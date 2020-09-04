@@ -392,14 +392,6 @@ ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 message(STATUS "Python version is ${Python_VERSION}")
 find_package (SWIG 3.0 REQUIRED)
 
-# Enter subdirectories
-set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/cdmath)
-add_subdirectory (CDMATH)
-if(SOLVERLAB_WITH_COREFLOWS)
-  set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/../coreflows)
-  add_subdirectory (CoreFlows)
-endif(SOLVERLAB_WITH_COREFLOWS)
-
 if (SOLVERLAB_WITH_DOCUMENTATION)                                                                           #
   find_package (Doxygen)                                                                                    #
   set (CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, doxygen, graphviz, mscgen")
@@ -413,6 +405,14 @@ if (SOLVERLAB_WITH_TESTS)                                                       
 endif()			
 find_package (XDR REQUIRED)
 				    
+# Enter subdirectories
+set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/cdmath)
+add_subdirectory (CDMATH)
+if(SOLVERLAB_WITH_COREFLOWS)
+  set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/../coreflows)
+  add_subdirectory (CoreFlows)
+endif(SOLVERLAB_WITH_COREFLOWS)
+
 set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/../)
 # Configuration file
 configure_file(
