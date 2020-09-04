@@ -157,6 +157,7 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       string(SUBSTRING ${DOWNLOAD_PETSC} ${start_tarball_name} ${tarball_name_length} PETSC_TARBALL_NAME)
 
       set(PETSC_DIR ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${PETSC_TARBALL_NAME}) # Location of the final install 
+      set(PETSC_ARCH arch-linux-c-opt)
       set(PETSC_INSTALL ${CMAKE_INSTALL_PREFIX}/share/petsc)#folder to copy petsc libraries and include files
 
       ExternalProject_Add (PETSc
@@ -182,9 +183,11 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       message( STATUS "PETSc, SLEPc and HDF5 will be installed at ${PETSC_INSTALL}")
 
       string(SUBSTRING ${PETSC_TARBALL_NAME} 6 ${tarball_name_length} PETSC_VERSION)
+      set(PETSC_INCLUDES ${PETSC_DIR}/${PETSC_ARCH}/include ${PETSC_DIR}/include)
+
       #define slepc variables
       set(SLEPC_DIR ${PETSC_INSTALL})
-      set(SLEPC_INCLUDES ${SLEPC_DIR}/include)
+      set(SLEPC_INCLUDES ${SLEPC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/include)
       set(SLEPC_LIBRARIES ${SLEPC_DIR}/lib/libslepc.so)
 
       #define hdf5 variables
