@@ -26,7 +26,7 @@ set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/p
      CACHE STRING           "PETSc tarball path/url" )
 set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.13.4.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
-set (DOWNLOAD_F2CBLASLAPACK ${CDMATH_SOURCE_DIR}/pre_requis/PETSc/f2cblaslapack-3.4.2.q4.tar.gz
+set (DOWNLOAD_F2CBLASLAPACK ${SOLVERLAB_SOURCE_DIR}/CDMATH/pre_requis/PETSc/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
 set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz  
      CACHE STRING           "HDF5 tarball path/url" )
@@ -37,7 +37,6 @@ set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCou
 
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 include(ExternalProject)#For PETSc, MED and MEDCoupling
-
 ######################################################
 # Detection or compilation of PETSc+SLEPc+HDF5       #
 ######################################################
