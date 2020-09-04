@@ -52,12 +52,13 @@ set (TESTS_DIR ${CDMATH_SOURCE_DIR}/tests)
 ###Define CDMATH_INCLUDES and CDMATH_LIBRARIES for the compilation of CoreFlows
 set(CDMATH_INCLUDES 
 	${MEDFILE_INCLUDE_DIRS} ${MEDCOUPLING_INCLUDE_DIR}
-	${BASE_DIR}/inc ${MESH_DIR}/inc ${LINEARSOLVER_DIR}/inc )
+	${BASE_DIR}/inc ${MESH_DIR}/inc ${LINEARSOLVER_DIR}/inc 
+	PARENT_SCOPE 	)
 
 set (CDMATH_LIBRARIES
 	medC medloader	medcoupling
 	base mesh 	linearsolver
-    )
+	PARENT_SCOPE    )
  
 # Swig interface
 if   (CDMATH_WITH_PYTHON)
