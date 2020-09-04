@@ -1,0 +1,20 @@
+/*!
+\page ExampleTransportEqPage  Example cases for : \a The \a transport \a equation 
+[TOC]
+
+
+ \section Trans1 Problem Transport 1D Heated Channel (C)
+
+\include TransportEquation_1DHeatedChannel.cxx
+
+ \section TransDiffus Coupled Problem Transport Diffusion 1D Heated Channel (C)
+
+\include CoupledTransportDiffusionEquations_1DHeatedChannel.cxx
+
+ \section Trans1py Problem Transport 1D Heated Channel (python)
+
+\include TransportEquation_1DHeatedChannel.py
+
+
+*/
+

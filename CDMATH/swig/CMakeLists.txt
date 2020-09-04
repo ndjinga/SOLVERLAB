@@ -1,0 +1,47 @@
+INCLUDE(${SWIG_USE_FILE})
+
+INCLUDE_DIRECTORIES(
+  ${Python_INCLUDE_DIRS}
+  ${MEDCOUPLING_INCLUDE_DIR}
+  ${BASE_DIR}/inc
+  ${MESH_DIR}/inc
+)
+
+SET(_extra_lib_SWIG)
+if (CDMATH_WITH_PETSC)
+    INCLUDE_DIRECTORIES(
+      ${PETSC_INCLUDES}
+      ${SLEPC_INCLUDES}
+      ${LINEARSOLVER_DIR}/inc
+    )
+    SET(_extra_lib_SWIG linearsolver ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES})
+    file(COPY cdmath_with_petsc.i DESTINATION ${CMAKE_BINARY_DIR}/swig)
+    file(RENAME ${CMAKE_BINARY_DIR}/swig/cdmath_with_petsc.i ${CMAKE_BINARY_DIR}/swig/cdmath.i)
+else (CDMATH_WITH_PETSC)
+    file(COPY cdmath_without_petsc.i DESTINATION ${CMAKE_BINARY_DIR}/swig)
+    file(RENAME ${CMAKE_BINARY_DIR}/swig/cdmath_without_petsc.i ${CMAKE_BINARY_DIR}/swig/cdmath.i)
+endif (CDMATH_WITH_PETSC)
+
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/swig/cdmath.i PROPERTIES CPLUSPLUS ON)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/swig/cdmath.i PROPERTIES C OFF)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/swig/cdmath.i PROPERTIES SWIG_DEFINITIONS "-shadow")
+
+#Trying to remove warnings due to cmake policies cmp0078 and cmp0086
+IF   (${CMAKE_VERSION} VERSION_GREATER "3.13.0")
+  cmake_policy(SET CMP0078 NEW)
+  IF   (${CMAKE_VERSION} VERSION_GREATER "3.14.0")
+    cmake_policy(SET CMP0086 NEW)
+  ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.14.0")
+ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.13.0")
+
+IF   (${CMAKE_VERSION} VERSION_LESS "3.8.0") 
+  SWIG_ADD_MODULE(cdmath python ${CMAKE_BINARY_DIR}/swig/cdmath.i)
+ELSE (${CMAKE_VERSION} VERSION_LESS "3.8.0") 
+  SWIG_ADD_LIBRARY(cdmath TYPE SHARED LANGUAGE python SOURCES ${CMAKE_BINARY_DIR}/swig/cdmath.i)
+ENDIF(${CMAKE_VERSION} VERSION_LESS "3.8.0")
+ 
+SWIG_LINK_LIBRARIES(cdmath ${Python_LIBRARIES} base mesh ${medloader} ${medcoupling} ${_extra_lib_SWIG})
+
+INSTALL(TARGETS _cdmath DESTINATION lib/cdmath)
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/cdmath.py DESTINATION bin/cdmath)
+

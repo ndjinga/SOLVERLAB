@@ -1,0 +1,74 @@
+/*!
+\page DriftModelPage The Drift model
+	
+
+[TOC]
+The model consists in the steam mass balance equation together with the mixture mass conservation, the mixture momentum balance and mixture energy balance equations. The main unknowns are the steam mass concentration \f$c_v\f$, the pressure \f$P\f$, the mixture velocity \f$\vec{u}_m\f$, and the common temperature \f$T\f$. The model uses stiffened gas laws \f$p_g(\rho_g,T)\f$ and  \f$p_l(\rho_l,T)\f$ as well as  linearised internal energy law \f$e_k(T)\f$ valid around the saturation points \f$(P=1 bar, T=373K)\f$ or \f$(P=155 bars, T=618K)\f$ depending on the value of the enum \ref pressureEstimate.
+
+The drift model is a system of four nonlinear equations taking the following conservative form
+\f{eqnarray*}
+\left\{\begin{array}{lll}
+         \partial_t(\phi \rho_m) &+\nabla\cdot(\phi\rho_m\vec{u}_m)&=0\\
+         \partial_t(\phi m_g)&+\nabla\cdot\phi(m_g\vec{u}_g)&=\phi\Gamma_g(h_m,\Phi)\\
+         \partial_t(\phi\rho_m\vec{u}_m)&+\nabla\cdot\phi(m_g\vec{u}_g\otimes\vec{u}_g+ m_l\vec{u}_l\otimes\vec{u}_l)+\vec{\nabla}(p\phi)&=p\vec{\nabla}\phi+\phi\rho_m\vec{g}- K_g\phi m_g||\vec{u}_g||\vec{u}_g- K_l\phi m_l||\vec{u}_l||\vec{u}_l- K_s\delta_s(x)\phi\rho_m||\vec{u}_m||\vec{u}_m\\
+         \partial_t\phi (\rho_m E_m)&+\nabla\cdot\phi(m_g H_g{}^t\vec{u}_g+m_l H_l{}^t\vec{u}_l)&=\Phi+\phi\rho_m\vec{g}\cdot\vec{u}_m- K_g\phi m_g||\vec{u}_g||^3- K_l\phi m_l||\vec{u}_l||^3- K_s\delta_s(x)\phi\rho_m||\vec{u}_m||^3
+        \end{array}\right.,
+\f}
+where the mixture quantities are defined by
+\f{eqnarray*}
+\rho_m&=&\alpha_g\rho_g+\alpha_l\rho_l\\
+\vec{u}_m&=&\frac{\alpha_g\rho_g\vec{u}_g+\alpha_l\rho_l\vec{u}_l}{\alpha_g\rho_g+\alpha_l\rho_l}\\
+E_m&=&\alpha_g\rho_g E_g+\alpha_l\rho_l E_l,
+\f}
+
+whereas the quantities associated to each to phase \f$k=g,l\f$ are defined as
+- \f$\alpha_k\f$ is the phasic volumic presence rate,
+- \f$\rho_k\f$ is the phasic density,
+- \f$m_k=\alpha_k\rho_k\f$ is the phasic partial density,
+- \f$\vec u_k\f$ the phasic velocity,
+- \f$\vec q_k = \rho \vec u\f$ the phasic momentum,
+- \f$p\f$ the common phasic pressure,
+- \f$e_k\f$ the phasic internal energy,
+- \f$E_k = e_k + \frac{||\vec u||^2}{2}\f$ the phasic total energy,
+- \f$h_k=e_k+\frac{p}{\rho_k}\f$ the phasic enthalpy
+- \f$H_k=h_k+\frac{1}{2}|\vec{u}_k|^2\f$ the phasic total enthalpy
+- \f$T\f$ the common absolute temperature,
+- \f$\nu_k\f$ the viscosity (\ref DriftModel::setViscosity),
+- \f$\lambda_k\f$ the thermal conductivity (\ref DriftModel::setConductivity),
+- \f$K_k\f$ the phasic regular friction coefficient (\ref DriftModel::setDragCoeffs),
+
+Geometric and physical source terms are
+- \f$\vec g\f$ the gravity vector (\ref DriftModel::setGravity)
+- \f$\Phi(\vec x)\f$ the heat power received by the fluid (\ref DriftModel::setHeatPowerField),
+- \f$\phi(\vec x)\f$ the volumic porosity field (\ref DriftModel::setPorosityField),
+- \f$K_s(\vec x)\f$ the singular friction function, \f$\delta_s(\vec x)\f$ the Dirac delta function with support on the set $s$ (\ref DriftModel::setPressureLossField).
+
+We close the Drift-Model system with a stiffened gas law \f$p = (\gamma_k -1) \rho_k e_k -\gamma_k p_{0k}\f$ for each phase and a linearised enthalpy law \f$h_k(T)\f$ valid around the points \f$(P=1 bar, T=300K)\f$ or \f$(P=155 bars, T=618K)\f$ depending on the value of the enum \ref pressureEstimate.
+
+For the sake of simplicity, for the moment we consider constant viscosity and conductivity, and neglect the contribution of viscous forces in the energy equation.
+
+The constant parameters \f$\lambda_k, \nu_k,\vec g, K_k\f$ and the fields \f$\phi(\vec x),\: \Phi(\vec x),\: K_s(\vec x)\f$ can be set by the user. The default value for \f$\phi\f$ is \f$\phi=1\f$.
+
+
+To close the system we need a drift correlation for the relative velocity:
+\f{eqnarray*}
+\vec{u}_r=\vec{u}_g-\vec{u}_l=\vec{f}_r(c_g,\vec{u}_m,\rho_m).
+\f}
+For the moment the only drift correlation available is \f$\vec{u}_g=\vec{u}_l\f$.
+
+The phase change is modeled using the formula
+\f{eqnarray*}
+ \Gamma_g=\left\{\begin{array}{cc}
+         \frac{\Phi}{\mathcal{L}}&\textrm{ if } T^{sat}\leq T \textrm{ and } 0<\alpha_g<1\\[1.5ex]
+         0& \textrm{ otherwise }
+        \end{array}\right..
+\f}
+
+For the moment the boiling temperature \f$T^{sat}\f$ is constant and can be changed using the function DriftModell::setSatTemp.
+
+* The class : \ref DriftModel implements the 4 equation drift model
+
+* \subpage ExampleDriftModelPage "Here are C and Python example scripts using the Drift Model  "
+
+
+*/

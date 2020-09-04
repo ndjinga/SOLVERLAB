@@ -1,0 +1,31 @@
+/*!
+\page ExampleIsothermalPage  Example cases for : \a The \a isothermal \a model 
+[TOC]
+
+\section IsoRP Isothermal 1D RiemannProblem  (C) 
+\include IsothermalTwoFluid_1DRiemannProblem.cxx
+
+\section IsoSed Isothermal 1D Sedimentation  (C) 
+\include IsothermalTwoFluid_1DSedimentation.cxx
+
+\section IsoSedPy Isothermal 1D Sedimentation  (Python) 
+\include IsothermalTwoFluid_1DSedimentation.py
+
+\section IsoDepr Isothermal 1D Depressurisation  (C) 
+\include IsothermalTwoFluid_1DDepressurisation.cxx
+
+\section IsoVidPy Isothermal 1D Emptying tank  (Python) 
+\include IsothermalTwoFluid_1DVidangeReservoir.py
+
+\section IsoSed2D Isothermal 2D Inclined Sedimentation  (C) 
+\include IsothermalTwoFluid_2DInclinedSedimentation.cxx
+
+\section IsoVid2D Isothermal 2D Emptying tank  (C) 
+\include IsothermalTwoFluid_2DVidangeReservoir.cxx
+
+\section IsoVid2DPy Isothermal 2D Emptying tank  (Python) 
+\include IsothermalTwoFluid_2DVidangeReservoir.py
+
+
+*/
+

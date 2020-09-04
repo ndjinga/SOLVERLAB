@@ -1,0 +1,24 @@
+,PDE_model,Numerical_method_name,Mesh_dimension,Mesh_type,Scheme_order,Mesh_cell_type,Test_color,Computational_time
+9,Poisson,P1 FE,2,Unstructured_triangles,2.11982946329,Triangles,Green,31.3697009087
+17,Poisson,P1 FE,3,Unstructured_tetrahedra,0.988168053532,Tetrahedra,Green,166.048187971
+21,Poisson,VF5,2,Deformed_quadrangles,1.09971514876,Squares,Green,8.5720410347
+14,Poisson,VF5,2,Non_conforming_checkerboard,0.350053830753,Squares,Green,6.62084889412
+8,Poisson,VF5,2,Non_conforming_locally_refined,0.936221110698,Squares,Green,21.0660178661
+1,Poisson,VF5,2,Regular_brickwall,-0.207389190578,Squares,Green,2.42717003822
+3,Poisson,VF5,2,Regular_hexagons,1.94163703307,Hexagons,Green,2.97270894051
+11,Poisson,VF5,2,Regular_squares,2.00999131781,Squares,Green,3.35757899284
+15,Poisson,VF5,2,Unstructured_triangles,0.613779858098,Triangles,Green,3.17705583572
+20,Poisson,VF5,3,Non_conforming_checkerboard,-0.260162471482,Cubes,"Orange, BC violated. PB with mesh ?",13.9536550045
+10,Poisson,VF5,3,Regular_cubes,2.00287087151,Cubes,Green,24.5199820995
+19,Poisson,VF5,3,Unstructured_tetrahedra,0.811060477886,Tetrahedra,Green,37.7271621227
+5,Poisson-Beltrami,P1 FE,2,Unstructured_3D_triangles,0.609143862465,3DTriangles,Green,9.20593500137
+12,Wave system,PStag scaling,2,Regular squares,-0.000240328317794,Squares,Green,48.6747219563
+16,Wave system,PStag scaling,2,Unstructured triangles,8.01376136056e-05,Triangles,Orange,138.242769957
+0,Wave system,Upwind,2,Deformed quadrangles,-3.48762021246e-09,Deformed quadrangles,Green,3.91550087929
+2,Wave system,Upwind,2,Regular brick wall,-7.02335062508e-06,Squares,Green,6.97334003448
+22,Wave system,Upwind,2,Regular checkerboard,-1.85509623681e-11,Squares,Green,6.20443511009
+18,Wave system,Upwind,2,Regular hexagons,-8.56471405081e-06,Hexagons,Green,7.82105183601
+6,Wave system,Upwind,2,Regular squares,-3.86440547349e-05,Squares,Green,6.3302488327
+4,Wave system,Upwind,2,Unstructured triangles,-8.25752331143e-11,Triangles,Green,4.32650613785
+13,Wave system,Upwind,3,Regular cubes,-3.26265785024e-05,Cubes,Green,11.5860280991
+7,Wave system,Upwind,3,Regular tetrahedra,-1.11783491592e-11,Tetrahedra,Green,74.7223608494

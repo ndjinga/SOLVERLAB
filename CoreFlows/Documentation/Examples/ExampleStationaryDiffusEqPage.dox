@@ -1,0 +1,23 @@
+/*!
+\page ExampleStationaryDiffusionEqPage  Example cases for : \a The \a Stationary \a diffusion \a equation 
+[TOC]
+
+\section StationaryDiffus1 Problem Stationary diffusion 2D Finite Elements on structured triangles with Dirichlet boundary conditions (C)
+
+\include StationaryDiffusionEquation_2DEF_StructuredTriangles.cxx
+
+\section StationaryDiffus1FV Problem Stationary diffusion 2D Finite Volumes on structured triangles with Dirichlet boundary conditions (C)
+
+\include StationaryDiffusionEquation_2DFV_StructuredTriangles.cxx
+
+
+\section StationaryDiffus1py Problem Stationary diffusion 2D Finite Elements on structured triangles with Dirichlet boundary conditions (Python)
+
+\include StationaryDiffusionEquation_2DEF.py
+
+\section StationaryDiffus1pyFV Problem Stationary diffusion 2D Finite Volumes on structured triangles with Dirichlet boundary conditions (Python)
+
+\include StationaryDiffusionEquation_2DVF_StructuredTriangles.py
+
+*/
+

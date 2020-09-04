@@ -1,0 +1,29 @@
+/*!
+\page TransportEqPage The transport equation
+
+[TOC]
+
+
+ 
+\f[
+ \partial_t h + \vec{u}\cdot\vec{\nabla} h = \Phi+\lambda_{sf}(T_s-T)
+\f]
+
+where
+
+- \f$ h \f$ the main unknown is the fluid enthalpy field
+- \f$ \vec{u} \f$ is the constant transport velocity set by the user
+- \f$ \Phi \f$ is the heat source term if explicitely known
+- \f$ T_s \f$ is the rod temperature field provided by the user
+- \f$ T=T_0+\frac{h-h_0}{c_p}\f$ is the fluid temperature field
+- \f$ \lambda_{sf}\f$ is the fluid-rod heat transfer coefficient provided by the user
+- \f$ c_p \f$ is the fluid specific heat, provided by the user and assumed constant
+
+
+
+* The class \ref TransportEquation implements a scalar advection equation for the enthalpy of a fluid. The fluid can be either steam or liquid water around 1 bar or 155 bars.
+
+* \subpage ExampleTransportEqPage "Here are C and Python example scripts"	
+
+
+*/

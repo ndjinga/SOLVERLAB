@@ -1,0 +1,56 @@
+/*!
+
+\mainpage CDMATH-CoreFlows User Guide
+
+\section CFlows Presentation of CDMATH-CoreFlows
+
+CDMATH-CoreFlows is an open source C++/Python library intended at solving PDE systems
+arising from the thermalhydraulics of two phase flows in power plant boilers. It
+is a simple environment meant at students and researchers to test new numerical
+methods on general geometries with unstructured meshes. It is developped by
+CEA Saclay since 2014 and proposes a few
+basic models and finite volume numerical methods. Some of the main objectives
+are the study of
+
+- Numerical schemes for compressible flows at low Mach numbers
+- Well balanced schemes for stiff source terms (heat source, phase change, pressure losses)
+- Flow inversion and counter-current two phase flows
+- Schemes that preserve the phasic volume fraction α ∈ [0, 1]
+- Convergence of finite volume methods
+- New preconditioners for implicit methods for two phase flows
+- The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
+
+CDMATH-CoreFlows relies on the \ref toolbox of the project \ref cdmath for the handling of meshes and fields, and on the library \ref petsc for the handling of large sparse matrices.
+
+
+\section Contents
+This document is the user guide of the %CoreFlows library. It is organized as follows :
+
+- \subpage physicalmodels "The Physical Models" 
+	+ \subpage ScalarModelsPage "The linear scalar problems" 
+		-# \ref TransportEqPage 
+		-# \ref DiffusionEqPage 
+	+ \subpage NSModelsPage "The Navier-Stokes model" 
+	+ \subpage twophasePage "The two-phase flow models"
+		-# \subpage DriftModelPage "The Drift model"
+		-# \subpage IsothermalPage "The isothermal two-fluid model"
+		-# \subpage FiveEqPage "The five equation two-fluid model"	
+
+- \subpage software "Software structure"
+- \subpage numericalPage "The numerical methods"
+- Summary of available \subpage functionalities  "functionalities"
+- \subpage examples "CDMATH-CoreFlows example scripts"
+
+
+\section installation Installation and use
+In order to install CDMATH-CoreFlows you will need the packages \ref cmake , \ref hdf5 and possibly 
+- \ref swig and \ref numpy if you want to use CDMATH-CoreFlows in python scripts 
+- \ref doxygen if you want to generate this html documentation.
+
+Instructions for installation and use of CDMATH-CoreFlows can be found here \subpage install "Installation and use of CDMATH-CoreFlows".
+
+\section References 
+
+\subpage references "A specific page dedicated to references is available here".
+
+*/

@@ -1,0 +1,79 @@
+/*!
+\page references References
+
+Here follows a list of useful references :
+
+ \subsection relap5 Relap5 [1]
+- 1- A. S. Shieh, V. H. Ransom, R. Krishnamurthy, Validation of numerical techniques in RELAP5/MOD3, RELAP5/MOD3 code manual volume 6, October 1994
+ \subsection CobraTF Cobra-TF [2]
+- 2- http://www.casl.gov/COBRA-TF.shtml
+ \subsection ANSYS-CFX CFX [3]
+- 3- http://www.ansys.com/Products/Simulation+Technology/Fluid+Dynamics/Fluid+Dynamics+Products/ANSYS+CFX
+ \subsection cupid CUPID [4]
+- 4- J. J. jeong, H. Y. Yoon, I. K. Park, H. K. Cho, J. Kim, A semi-implicit numerical scheme for transient two-phase flows, Nuclear Engineering and Design 236 (2008) 3403-3412
+\subsection flica4 Flica4 [5]
+- 5- I. Toumi, A. Bergeron, D. Gallo, E. Royer, D. Caruge, '' \a FLICA-4: \a a \a three-dimensional \a two-phase \a flow \a computer \a code \a with \a advanced \a numerical \a methods \a for \a nuclear \a applications, '' Nuclear Engineering and Design, Volume 200, Issues 1-2, August 2000, Pages 139-155.
+\subsection cathare Cathare [6]
+- 6- D. Bestion, '' \a The \a Physical \a Closure \a Laws \a in \a The \a CATHARE \a Code, \a Nuclear \a Engineering \a and \a Design, '' vol. 124, pp. 229-245, 1990.
+\subsection neptuneCFD Neptune_CFD [7]
+- 7- N. Méchitoua, M. Boucker, J. Laviéville, J.-M. Hérard, S. Pigny, and G. Serre. An Unstructured Finite Volume Solver for Two-Phase Water/Vapour Flows Modelling Based on an Elliptic Oriented Fractional Step Method. In NURETH 10, International Meeting on Nuclear Reactor Thermal-Hydraulics, Seoul, South Korea, 2003.
+\subsection nist NIST [8]
+- 8- Propriétés thermophysiques des systèmes fluides, http://webbook.nist.gov/chemistry/fluid/
+\subsection ishii ISHII [9]
+- 9- M. Ishii, ''\a  Thermo-Fluid \a  Dynamic \a Theory \a of \a Two-Phase \a Flow,'' Eyrolles, Paris, 1975.
+\subsection Drew Drew [10]
+- 10- D.A. Drew and S.L. Passman, '' \a Theory \a of \a Multicomponent \a Fluids,'' Springer-Verlag, New York, 1999.
+\subsection roe Roe [11]
+- 11- Ph. Roe, Approximate Riemann solvers, parameter vectors, and difference schemes, J. Comput. Phys., 43, 357, 1981
+\subsection wbsourceterms Velasquez [12] 
+- 12- ''\a Upwind \a methods \af or \a hyperbolic \a conservation \a laws \a with \a source \a terms'', A. Bermudez, E. Vazquez, Comp. Fluids, vol 23, issue 8, pp. 1049-1071,1994
+\subsection kieu NGUYENFVCA6 [13]
+- 13- M. Ndjinga, T.-P.-K. Nguyen, C. Chalons, Numerical simulation of an incompressible two-fluid model, Springer Proc. Math. \& Stat., Vol. 78, Finite Volumes for Complex Applications FVCA7, 2014
+\subsection DaoFVCA6 DAOFVCA6 [14]
+- 14- T.-H. Dao, M. Ndjinga, F. Magoules, Comparaison of Upwind and Centered Schemes for Low Mach Number Flows, Finite Volumes for Complex Applications VI - Problems \& Perspectives, Springer Proceedings in Mathematics 4, 2011
+\subsection leveque LEVEQUE[15]
+- 15- R. J. LeVeque, Finite Volume Methods for Hyperbolic Problems, Cambridge University Press, 2002
+\subsection salome Salome [16]
+- 16- Salome - The open source integration platform for numerical simulation: http://www.salome-platform.org
+\subsection paraview Paraview [17]
+- 17- Paraview - Parallel open-source data analysis and visualization application: http://www.paraview.org
+\subsection vtk VTK [18]
+- 18- VTK - Opensource Visualization Toolkit : http://www.vtk.org
+\subsection petsc Petsc [19]
+- 19- Petsc 3.4.5 - Parallel storage and manipulation of large sparse matrices : http://http://www.mcs.anl.gov/petsc/
+\subsection cdmath CDMATH [20]
+- 20- Project CDMATH ''\a Ce \a sont \a Des \a Mathématiques \a Appliquées \a à \a la \a Thermohydraulique'': http://cdmath.jimdo.com/
+\subsection toolbox Toolbox [21]
+- 21- Toolbox of the project CDMATH : https://github.com/PROJECT-CDMATH/CDMATH
+\subsection swig SWIG [22]
+- 22- SWIG - Simplified Wrapper and Interface Generator : http://www.swig.org
+\subsection hdf5 HDF5 [23]
+- 23- HDF5 - Data model and file format of large volume : http://www.hdfgroup.org/HDF5
+\subsection doxygen DOXYGEN [24]
+- 24- DOXYGEN - Generate documentation from source code : http://www.doxygen.org
+\subsection cmake CMAKE [25]
+- 25- CMAKE - Open-source build test and package software : http://www.cmake.org
+\subsection med MED [26]
+- 26- MED - Modèle d'échange de données http://www.code-aster.org/outils/med/html/introduction.html
+\subsection numpy NUMPY [27]
+- 27- NUMPY - Package for scientific computing with Python http://www.numpy.org/
+\subsection flocal FLOCAL [28]
+- 28- U. Grundmann, U. Rohde, S. Mittag, S. Kliem, ``DYN3D Version 3.2- Code for calculation of transients in light water reactors (LWR) with hexagonal or quadratic fuel elements'', technical report, Forschungszentrum Rossendorf, Germany, 2005
+\subsection thuhuyen ThuHuyenPhDThesis [29]
+- 29 Dao Thu Huyen, "Simulation numérique d’écoulements diphasiques par décomposition de domaine", PhD thesis Ecole Centrale des Arts et Manufactures, 2013
+\subsection tassadit TASSADITInternship [30]
+- 30 Tassadit Sid Abdelkader, "Environnement de simulation pour les écoulements bouillants dans des canaux
+parallèles chauffés différentiellement", master thesis CEA Saclay - Ecole d'Ingénieurs Sup' Galilée, 2015
+\subsection kieu NGUYENPhDThesis [31]
+- 31 Thi Phuong Kieu Nguyen, "On the mathematical analysis and the numerical simulation of boiling
+flow models in nuclear power plants thermal hydraulics", PhD thesis Université de Versailles-Saint-Quentin-En-Yvelines, 2016
+\subsection vfroe VFRoe [32]
+- [32] J. M. Masella, I. Faille and T. Gallouët,
+"On an Approximate Godunov Scheme", Intl. J. Computational
+Fluid Dynamics, 1999, Vol. 12, pp. 133-149. 
+\subsection vffc VFFC [33]
+- [33] J.M. Ghidaglia, A. Kumbaro, G. Le Coq, Une méthode volumes finis à flux caractéristiques pour la résolution numérique des systèmes hyperboliques de lois de conservation, Comptes Rendus de l'Acad. Sciences Paris, S\'erie 1, vol 322, pp. 981 988, 1996.
+
+
+*/
+

@@ -1,0 +1,123 @@
+/*!
+\page install Installation and use of CoreFlows 
+
+
+CDMATH-CoreFlows is currently developped and maintained on Fedora and Ubuntu distributions.
+CDMATH-CoreFlows relies on the numerical toolbox of the project [CDMATH]((http://cdmath.jimdo.com)) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
+You will need the packages  '\a cmake ', '\a gcc', '\a gfortran' and '\a hdf5', plus '\a doxygen' if you want to generate this documentation and '\a swig' if you want to use python scripts.
+
+Download and compilation of CDMATH and PETSc
+--------------------------------------------
+CDMATH can be downloaded and compiled together with PETSc in a single process, thanks to the cmake option -DCDMATH_WITH_PETSC=ON.
+First create and enter a working dir
+\verbatim 
+ mkdir -p ~/workspace/cdmath
+ cd ~/workspace/cdmath
+\endverbatim
+
+In order to download the approriate branch of \ref cdmath either unzip the following file to a directory cdmath-master
+\verbatim 
+ https://github.com/ndjinga/CDMATH/archive/master.zip
+\endverbatim
+or clone the git repository to a folder cdmath-master
+\verbatim 
+git clone https://github.com/ndjinga/CDMATH.git cdmath-master
+\endverbatim 
+
+In order to compile \ref cdmath you will need at least the libraries '\a cmake ', '\a gcc', '\a gfortran' , and '\a hdf5' plus optionally '\a swig' 'python-dev' and '\a numpy' if you intend to use \ref cdmath functions in your python scripts. 
+
+Create build and install repositories:
+\verbatim 
+ mkdir cdmath_build cdmath_install
+\endverbatim
+
+Enter the build directory
+\verbatim 
+ cd cdmath_build
+\endverbatim 
+
+Then run the commands
+\verbatim 
+ cmake ../cdmath-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PYTHON=ON -DCDMATH_WITH_PETSC=ON
+ make
+ make install
+\endverbatim 
+
+By default, \ref cdmath will compile a new sequential installation of PETSc. If an installation of PETSc (version 3.4 or later) is already available in the system, it is possible to save time by first setting the environment variables PETSC_DIR and PETSC_ARCH to the appropriate values as can be found in petscconf.h, and then running the above cmake command.
+
+Download and compilation of CoreFlows
+---------------------------------------------
+First create and access a working directory :
+\verbatim
+ mkdir -p ~/workspace/CDMATH-CoreFlows
+ cd ~/workspace/CDMATH-CoreFlows
+\endverbatim
+
+Now create build and install repositories:
+\verbatim
+mkdir CDMATH-CoreFlows_build CDMATH-CoreFlows_install
+\endverbatim
+
+In order to download CDMATH-CoreFlows either unzip the following file to a directory CDMATH-CoreFlows-master
+\verbatim
+ https://github.com/ndjinga/CDMATH-CoreFlows/archive/master.zip
+\endverbatim
+or clone the git repository to a folder CDMATH-CoreFlows-master
+\verbatim 
+git clone https://github.com/ndjinga/CDMATH-CoreFlows.git CDMATH-CoreFlows-master
+\endverbatim 
+Either of these latter commands results in the creation of a directory `~/workspace/CDMATH-CoreFlows/CDMATH-CoreFlows-master`  containing the source files.
+
+In the following steps we assume that 'PETSc' (version 3.4 or more recent) has been installed with 'CDMATH' with the process described above.
+You need to set the following variables 
+- `\a CDMATH_DIR`, the path to your CDMATH installation, for example  `~/workspace/cdmath/cdmath_install//share/petsc-3.8.3 `
+- `\a PETSC_DIR`, the path to your PETSc installation. If PETSc was installed by CDMATH then PETSC_DIR can be defined as `~/workspace/cdmath/cdmath_install`
+- `\a PETSC_ARCH`, the type of installation used (usually arch-linux2-c-opt or linux-gnu-c-opt)
+In order to do so, it is sufficient to source the 'CDMATH' environment file. Type in your linux terminal
+\verbatim
+source ~/workspace/cdmath/cdmath_install/env_CDMATH.sh
+\endverbatim
+Go to the build directory
+\verbatim
+cd CDMATH-CoreFlows_build
+\endverbatim
+
+Then run the command
+\verbatim
+../CDMATH-CoreFlows-master/configure  --prefix=../CDMATH-CoreFlows_install/ --with-petsc-dir=$PETSC_DIR --with-petsc-arch=$PETSC_ARCH --with-cdmath-dir=$CDMATH_DIR --with-python --with-doc
+make doc install
+\endverbatim
+You can add the following optional commands
+- `--with-gui`, if you want to use CDMATH-CoreFlows as a Salomé module (you will need to use a Salomé shell)
+- `--with-debug`, if you want to use CDMATH-CoreFlows in debug mode instead of the default optimised mode
+
+Use of CoreFlows
+----------------
+First load CoreFlows environment from the CoreFlows_install directory
+\verbatim
+source CoreFlows_install/env_CoreFlows.sh
+\endverbatim
+
+- If you use C language: edit the file CoreFlows-master/main.cxx then in a terminal type
+\verbatim
+cd CoreFlows_build 
+make -j
+make install -j
+\endverbatim
+Then you can run the simulation in any directory with the command line
+\verbatim
+$CoreFlows
+\endverbatim
+
+- If you use python language: edit your own python file my_file.py following for example the pattern of the file CDMATH-CoreFlows-master/main.py. Then in a terminal type
+\verbatim
+python my_file.py
+\endverbatim
+
+- If you use the graphic interface, you need to run a Salomé Unix shell and type the command line
+\verbatim
+runSalome -mCOREFLOWS
+\verbatim
+then click on new study to open CoreFlows interface
+
+*/

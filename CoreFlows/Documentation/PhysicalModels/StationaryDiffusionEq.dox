@@ -1,0 +1,21 @@
+/*!
+\page StationaryDiffusionEqPage The diffusion equation
+
+[TOC]
+
+\f[
+-\lambda\triangle T = \Phi+\lambda_{sf}(T_f-T)
+\f]
+where
+- \f$T\f$ the main unknown is the solid temperature field
+- \f$\lambda\f$ is the solid thermal conductivity possibly set by the user (default value is 1)
+- \f$\lambda_{sf}\f$ is the fluid-solid heat transfer coefficient set by the user (default value is 0)
+- \f$\Phi\f$ is the heat source term set by the user (default value is zero)
+- \f$T_f\f$ is the fluid temperature field set by the user
+
+* The class \ref StationaryDiffusionEquation implements a scalar stationary diffusion equation for the temperature in a solid. 
+
+
+* \subpage ExampleStationaryDiffusionEqPage "Here are C and Python example scripts"
+
+*/

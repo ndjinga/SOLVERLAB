@@ -1,0 +1,16 @@
+\begin{tabular}{lllrllrllr}
+\toprule
+{} & PDE\_model & Num\_method &  Mesh\_dim & Bound\_cond &                Mesh\_type &  Scheme\_order & Mesh\_cell\_type &            Test\_color &  Comput\_time \\
+\midrule
+1 &   Poisson &         FE &         2 &  Dirichlet &   Regular\_RightTriangles &        2.0039 &      Triangles &                 Green &      105.016 \\
+2 &   Poisson &         FE &         2 &  Dirichlet &   Unstructured\_triangles &        2.0156 &      Triangles &                 Green &        6.369 \\
+5 &   Poisson &         FE &         3 &  Dirichlet &  Unstructured\_Tetrahedra &        0.6273 &    Tetrahedron &  Orange (not order 2) &      122.079 \\
+3 &   Poisson &         FV &         2 &  Dirichlet &   Regular\_RightTriangles &        0.0212 &      Triangles &                 Green &       17.547 \\
+6 &   Poisson &         FV &         2 &  Dirichlet &   Unstructured\_triangles &        0.6138 &      Triangles &                 Green &        2.386 \\
+8 &   Poisson &         FV &         2 &  Dirichlet &      Structured\_hexagons &        1.9416 &       Hexagons &                 Green &        2.380 \\
+4 &   Poisson &         FV &         2 &  Dirichlet &    Equilateral\_triangles &        1.9766 &      Triangles &                 Green &        5.698 \\
+0 &   Poisson &         FV &         2 &  Dirichlet &           RegularSquares &        2.0039 &        Squares &                 Green &       10.755 \\
+7 &   Poisson &         FV &         3 &  Dirichlet &       Regular\_Tetrahedra &        0.0065 &    Tetrahedron &                 Green &       76.646 \\
+9 &   Poisson &         FV &         3 &  Dirichlet &  Unstructured\_Tetrahedra &        0.5359 &    Tetrahedron &                 Green &       19.588 \\
+\bottomrule
+\end{tabular}

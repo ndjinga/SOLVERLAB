@@ -1,0 +1,13 @@
+INCLUDE_DIRECTORIES(
+  ${MEDCOUPLING_INCLUDE_DIR}
+  ${BASE_DIR}/inc
+  ${MESH_DIR}/inc 
+  ${LINEARSOLVER_DIR}/inc
+  ${PETSC_INCLUDES}
+  ${SLEPC_INCLUDES}
+)
+
+FILE(GLOB src_linearsolver_CXX . *.cxx)
+ADD_LIBRARY(linearsolver SHARED ${src_linearsolver_CXX} ${MPI_CXX_LIBRARIES})
+
+INSTALL(TARGETS linearsolver DESTINATION lib)

@@ -1,0 +1,58 @@
+# This is the configuration file for Travis CI, an online continuous integration service.
+language: cpp
+sudo: required
+dist: trusty
+addons:
+  apt:
+    packages:
+    - libhdf5-openmpi-dev
+    - libopenmpi-dev
+    - petsc-dev
+    - libcppunit-dev
+
+before_install:
+  #- export NUM_THREADS=1
+  ## Installation of a newer version of CMake
+  #- wget https://cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz --no-check-certificate
+  #- tar -zxf cmake-3.3.2-Linux-x86_64.tar.gz
+  #- cmake-3.3.2-Linux-x86_64/bin/cmake --version
+  - cmake --version
+  ## Installation of newer version of HDF5
+  #- wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.14.tar.gz
+  #- tar -zxf hdf5-1.8.14.tar.gz
+  #- cd hdf5-1.8.14
+  #- ./configure
+  #- make -j$NUM_THREADS --silent
+  #- sudo make install -j --silent
+  #- cd ..
+  ## Installation of newer version of OpenMPI
+  #- wget http://www.open-mpi.org/software/ompi/v1.8/downloads/openmpi-1.8.4.tar.gz
+  #- tar -zxf openmpi-1.8.4.tar.gz
+  #- cd openmpi-1.8.4
+  #- ./configure
+  #- make -j$NUM_THREADS --silent
+  #- sudo make install -j --silent
+  #- cd ..
+  - ls -l /usr/include/*mpi*
+  - ls -l /usr/include/openmpi/
+  - sudo ln -s /usr/include/openmpi/mpi-ext.h /usr/include/mpi-ext.h
+  - sudo ln -s /usr/include/openmpi/mpif-common.h /usr/include/mpif-common.h
+  - sudo ln -s /usr/include/openmpi/mpif-config.h /usr/include/mpif-config.h
+  - sudo ln -s /usr/include/openmpi/mpif.h /usr/include/mpif.h
+  - sudo ln -s /usr/include/openmpi/mpif-mpi-io.h /usr/include/mpif-mpi-io.h
+  - sudo ln -s /usr/include/openmpi/mpi.h /usr/include/mpi.h
+  - sudo ln -s /usr/include/openmpi/mpi_portable_platform.h /usr/include/mpi_portable_platform.h
+  - ls -l /usr/include/*mpi*
+  
+install:
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_TESTS=ON -DCDMATH_WITH_PETSC=ON ..
+  - make
+  - sudo make install -j --silent
+  - cd ..
+  
+script:
+  - cd build
+  - make test
+  - cd ..

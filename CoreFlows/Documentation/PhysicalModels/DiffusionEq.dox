@@ -1,0 +1,24 @@
+/*!
+\page DiffusionEqPage The diffusion equation
+
+[TOC]
+
+\f[
+ \partial_t T =d\triangle T +\frac{ \Phi+\lambda_{sf}(T_f-T)}{\rho c_p}
+\f]
+where
+- \f$T\f$ the main unknown is the solid temperature field
+- \f$\rho\f$ is the solid density assumed constant and possibly set by the user
+- \f$c_p\f$ is the solid specific heat, possibly set by the user and assumed constant
+- \f$\lambda\f$ is the solid thermal conductivity possibly set by the user
+- \f$d=\frac{\lambda}{\rho c_p}\f$ is the solid diffusivity
+- \f$\lambda_{sf}\f$ is the fluid-solid heat transfer coefficient set by the user
+- \f$\Phi\f$ is the heat source term set by the user
+- \f$T_f\f$ is the fluid temperature field provided by the user
+
+* The class \ref DiffusionEquation implementing a scalar diffusion equation for the temperature in a solid. The default values for \f$\rho, c_p, \lambda\f$ are those of Uranium oxyde at \f$900 K\f$.
+
+
+* \subpage ExampleDiffusionEqPage "Here are C and Python example scripts"
+
+*/

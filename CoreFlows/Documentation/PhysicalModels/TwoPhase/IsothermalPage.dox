@@ -1,0 +1,48 @@
+/*!
+\page IsothermalPage The isothermal two-fluid model
+
+[TOC]
+
+The model consists in the phasic mass and momentum balance equations.
+
+The main unknowns are \f$\alpha\f$, \f$P\f$, \f$\vec{u}_g\f$, \f$\vec{u}_l\f$. The model uses stiffened gas laws \f$p_g(\rho_g)\f$ and  \f$p_l(\rho_l)\f$ valid around the saturation points \f$(P=1 bar, T=373K)\f$ or \f$(P=155 bars, T=618K)\f$ depending on the value of the enum \ref pressureEstimate.
+
+The subscript \f$k\f$ stands for \f$l\f$ for the liquid phase and \f$g\f$ for the gas phase. The common
+averaged pressure of the two phases is denoted by \f$p\f$. 
+
+In our model, pressure equilibrium between the two phases is postulated, and the resulting system to solve is:
+\f{eqnarray*}
+\left\{
+\begin{array}{ccll}
+ \frac{\partial m_g}{\partial t}& +& \nabla \cdot \vec{q}_g &= 0,\\[1.5ex]
+\frac{\partial m_l}{\partial t} &+ &\nabla \cdot \vec{q}_l &= 0,\\[1.5ex]
+\frac{\partial \vec{q}_g}{\partial t}& +& \nabla \cdot (\vec{q}_g\otimes\frac{\vec{q}_g}{m_g})+ \alpha_g \vec\nabla p&\\[1.5ex] 
+ &+&\Delta p \nabla \alpha_g -\nu_g\Delta \vec{u}_g &= m_g\vec{g}-K\rho_m||\vec{u}_g-\vec{u}_l||(\vec{u}_g-\vec{u}_l)-K_s\delta(x)m_g||\vec{u}_g||\vec{u}_g\\[1.5ex]
+\frac{\partial \vec{q}_l}{\partial t}& +& \nabla \cdot (\vec{q}_l\otimes\frac{\vec{q}_l}{m_l})+ \alpha_l \vec\nabla p&\\[1.5ex]
+&+&\Delta p \nabla \alpha_l -\nu_l\Delta \vec{u}_l &= m_l\vec{g}-K\rho_m||\vec{u}_l-\vec{u}_g||(\vec{u}_l-\vec{u}_g)-K_s\delta(x)m_l||\vec{u}_l||\vec{u}_l\\
+\end{array}
+\right. \label{eq: isentropictwophase}
+\f} 
+
+Here :
+-\f$\nu_k\f$ is the viscosity of phase \f$k\f$, set by \ref IsothermalTwoFluid::setViscosity
+-\f$\Delta p\f$ denotes the pressure default \f$p-p_k\f$ between the bulk average pressure and the interfacial average pressure.
+- \f$\vec g\f$ the gravity vector (\ref IsothermalTwoFluid::setGravity)
+- \f$K\f$ the interphase friction coefficient (\ref IsothermalTwoFluid::setDragCoeffs),
+- \f$K_s(\vec x)\f$ the singular friction function, \f$\delta_s(\vec x)\f$ the Dirac delta function with support on the set $s$ (\ref IsothermalTwoFluid::setPressureLossField).
+
+where \f$ 
+ =\left\{\begin{array}{clc}
+	\alpha_g +\alpha_l &=& 1 \\[1.5ex]
+	m_k &=& \alpha_k \rho_k \\[1.5ex]
+	\vec{q}_k &=& \alpha_k \rho_k \vec{u}_k \\[1.5ex]
+        
+	\end{array}\right..
+\f$
+
+
+* The class : \ref IsothermalTwoFluid implements the isentropic two-fluid model
+
+* \subpage ExampleIsothermalPage "Here are C and Python example scripts using the isothermal two-fluid model"	
+
+*/

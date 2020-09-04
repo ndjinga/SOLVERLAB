@@ -1,0 +1,89 @@
+/*!
+\page ExampleSinglePhase  Example cases for : \a The \a single \a phase \a model 
+[TOC]
+
+
+\section Single1H Single Phase Problem 1D Heated Channel (C)
+
+\include SinglePhase_1DHeatedChannel.cxx
+
+\section Single1Hpy Single Phase Problem 1D Heated Channel (Python)
+
+\include SinglePhase_1DHeatedChannel.py
+
+\section Single1R Single Phase Problem 1D RiemannProblem (C)
+
+\include SinglePhase_1DRiemannProblem.cxx
+
+\section Single1RPy Single Phase Problem 1D RiemannProblem (Python)
+
+\include SinglePhase_1DRiemannProblem.py
+
+\section Single1DDep Single Phase Problem 1D depressurisation (C)
+
+\include SinglePhase_1DDepressurisation.cxx
+
+\section Single1DDepPy Single Phase Problem 1D depressurisation (Python)
+
+\include SinglePhase_1DDepressurisation.py
+
+\section Single1DWaterHammerPy Single Phase Problem 1D water hammer (Python)
+
+\include SinglePhase_1DWaterHammer.py
+
+\section Single1PorJump Single Phase Problem 1D porosity jump (C)
+
+\include SinglePhase_1DPorosityJump.cxx
+
+\section Single2dCavity Single Phase Problem 2D Lid driven cavity (C)
+
+\include SinglePhase_2DLidDrivenCavity.cxx
+
+\section Single2d Single Phase Problem 2D Spherical wave (C)
+
+\include SinglePhase_2DSphericalExplosion_unstructured.cxx
+
+Structured mesh used for the driven cavity and the spherical explosion tests
+\image html BoiteStruct.png
+
+\section Single2dpy Single Phase Problem 2D Spherical wave (Python)
+\include SinglePhase_2DSphericalExplosion_unstructured.py
+
+Unstructured mesh
+\image html BoiteNStruct.png
+
+\section Single2dHeatedChannelInclinedpy Single Phase Problem 2D Heated flow in inclined channel (Python)
+\include SinglePhase_2DHeatedChannelInclined.py
+
+\section Single2dC Single Phase Problem 2D Wall heated Channel with cross section change (C)
+
+\include SinglePhase_2DWallHeatedChannel_ChangeSect.cxx
+
+\section SingleWire Single Phase Problem Heated wire with 2 Branches (C)
+\include SinglePhase_HeatedWire_2Branches.cxx
+
+@image html 2BranchesHeatedChannelPower.png "Power field of the heated wire problem"
+@image html 2BranchesHeatedChannelTemperature.png "Stationary temperature field of the heated wire problem"
+
+\section SingleWirePy Single Phase Problem Heated wire with 2 Branches (Python)
+\include SinglePhase_2BranchesHeatedChannels.py
+
+\section Single2dThermalConductionpy Single Phase Problem 2D Thermal conduction (Python)
+\include SinglePhase_2DThermalDiffusion.py
+
+Initial data and mesh
+@image html 2DRiemann_t0.png
+
+Stationary solution
+@image html 2DRiemannStaggered.png
+
+
+\section Single3d Single Phase Problem 3D Heat driven cavity (C)
+\include SinglePhase_3DHeatDrivenCavity.cxx
+
+\section Single3dPy Single Phase Problem 3D Heat driven cavity (Python)
+
+\include SinglePhase_3DHeatDrivenCavity.py
+
+*/
+

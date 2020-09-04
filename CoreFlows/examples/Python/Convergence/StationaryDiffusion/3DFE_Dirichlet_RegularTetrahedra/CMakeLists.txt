@@ -1,0 +1,3 @@
+
+CreatePythonConvergenceTest(StationaryDiffusion 3DFE_Dirichlet_RegularTetrahedra  validationStationaryDiffusionEquation.py	"" )
+

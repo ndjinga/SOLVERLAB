@@ -1,0 +1,7 @@
+# nom du projet base
+PROJECT(base)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+
+ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(inc)

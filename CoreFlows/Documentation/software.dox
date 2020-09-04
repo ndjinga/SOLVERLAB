@@ -1,0 +1,28 @@
+/*!
+\page software Software structure   
+
+CoreFlows is composed of 6 concrete classes dealing with specific models. They are listed in chronological order :
+
+- \ref SinglePhase implementing the compressible Navier-Stokes equations 
+- \ref DriftModel implementing the 4 equation drift model
+- \ref IsothermalTwoFluid implementing the isentropic two-fluid model 
+- \ref FiveEqsTwoFluid implementing the equal temperature two fluid model 
+- \ref TransportEquation implementing a scalar advection equation for the fluid enthalpy 
+- \ref DiffusionEquation implementing a scalar heat equation for the Uranium rods temperature 
+
+On top of these classes there are two abstract classes that mutualise functions
+that are common to several models.
+- ProblemFluid which contains the methods that are common to the non
+scalar models : SinglePhase DriftModel IsothermalTwoFluid and FiveEqsTwoFluid
+- ProblemCoreFlows which contains the methods that are common to the scalar and non scalar models: ProblemFluid, ProblemTransport and ProblemDiffusion
+
+Here follows an inheritance diagram of CoreFlows.
+@image html classProblemCoreFlows__inherit__graph.png
+
+
+The program can build simple geometries and meshes using the library \ref cdmath or read complex geometries and meshes written with the \ref med file system (see \ref salome ). The output files containing the fields resulting from the calculation can be either of \ref vtk or \ref med type. One can use \ref paraview (for \vtk files) or \ref salome (for \med files) to visualise the results.
+Vector and matrices structures come from the \ref petsc library. The matrices are stored in a block sparse format (type baij in \ref petsc conventions). The default linear solver is GMRES and the default preconditioner is ILU, both provided
+by \ref petsc .
+
+
+*/

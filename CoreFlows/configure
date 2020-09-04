@@ -1,0 +1,188 @@
+#!/usr/bin/env python
+
+import optparse
+import os
+import sys
+import subprocess
+import pdb
+    
+TrueFalseStr=("False","True")
+TrueFalse={'no':False, 'yes':True}
+
+def GetCDMATHOptions(options):
+    res=" -DCDMATH_DIR="+options.cdmath_dir
+    return res
+
+def GetPETSC_DIROptions(options):
+    res=' -DPETSC_DIR='+options.petsc_dir
+    return res
+
+def GetDebugOptions(options):
+	if options.debug == True:
+	    res=" -DCMAKE_BUILD_TYPE=Debug "
+	else:
+		res=""
+	return res
+
+def GetPETSC_ARCHOptions(options):
+	res=' -DPETSC_ARCH="'+options.petsc_arch+'"'
+	return res
+
+def GetInstallPrefix(options):
+    res=" -DCMAKE_INSTALL_PREFIX="+options.install_prefix
+    return res
+
+def GetPythonOptions(options):
+    res=" -DCOREFLOWS_WITH_PYTHON="+TrueFalseStr[options.python]
+    return res
+
+def GetPackagesOptions(options):
+    res=" -DCOREFLOWS_WITH_PACKAGE="+TrueFalseStr[options.packages]
+    return res
+
+def GetDocOptions(options):
+    res=" -DCOREFLOWS_WITH_DOCUMENTATION="+TrueFalseStr[options.doc]
+    return res
+
+def GetGuiOptions(options):
+    res=" -DCOREFLOWS_WITH_GUI="+TrueFalseStr[options.gui]
+    return res
+
+def GetEclipseOptions(options):
+	res=" -G\"Eclipse CDT4 - Unix Makefiles\""*(options.create_eclipse_project)
+	return res
+
+def GetCmakeExecOption(options):
+    cmakeExecutable=options.path_to_cmake_exec
+    return cmakeExecutable
+
+def CheckOptions(parser):
+    options, arguments = parser.parse_args()
+    for stringToCheck in ['cdmath_dir', 'petsc_dir', 'petsc_arch']:
+        if options.__dict__[stringToCheck] is None:
+            parser.error("cannot determine "+stringToCheck)
+
+def printDocumentationInstructions(options):
+	if options.doc:
+		print "\n\t$ make doc\n\tto create the documentation."
+	return
+
+
+def ForgeCMakeCommand(options):
+    installPrefix=GetInstallPrefix(options)
+    CDMATHOptions=GetCDMATHOptions(options)
+    PETSC_DIROptions=GetPETSC_DIROptions(options)
+    PETSC_ARCHOptions=GetPETSC_ARCHOptions(options)
+    guiOptions=GetGuiOptions(options)
+    docOptions=GetDocOptions(options)
+    packagesOptions=GetPackagesOptions(options)
+    debugOptions=GetDebugOptions(options)
+    pythonOptions=GetPythonOptions(options)
+    absolutePathToConfigure = os.path.abspath(sys.argv[0])
+    absolutePathToProjectDir = os.path.dirname(absolutePathToConfigure)
+    eclipseProjectoptions=GetEclipseOptions(options)
+    cmake_options=(
+            installPrefix+" "
+            +debugOptions
+            +guiOptions+" "
+            +pythonOptions+" "
+            +CDMATHOptions+" "
+            +PETSC_DIROptions+" "
+            +PETSC_ARCHOptions+" "
+            +docOptions+" "
+            +packagesOptions+" "
+            +eclipseProjectoptions
+            )
+    cmake_executable=GetCmakeExecOption(options)
+    cmake_cmd=cmake_executable+" "+cmake_options+" "+absolutePathToProjectDir
+    return cmake_cmd
+
+def main():
+    usage = "usage: %prog [options]"
+    p = optparse.OptionParser(usage=usage,conflict_handler="error")
+    p.add_option('--prefix',
+                 default=".",
+                 metavar="<dir>",
+                 dest="install_prefix",
+                 help="specify location for installing CoreFlows (default is $PWD)"
+                 )
+    p.add_option('--with-petsc-dir',
+                 type="string",
+                 metavar="<dir>",
+                 default=os.environ.get('PETSC_DIR'),
+                 dest="petsc_dir",
+                 help="specify the petsc install directory (default value is $PETSC_DIR environement variable )"
+                 )
+    p.add_option('--with-petsc-arch',
+                 type="string",
+                 metavar="<dir>",
+                 default=os.environ.get('PETSC_ARCH'),
+                 dest="petsc_arch",
+                 help="specify the petsc arch (default value is $PETSC_ARCH environement variable )"
+                 )
+    p.add_option('--with-cdmath-dir',
+                 type="string",
+                 metavar="<dir>",
+                 default=os.environ.get('CDMATH_DIR'),
+                 dest="cdmath_dir",
+                 help="specify the install directory or CDMATH (default is the environment variable $CDMATH_DIR)"
+                 )
+    p.add_option('--create-eclipse-project',
+    			 action="store_true",
+                 default=False,
+                 dest="create_eclipse_project",
+                 help="create an eclipse project"
+                 )
+    p.add_option('--with-python',
+    			 action="store_true",
+                 default=False,
+                 dest="python",
+                 help="compile python interface for CoreFlows"
+                 )
+    p.add_option('--with-packages',
+    			 action="store_true",
+                 default=False,
+                 dest="packages",
+                 help="generate CoreFlows packages"
+                 )
+    p.add_option('--with-gui',
+    			 action="store_true",
+                 default=False,
+                 dest="gui",
+                 help="compile CoreFlows GUI"
+                 )
+    p.add_option('--with-doc',
+    			 action="store_true",
+                 default=False,
+                 dest="doc",
+                 help="generate CoreFlows documentation"
+                 )
+    p.add_option('--with-debug',
+    			 action="store_true",
+                 default=False,
+                 dest="debug",
+                 help="compile CoreFlows in debug mode"
+                 )
+    p.add_option('--with-cmake-exec',
+                 type="string",
+                 metavar="<path>",
+                 default="cmake",
+                 dest="path_to_cmake_exec",
+                 help="specify a path to a specific CMake executable"
+                 )
+    options, arguments = p.parse_args()
+    CheckOptions(p)
+    cmake_cmd=ForgeCMakeCommand(options)
+    print cmake_cmd
+    print "Configuring CoreFlows"
+    returnCode=subprocess.call(cmake_cmd,shell=True)
+    returnCode=0
+    if returnCode == 0:
+        print("\n\nNow issue:\n\t$ make install\n\tfor compiling the code.")
+        print("\n\t$ make test\n\tto test the code execution.")
+        printDocumentationInstructions(options)
+    else:
+        print("error: cmake did not run correctly.")
+
+#    if __name__ == '__main__':
+main()

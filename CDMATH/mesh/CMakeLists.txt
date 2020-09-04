@@ -1,0 +1,9 @@
+# nom du projet mesh
+PROJECT(mesh)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+
+ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(inc)
+
+

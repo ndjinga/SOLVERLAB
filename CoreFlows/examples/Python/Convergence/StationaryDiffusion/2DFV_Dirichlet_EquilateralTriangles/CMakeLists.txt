@@ -1,0 +1,3 @@
+
+CreatePythonConvergenceTest(StationaryDiffusion 2DFV_Dirichlet_EquilateralTriangles  validationStationaryDiffusionEquation.py	${CDMATH_DIR}/share/meshes/2DEquilateralTriangles/squareWithEquilateralTriangles* )
+

@@ -1,0 +1,3 @@
+<VTKFile type="Collection" version="0.1" byte_order="LittleEndian"><Collection>
+<DataSet timestep="0" group="" part="0" file="/home/ndjinga/Logiciels/CDMATH-CoreFlows/CoreFlows_build/examples/Python/Convergence/StationaryDiffusion/2DFV_Dirichlet_Hexagons/StationaryDiffusionEquation_2DFV_Structured_hexagons_Dirichlet25_0.vtu"/>
+</Collection></VTKFile>

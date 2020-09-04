@@ -1,0 +1,18 @@
+/*!
+\page physicalmodels The Physical Models   
+
+\ref physicalmodels "The physical models" are presented in order of mathematical complexity: 
+
+- \subpage ScalarModelsPage "The linear scalar problem" 
+	+ \ref TransportEqPage 
+	+ \ref DiffusionEqPage 
+- \subpage NSModelsPage "The Navier-Stokes model" 
+- \subpage twophasePage "The two-phase flow models"
+	+ \ref DriftModelPage "The Drift model"
+	+ \ref IsothermalPage "The isothermal two-fluid model"
+	+ \ref FiveEqPage "The five equation two-fluid model"	
+
+
+
+
+*/

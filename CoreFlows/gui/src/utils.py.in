@@ -1,0 +1,8 @@
+def completeResPath(fileName):
+  import os
+  subPath = "@SALOME_INSTALL_PYTHON@"
+  rd = os.environ.get("COREFLOWS_ROOT_DIR", None)
+  if rd is None:
+    raise Exception("COREFLOWS_ROOT_DIR is not defined!")
+  filePath = os.path.join(rd, subPath, fileName)
+  return filePath

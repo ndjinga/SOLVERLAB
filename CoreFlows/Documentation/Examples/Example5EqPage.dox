@@ -1,0 +1,45 @@
+/*!
+\page Example5EqPage  Example cases for : \a The \a five \a equation \a model
+[TOC]
+
+
+\section RiemannPrblm5Eq Five Equations Model 1D Riemann Problem  (C)
+\include FiveEqsTwoFluid_1DRiemannProblem.cxx
+
+\section BoilingChannel5Eq Five Equations Model 1D Boiling Channel (C)
+\include FiveEqsTwoFluid_1DBoilingChannel.cxx
+
+\section BoilingChannel5EqPy Five Equations Model 1D Boiling Channel (Python)
+\include FiveEqsTwoFluid_1DBoilingChannel.py
+
+\section BoilingAssembly5EqPy Five Equations Model 1D Boiling Assembly (Python)
+\include FiveEqsTwoFluid_1DBoilingAssembly.py
+
+\section FiveEqDepr Five Equations Model 1D Depressurisation  (C) 
+\include FiveEqsTwoFluid_1DDepressurisation.cxx
+
+\section FiveEqVidangeReservoirPy Five Equations Model 1D Emptying tank  (Python) 
+\include FiveEqsTwoFluid_1DVidangeReservoir.py
+
+\section FiveEqSed2DInclined Five Equations Model 2D Inclined Sedimentation  (C) 
+\include FiveEqsTwoFluid_2DInclinedSedimentation.cxx
+
+\section FiveEqSed2DInclinedPy Five Equations Model 2D Inclined Sedimentation  (Python) 
+\include FiveEqsTwoFluid_2DInclinedSedimentation.py
+
+\image html 2DSedimentation.png "Stationary void fraction"
+\image html 2DSedimentationPression.png "Stationary pressure"
+\image html 2DSedimentationVitesseGaz.png "Stationary gas velocity"
+\image html 2DSedimentationVitesseLiq.png "Stationary liquid velocity"
+
+\section FiveEqBoilingChannel2D Five Equations Model 2D Inclined Boiling Channel (C) 
+\include FiveEqsTwoFluid_2DInclinedBoilingChannel.cxx
+
+\section FiveEqBoilingChannel2DPy Five Equations Model 2D Inclined Boiling Channel (Python) 
+\include FiveEqsTwoFluid_2DInclinedBoilingChannel.py
+
+\section FiveEqVidangeReservoir2DPy Five Equations Model 2D Emptying tank  (Python) 
+\include FiveEqsTwoFluid_2DVidangeReservoir.py
+
+*/
+

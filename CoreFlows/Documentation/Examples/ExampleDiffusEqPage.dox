@@ -1,0 +1,15 @@
+/*!
+\page ExampleDiffusionEqPage  Example cases for : \a The \a diffusion \a equation 
+[TOC]
+
+\section Diffus1 Problem Diffusion 1D Heated Rod (C)
+
+\include DiffusionEquation_1DHeatedRod.cxx
+
+
+\section Diffus1py Problem Diffusion 1D Heated Rod (Python)
+
+\include DiffusionEquation_1DHeatedRod.py
+
+*/
+
