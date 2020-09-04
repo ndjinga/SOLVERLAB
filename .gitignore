@@ -17,7 +17,6 @@
 *~
 
 # Automatically generated documentation files
-CDMATH/tests/doc/*
 *.map
 
 # Eclipse files
