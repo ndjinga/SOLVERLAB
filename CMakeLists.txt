@@ -165,9 +165,9 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       SOURCE_DIR        ${PETSC_DIR}
       BUILD_IN_SOURCE   TRUE
       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --with-mpi=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}
-      BUILD_COMMAND     make
+      BUILD_COMMAND     make all
       TEST_COMMAND      make check
-      INSTALL_COMMAND   make all
+      INSTALL_COMMAND   make install
       INSTALL_DIR       ${PETSC_DIR}
       STAMP_DIR         ${CMAKE_CURRENT_BINARY_DIR}/pre_requis
       LOG_DOWNLOAD      TRUE           # Wrap download in script to log output
@@ -184,11 +184,12 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 
       string(SUBSTRING ${PETSC_TARBALL_NAME} 6 ${tarball_name_length} PETSC_VERSION)
       set(PETSC_INCLUDES ${PETSC_DIR}/${PETSC_ARCH}/include ${PETSC_DIR}/include)
+      set(PETSC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/lib/libpetsc.so)
 
       #define slepc variables
       set(SLEPC_DIR ${PETSC_INSTALL})
-      set(SLEPC_INCLUDES ${SLEPC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.2/include)
-      set(SLEPC_LIBRARIES ${SLEPC_DIR}/lib/libslepc.so)
+      set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/include ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/installed-arch-linux2-c-opt/include)
+      set(SLEPC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/installed-arch-linux2-c-opt/lib/libslepc.so)
 
       #define hdf5 variables
       if   ( NOT HDF5_ROOT )#hdf5 is not defined in cmake arguments
@@ -207,7 +208,13 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
   if   ( ${PETSC_VERSION} VERSION_GREATER 3.5 )
     add_definitions(-DPETSC_VERSION_GREATER_3_5)
   endif( ${PETSC_VERSION} VERSION_GREATER 3.5 )
+
 string(REPLACE ";" ":"  PETSC_INCLUDES_INSTALL "${PETSC_INCLUDES}")# use colon instead of semicolon in environment file env_CDMATH.sh
+
+add_library(petsc   SHARED IMPORTED)
+set_property(TARGET petsc  PROPERTY IMPORTED_LOCATION ${PETSC_LIBRARIES})
+add_library(slepc   SHARED IMPORTED)
+set_property(TARGET slepc  PROPERTY IMPORTED_LOCATION ${SLEPC_LIBRARIES})
 
 ######################################################
 # Detection or compilation of MEDFile                #
