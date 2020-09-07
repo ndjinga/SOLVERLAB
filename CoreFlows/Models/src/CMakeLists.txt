@@ -1,6 +1,8 @@
 
 INCLUDE_DIRECTORIES(
   ${CoreFlows_INCLUDES}											    #
+  ${PETSC_INCLUDES}
+  ${SLEPC_INCLUDES}
   )
 
 SET(src_models_CXX
