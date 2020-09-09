@@ -85,6 +85,8 @@ endif ()                                                                        
 													    #
 INCLUDE_DIRECTORIES(						   					    #
   ${CoreFlows_INCLUDES}											    #
+  ${PETSC_INCLUDES}
+  ${SLEPC_INCLUDES}
   )													    #
 													    #
 SET(CoreFlowsMain_SOURCES										    #

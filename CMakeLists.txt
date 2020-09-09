@@ -24,7 +24,7 @@ set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
 #url of tarball librairies
 set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.13.5.tar.gz 
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.13.2.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.13.4.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
@@ -65,7 +65,7 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 
     message ( STATUS "Checking variable SLEPC_DIR" )
     if ( IS_DIRECTORY ${SLEPC_DIR}/include AND EXISTS ${SLEPC_DIR}/lib/libslepc.so)
-      set(SLEPC_INCLUDES ${SLEPC_DIR}/include)
+      set(SLEPC_INCLUDES  ${SLEPC_DIR}/include)
       set(SLEPC_LIBRARIES ${SLEPC_DIR}/lib/libslepc.so)
       message( STATUS "SLEPc found at ${SLEPC_DIR}" )
     else()
@@ -81,14 +81,14 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
         set(HDF5_ROOT ${PETSC_DIR}/${PETSC_ARCH})# define hint for hdf5/med installation in petsc external packages
       endif( DEFINED ENV{HDF5_ROOT} )
     endif( NOT HDF5_ROOT )
-    set(HDF5_LIBRARY_DIR ${HDF5_ROOT}/lib)
+    set(HDF5_LIBRARY_DIR  ${HDF5_ROOT}/lib)
     set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
   else ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
     message ( STATUS "PETSC_DIR not set, searching PETSc and SLEPc in the system" )
 
     if ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )  #Case fedora/redhat system install
       message ( STATUS "PETSC includes found in /usr/include/petsc/" )
-      message ( STATUS "PETSC library found in /usr/lib64" )
+      message ( STATUS "PETSC library  found in /usr/lib64" )
       set(PETSC_DIR /usr/)
       set(PETSC_INCLUDES  /usr/include/petsc /usr/include/petsc/petsc/mpiuni)
       set(PETSC_LIBRARIES /usr/lib64/libpetsc.so)
@@ -101,9 +101,9 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       #Define and search slepc variables
       if   ( IS_DIRECTORY "/usr/include/slepc/" AND EXISTS "/usr/lib64/libslepc.so" )
         message( STATUS "SLEPc includes found in /usr/include/slepc/" )
-        message( STATUS "SLEPc library found in /usr/lib64/slepc/" )
+        message( STATUS "SLEPc library  found in /usr/lib64/slepc/" )
         set(SLEPC_DIR /usr/)
-        set(SLEPC_INCLUDES ${SLEPC_DIR}/include)
+        set(SLEPC_INCLUDES  ${SLEPC_DIR}/include)
         set(SLEPC_LIBRARIES ${SLEPC_DIR}/lib/libslepc.so)
         set (CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES}, slepc-devel (>= 3.4)") # This is not fully working yet. 
       else ( IS_DIRECTORY "/usr/include/slepc/" AND EXISTS "/usr/lib64/libslepc.so" )
@@ -114,9 +114,8 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       if   ( NOT HDF5_ROOT AND NOT DEFINED ENV{HDF5_ROOT} )#hdf5 is not defined in the environment
         find_package(HDF5 REQUIRED)
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "libhdf5-dev")
-        set(CPACK_RPM_PACKAGE_REQUIRES "hdf5-devel")
+        set(CPACK_RPM_PACKAGE_REQUIRES   "hdf5-devel")
       endif( NOT HDF5_ROOT AND NOT DEFINED ENV{HDF5_ROOT} )
-
 
     #elseif ( IS_DIRECTORY "/usr/lib/petsc/include" AND EXISTS "/usr/lib/petsc/lib/libpetsc_real.so" ) #Case ubuntu/debian system install
     #  message ( STATUS "PETSc includes found in /usr/lib/petsc/include")
@@ -152,7 +151,7 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       #extract tarball name
       string(LENGTH "${DOWNLOAD_PETSC}" tarball_url_length)#length of the tarball
       string(FIND   "${DOWNLOAD_PETSC}" "/" start_tarball_name REVERSE )# last occurence of "/"
-      MATH(EXPR start_tarball_name "${start_tarball_name}+1")#start after the occurence of "/"
+      MATH(EXPR start_tarball_name  "${start_tarball_name}+1")#start after the occurence of "/"
       MATH(EXPR tarball_name_length "${tarball_url_length}-${start_tarball_name}-7")#name ends before .tar.gz that counts for 7 characters
       string(SUBSTRING ${DOWNLOAD_PETSC} ${start_tarball_name} ${tarball_name_length} PETSC_TARBALL_NAME)
 
@@ -178,18 +177,22 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       LOG_INSTALL       TRUE           # Wrap install in script to log output
        )
 
-      #file (STRINGS "${PETSC_DIR}/${PETSC_ARCH}/include/petscversion.h" vstrings REGEX "#define PETSC_VERSION_(RELEASE|MAJOR|MINOR|SUBMINOR|PATCH) ")
-      #message( STATUS "PETSc version is ${PETSC_VERSION_MAJOR}.${PETSC_VERSION_MINOR}.${PETSC_VERSION_SUBMINOR}" )
       message( STATUS "PETSc, SLEPc and HDF5 will be installed at ${PETSC_INSTALL}")
 
-      string(SUBSTRING ${PETSC_TARBALL_NAME} 6 ${tarball_name_length} PETSC_VERSION)
-      set(PETSC_INCLUDES ${PETSC_DIR}/${PETSC_ARCH}/include ${PETSC_DIR}/include)
+      string(LENGTH "${PETSC_TARBALL_NAME}" tarball_name_length)#length of the tarball
+      string(FIND   "${PETSC_TARBALL_NAME}" "-" start_version_name REVERSE )# last occurence of "-"
+      MATH(EXPR start_version_name  "${start_version_name}+1")#start after the occurence of "/"
+      string(SUBSTRING ${PETSC_TARBALL_NAME} ${start_version_name} ${tarball_name_length} PETSC_VERSION)
+      message( STATUS "PETSc version ${PETSC_VERSION}  will be installed" )
+
+      set(PETSC_INCLUDES  ${PETSC_DIR}/${PETSC_ARCH}/include ${PETSC_DIR}/include)
       set(PETSC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/lib/libpetsc.so)
 
       #define slepc variables
       set(SLEPC_DIR ${PETSC_INSTALL})
       set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/include ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/installed-arch-linux2-c-opt/include)
       set(SLEPC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/installed-arch-linux2-c-opt/lib/libslepc.so)
+      message( STATUS "SLEPc includes ${SLEPC_INCLUDES}")
 
       #define hdf5 variables
       if   ( NOT HDF5_ROOT )#hdf5 is not defined in cmake arguments
@@ -229,9 +232,7 @@ if( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
   message (STATUS "MEDFile found in ${MEDFILE_ROOT_DIR}")
 
 else( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
-  #string(FIND "${HDF5_LIBRARIES}" "libhdf5.so" pos)
-  #string(SUBSTRING "${HDF5_LIBRARIES}" 0 ${pos} HDF5_LIBRARY_DIR)
-  
+
   message(STATUS "MED will be downloaded and installed from ${DOWNLOAD_MED}")
   set(MACHINE PCLINUX)
   set(MEDFILE_DEFINITIONS "-D${MACHINE} -DMEDFILE_INSTALL_DOC=OFF")#Comment ne pas compiler la doc ?
