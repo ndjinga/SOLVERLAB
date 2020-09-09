@@ -11,7 +11,7 @@ WaveSystem_Stationary/WaveSystemUpwind WaveSystem_Stationary/WaveSystemCentered 
 WaveSystem_Shock/WaveSystemUpwind WaveSystem_Shock/WaveSystemCentered WaveSystem_Shock/WaveSystemPStag WaveSystem_Shock/WaveSystemStaggered 
 )
 
-install(DIRECTORY ${NICE_EXAMPLES_TO_INSTALL} DESTINATION examples)
+install(DIRECTORY ${NICE_EXAMPLES_TO_INSTALL} DESTINATION share/examples)
 
 IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
     ADD_SUBDIRECTORY(TransportEquation1DUpwindExplicit)

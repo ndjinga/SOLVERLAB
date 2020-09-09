@@ -32,4 +32,4 @@ else (CDMATH_WITH_PETSC)
     TARGET_LINK_LIBRARIES(TestMesh base mesh medloader medcoupling med)
 endif (CDMATH_WITH_PETSC) 
 
-INSTALL(TARGETS TestMesh DESTINATION tests/unit_tests)
+INSTALL(TARGETS TestMesh DESTINATION bin/unit_tests)

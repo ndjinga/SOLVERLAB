@@ -416,14 +416,11 @@ endif()
 find_package (XDR REQUIRED)
 				    
 # Enter subdirectories
-set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/cdmath)
 add_subdirectory (CDMATH)
 if(SOLVERLAB_WITH_COREFLOWS)
-  set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/../coreflows)
   add_subdirectory (CoreFlows)
 endif(SOLVERLAB_WITH_COREFLOWS)
 
-set( CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/../)
 # Configuration file
 configure_file(
     ${PROJECT_SOURCE_DIR}/env_SOLVERLAB.sh

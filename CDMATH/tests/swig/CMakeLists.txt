@@ -12,7 +12,7 @@ if (CDMATH_WITH_PETSC)
     ADD_TEST(TestsLinearSolverSwig ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/linearSolverTests.py)
     SET_PROPERTY(TEST TestsLinearSolverSwig        PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH}")
     SET_PROPERTY(TEST TestsLinearSolverSwig APPEND PROPERTY ENVIRONMENT "PYTHONPATH=${TESTS_PYTHON_PATH}")
-    INSTALL(FILES linearSolverTests.py DESTINATION tests/unit_tests)
+    INSTALL(FILES linearSolverTests.py DESTINATION bin/unit_tests)
 
     SET_PROPERTY(TEST TestsCDMATHSwig PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH}")
 
@@ -34,5 +34,5 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_POSTPRO)
   add_subdirectory (BoySurface)
 endif ()
 
-INSTALL(FILES ${MESH_MED}  mainTests.py test_VTK_routines.py test_PV_routines.py DESTINATION tests/unit_tests)
+INSTALL(FILES ${MESH_MED}  mainTests.py test_VTK_routines.py test_PV_routines.py DESTINATION bin/unit_tests)
 

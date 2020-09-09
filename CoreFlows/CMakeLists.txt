@@ -102,13 +102,13 @@ SET(CoreFlowsMain_SOURCES										    #
   )													    #
 													    #
 SET(MAIN_SOURCES											    #
-  main.cxx												    #
+  mainCoreFlows.cxx												    #
   )													    #
 SET(_extra_lib_CoreFlows ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} )					    #
 ADD_EXECUTABLE(CoreFlowsMainExe ${MAIN_SOURCES})							    #
 SET_TARGET_PROPERTIES(CoreFlowsMainExe PROPERTIES COMPILE_FLAGS "")					    #
 TARGET_LINK_LIBRARIES(CoreFlowsMainExe CoreFlows  ${_extra_lib_CoreFlows})				    #
-INSTALL(TARGETS CoreFlowsMainExe DESTINATION bin/Executable)						    #
+INSTALL(TARGETS CoreFlowsMainExe DESTINATION bin)						    #
 													    #
 configure_file(
     ${PROJECT_SOURCE_DIR}/env_CoreFlows.sh

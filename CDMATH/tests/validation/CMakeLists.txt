@@ -109,7 +109,7 @@ IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir}/
-      DESTINATION bin/validation/${dir}
+      DESTINATION share/validation/${dir}
       FILES_MATCHING PATTERN "*.py"
                      PATTERN "*.med"
                      PATTERN "*_0.vtu"
@@ -120,13 +120,13 @@ IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
     if(NOT ${is_2DPoissonVF} EQUAL -1)
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir}/
-      DESTINATION doc/convergence_tests/2DPoissonVF
+      DESTINATION share/doc/convergence_tests/2DPoissonVF
       FILES_MATCHING PATTERN "*_SQUARE.ipynb"
                      PATTERN "*_SQUARE.pdf"
     )
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir}/
-      DESTINATION doc/convergence_tests/2DPoissonVF/${dir}
+      DESTINATION share/doc/convergence_tests/2DPoissonVF/${dir}
       FILES_MATCHING PATTERN "*.png"
                      PATTERN "*.ipynb"
                      PATTERN "*.py"
@@ -143,13 +143,13 @@ IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
     if(NOT ${is_2DWaveSystem} EQUAL -1)
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir}/
-      DESTINATION doc/convergence_tests/2DWaveSystemVF_stationary
+      DESTINATION share/doc/convergence_tests/2DWaveSystemVF_stationary
       FILES_MATCHING PATTERN "*_SQUARE.ipynb"
                      PATTERN "*_SQUARE.pdf"
     )
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir}/
-      DESTINATION doc/convergence_tests/2DWaveSystemVF_stationary/${dir}
+      DESTINATION share/doc/convergence_tests/2DWaveSystemVF_stationary/${dir}
       FILES_MATCHING PATTERN "*.png"
                      PATTERN "*.ipynb"
                      PATTERN "*.py"
@@ -167,13 +167,13 @@ IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
     if(NOT ${is_2DDiffusion} EQUAL -1)
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir}/
-      DESTINATION doc/convergence_tests/2DAnisotropicDiffusionVF
+      DESTINATION share/doc/convergence_tests/2DAnisotropicDiffusionVF
       FILES_MATCHING PATTERN "*_SQUARE.ipynb"
                      PATTERN "*_SQUARE.pdf"
     )
     install(
       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${dir}/
-      DESTINATION doc/convergence_tests/2DAnisotropicDiffusionVF/${dir}
+      DESTINATION share/doc/convergence_tests/2DAnisotropicDiffusionVF/${dir}
       FILES_MATCHING PATTERN "*.png"
                      PATTERN "*.ipynb"
                      PATTERN "*.py"
