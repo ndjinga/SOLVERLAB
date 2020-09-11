@@ -412,6 +412,7 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   endif(NOT DOXYGEN_FOUND)
 endif()			
 if (SOLVERLAB_WITH_TESTS)                                                                                  #
+  enable_testing ()
   find_package (CPPUNIT REQUIRED)
 endif()			
 find_package (XDR REQUIRED)
