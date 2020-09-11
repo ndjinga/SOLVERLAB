@@ -63,7 +63,7 @@ def Slice_VTK_data_to_numpyArray(inputFileName,
     plane.SetOrigin(point)
     plane.SetNormal(normal)
 
-    cutter = vtk.vtkFiltersCorePython.vtkCutter()
+    cutter = vtk.vtkCutter()
     cutter.SetCutFunction(plane)
     cutter.SetInputConnection(reader.GetOutputPort())
     cutter.Update()
@@ -115,7 +115,7 @@ def Slice_VTK_data_to_VTK(inputFileName,
     plane.SetOrigin(point)
     plane.SetNormal(normal)
 
-    cutter = vtk.vtkFiltersCorePython.vtkCutter()
+    cutter = vtk.vtkCutter()
     cutter.SetCutFunction(plane)
     cutter.SetInputConnection(reader.GetOutputPort())
     cutter.Update()
