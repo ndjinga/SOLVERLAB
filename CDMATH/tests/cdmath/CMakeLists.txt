@@ -20,7 +20,7 @@ SET(MESH_MED
   ../ressources/meshCube.med
 	)
 
-file(COPY ${MESH_MED} DESTINATION ${CMAKE_BINARY_DIR}/tests) 
+file(COPY ${MESH_MED} DESTINATION ${CMAKE_BINARY_DIR}/CDMATH/tests) 
 
 if (CDMATH_WITH_PETSC)
     FILE(GLOB TestMesh_SOURCES . *.cxx)

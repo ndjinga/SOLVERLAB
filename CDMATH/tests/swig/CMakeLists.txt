@@ -5,7 +5,7 @@ SET(MESH_MED
   ../ressources/meshCube.med
   )
 
-file(COPY ${MESH_MED} DESTINATION ${CMAKE_BINARY_DIR}/tests/swig)
+file(COPY ${MESH_MED} DESTINATION ${CMAKE_BINARY_DIR}/CDMATH/tests/swig)
 ADD_TEST(TestsCDMATHSwig ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mainTests.py)
 
 if (CDMATH_WITH_PETSC)
