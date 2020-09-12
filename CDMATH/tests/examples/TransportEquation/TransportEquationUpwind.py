@@ -196,7 +196,7 @@ def TransportEquationVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolu
         if(test_bc=="Periodic"):
             print( "Mass loss: ", (total_mass_initial-unknown_field.integral()).norm(), " precision required= ", precision )
             assert (total_mass_initial-unknown_field.integral()).norm()<precision
-        print "------------------------------------------------------------------------------------"
+        print( "------------------------------------------------------------------------------------")
 
         unknown_field.setTime(time,0);
         unknown_field.writeVTK("TransportEquation"+str(dim)+"DUpwind"+meshName+"_Stat");
