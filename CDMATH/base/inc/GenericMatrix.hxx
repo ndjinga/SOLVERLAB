@@ -53,6 +53,10 @@ class GenericMatrix
 
     virtual double operator ()( int i, int j ) const = 0;
 
+    double max() const;
+
+    double min() const;
+
     virtual bool isSymmetric(double tol=1e-6) const ;
 
     bool isSquare() const ;

@@ -98,6 +98,21 @@ GenericMatrix::coefficient(int index) const
 	return (-1);
 }
 
+
+double 
+GenericMatrix::max() const
+{
+    return _values.max();
+}
+
+
+double 
+GenericMatrix::min() const
+{
+    return _values.max();	
+}
+
+
 void
 GenericMatrix::view() const
 {
