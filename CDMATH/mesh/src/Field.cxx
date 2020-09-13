@@ -545,14 +545,12 @@ Field::normMax ( ) const
 //----------------------------------------------------------------------
 {
 	int nbComp=_field->getNumberOfComponents();
-   	int nbElems=getNumberOfElements();
+	double res[nbComp];//Pointer containing the L2 norm of each component
+	_field->normMax(res);
+	Vector result(nbComp);//Vector containing the L2 norm of each component
 
-	Vector result(nbComp);//Vector containing the Linfinity norm of each component
-
-	for(int i=0; i<nbElems ; i++)
-        for(int j=0; j<nbComp ; j++)
-            if(fabs((*this)(i,j))>result(j))
-                result(j)=fabs((*this)(i,j));
+	for(int i=0; i<nbComp ; i++)
+		result(i)=res[i];
 
 	return result;
 }
