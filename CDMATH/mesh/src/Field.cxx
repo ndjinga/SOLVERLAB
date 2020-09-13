@@ -401,18 +401,21 @@ Field::readFieldMed( const std::string & fileNameRadical,
 }
 
 
-DoubleTab
+Vector
 Field::getNormEuclidean() const
 {
-	DoubleTab norm(getNumberOfElements(),_field->magnitude()->getArray()->getConstPointer());
-	return norm;
+	Vector result(_numberOfComponents);
+	DoubleTab norm(_numberOfComponents,_field->magnitude()->getArray()->getConstPointer());
+	result.setValues(norm);
+	
+	return result;
 }
 
 double
 Field::max(int component) const
 {
-	if( component >= getNumberOfComponents() )
-		throw CdmathException("double Field::max() : component number should be smaller than field number of components");
+	if( component >= getNumberOfComponents() || component < 0)
+		throw CdmathException("double Field::max() : component number should be between 0 and the field number of components");
 		
 	double result=-1e100;
 	for(int i=0; i<getNumberOfElements() ; i++)
@@ -425,8 +428,8 @@ Field::max(int component) const
 double
 Field::min(int component) const
 {
-	if( component >= getNumberOfComponents() )
-		throw CdmathException("double Field::min() : component number should be smaller than field number of components");
+	if( component >= getNumberOfComponents() || component < 0)
+		throw CdmathException("double Field::min() : component number should be between 0 and the field number of components");
 		
 	double result=1e100;
 	for(int i=0; i<getNumberOfElements() ; i++)

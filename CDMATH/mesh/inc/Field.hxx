@@ -243,7 +243,7 @@ class Field
 
     void setFieldByDataArrayDouble ( const MEDCoupling::DataArrayDouble* array );
 
-    DoubleTab getNormEuclidean( void ) const ;
+    Vector getNormEuclidean( void ) const ;
 
     double max( int component=0 ) const ;
 
