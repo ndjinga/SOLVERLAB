@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export CDMATH_DIR=@CDMATH_INSTALL@
-source $CDMATH_DIR/env_CDMATH.sh
+source ${CMAKE_INSTALL_PREFIX}/env_SOLVERLAB.sh
 
 export CoreFlows_INSTALL=@CMAKE_INSTALL_PREFIX@
 export PETSC_DIR=@PETSC_DIR@
