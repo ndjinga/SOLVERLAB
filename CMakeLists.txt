@@ -212,7 +212,7 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
     add_definitions(-DPETSC_VERSION_GREATER_3_5)
   endif( ${PETSC_VERSION} VERSION_GREATER 3.5 )
 
-string(REPLACE ";" ":"  PETSC_INCLUDES_INSTALL "${PETSC_INCLUDES}")# use colon instead of semicolon in environment file env_CDMATH.sh
+string(REPLACE ";" ":"  PETSC_INCLUDES_INSTALL "${PETSC_INCLUDES}")# use colon instead of semicolon in environment file env_SOLVERLAB.sh
 
 add_library(petsc   SHARED IMPORTED)
 set_property(TARGET petsc  PROPERTY IMPORTED_LOCATION ${PETSC_LIBRARIES})
