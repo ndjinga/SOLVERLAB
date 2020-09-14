@@ -89,6 +89,7 @@ LinearElasticityModel::LinearElasticityModel(int dim, bool FECalculation,  doubl
     _NdirichletNodes=0;
     _NunknownNodes=0;
     _dirichletValuesSet=false;   
+    _neumannValuesSet=false;   
     
     //Linear solver data
 	_precision=1.e-6;
@@ -207,7 +208,7 @@ void LinearElasticityModel::initialize()
     else
         MatCreateSeqAIJ(PETSC_COMM_SELF, _NunknownNodes*_nVar, _NunknownNodes*_nVar, (1+_neibMaxNbNodes), PETSC_NULL, &_A);
 
-	VecCreate(PETSC_COMM_SELF, &_displacments);
+	VecCreate(PETSC_COMM_SELF, &_displacements);
 
 	VecDuplicate(_displacements, &_b);//RHS of the linear system
 
@@ -218,6 +219,21 @@ void LinearElasticityModel::initialize()
 	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
 	KSPGetPC(_ksp, &_pc);
 	PCSetType(_pc, _pctype);
+
+    //Checking whether all boundary conditions are Neumann boundary condition
+    //if(_FECalculation) _onlyNeumannBC = _NdirichletNodes==0;
+    if(!_neumannValuesSet)//Boundary conditions set via LimitField structure
+    {
+        map<string, LimitFieldStationaryDiffusion>::iterator it = _limitField.begin();
+        while(it != _limitField.end() and (it->second).bcType == NeumannStationaryDiffusion)
+            it++;
+        _onlyNeumannBC = (it == _limitField.end() && _limitField.size()>0);//what if _limitField.size()==0 ???
+    }
+    else
+        if(_FECalculation)
+            _onlyNeumannBC = _neumannBoundaryValues.size()==_NboundaryNodes;
+        else
+            _onlyNeumannBC = _neumannBoundaryValues.size()==_mesh.getBoundaryFaceIds().size();
 
     //Checking whether all boundaries are Neumann boundaries
     map<string, LimitFieldLinearElasticity>::iterator it = _limitField.begin();
@@ -269,14 +285,14 @@ Vector LinearElasticityModel::gradientNodal(Matrix M, vector< double > values){
 	return result;    
 }
 
-double LinearElasticityModel::computeDiffusionMatrix(bool & stop)
+double LinearElasticityModel::computeStiffnessMatrix(bool & stop)
 {
     double result;
     
     if(_FECalculation)
-        result=computeDiffusionMatrixFE(stop);
+        result=computeStiffnessMatrixFE(stop);
     else
-        result=computeDiffusionMatrixFV(stop);
+        result=computeStiffnessMatrixFV(stop);
 
     if(_verbose or _system)
         MatView(_A,PETSC_VIEWER_STDOUT_SELF);
@@ -284,10 +300,10 @@ double LinearElasticityModel::computeDiffusionMatrix(bool & stop)
     return  result;
 }
 
-double LinearElasticityModel::computeDiffusionMatrixFE(bool & stop){
+double LinearElasticityModel::computeStiffnessMatrixFE(bool & stop){
 	Cell Cj;
 	string nameOfGroup;
-	double dn;
+	double dn, coeff;
 	MatZeroEntries(_A);
 	VecZeroEntries(_b);
     
@@ -345,7 +361,7 @@ double LinearElasticityModel::computeDiffusionMatrixFE(bool & stop){
                                 if( _dirichletValuesSet )//New way of storing BC
                                     valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
                                 else    //old way of storing BC
-                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].displacements;
+                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].displacement;
                             }
                             else
                                 valuesBorder[kdim]=Vector(_Ndim);                            
@@ -392,7 +408,7 @@ double LinearElasticityModel::computeDiffusionMatrixFE(bool & stop){
 	return INFINITY;
 }
 
-double LinearElasticityModel::computeDiffusionMatrixFV(bool & stop){
+double LinearElasticityModel::computeStiffnessMatrixFV(bool & stop){
 	long nbFaces = _mesh.getNumberOfFaces();
 	Face Fj;
 	Cell Cell1,Cell2;
@@ -453,11 +469,11 @@ double LinearElasticityModel::computeDiffusionMatrixFV(bool & stop){
                 else if(_limitField[nameOfGroup].bcType==DirichletLinearElasticity){
                     barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
                     MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                           , ADD_VALUES);
-                    VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
+                    VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].displacement, ADD_VALUES);
                 }
                 else {
                     stop=true ;
-                    cout<<"!!!!!!!!!!!!!!! Error LinearElasticityModel::computeDiffusionMatrixFV !!!!!!!!!!"<<endl;
+                    cout<<"!!!!!!!!!!!!!!! Error LinearElasticityModel::computeStiffnessMatrixFV !!!!!!!!!!"<<endl;
                     cout<<"!!!!!! Boundary condition not accepted for boundary named !!!!!!!!!!"<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
                     cout<<"Accepted boundary conditions are Neumann "<<NeumannLinearElasticity<< " and Dirichlet "<<DirichletLinearElasticity<<endl;
                     *_runLogFile<<"!!!!!! Boundary condition not accepted for boundary named !!!!!!!!!!"<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
@@ -491,8 +507,8 @@ double LinearElasticityModel::computeDiffusionMatrixFV(bool & stop){
 		}
 		else
         {
-            *_runLogFile<<"LinearElasticityModel::computeDiffusionMatrixFV(): incompatible number of cells around a face"<<endl;
-			throw CdmathException("LinearElasticityModel::computeDiffusionMatrixFV(): incompatible number of cells around a face");
+            *_runLogFile<<"LinearElasticityModel::computeStiffnessMatrixFV(): incompatible number of cells around a face"<<endl;
+			throw CdmathException("LinearElasticityModel::computeStiffnessMatrixFV(): incompatible number of cells around a face");
         }
 	}
 
@@ -554,7 +570,7 @@ bool LinearElasticityModel::solveLinearSystem()
 
     if(_conditionNumber)
         KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
-    KSPSolve(_ksp, _b, displacements);
+    KSPSolve(_ksp, _b, _displacements);
 
 	KSPConvergedReason reason;
 	KSPGetConvergedReason(_ksp,&reason);
@@ -713,7 +729,7 @@ bool LinearElasticityModel::solveStationaryProblem()
 		*_runLogFile<< "Finite elements method"<< endl<<endl;
 	}
 
-    computeDiffusionMatrix( stop);
+    computeStiffnessMatrix( stop);
     if (stop){
         cout << "Error : failed computing diffusion matrix, stopping calculation"<< endl;
         *_runLogFile << "Error : failed computing diffusion matrix, stopping calculation"<< endl;
@@ -828,6 +844,12 @@ LinearElasticityModel::setDirichletValues(map< int, double> dirichletBoundaryVal
 {
     _dirichletValuesSet=true;
     _dirichletBoundaryValues=dirichletBoundaryValues;
+}
+void 
+LinearElasticityModel::setNeumannValues(map< int, double> neumannBoundaryValues)
+{
+    _neumannValuesSet=true;
+    _neumannBoundaryValues=neumannBoundaryValues;
 }
 
 double 

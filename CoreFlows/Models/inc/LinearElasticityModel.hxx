@@ -32,14 +32,14 @@ enum BoundaryTypeLinearElasticity	{ NeumannLinearElasticity, DirichletLinearElas
 /** \struct LimitField
  * \brief value of some fields on the boundary  */
 struct LimitFieldLinearElasticity{
-	LimitFieldLinearElasticity(){bcType=NoneBCLinearElasticity; displacement=0; force=0;}
-	LimitFieldLinearElasticity(BoundaryTypeLinearElasticity _bcType, double _displacement,	double _force){
-		bcType=_bcType; displacement=_displacement; force=_force;
+	LimitFieldLinearElasticity(){bcType=NoneBCLinearElasticity; displacement=0; normalForce=0;}
+	LimitFieldLinearElasticity(BoundaryTypeLinearElasticity _bcType, double _displacement,	double _normalForce){
+		bcType=_bcType; displacement=_displacement; normalForce=_normalForce;
 	}
 
 	BoundaryTypeLinearElasticity bcType;
 	double displacement; //for Dirichlet
-	double force; //for Neumann
+	double normalForce; //for Neumann
 };
 
 class LinearElasticityModel
@@ -61,7 +61,7 @@ public :
 	void setDensityField(Field densityField) { _densityField=densityField; _densityFieldSet=true;}
 	void setLameCoefficient(double lambda, double mu) { _lambda = lambda; _mu = mu;}
 	void setYoungAndPoissonModuli(double E, double nu) { _lambda = E*nu/(1+nu)/(1-2*nu); _mu = E/2/(1+nu);}
-	void setGravity(Vector gravite ) { _gravite=gravite; }
+	void setGravity(Vector gravite ) { _gravity=gravite; }
 
     void setMesh(const Mesh &M);
     void setFileName(string fileName){
@@ -103,11 +103,12 @@ public :
 			 * \param [in] double : outward normal force
 			 * \param [out] void
 			 *  */
-	void setNeumannBoundaryCondition(string groupName, double force=0){
-		_limitField[groupName]=LimitFieldLinearElasticity(DirichletLinearElasticity,-1, force);
+	void setNeumannBoundaryCondition(string groupName, double normalForce=0){
+		_limitField[groupName]=LimitFieldLinearElasticity(DirichletLinearElasticity,-1, normalForce);
 	};
 
 	void setDirichletValues(map< int, double> dirichletBoundaryValues);
+	void setNeumannValues  (map< int, double> neumannBoundaryValues);
 	
 
 protected :
@@ -185,7 +186,9 @@ protected :
 
     /********* Possibility to set a boundary field as Dirichlet boundary condition *********/
     bool _dirichletValuesSet;
+    bool _neumannValuesSet;
     std::map< int, double> _dirichletBoundaryValues;
+    std::map< int, double> _neumannBoundaryValues;
 };
 
 #endif /* LinearElasticityModel_HXX_ */
