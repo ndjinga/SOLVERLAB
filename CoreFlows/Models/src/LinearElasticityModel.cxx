@@ -176,21 +176,21 @@ void LinearElasticityModel::initialize()
                 _runLogFile->close();
                 throw CdmathException("Missing boundary value");
             }
-            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==NoTypeSpecified)
+            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==NoneBCLinearElasticity)
             {
                 cout<<"!!! No boundary condition set for boundary node " << _boundaryNodeIds[i]<< endl;
                 *_runLogFile<< "!!!No boundary condition set for boundary node " << _boundaryNodeIds[i]<<endl;
                 _runLogFile->close();
                 throw CdmathException("Missing boundary condition");
             }
-            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==Dirichlet)
+            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==DirichletLinearElasticity)
                 _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
-            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType!=Neumann)
+            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType!=NeumannLinearElasticity)
             {
                 cout<<"!!! Wrong boundary condition "<< _limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType<< " set for boundary node " << _boundaryNodeIds[i]<< endl;
-                cout<<"!!! Accepted boundary conditions are Dirichlet "<< Dirichlet <<" and Neumann "<< Neumann << endl;
+                cout<<"!!! Accepted boundary conditions are Dirichlet "<< DirichletLinearElasticity <<" and Neumann "<< NeumannLinearElasticity << endl;
                 *_runLogFile<< "Wrong boundary condition "<< _limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType<< " set for boundary node " << _boundaryNodeIds[i]<<endl;
-                *_runLogFile<< "Accepted boundary conditions are Dirichlet "<< Dirichlet <<" and Neumann "<< Neumann <<endl;
+                *_runLogFile<< "Accepted boundary conditions are Dirichlet "<< DirichletLinearElasticity <<" and Neumann "<< NeumannLinearElasticity <<endl;
                 _runLogFile->close();
                 throw CdmathException("Wrong boundary condition");
             }
@@ -220,8 +220,8 @@ void LinearElasticityModel::initialize()
 	PCSetType(_pc, _pctype);
 
     //Checking whether all boundaries are Neumann boundaries
-    map<string, LimitField>::iterator it = _limitField.begin();
-    while(it != _limitField.end() and (it->second).bcType == Neumann)
+    map<string, LimitFieldLinearElasticity>::iterator it = _limitField.begin();
+    while(it != _limitField.end() and (it->second).bcType == NeumannLinearElasticity)
         it++;
     _onlyNeumannBC = (it == _limitField.end() && _limitField.size()>0);
     //If only Neumann BC, then matrix is singular and solution should be sought in space of mean zero vectors
@@ -425,9 +425,9 @@ double LinearElasticityModel::computeDiffusionMatrixFV(bool & stop){
             {
                 nameOfGroup = Fj.getGroupName();
     
-                if (_limitField[nameOfGroup].bcType==Neumann){//Nothing to do
+                if (_limitField[nameOfGroup].bcType==NeumannLinearElasticity){//Nothing to do
                 }
-                else if(_limitField[nameOfGroup].bcType==Dirichlet){
+                else if(_limitField[nameOfGroup].bcType==DirichletLinearElasticity){
                     barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
                     MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                           , ADD_VALUES);
                     VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
@@ -436,7 +436,7 @@ double LinearElasticityModel::computeDiffusionMatrixFV(bool & stop){
                     stop=true ;
                     cout<<"!!!!!!!!!!!!!!! Error LinearElasticityModel::computeDiffusionMatrixFV !!!!!!!!!!"<<endl;
                     cout<<"!!!!!! Boundary condition not accepted for boundary named !!!!!!!!!!"<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
-                    cout<<"Accepted boundary conditions are Neumann "<<Neumann<< " and Dirichlet "<<Dirichlet<<endl;
+                    cout<<"Accepted boundary conditions are Neumann "<<NeumannLinearElasticity<< " and Dirichlet "<<DirichletLinearElasticity<<endl;
                     *_runLogFile<<"!!!!!! Boundary condition not accepted for boundary named !!!!!!!!!!"<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
                     _runLogFile->close();
                     throw CdmathException("Boundary condition not accepted");
