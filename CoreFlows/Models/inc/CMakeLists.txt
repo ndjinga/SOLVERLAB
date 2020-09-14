@@ -7,6 +7,7 @@ SET(include_models_HXX
     TransportEquation.hxx
     DiffusionEquation.hxx
     StationaryDiffusionEquation.hxx
+    LinearElasticityModel.hxx
     Fluide.h
     ProblemFluid.hxx
     utilitaire_algebre.h

@@ -14,6 +14,7 @@ SET(src_models_CXX
     TransportEquation.cxx
     DiffusionEquation.cxx
     StationaryDiffusionEquation.cxx
+#    LinearElasticityModel.cxx
     Fluide.cxx
     ProblemFluid.cxx
     utilitaire_algebre.cxx
