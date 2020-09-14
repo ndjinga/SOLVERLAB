@@ -8,6 +8,7 @@ set (CDMATH_VERSION_MAJOR 1)
 set (CDMATH_VERSION_MINOR 0)
 
 include(ExternalProject)#For PETSc, MED and MEDCoupling
+set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
 
 # Project options
 option (CDMATH_WITH_PETSC "Compile CDMATH with PETSc linking." ON)
