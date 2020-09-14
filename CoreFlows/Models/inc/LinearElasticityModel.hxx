@@ -7,23 +7,40 @@
  * \brief Stationary linear elasticity model  
  * -div \sigma = f 
  * with the stress \sigma given by the Hooke's law 
- * \sigma=2\mu e(u)+\lambda Tr(e(u)) I_d
- * solved with either finite elements or finite volume method
- * Dirichlet (fixed boundary) or Neumann (free boundary) boundary conditions
+ * \sigma = 2 \mu e(u) + \lambda Tr(e(u)) I_d
+ * solved with either finite element or finite volume method
+ * Dirichlet (fixed boundary) or Neumann (free boundary) boundary conditions.
  * */
 //============================================================================
 
 /*! \class LinearElasticityModel LinearElasticityModel.hxx "LinearElasticityModel.hxx"
- *  \brief Linear Elasticity Model solved with either finite elements or finite volume method. 
+ *  \brief Linear Elasticity Model solved with either finite element or finite volume method. 
  * -div \sigma = f 
- * \sigma=2\mu e(u)+\lambda Tr(e(u)) I_d
+ * \sigma = 2 \mu e(u) + \lambda Tr(e(u)) I_d
  */
+ 
 #ifndef LinearElasticityModel_HXX_
 #define LinearElasticityModel_HXX_
 
 #include "ProblemCoreFlows.hxx"
 
 using namespace std;
+
+/*! Boundary condition type  */
+enum BoundaryTypeLinearElasticity	{ NeumannLinearElasticity, DirichletLinearElasticity, NoneBCLinearElasticity};
+
+/** \struct LimitField
+ * \brief value of some fields on the boundary  */
+struct LimitFieldLinearElasticity{
+	LimitFieldLinearElasticity(){bcType=NoneBCLinearElasticity; displacement=0; force=0;}
+	LimitFieldLinearElasticity(BoundaryTypeLinearElasticity _bcType, double _displacement,	double _force){
+		bcType=_bcType; displacement=_displacement; force=_force;
+	}
+
+	BoundaryTypeLinearElasticity bcType;
+	double displacement; //for Dirichlet
+	double force; //for Neumann
+};
 
 class LinearElasticityModel
 {
@@ -32,7 +49,7 @@ public :
 	/** \fn LinearElasticityModel
 			 * \brief Constructor for the linear elasticity in a solid
 			 * \param [in] int : space dimension
-			 * \param [in] double : numerical method
+			 * \param [in] bool : numerical method
 			 * \param [in] double : solid density
 			 * \param [in] double : first Lamé coefficient
 			 * \param [in] double : second  Lamé coefficient
@@ -65,30 +82,29 @@ public :
 	void save();
 
     /* Boundary conditions */
-	void setBoundaryFields(map<string, LimitField> boundaryFields){
+	void setBoundaryFields(map<string, LimitFieldLinearElasticity> boundaryFields){
 		_limitField = boundaryFields;
     };
 	/** \fn setDirichletBoundaryCondition
 			 * \brief adds a new boundary condition of type Dirichlet
 			 * \details
 			 * \param [in] string : the name of the boundary
-			 * \param [in] double : the value of the temperature at the boundary
+			 * \param [in] double : the value of the displacement at the boundary
 			 * \param [out] void
 			 *  */
-	void setDirichletBoundaryCondition(string groupName,double Temperature){
-		_limitField[groupName]=LimitField(Dirichlet,-1, vector<double>(_Ndim,0),vector<double>(_Ndim,0),
-                                                        vector<double>(_Ndim,0),Temperature,-1,-1,-1);
+	void setDirichletBoundaryCondition(string groupName,double displacement){
+		_limitField[groupName]=LimitFieldLinearElasticity(DirichletLinearElasticity,displacement,-1);
 	};
 
 	/** \fn setNeumannBoundaryCondition
 			 * \brief adds a new boundary condition of type Neumann
 			 * \details
 			 * \param [in] string : the name of the boundary
+			 * \param [in] double : outward normal force
 			 * \param [out] void
 			 *  */
-	void setNeumannBoundaryCondition(string groupName){
-		_limitField[groupName]=LimitField(Neumann,-1, vector<double>(0),vector<double>(0),
-                                                      vector<double>(0),-1,-1,-1,-1);
+	void setNeumannBoundaryCondition(string groupName, double force=0){
+		_limitField[groupName]=LimitFieldLinearElasticity(DirichletLinearElasticity,-1, force);
 	};
 
 	void setDirichletValues(map< int, double> dirichletBoundaryValues);
@@ -126,7 +142,7 @@ protected :
 	double _MaxIterLinearSolver;//nombre maximum d'iteration gmres obtenu au cours par les resolution de systemes lineaires au cours d'un pas de tmeps
 	bool _conditionNumber;//computes an estimate of the condition number
 
-	map<string, LimitField> _limitField;
+	map<string, LimitFieldLinearElasticity> _limitField;
     bool _onlyNeumannBC;//if true then the linear system is singular and should be solved up to a constant vector
     
 	Vector _normale;
