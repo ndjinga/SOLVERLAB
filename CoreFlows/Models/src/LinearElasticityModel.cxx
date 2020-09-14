@@ -345,7 +345,7 @@ double LinearElasticityModel::computeDiffusionMatrixFE(bool & stop){
                                 if( _dirichletValuesSet )//New way of storing BC
                                     valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
                                 else    //old way of storing BC
-                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].Displacements;
+                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].displacements;
                             }
                             else
                                 valuesBorder[kdim]=Vector(_Ndim);                            
@@ -359,6 +359,29 @@ double LinearElasticityModel::computeDiffusionMatrixFE(bool & stop){
         }            
 	}
     
+    //Calcul de la contribution de la condition limite de Neumann au second membre
+    if( _NdirichletNodes !=_NboundaryNodes)
+    {
+        vector< int > boundaryFaces = _mesh.getBoundaryFaceIds();
+        int NboundaryFaces=boundaryFaces.size();
+        for(int i = 0; i< NboundaryFaces ; i++)//On parcourt les faces du bord
+        {
+            Face Fi = _mesh.getFace(i);
+            for(int j = 0 ; j<_Ndim ; j++)//On parcourt les noeuds de la face
+            {
+                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is an Neumann BC node (not a Dirichlet BC node)
+                {
+                    j_int=unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
+                    if( _neumannValuesSet )
+                        coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
+                    else    
+                        coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalForce;
+                    VecSetValue(_b, j_int, coeff, ADD_VALUES);
+                }
+            }
+        }
+    }
+
     MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 	VecAssemblyBegin(_b);
