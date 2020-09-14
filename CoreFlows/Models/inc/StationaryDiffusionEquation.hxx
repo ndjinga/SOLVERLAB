@@ -6,7 +6,7 @@
  * \date June 2019
  * \brief Stationary heat diffusion equation solved with either finite elements or finite volume method. 
  * -\lambda\Delta T=\Phi + \lambda_{sf} (T_{fluid}-T)
- * Dirichlet (imposed temperature) or Neumann (imposed normal flux) boundary conditions
+ * Dirichlet (imposed temperature) or Neumann (imposed normal flux) boundary conditions.
  * */
 //============================================================================
 
@@ -15,18 +15,18 @@
  *  \details see \ref StationaryDiffusionEqPage for more details
  * -\lambda\Delta T=\Phi(T) + \lambda_{sf} (T_{fluid}-T)
  */
+ 
 #ifndef StationaryDiffusionEquation_HXX_
 #define StationaryDiffusionEquation_HXX_
 
 #include "ProblemCoreFlows.hxx"
 
-/* for the laplacian spectrum */
+/* For the laplacian spectrum */
 #include <slepceps.h>
 #include <slepcsvd.h>
 
 using namespace std;
 
-//! enumeration BoundaryType
 /*! Boundary condition type  */
 enum BoundaryTypeStationaryDiffusion	{ NeumannStationaryDiffusion, DirichletStationaryDiffusion, NoneBCStationaryDiffusion};
 
@@ -50,6 +50,7 @@ public :
 	/** \fn StationaryDiffusionEquation
 			 * \brief Constructor for the temperature diffusion in a solid
 			 * \param [in] int : space dimension
+			 * \param [in] bool : numerical method
 			 * \param [in] double : solid conductivity
 			 *  */
 
@@ -96,6 +97,7 @@ public :
 			 * \brief adds a new boundary condition of type Neumann
 			 * \details
 			 * \param [in] string : the name of the boundary
+			 * \param [in] double : outward normal flux
 			 * \param [out] void
 			 *  */
 	void setNeumannBoundaryCondition(string groupName, double normalFlux=0){
