@@ -97,7 +97,7 @@ for i in range(nbCells):
 			#Ajout de la contribution de la cellule i au second membre du noeud j 
 			RHS[j_int]=Ci.getMeasure()/2*my_RHSfield[j]+RHS[j_int] # intégrale sur le segment du produit f x fonction de base
 			#Contribution de la cellule i à la ligne j_int du système linéaire
- 			for k in [nodeId0,nodeId1] : 
+			for k in [nodeId0,nodeId1] : 
 				if boundaryNodes.count(k)==0 : #seuls les noeuds intérieurs contribuent à la matrice du système linéaire
 					k_int=interiorNodes.index(k)#indice du noeud k en tant que noeud intérieur
 					Rigidite.addValue(j_int,k_int,GradShapeFuncs[j]*GradShapeFuncs[k]/Ci.getMeasure())
