@@ -8,6 +8,7 @@ IF (CDMATH_WITH_TESTS)
     ${BASE_DIR}/inc
     ${MESH_DIR}/inc
     cdmath
+    ${CPPUNIT_INCLUDE_DIR}
     )
 
   SET(MAIN_SOURCES
