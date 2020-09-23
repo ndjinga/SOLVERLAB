@@ -78,7 +78,7 @@ if (CDMATH_WITH_DOCUMENTATION)
   add_custom_target (docCDMATH COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
   							  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
   if   ( IS_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html)
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION doc/cdmath-dev-doc)
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION share/doc/cdmath-dev-doc)
   endif( IS_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html)
 endif(CDMATH_WITH_DOCUMENTATION)
 
