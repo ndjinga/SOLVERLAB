@@ -54,7 +54,7 @@ Dependencies. The following package list is sufficient on Ubuntu 14.04, Ubuntu 1
  - `g++` or another C++ compiler (mandatory)
  - `python-dev`, `python-numpy` and `swig3`for python scripts (mandatory)
  - `python-matplotlib` and `paraview` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (mandatory)
- - `doxygen`, `graphviz` and `mscgen`, if you want to generate a nice source code documentation in `~/workspace/SOLVERLAB/SOLVERLAB_install/doc/`. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
+ - `doxygen`, `graphviz` and `mscgen`, if you want to generate a nice source code documentation in `~/workspace/SOLVERLAB/SOLVERLAB_install/share/doc/`. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
  - `libcppunit-dev`, if you want to generate unit tests. Use the compilation option `-DSOLVERLAB_WITH_TESTS=ON` (optional).
  - `rpm`, if you want to generate RPM installation packages. Use the compilation option `-DSOLVERLAB_WITH_PACKAGE=ON` (optional).
 
@@ -89,13 +89,19 @@ The 3 dependencies PETSC, MED and MEDCOUPLING should have been compiled with the
 Warning : the linux package libhdf5-dev is generally not compatible with the libraries MED and MEDCoupling  
 Compile and install:
 * `make`
-* `make doc install`
+* `make install`
 
 Run unit and example tests:
 * make example
 
 Run validation tests:
 * make validation
+
+Generate documentation of CDMATH module
+* make docCDMATH
+
+Generate documentation of CoreFlows module
+* make docCoreFlows
 
 Use of SOLVERLAB
 -------------
