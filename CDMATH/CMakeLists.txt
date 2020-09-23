@@ -108,7 +108,6 @@ endif ()
 # Configuration file
 configure_file(
     ${PROJECT_SOURCE_DIR}/env_CDMATH.sh
-    ${CMAKE_INSTALL_PREFIX}/env_CDMATH.sh
     @ONLY
 )
 													    

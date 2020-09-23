@@ -114,7 +114,6 @@ INSTALL(TARGETS CoreFlowsMainExe DESTINATION bin)						    #
 													    #
 configure_file(
     ${PROJECT_SOURCE_DIR}/env_CoreFlows.sh
-    ${CMAKE_INSTALL_PREFIX}/env_CoreFlows.sh
     @ONLY
 )
 													    
