@@ -7,9 +7,6 @@ project (CDMATH)
 set (CDMATH_VERSION_MAJOR 1)
 set (CDMATH_VERSION_MINOR 0)
 
-include(ExternalProject)#For PETSc, MED and MEDCoupling
-set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
-
 # Project options
 option (CDMATH_WITH_PETSC "Compile CDMATH with PETSc linking." ON)
 option (CDMATH_WITH_DOCUMENTATION "Generate documentation with doxygen." ON)
@@ -87,7 +84,7 @@ endif(CDMATH_WITH_DOCUMENTATION)
 
 #Debug option : todo = sort flags
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fprofile-arcs -ftest-coverage -lgcov")
-if   (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if   (CMAKE_BUILD_TYPE STREQUAL "Debug")
   SET(CMAKE_EXE_LINKER_FLAGS "-pg -fprofile-arcs -ftest-coverage -lgcov")
   SET(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage")
 endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")

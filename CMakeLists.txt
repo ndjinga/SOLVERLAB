@@ -35,8 +35,12 @@ set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.
 set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.4.0.tar.gz
      CACHE STRING           "MEDCoupling tarball path/url" )
 
+set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
+
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
+
 include(ExternalProject)#For PETSc, MED and MEDCoupling
+
 ######################################################
 # Detection or compilation of PETSc+SLEPc+HDF5       #
 ######################################################
