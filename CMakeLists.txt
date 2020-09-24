@@ -355,11 +355,14 @@ endif(TARGET PETSc AND TARGET MEDCoupling)
 ####################                                  
 
 # Paraview variables for env_SOLVERLAB.sh  
-if( NOT DEFINED PARAVIEW_VERSION )
+if  ( DEFINED PARAVIEW_VERSION )
+  message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
+else( DEFINED PARAVIEW_VERSION )
   if( DEFINED PARAVIEW_ROOT_DIR)
     set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
     set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
   else( DEFINED PARAVIEW_ROOT_DIR)
+    message(WARNING "PARAVIEW_VERSION and PARAVIEW_ROOT_DIR not set. Trying to find paraview in the system.")
     set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
     set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/)
   endif( DEFINED PARAVIEW_ROOT_DIR)
@@ -376,14 +379,14 @@ if( NOT DEFINED PARAVIEW_VERSION )
         break()
       ENDIF(NOT ${pos} EQUAL -1)
     ENDFOREACH(line vtkConfig)
+    message(STATUS "ParaView found, version is ${PARAVIEW_VERSION}" )
   ELSE ( EXISTS ${PARAVIEW_INCLUDE_DIR}/vtkPVConfig.h )
     message(WARNING "Could not find ParaView configuration file vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR}. Postprocessing may not work")
     set( PARAVIEW_VERSION  "5.0")
   ENDIF( EXISTS ${PARAVIEW_INCLUDE_DIR}/vtkPVConfig.h )
-endif(NOT DEFINED PARAVIEW_VERSION)
+endif( DEFINED PARAVIEW_VERSION)
 
   
-message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
 IF   ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )#Use python 3, use VERSION_GREATER_EQUAL if cmake >=3.7
   SET(PYTHON2OR3 "3")
 ELSE ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )#Use python 2
