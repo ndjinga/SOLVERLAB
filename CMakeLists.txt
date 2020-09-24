@@ -393,9 +393,6 @@ ELSE ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6
   SET(PYTHON2OR3 "2")
 ENDIF( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )
 
-    set (PV_LIB_DIR    /usr/lib/python${PYTHON2OR3}.7/dist-packages/paraview/:/usr/lib64/python${PYTHON2OR3}.7/site-packages/vtk/:${PARAVIEW_LIBRARIES_DIR})
-    set (PV_PYTHON_DIR /usr/lib/python${PYTHON2OR3}.7/dist-packages/paraview/:/usr/lib64/python${PYTHON2OR3}.7/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${PYTHON2OR3}.7/site-packages/:/usr/lib64/paraview/python${PYTHON2OR3}.7/site-packages/paraview/:/usr/lib64/paraview/python${PYTHON2OR3}.7/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk)
-
 # Find python
 IF   (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   find_package(Python ${PYTHON2OR3} REQUIRED COMPONENTS Interpreter Development )
@@ -403,10 +400,16 @@ IF   (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 ELSE (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   find_package(PythonInterp ${PYTHON2OR3} REQUIRED )
   find_package(PythonLibs   ${PYTHON2OR3} REQUIRED )
-  set(Python_LIBRARIES    ${PYTHON_LIBRARIES})
-  set(Python_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
-  set(Python_VERSION      ${PYTHON_VERSION_STRING})
+  set(Python_LIBRARIES     ${PYTHON_LIBRARIES})
+  set(Python_INCLUDE_DIRS  ${PYTHON_INCLUDE_DIRS})
+  set(Python_VERSION       ${PYTHON_VERSION_STRING})
+  set(Python_VERSION_MAJOR ${PYTHON_VERSION_MAJOR})
+  set(Python_VERSION_MINOR ${PYTHON_VERSION_MINOR})
 ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
+
+#Paraview library paths
+set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${PARAVIEW_LIBRARIES_DIR})
+set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk)
 
 message(STATUS "Python version is ${Python_VERSION}")
 find_package (SWIG 3.0 REQUIRED)
