@@ -240,7 +240,7 @@ public :
 	 * @param void
 	 * @return the number of phases considered in the model
 	 * */
-	int getNumberOfPhases(){
+	int getNumberOfPhases() const {
 		return _nbPhases;
 	};
 
@@ -327,7 +327,7 @@ public :
 	 * \brief returns the value of the latent heat
 	 * @param double L, the value of the latent heat
 	 * */
-	double getLatentHeat(){
+	double getLatentHeat() const{
 		return _latentHeat;
 	}
 
@@ -343,7 +343,7 @@ public :
 	 * \brief sets the saturation temperature
 	 * @param  Tsat double corresponds to saturation temperature
 	 * */
-	double getSatTemp(){
+	double getSatTemp() const {
 		return _Tsat;
 	}
 
@@ -369,7 +369,7 @@ public :
 	 * \brief returns the porosity field;
 	 * @param
 	 * */
-	Field getPorosityField(){
+	Field getPorosityField() const {
 		return _porosityField;
 	}
 
@@ -443,7 +443,7 @@ public :
 	 * \param [in] void
 	 * \param [out] enum NonLinearFormulation
 	 *  */
-	NonLinearFormulation getNonLinearFormulation(){
+	NonLinearFormulation getNonLinearFormulation() const{
 		return _nonLinearFormulation;
 	}
 
@@ -460,7 +460,7 @@ public :
 	 * \param [in] void
 	 * \param [out] enum SpaceScheme(upwind, centred, pressureCorrection, pressureCorrection, staggered)
 	 *  */
-	SpaceScheme getSpaceScheme();
+	SpaceScheme getSpaceScheme() const;
 
 	/** \fn setNumericalScheme
 	 * \brief sets the numerical method (upwind vs centered and explicit vs implicit)
@@ -479,6 +479,9 @@ public :
 	virtual vector<string> getOutputFieldsNames()=0 ;//liste tous les champs que peut fournir le code pour le postraitement
 	virtual Field& getOutputField(const string& nameField )=0;//Renvoie un champs pour le postraitement
 	 */
+
+	Field getConservativeField() const ;
+	Field getPrimitiveField() const;
 
 protected :
 	/** Number of phases in the fluid **/

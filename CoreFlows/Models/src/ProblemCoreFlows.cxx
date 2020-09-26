@@ -621,3 +621,14 @@ ProblemCoreFlows::getEigenvectorsField(int nev, EPSWhich which, double tol) cons
   
   return my_eigenfield;
 }
+
+Field 
+ProblemCoreFlows::getUnknownField() const
+{
+	if(!_initializedMemory)
+	{
+		_runLogFile->close();
+		throw CdmathException("ProblemCoreFlows::getUnknownField() call initialize() first");
+	}
+	return _VV;
+}

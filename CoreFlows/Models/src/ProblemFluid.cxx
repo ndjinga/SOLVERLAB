@@ -29,7 +29,7 @@ ProblemFluid::ProblemFluid(void){
 	_spaceScheme=upwind;
 }
 
-SpaceScheme ProblemFluid::getSpaceScheme()
+SpaceScheme ProblemFluid::getSpaceScheme() const
 {
 	return _spaceScheme;
 }
@@ -1427,6 +1427,26 @@ void ProblemFluid::InvMatriceRoe(vector< complex<double> > valeurs_propres_dist)
 		cout<< endl;
 		displayMatrix(_invAroe,_nVar,"Inverse matrice de Roe");
 	}
+}
+
+Field ProblemFluid::getConservativeField() const
+{
+	if(!_initializedMemory)
+	{
+		_runLogFile->close();
+		throw CdmathException("ProblemFluid::getConservativeField call initialize() first");
+	}
+	return _UU;
+}
+
+Field ProblemFluid::getPrimitiveField() const
+{
+	if(!_initializedMemory)
+	{
+		_runLogFile->close();
+		throw CdmathException("ProblemFluid::getPrimitiveField call initialize() first");
+	}
+	return _VV;
 }
 
 void ProblemFluid::terminate(){

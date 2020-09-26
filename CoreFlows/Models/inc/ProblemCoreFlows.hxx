@@ -77,8 +77,8 @@ public :
 	//! Constructeur par défaut
 	ProblemCoreFlows();
 	virtual ~ProblemCoreFlows();
-	// -*-*-*- Gestion du calcul -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-
+	
+	// -*-*-*- Gestion du calcul (interface ICoCo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 	/** \fn initialize
 	 * \brief Alloue la mémoire et vérifie que  le maillage et les conditions limites/initiales sont bien définis
@@ -182,6 +182,8 @@ public :
 	virtual Field& getOutputField(const string& nameField )=0;//Renvoie un champs pour le postraitement
 	 */
 
+	Field getUnknownField() const;
+	
 	//paramètres du calcul -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 	/** \fn setPresentTime
