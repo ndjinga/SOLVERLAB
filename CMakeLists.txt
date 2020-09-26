@@ -355,14 +355,17 @@ endif(TARGET PETSc AND TARGET MEDCoupling)
 ####################                                  
 
 # Paraview variables to choose python version and for env_SOLVERLAB.sh  
-if  ( DEFINED PARAVIEW_VERSION )
+if  ( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
+  if   ( NOT DEFINED PARAVIEW_VERSION )
+    set( PARAVIEW_VERSION  $ENV{PARAVIEW_VERSION})
+  endif( NOT DEFINED PARAVIEW_VERSION )
   message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
-else( DEFINED PARAVIEW_VERSION )
+else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   if  ( DEFINED PARAVIEW_ROOT_DIR)
     set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
     set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
   else( DEFINED PARAVIEW_ROOT_DIR)
-    message(STATUS "PARAVIEW_VERSION and PARAVIEW_ROOT_DIR not set. Trying to find paraview in the system.")
+    message(STATUS "PARAVIEW_VERSION and PARAVIEW_ROOT_DIR not set. Trying to detect paraview.")
     set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
     set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/)
   endif( DEFINED PARAVIEW_ROOT_DIR)
@@ -375,7 +378,7 @@ else( DEFINED PARAVIEW_VERSION )
     message(WARNING "Could not find ParaView configuration file vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR} and subdirectories  ${PARAVIEW_SUFFIXES}. Postprocessing may not work")
     set( PARAVIEW_VERSION  "5.0")
   ELSE ( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
-    message( STATUS "find_file a trouvé vtkPVConfig.h dans ${vtkConfig_file}")
+    message( STATUS "Found vtkPVConfig.h in ${vtkConfig_file}")
     file(STRINGS ${vtkConfig_file} vtkConfig)
     FOREACH(line ${vtkConfig})
       string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
@@ -386,15 +389,17 @@ else( DEFINED PARAVIEW_VERSION )
         break()
       ENDIF(NOT ${pos} EQUAL -1)
     ENDFOREACH(line ${vtkConfig})
-    message(STATUS "ParaView found, version is ${PARAVIEW_VERSION}" )
+    message(STATUS "ParaView detected, version is ${PARAVIEW_VERSION}" )
   ENDIF( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
-endif( DEFINED PARAVIEW_VERSION)
+endif( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
 
   
 IF   ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )#Use python 3, use VERSION_GREATER_EQUAL if cmake >=3.7
   SET(PYTHON2OR3 "3")
+  message(STATUS "PARAVIEW_VERSION greater than 5.6. We need python3 for postprocessing scripts.")
 ELSE ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )#Use python 2
   SET(PYTHON2OR3 "2")
+  message(STATUS "PARAVIEW_VERSION smaller than 5.6. We need python2 for postprocessing scripts.")
 ENDIF( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )
 
 # Find python
@@ -415,7 +420,7 @@ ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${PARAVIEW_LIBRARIES_DIR})
 set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk)
 
-message(STATUS "Python version is ${Python_VERSION}")
+message(STATUS "Python version found is ${Python_VERSION}")
 find_package (SWIG 3.0 REQUIRED)
 
 if (SOLVERLAB_WITH_DOCUMENTATION)                                                                           #
