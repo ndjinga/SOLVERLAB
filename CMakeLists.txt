@@ -354,22 +354,29 @@ endif(TARGET PETSc AND TARGET MEDCoupling)
 # Final operations #
 ####################                                  
 
-# Paraview variables for env_SOLVERLAB.sh  
+# Paraview variables to choose python version and for env_SOLVERLAB.sh  
 if  ( DEFINED PARAVIEW_VERSION )
   message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
 else( DEFINED PARAVIEW_VERSION )
-  if( DEFINED PARAVIEW_ROOT_DIR)
+  if  ( DEFINED PARAVIEW_ROOT_DIR)
     set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
     set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
   else( DEFINED PARAVIEW_ROOT_DIR)
-    message(WARNING "PARAVIEW_VERSION and PARAVIEW_ROOT_DIR not set. Trying to find paraview in the system.")
+    message(STATUS "PARAVIEW_VERSION and PARAVIEW_ROOT_DIR not set. Trying to find paraview in the system.")
     set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
     set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/)
   endif( DEFINED PARAVIEW_ROOT_DIR)
 
+  set( PARAVIEW_SUFFIXES paraview-5.0 paraview-5.1 paraview-5.2 paraview-5.3 paraview-5.4 paraview-5.5 paraview-5.6 paraview-5.7 paraview-5.8 paraview-5.9 )
+  find_file( vtkConfig_file vtkPVConfig.h HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
+
   #extraction of the paraview version"
-  IF   ( EXISTS ${PARAVIEW_INCLUDE_DIR}/vtkPVConfig.h )
-    file(STRINGS ${PARAVIEW_INCLUDE_DIR}/vtkPVConfig.h vtkConfig)
+  IF   ( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
+    message(WARNING "Could not find ParaView configuration file vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR} and subdirectories  ${PARAVIEW_SUFFIXES}. Postprocessing may not work")
+    set( PARAVIEW_VERSION  "5.0")
+  ELSE ( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
+    message( STATUS "find_file a trouvé vtkPVConfig.h dans ${vtkConfig_file}")
+    file(STRINGS ${vtkConfig_file} vtkConfig)
     FOREACH(line ${vtkConfig})
       string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
       IF(NOT ${pos} EQUAL -1)
@@ -378,12 +385,9 @@ else( DEFINED PARAVIEW_VERSION )
         string(SUBSTRING ${line} ${start_pv_version} 5 PARAVIEW_VERSION)
         break()
       ENDIF(NOT ${pos} EQUAL -1)
-    ENDFOREACH(line vtkConfig)
+    ENDFOREACH(line ${vtkConfig})
     message(STATUS "ParaView found, version is ${PARAVIEW_VERSION}" )
-  ELSE ( EXISTS ${PARAVIEW_INCLUDE_DIR}/vtkPVConfig.h )
-    message(WARNING "Could not find ParaView configuration file vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR}. Postprocessing may not work")
-    set( PARAVIEW_VERSION  "5.0")
-  ENDIF( EXISTS ${PARAVIEW_INCLUDE_DIR}/vtkPVConfig.h )
+  ENDIF( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
 endif( DEFINED PARAVIEW_VERSION)
 
   
