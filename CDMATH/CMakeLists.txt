@@ -87,7 +87,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fprofile-arcs -ftest-co
 if   (CMAKE_BUILD_TYPE STREQUAL "Debug")
   SET(CMAKE_EXE_LINKER_FLAGS "-pg -fprofile-arcs -ftest-coverage -lgcov")
   SET(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage")
-endif(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tests
 if   (CDMATH_WITH_TESTS)
