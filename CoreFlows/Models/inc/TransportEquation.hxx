@@ -138,13 +138,6 @@ public :
 		return _VV;
 	}
 
-	/** \fn getTimeScheme
-	 * \brief returns the  time scheme name
-	 * \param [in] void
-	 * \param [out] enum TimeScheme (explicit or implicit)
-	 *  */
-	TimeScheme getTimeScheme();
-
 protected :
 	double computeTransportMatrix();
 	double computeRHS();
