@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(
 )
 
 
-SET(_extra_lib_CoreFlows CoreFlows ${PETSC_LIBRARIES} ${CDMATH_LIBRARIES})
+SET(_extra_lib_CoreFlows CoreFlowsLibs )
 
 
 if(CMAKE_COMPILER_IS_GNUCXX)
