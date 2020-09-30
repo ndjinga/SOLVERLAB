@@ -41,6 +41,8 @@ list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 
 include(ExternalProject)#For PETSc, MED and MEDCoupling
 
+ADD_DEFINITIONS(-DWITH_NUMPY)
+
 ######################################################
 # Detection or compilation of PETSc+SLEPc+HDF5       #
 ######################################################
@@ -415,6 +417,9 @@ ELSE (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   set(Python_VERSION_MAJOR ${PYTHON_VERSION_MAJOR})
   set(Python_VERSION_MINOR ${PYTHON_VERSION_MINOR})
 ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
+
+# Bug MEDCoupling9.5.0 -> On ajoute les include de numpy
+set(Python_INCLUDE_DIRS  ${Python_INCLUDE_DIRS} $ENV{PYTHON_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/numpy/core/include)
 
 #Paraview library paths
 set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${PARAVIEW_LIBRARIES_DIR})
