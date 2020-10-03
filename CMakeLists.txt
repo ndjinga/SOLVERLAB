@@ -20,6 +20,7 @@ set (SLEPC_DIR            OFF CACHE STRING "SLEPc library path" )
 set (HDF5_ROOT            OFF CACHE STRING "HDF5 library path" )#For the compilation of MED with a specific version of HDF5
 set (MEDFILE_ROOT_DIR     OFF CACHE STRING "MED library path" )
 set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
+set (PYTHON_ROOT_DIR      OFF CACHE STRING "Python library path" )
 
 #url of tarball librairies
 set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.13.5.tar.gz 
@@ -361,14 +362,19 @@ if  ( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   endif( NOT DEFINED PARAVIEW_VERSION )
   message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
 else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
-  if  ( DEFINED PARAVIEW_ROOT_DIR)
-    set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
-    set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
-  else( DEFINED PARAVIEW_ROOT_DIR)
+  if  ( DEFINED PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
+    if  ( DEFINED PARAVIEW_ROOT_DIR )
+      set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
+      set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
+    else( DEFINED PARAVIEW_ROOT_DIR )
+      set( PARAVIEW_INCLUDE_DIR   $ENV{PARAVIEW_ROOT_DIR}/include)
+      set( PARAVIEW_LIBRARIES_DIR $ENV{PARAVIEW_ROOT_DIR}/lib)
+    endif( DEFINED PARAVIEW_ROOT_DIR )
+  else( DEFINED PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
     message(STATUS "PARAVIEW_VERSION and PARAVIEW_ROOT_DIR not set. Trying to detect paraview.")
     set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
     set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/)
-  endif( DEFINED PARAVIEW_ROOT_DIR)
+  endif( DEFINED PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
 
   set( PARAVIEW_SUFFIXES paraview-5.0 paraview-5.1 paraview-5.2 paraview-5.3 paraview-5.4 paraview-5.5 paraview-5.6 paraview-5.7 paraview-5.8 paraview-5.9 )
   find_file( vtkConfig_file vtkPVConfig.h HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
@@ -403,6 +409,14 @@ ELSE ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6
 ENDIF( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )
 
 # Find python
+IF  ( PYTHON_ROOT_DIR OR ENV{PYTHON_ROOT_DIR})
+  IF  ( PYTHON_ROOT_DIR )
+    set(Python_ROOT_DIR ${PYTHON_ROOT_DIR} ) 
+  ELSE( PYTHON_ROOT_DIR })
+    set(Python_ROOT_DIR $ENV{PYTHON_ROOT_DIR} ) 
+  ENDIF( PYTHON_ROOT_DIR })
+ENDIF(PYTHON_ROOT_DIR OR ENV{PYTHON_ROOT_DIR})
+
 IF   (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   find_package(Python ${PYTHON2OR3} REQUIRED COMPONENTS Interpreter Development )
   SET(PYTHON_EXECUTABLE ${Python_EXECUTABLE})
@@ -418,7 +432,7 @@ ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 
 #Paraview library paths
 set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${PARAVIEW_LIBRARIES_DIR})
-set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk)
+set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/)
 
 message(STATUS "Python version found is ${Python_VERSION}")
 find_package (SWIG 3.0 REQUIRED)
