@@ -102,7 +102,7 @@ for i in range(nbCells):
 	normalFace1[2]=Ci.getNormalVector(1,2)
 
 	normalCell = normalFace0.crossProduct(normalFace1)
-	normalCell = normalCell/normalCell.norm()
+	normalCell = normalCell*(1/normalCell.norm())
 
 	cellMat=cdmath.Matrix(4)
 	cellMat[0,0]=N0.x()
@@ -123,15 +123,15 @@ for i in range(nbCells):
 	cellMat[3,3]=0
 
 	#Formule des gradients voir EF P1 -> calcul déterminants
-	GradShapeFunc0[0]= cellMat.partMatrix(0,0).determinant()/2
-	GradShapeFunc0[1]=-cellMat.partMatrix(0,1).determinant()/2
-	GradShapeFunc0[2]= cellMat.partMatrix(0,2).determinant()/2
-	GradShapeFunc1[0]=-cellMat.partMatrix(1,0).determinant()/2
-	GradShapeFunc1[1]= cellMat.partMatrix(1,1).determinant()/2
-	GradShapeFunc1[2]=-cellMat.partMatrix(1,2).determinant()/2
-	GradShapeFunc2[0]= cellMat.partMatrix(2,0).determinant()/2
-	GradShapeFunc2[1]=-cellMat.partMatrix(2,1).determinant()/2
-	GradShapeFunc2[2]= cellMat.partMatrix(2,2).determinant()/2
+	GradShapeFunc0[0]= cellMat.partMatrix(0,0).determinant()*0.5
+	GradShapeFunc0[1]=-cellMat.partMatrix(0,1).determinant()*0.5
+	GradShapeFunc0[2]= cellMat.partMatrix(0,2).determinant()*0.5
+	GradShapeFunc1[0]=-cellMat.partMatrix(1,0).determinant()*0.5
+	GradShapeFunc1[1]= cellMat.partMatrix(1,1).determinant()*0.5
+	GradShapeFunc1[2]=-cellMat.partMatrix(1,2).determinant()*0.5
+	GradShapeFunc2[0]= cellMat.partMatrix(2,0).determinant()*0.5
+	GradShapeFunc2[1]=-cellMat.partMatrix(2,1).determinant()*0.5
+	GradShapeFunc2[2]= cellMat.partMatrix(2,2).determinant()*0.5
 
 	#Création d'un tableau (numéro du noeud, gradient de la fonction de forme
 	GradShapeFuncs={nodeId0 : GradShapeFunc0}

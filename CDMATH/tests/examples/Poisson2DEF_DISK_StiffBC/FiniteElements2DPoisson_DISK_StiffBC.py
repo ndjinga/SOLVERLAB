@@ -129,9 +129,9 @@ for i in range(nbCells):
     values1=[0,1,0]
     values2=[0,0,1]
 
-    GradShapeFunc0 = gradientNodal(M,values0)/2
-    GradShapeFunc1 = gradientNodal(M,values1)/2
-    GradShapeFunc2 = gradientNodal(M,values2)/2
+    GradShapeFunc0 = gradientNodal(M,values0)*0.5
+    GradShapeFunc1 = gradientNodal(M,values1)*0.5
+    GradShapeFunc2 = gradientNodal(M,values2)*0.5
 
     #Création d'un tableau (numéro du noeud, gradient de la fonction de forme
     GradShapeFuncs={nodeId0 : GradShapeFunc0}
@@ -164,7 +164,7 @@ for i in range(nbCells):
                     else:
                         u2=0
                     boundaryContributionAdded=True#Contribution from the boundary to matrix line j is done in one step
-                    GradGh = gradientNodal(M,[u0,u1,u2])/2
+                    GradGh = gradientNodal(M,[u0,u1,u2])*0.5
                     RHS[j_int] += -(GradGh*GradShapeFuncs[j])/Ci.getMeasure()
 
 print("Linear system matrix building done")
