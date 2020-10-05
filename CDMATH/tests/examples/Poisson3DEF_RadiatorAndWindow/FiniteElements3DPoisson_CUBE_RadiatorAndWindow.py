@@ -140,10 +140,10 @@ for i in range(nbCells):
 	values2=[0,0,1,0]
 	values3=[0,0,0,1]
 
-	GradShapeFunc0 = gradientNodal(M,values0)/6
-	GradShapeFunc1 = gradientNodal(M,values1)/6
-	GradShapeFunc2 = gradientNodal(M,values2)/6
-	GradShapeFunc3 = gradientNodal(M,values3)/6
+	GradShapeFunc0 = gradientNodal(M,values0)*(1./6)
+	GradShapeFunc1 = gradientNodal(M,values1)*(1./6)
+	GradShapeFunc2 = gradientNodal(M,values2)*(1./6)
+	GradShapeFunc3 = gradientNodal(M,values3)*(1./6)
 	
 	#Création d'un tableau (numéro du noeud, gradient de la fonction de forme)
 	GradShapeFuncs={nodeId0 : GradShapeFunc0}
@@ -168,7 +168,7 @@ for i in range(nbCells):
 					T2 = boundaryValue(nodeId2)
 					T3 = boundaryValue(nodeId3)
 					boundaryContributionAdded=True#Contribution from the boundary to matrix line j is done in one step
-					GradGh = gradientNodal(M,[T0,T1,T2,T3])/6
+					GradGh = gradientNodal(M,[T0,T1,T2,T3])*(1./6)
 					RHS[j_int] += -(GradGh*GradShapeFuncs[j])/Ci.getMeasure()
             
 

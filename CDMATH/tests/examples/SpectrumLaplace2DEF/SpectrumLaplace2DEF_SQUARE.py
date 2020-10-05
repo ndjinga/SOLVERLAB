@@ -91,12 +91,12 @@ for i in range(nbCells):
 	N2=my_mesh.getNode(nodeId2)
 
 	#Formule des gradients voir EF P1 -> calcul déterminants
-	GradShapeFunc0[0]= (N1.y()-N2.y())/2
-	GradShapeFunc0[1]=-(N1.x()-N2.x())/2
-	GradShapeFunc1[0]=-(N0.y()-N2.y())/2
-	GradShapeFunc1[1]= (N0.x()-N2.x())/2
-	GradShapeFunc2[0]= (N0.y()-N1.y())/2
-	GradShapeFunc2[1]=-(N0.x()-N1.x())/2
+	GradShapeFunc0[0]= (N1.y()-N2.y())*0.5
+	GradShapeFunc0[1]=-(N1.x()-N2.x())*0.5
+	GradShapeFunc1[0]=-(N0.y()-N2.y())*0.5
+	GradShapeFunc1[1]= (N0.x()-N2.x())*0.5
+	GradShapeFunc2[0]= (N0.y()-N1.y())*0.5
+	GradShapeFunc2[1]=-(N0.x()-N1.x())*0.5
 
 	#Création d'un tableau (numéro du noeud, gradient de la fonction de forme
 	GradShapeFuncs={nodeId0 : GradShapeFunc0}
@@ -110,7 +110,7 @@ for i in range(nbCells):
 			j_int=interiorNodes.index(j)#indice du noeud j en tant que noeud intérieur
 			nodal_volumes[j_int]+=Ci.getMeasure()/3
 			#Contribution de la cellule triangulaire i à la ligne j_int du système linéaire
- 			for k in [nodeId0,nodeId1,nodeId2] : 
+			for k in [nodeId0,nodeId1,nodeId2] : 
 				if boundaryNodes.count(k)==0 : #seuls les noeuds intérieurs contribuent à la matrice du système linéaire
 					k_int=interiorNodes.index(k)#indice du noeud k en tant que noeud intérieur
 					Rigidite.addValue(j_int,k_int,GradShapeFuncs[j]*GradShapeFuncs[k]/Ci.getMeasure())
