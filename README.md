@@ -54,6 +54,7 @@ Dependencies. The following package list is sufficient on Ubuntu 14.04, Ubuntu 1
  - `g++` or another C++ compiler (mandatory)
  - `python-dev`, `python-numpy` and `swig3`for python scripts (mandatory)
  - `python-matplotlib` and `paraview` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (mandatory)
+ - `ffmpeg` and `ffmpeg-devel` to generate an animation from a set of curves (optional)
  - `doxygen`, `graphviz` and `mscgen`, if you want to generate a nice source code documentation in `~/workspace/SOLVERLAB/SOLVERLAB_install/share/doc/`. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
  - `libcppunit-dev`, if you want to generate unit tests. Use the compilation option `-DSOLVERLAB_WITH_TESTS=ON` (optional).
  - `rpm`, if you want to generate RPM installation packages. Use the compilation option `-DSOLVERLAB_WITH_PACKAGE=ON` (optional).
