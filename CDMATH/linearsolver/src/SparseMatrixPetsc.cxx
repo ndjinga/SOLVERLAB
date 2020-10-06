@@ -769,7 +769,11 @@ SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, doubl
 
 	nconv=computeSpectrum(nev, &valP, &vecP, which, tol);
 	
+#ifdef MEDCoupling_VERSION_VERSION_GREATER_9_4
+	std::vector< long unsigned int > compoId(1);
+#else
 	std::vector< int > compoId(1);
+#endif
 	MEDCoupling::DataArrayDouble *arrays=MEDCoupling::DataArrayDouble::New();
 	MEDCoupling::DataArrayDouble *array =MEDCoupling::DataArrayDouble::New();
 	arrays->alloc(_numberOfRows,nconv);	
