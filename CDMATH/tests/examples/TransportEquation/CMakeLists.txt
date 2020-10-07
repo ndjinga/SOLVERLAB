@@ -2,8 +2,6 @@
 if (CDMATH_WITH_PYTHON )
 
     ADD_TEST(ExampleTransportEquation_2DUpwind_Explicit ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/TransportEquationUpwind.py)
-    SET_PROPERTY(TEST ExampleTransportEquation_2DUpwind_Explicit        PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH}:${PV_LIB_DIR}")
-    SET_PROPERTY(TEST ExampleTransportEquation_2DUpwind_Explicit APPEND PROPERTY ENVIRONMENT "PYTHONPATH=${TESTS_PYTHON_PATH}:${PV_PYTHON_DIR}")
 
 endif (CDMATH_WITH_PYTHON )
 
