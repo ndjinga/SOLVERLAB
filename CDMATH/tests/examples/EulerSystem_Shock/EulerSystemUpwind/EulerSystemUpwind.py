@@ -84,12 +84,14 @@ def jacobianMatrices(normale,coeff,rho_l,q_l,rho_r,q_r):
     tangent[0]= normale[1];
     tangent[1]=-normale[0];
 
-    u_l = q_l/rho_l;
-    u_r = q_r/rho_r;
+    u_l = cdmath.Vector(2); u_l[0]*=q_l[0]/rho_l; u_l[1]*=q_l[1]/rho_l;
+    u_r = cdmath.Vector(2); u_r[0]*=q_r[0]/rho_r; u_r[1]*=q_r[1]/rho_r;
     if rho_l<0 or rho_r<0 :
         print( "rho_l=",rho_l, " rho_r= ",rho_r )
         raise ValueError("Negative density")
-    u = (u_l*sqrt(rho_l)+u_r*sqrt(rho_r))/(sqrt(rho_l)+sqrt(rho_r));   
+    u=cdmath.Vector(2);
+    u[0] = (u_l[0]*sqrt(rho_l)+u_r[0]*sqrt(rho_r))/(sqrt(rho_l)+sqrt(rho_r));   
+    u[1] = (u_l[1]*sqrt(rho_l)+u_r[1]*sqrt(rho_r))/(sqrt(rho_l)+sqrt(rho_r));   
     un=u*normale;
 
     RoeMat[0,0]   = 0
@@ -113,7 +115,7 @@ def jacobianMatrices(normale,coeff,rho_l,q_l,rho_r,q_r):
     AbsRoeMa[2,1]=(abs(un+c0)*((u[1]-c0*normale[1])*normale[0])-abs(un-c0)*((u[1]-c0*normale[1])*normale[0]))/(2*c0)+abs(un)*(tangent[1]*tangent[0]);
     AbsRoeMa[2,2]=(abs(un+c0)*((u[1]-c0*normale[1])*normale[1])-abs(un-c0)*((u[1]-c0*normale[1])*normale[1]))/(2*c0)+abs(un)*(tangent[1]*tangent[1]);
 
-    return (RoeMat-AbsRoeMa)*coeff/2,un;
+    return (RoeMat-AbsRoeMa)*coeff*0.5,un;
 
 def computeDivergenceMatrix(my_mesh,implMat,Un):
     nbCells = my_mesh.getNumberOfCells()
@@ -217,12 +219,12 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
     dUn=cdmath.Vector(nbCells*(dim+1))
     
     for k in range(nbCells):
-        Un[k*(dim+1)+0] =     pressure_field[k]
+        Un[k*(dim+1)+0] =     pressure_field[k]/(c0*c0)
         Un[k*(dim+1)+1] =rho0*velocity_field[k,0]
         if(dim>=2):
-            Un[k + 2*nbCells] = rho0*velocity_field[k,1] # value on the bottom face
+            Un[k*(dim+1)+2] = rho0*velocity_field[k,1] # value on the bottom face
             if(dim==3):
-                Un[k + 3*nbCells] = rho0*initial_velocity[k,2]
+                Un[k*(dim+1)+3] = rho0*initial_velocity[k,2]
 
     #sauvegarde de la donnée initiale
     pressure_field.setTime(time,it);
@@ -268,7 +270,7 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
             print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
 
             for k in range(nbCells):
-                pressure_field[k]  =Un[k*(dim+1)+0]
+                pressure_field[k]  =Un[k*(dim+1)+0]*c0*c0
                 velocity_field[k,0]=Un[k*(dim+1)+1]/rho0
                 if(dim>1):
                     velocity_field[k,1]=Un[k*(dim+1)+2]/rho0
