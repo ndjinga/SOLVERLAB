@@ -56,15 +56,15 @@ endif (COREFLOWS_WITH_GUI)                                                      
 #---------------------------------------------------------------------------------------------------------------#
 
 
-SET(TESTS_LIBRARY_PATH ${CMAKE_BINARY_DIR}/Models/src:${CDMATH_DIR}/lib:${MEDCOUPLING_LIBRARIES}:${MEDFILE_C_LIBRARIES}:${PETSC_DIR}/${PETSC_ARCH}/lib:${PV_LIB_DIR} )
-SET(TESTS_PYTHON_PATH  ${CMAKE_BINARY_DIR}/Models/src:${CMAKE_BINARY_DIR}/swig:${CDMATH_DIR}/lib:${CDMATH_DIR}/lib/cdmath:${CDMATH_DIR}/bin/cdmath:${CDMATH_DIR}/bin/cdmath/postprocessing:${MEDCOUPLING_LIBRARIES}:${MEDFILE_C_LIBRARIES}:${PETSC_DIR}/${PETSC_ARCH}/lib:${PV_PYTHON_DIR} )
+#SET(TESTS_LIBRARY_PATH ${CMAKE_BINARY_DIR}/Models/src:${CDMATH_DIR}/lib:${MEDCOUPLING_LIBRARIES}:${MEDFILE_C_LIBRARIES}:${PETSC_DIR}/${PETSC_ARCH}/lib:${PV_LIB_DIR} )
+#SET(TESTS_PYTHON_PATH  ${CMAKE_BINARY_DIR}/Models/src:${CMAKE_BINARY_DIR}/swig:${CDMATH_DIR}/lib:${CDMATH_DIR}/lib/cdmath:${CDMATH_DIR}/bin/cdmath:${CDMATH_DIR}/bin/cdmath/postprocessing:${MEDCOUPLING_LIBRARIES}:${MEDFILE_C_LIBRARIES}:${PETSC_DIR}/${PETSC_ARCH}/lib:${PV_PYTHON_DIR} )
 
 ############# python example tests
 
 function(CreatePythonTest pythonFile)
     add_test(${pythonFile} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${pythonFile})
-    SET_PROPERTY(TEST ${pythonFile}        PROPERTY ENVIRONMENT LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH} )
-    SET_PROPERTY(TEST ${pythonFile} APPEND PROPERTY ENVIRONMENT      PYTHONPATH=${TESTS_PYTHON_PATH}  )
+#    SET_PROPERTY(TEST ${pythonFile}        PROPERTY ENVIRONMENT LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH} )
+#    SET_PROPERTY(TEST ${pythonFile} APPEND PROPERTY ENVIRONMENT      PYTHONPATH=${TESTS_PYTHON_PATH}  )
 endfunction(CreatePythonTest)
 
 # copy all *.py tests files before build
@@ -73,6 +73,10 @@ file(COPY ${pythonTestFiles} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
     FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE
 )
 
+# copy all mesh files before build
+file(COPY ../resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR} 
+    FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE
+)
 
 CreatePythonTest(DiffusionEquation/DiffusionEquation_1DHeatedRod.py)
 CreatePythonTest(DiffusionEquation/DiffusionEquation_1DHeatedRod_FE.py)
