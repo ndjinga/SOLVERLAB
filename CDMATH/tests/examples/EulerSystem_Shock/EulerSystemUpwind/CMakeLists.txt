@@ -50,6 +50,10 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
     ADD_TEST(ExampleEulerSystem_2DShock_UpwindExplicit_DISK_hexagons ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
 
+    SET(MESH_FILE  ../../../ressources/meshHexagonWithTriangles.med  )
+
+    ADD_TEST(ExampleEulerSystem_2DShock_UpwindExplicit_HEXAGON_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
+
     SET(IMPLICIT_SCHEME  1 )
 
     SET(MESH_FILE  ../../../ressources/meshSquare.med  )
