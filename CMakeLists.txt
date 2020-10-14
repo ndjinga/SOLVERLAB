@@ -213,9 +213,9 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
     endif ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )
   endif ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
 
-  if   ( ${PETSC_VERSION} VERSION_GREATER 3.5 )
-    add_definitions(-DPETSC_VERSION_GREATER_3_5)
-  endif( ${PETSC_VERSION} VERSION_GREATER 3.5 )
+if   ( ${PETSC_VERSION} VERSION_GREATER 3.5 )
+  add_definitions(-DPETSC_VERSION_GREATER_3_5)
+endif( ${PETSC_VERSION} VERSION_GREATER 3.5 )
 
 string(REPLACE ";" ":"  PETSC_INCLUDES_INSTALL "${PETSC_INCLUDES}")# use colon instead of semicolon in environment file env_SOLVERLAB.sh
 
@@ -288,8 +288,21 @@ if( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
     set(MEDCOUPLING_ROOT_DIR $ENV{MEDCOUPLING_ROOT_DIR} )
   endif( NOT MEDCOUPLING_ROOT_DIR )
 
-  set(MEDCoupling_DIR  ${MEDCOUPLING_ROOT_DIR}/cmake_files)
-  find_package(MEDCoupling CONFIG REQUIRED )   # CONFIG is important !
+  message (STATUS "Seeking MEDCoupling library in ${MEDCOUPLING_ROOT_DIR}")
+
+  if( NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedcoupling.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/include/MEDCoupling.hxx)
+    message (FATAL_ERROR "MEDCoupling library not found in ${MEDCOUPLING_ROOT_DIR}")
+  else( NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedcoupling.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/include/MEDCoupling.hxx)
+    message (STATUS "MEDCoupling library found in ${MEDCOUPLING_ROOT_DIR}")
+  endif( NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedcoupling.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/include/MEDCoupling.hxx)
+
+  #the find package(MEDCoupling) generates an error
+  set(MEDCoupling_VERSION 9.6.0)#We force the version to 9.6 until we solve the problem of find_package(MEDCoupling)
+  add_library(medloader   SHARED IMPORTED )
+  set_property(TARGET medloader   PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so)
+
+#  set(MEDCoupling_DIR  ${MEDCOUPLING_ROOT_DIR}/cmake_files)
+#  find_package(MEDCoupling CONFIG REQUIRED )   # CONFIG is important !
   message( STATUS "MEDCoupling found. Version is ${MEDCoupling_VERSION}")
 
 else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
@@ -413,9 +426,9 @@ ENDIF( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6
 IF  ( PYTHON_ROOT_DIR OR ENV{PYTHON_ROOT_DIR})
   IF  ( PYTHON_ROOT_DIR )
     set(Python_ROOT_DIR ${PYTHON_ROOT_DIR} ) 
-  ELSE( PYTHON_ROOT_DIR })
+  ELSE( PYTHON_ROOT_DIR )
     set(Python_ROOT_DIR $ENV{PYTHON_ROOT_DIR} ) 
-  ENDIF( PYTHON_ROOT_DIR })
+  ENDIF( PYTHON_ROOT_DIR)
 ENDIF(PYTHON_ROOT_DIR OR ENV{PYTHON_ROOT_DIR})
 
 IF   (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
