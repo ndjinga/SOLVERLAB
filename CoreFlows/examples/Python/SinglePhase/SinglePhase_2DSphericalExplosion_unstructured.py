@@ -7,7 +7,7 @@ import CoreFlows as cf
 
 def SinglePhase_2DSphericalExplosion_unstructured():
 
-	inputfile="../resources/BoxWithMeshWithTriangularCells";
+	inputfile="./resources/BoxWithMeshWithTriangularCells";
 	fieldName="Initial variables for spherical explosion";
 	spaceDim=2
 	
@@ -30,7 +30,7 @@ def SinglePhase_2DSphericalExplosion_unstructured():
 
 	# set the numerical method
 	myProblem.setNumericalScheme(cf.upwind, cf.Explicit);
- 	myProblem.setLinearSolver(cf.GMRES,cf.ILU,True);
+	myProblem.setLinearSolver(cf.GMRES,cf.ILU,True);
 	myProblem.setEntropicCorrection(False);
 	myProblem.setWellBalancedCorrection(False);
     
