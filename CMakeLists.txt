@@ -296,13 +296,17 @@ if( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
     message (STATUS "MEDCoupling library found in ${MEDCOUPLING_ROOT_DIR}")
   endif( NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/lib/libmedcoupling.so OR NOT EXISTS ${MEDCOUPLING_ROOT_DIR}/include/MEDCoupling.hxx)
 
-  #the find package(MEDCoupling) generates an error
-  set(MEDCoupling_VERSION 9.6.0)#We force the version to 9.6 until we solve the problem of find_package(MEDCoupling)
   add_library(medloader   SHARED IMPORTED )
   set_property(TARGET medloader   PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so)
+  add_library(interpkernel   SHARED IMPORTED )
+  set_property(TARGET interpkernel   PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libinterpkernel.so)
+  add_library(medcouplingremapper   SHARED IMPORTED )
+  set_property(TARGET medcouplingremapper   PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libmedcouplingremapper.so)
+  add_library(medcouplingcpp   SHARED IMPORTED )
+  set_property(TARGET medcouplingcpp   PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libmedcouplingcpp.so)
 
-#  set(MEDCoupling_DIR  ${MEDCOUPLING_ROOT_DIR}/cmake_files)
-#  find_package(MEDCoupling CONFIG REQUIRED )   # CONFIG is important !
+  set(MEDCoupling_DIR  ${MEDCOUPLING_ROOT_DIR}/cmake_files)
+  find_package(MEDCoupling CONFIG REQUIRED)   # CONFIG is important !
   message( STATUS "MEDCoupling found. Version is ${MEDCoupling_VERSION}")
 
 else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
@@ -363,6 +367,10 @@ endif(TARGET MED AND TARGET MEDCoupling)
 if   (TARGET PETSc AND TARGET MEDCoupling)
   ExternalProject_Add_StepDependencies( MEDCoupling build PETSc )#PETSc doit être compilé avant MEDCoupling (car il contient hdf5)
 endif(TARGET PETSc AND TARGET MEDCoupling)
+
+IF(MEDCOUPLING_USE_64BIT_IDS)
+  SET(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DMEDCOUPLING_USE_64BIT_IDS)
+ENDIF(MEDCOUPLING_USE_64BIT_IDS)
  
 ####################
 # Final operations #
