@@ -100,7 +100,7 @@ def computeFluxes(U, SumFluxes):
         Fr=numericalFlux(Uj,Ujp1,absA)
         Fl=numericalFlux(Ujm1,Uj,absA)
 
-        sumFluxCourant = (Fr - Fl)*0.5/Cj.getMeasure()
+        sumFluxCourant = (Fr - Fl)*0.5*(1./Cj.getMeasure())
             
         #On divise par le volume de la cellule la contribution des flux au snd membre
         for i in range(nbComp):
