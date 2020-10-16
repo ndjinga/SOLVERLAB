@@ -52,17 +52,17 @@ def computeStaggeredDivergenceMatrix(a,b,nx,nbVoisinsMax,dt,scaling):
     S1,S2 = staggeredMatrices(dt/dx,scaling)
     for k in range(nbCells):#On parcourt les cellules
         if ( k==0) :
-			implMat.addValue(k*nbComp, (k+1)*nbComp, S1)
-			implMat.addValue(k*nbComp,  k   *nbComp, S1*(-1.))
+            implMat.addValue(k*nbComp, (k+1)*nbComp, S1)
+            implMat.addValue(k*nbComp,  k   *nbComp, S1*(-1.))
         elif ( k==nbCells-1) :
-			implMat.addValue(k*nbComp,  k   *nbComp, S2)
-			implMat.addValue(k*nbComp, (k-1)*nbComp, S2*(-1.))
+            implMat.addValue(k*nbComp,  k   *nbComp, S2)
+            implMat.addValue(k*nbComp, (k-1)*nbComp, S2*(-1.))
         else :
-			implMat.addValue(k*nbComp, (k+1)*nbComp, S1)
-			implMat.addValue(k*nbComp,  k   *nbComp, S1*(-1.))
+            implMat.addValue(k*nbComp, (k+1)*nbComp, S1)
+            implMat.addValue(k*nbComp,  k   *nbComp, S1*(-1.))
 
-			implMat.addValue(k*nbComp,  k   *nbComp, S2)
-			implMat.addValue(k*nbComp, (k-1)*nbComp, S2*(-1.))
+            implMat.addValue(k*nbComp,  k   *nbComp, S2)
+            implMat.addValue(k*nbComp, (k-1)*nbComp, S2*(-1.))
         
     return implMat
 
