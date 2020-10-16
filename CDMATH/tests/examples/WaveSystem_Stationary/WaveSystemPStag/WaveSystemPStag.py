@@ -90,7 +90,7 @@ def jacobianMatrices(normal, coeff, signun):
         A[0,i+1]=c0*c0*normal[i]*coeff
         absA[0,i+1]=signun*A[0,i+1]
     
-    return (A-absA)/2
+    return (A-absA)*(1./2)
     
     
 def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt):
