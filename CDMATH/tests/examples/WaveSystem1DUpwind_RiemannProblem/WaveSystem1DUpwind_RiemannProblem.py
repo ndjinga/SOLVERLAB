@@ -59,17 +59,17 @@ def computeUpwindDivergenceMatrix(a,b,nx,nbVoisinsMax,dt,scaling):
     A,absA= jacobianMatrices(dt/dx,scaling)
     for j in range(nbCells):#On parcourt les cellules
         if ( j==0) :
-            implMat.addValue(j*nbComp,(j+1)*nbComp,(A-absA)/2)
-            implMat.addValue(j*nbComp,    j*nbComp,(A-absA)/2*(-1.))
+            implMat.addValue(j*nbComp,(j+1)*nbComp,(A-absA)*(1./2))
+            implMat.addValue(j*nbComp,    j*nbComp,(A-absA)*(-1./2))
         elif ( j==nbCells-1) :
-            implMat.addValue(j*nbComp,    j*nbComp,(A+absA)/2)
-            implMat.addValue(j*nbComp,(j-1)*nbComp,(A+absA)/2*(-1.))
+            implMat.addValue(j*nbComp,    j*nbComp,(A+absA)*(1./2))
+            implMat.addValue(j*nbComp,(j-1)*nbComp,(A+absA)*(-1./2))
         else :
-            implMat.addValue(j*nbComp,(j+1)*nbComp,(A-absA)/2)
-            implMat.addValue(j*nbComp,    j*nbComp,(A-absA)/2*(-1.))
+            implMat.addValue(j*nbComp,(j+1)*nbComp,(A-absA)*(1./2))
+            implMat.addValue(j*nbComp,    j*nbComp,(A-absA)*(-1./2))
 
-            implMat.addValue(j*nbComp,    j*nbComp,(A+absA)/2)
-            implMat.addValue(j*nbComp,(j-1)*nbComp,(A+absA)/2*(-1.))
+            implMat.addValue(j*nbComp,    j*nbComp,(A+absA)*(1./2))
+            implMat.addValue(j*nbComp,(j-1)*nbComp,(A+absA)*(-1./2))
                 
     return implMat
 
