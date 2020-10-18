@@ -48,6 +48,10 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
     ADD_TEST(ExampleWaveSystem_2DShock_PStag_DISK_hexagons ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemPStag.py  ${MESH_FILE})
 
+    SET(MESH_FILE  ../../../ressources/meshHexagonWithTriangles.med  )
+
+    ADD_TEST(ExampleWaveSystem_2DShock_PStag_HEXAGON_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemPStag.py  ${MESH_FILE})
+
 endif (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
 

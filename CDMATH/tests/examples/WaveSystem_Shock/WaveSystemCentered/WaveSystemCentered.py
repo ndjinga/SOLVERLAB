@@ -171,11 +171,11 @@ def WaveSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution):
     print("Construction of the initial condition …")
     if(dim==1 or filename.find("square")>-1 or filename.find("Square")>-1 or filename.find("cube")>-1 or filename.find("Cube")>-1):
         pressure_field, velocity_field = initial_conditions_shock(my_mesh,False)
-    elif(filename.find("disk")>-1 or filename.find("Disk")>-1):
+    elif(filename.find("disk")>-1 or filename.find("Disk")>-1 or filename.find("Hexagon")>-1):
         pressure_field, velocity_field = initial_conditions_shock(my_mesh,True)
     else:
         print( "Mesh name : ", filename )
-        raise ValueError("Mesh name should contain substring square, cube or disk")
+        raise ValueError("Mesh name should contain substring square, cube, Hexagon or disk")
 
     for k in range(nbCells):
         Un[k*(dim+1)+0] =      pressure_field[k]
