@@ -21,9 +21,8 @@ import PV_routines
 import VTK_routines
 import sys
 
-p0=155e5#reference pressure in a pressurised nuclear vessel
-c0=700.#reference sound speed for water at 155 bars, 600K
-rho0=p0/c0*c0#reference density
+p0=155e5#reference pressure in a pressurised nuclear vessel (used for initial data)
+c0=700.#reference sound speed for water at 155 bars, 600K (used for eox p= rho c0**2
 precision=1e-5
 
 def initial_conditions_shock(my_mesh, isCircle):
@@ -69,7 +68,7 @@ def initial_conditions_shock(my_mesh, isCircle):
             pressure_field[i] = p0
             pass
         else:
-            pressure_field[i] = p0/2
+            pressure_field[i] = p0
             pass
         pass
 
@@ -171,21 +170,20 @@ def computeDivergenceMatrix(my_mesh,implMat,Un):
                     idMoinsJacCL=v.tensProduct(v)*2
                     
                     implMat.addValue(j*nbComp,j*nbComp,Am*(-1.)*idMoinsJacCL)
-                    
                 elif( Fk.getGroupName() == "Periodic"):#Periodic boundary condition
-                    q_l[0]=Un[j*nbComp+1]
-                    q_l[1]=Un[j*nbComp+2]
-                    q_r[0]=Un[cellAutre*nbComp+1]
-                    q_r[1]=Un[cellAutre*nbComp+2]
-                    Am, un=jacobianMatrices( normal,Fk.getMeasure()/Cj.getMeasure(),Un[j*nbComp],Un[j*nbComp+1],Un[j*nbComp+2],Un[cellAutre*nbComp],Un[cellAutre*nbComp+1],Un[cellAutre*nbComp+2]);
-            
                     indexFP=my_mesh.getIndexFacePeriodic(indexFace)
                     Fp = my_mesh.getFace(indexFP)
                     cellAutre = Fp.getCellsId()[0]
                     
+                    q_l[0]=Un[j*nbComp+1]
+                    q_l[1]=Un[j*nbComp+2]
+                    q_r[0]=Un[cellAutre*nbComp+1]
+                    q_r[1]=Un[cellAutre*nbComp+2]
+                    Am, un=jacobianMatrices( normal,Fk.getMeasure()/Cj.getMeasure(),Un[j*nbComp],q_l,Un[cellAutre*nbComp],q_r);
+            
                     implMat.addValue(j*nbComp,cellAutre*nbComp,Am)
                     implMat.addValue(j*nbComp,        j*nbComp,Am*(-1.))
-                elif(Fk.getGroupName() != "Neumann"):#Nothing to do for Neumann boundary condition
+                elif( Fk.getGroupName() != "Neumann"):#Nothing to do for Neumann boundary condition
                     print( Fk.getGroupName() )
                     raise ValueError("computeFluxes: Unknown boundary condition name");
             
@@ -219,13 +217,13 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
     dUn=cdmath.Vector(nbCells*(dim+1))
     
     for k in range(nbCells):
-        Un[k*(dim+1)+0] =     pressure_field[k]/(c0*c0)
-        Un[k*(dim+1)+1] =rho0*velocity_field[k,0]
+        Un[k*(dim+1)+0] =                pressure_field[k]/(c0*c0)
+        Un[k*(dim+1)+1] =Un[k*(dim+1)+0]*velocity_field[k,0]
         if(dim>=2):
-            Un[k*(dim+1)+2] = rho0*velocity_field[k,1] # value on the bottom face
+            Un[k*(dim+1)+2] = Un[k*(dim+1)+0]*velocity_field[k,1]
             if(dim==3):
-                Un[k*(dim+1)+3] = rho0*initial_velocity[k,2]
-
+                Un[k*(dim+1)+3] = Un[k*(dim+1)+0]*velocity_field[k,2]
+        print(Un[k*(dim+1)+0],Un[k*(dim+1)+1],Un[k*(dim+1)+2])
     #sauvegarde de la donnée initiale
     pressure_field.setTime(time,it);
     pressure_field.writeVTK("EulerSystem"+str(dim)+"DUpwind"+"_isImplicit"+str(isImplicit)+meshName+"_pressure");
@@ -260,6 +258,7 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
 
         else:
             dUn=divMat*Un
+#            print(Un)
             Un-=dUn
         
         time=time+dt;
@@ -271,11 +270,12 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
 
             for k in range(nbCells):
                 pressure_field[k]  =Un[k*(dim+1)+0]*c0*c0
-                velocity_field[k,0]=Un[k*(dim+1)+1]/rho0
+                velocity_field[k,0]=Un[k*(dim+1)+1]/Un[k*(dim+1)+0]
                 if(dim>1):
-                    velocity_field[k,1]=Un[k*(dim+1)+2]/rho0
+                    velocity_field[k,1]=Un[k*(dim+1)+2]/Un[k*(dim+1)+0]
                     if(dim>2):
-                        velocity_field[k,2]=Un[k*(dim+1)+3]/rho0
+                        velocity_field[k,2]=Un[k*(dim+1)+3]/Un[k*(dim+1)+0]
+#                print(Un[k*(dim+1)+0],Un[k*(dim+1)+1],Un[k*(dim+1)+2])
 
             pressure_field.setTime(time,it);
             pressure_field.writeVTK("EulerSystem"+str(dim)+"DUpwind"+"_isImplicit"+str(isImplicit)+meshName+"_pressure",False);
@@ -317,7 +317,7 @@ def solve(my_mesh,filename,resolution, isImplicit):
 
     # Problem data
     tmax = 1.
-    ntmax = 100
+    ntmax = 1
     cfl = 1./my_mesh.getSpaceDimension()
     output_freq = 1
 

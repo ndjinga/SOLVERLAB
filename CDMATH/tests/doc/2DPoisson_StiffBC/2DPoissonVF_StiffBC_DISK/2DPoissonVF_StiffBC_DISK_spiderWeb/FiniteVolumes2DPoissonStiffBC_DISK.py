@@ -97,7 +97,7 @@ def solve(my_mesh,filename,resolution, meshType, testColor):
                 Ck=my_mesh.getCell(k)
                 distance=Ci.getBarryCenter().distance(Ck.getBarryCenter())
                 coeff=Fj.getMeasure()/Ci.getMeasure()/distance
-                Rigidite.setValue(i,k,-coeff) # terme extradiagonal
+                Rigidite.addValue(i,k,-coeff) # terme extradiagonal
             else:
                 coeff=Fj.getMeasure()/Ci.getMeasure()/Ci.getBarryCenter().distance(Fj.getBarryCenter())
                 #For the particular case where the mesh boundary does not coincide with the domain boundary
