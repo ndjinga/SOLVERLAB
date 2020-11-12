@@ -3,6 +3,7 @@
 # d q/d t + d (q^2/rho+p)/d x = 0, where q = rho*u and p = c^2*rho
 # UU = (rho,q) : conservative variable
 # Scheme : Roe scheme (without any entropy correction)
+# Comment : the solution displays a non entropic (non physical) shock instead of a rarefaction wave
 # Date : November 2020
 
 from cdmath import *
