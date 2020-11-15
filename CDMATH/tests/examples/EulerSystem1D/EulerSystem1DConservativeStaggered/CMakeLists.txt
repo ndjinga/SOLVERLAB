@@ -1,7 +1,7 @@
 
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
-    ADD_TEST(ExampleEulerSystem_1DShock_ConservativeStagered ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystem1DConservativeStaggered.py )
+    ADD_TEST(ExampleEulerSystem_1DShock_ConservativeStaggered ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystem1DConservativeStaggered.py )
 
 endif (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
