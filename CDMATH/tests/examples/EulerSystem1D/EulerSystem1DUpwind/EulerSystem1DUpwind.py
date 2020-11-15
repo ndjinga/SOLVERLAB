@@ -8,7 +8,7 @@
 
 from cdmath import *
 import numpy as np
-from math import sqrt, exp, pow
+from math import sqrt
 
 import matplotlib
 matplotlib.use("Agg")
