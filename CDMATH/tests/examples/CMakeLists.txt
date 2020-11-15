@@ -9,7 +9,7 @@ file(GLOB NICE_EXAMPLES_TO_INSTALL
   WaveSystem1DUpwind WaveSystem1DUpwind_RiemannProblem WaveSystem1Staggered_RiemannProblem WaveSystem2DUpwind_RiemannProblem
 WaveSystem_Stationary/WaveSystemUpwind WaveSystem_Stationary/WaveSystemCentered WaveSystem_Stationary/WaveSystemPStag WaveSystem_Stationary/WaveSystemStaggered 
 WaveSystem_Shock/WaveSystemUpwind WaveSystem_Shock/WaveSystemCentered WaveSystem_Shock/WaveSystemPStag WaveSystem_Shock/WaveSystemStaggered 
-EulerSystem1D/EulerSystem1DUpwind EulerSystem1D/EulerSystem1DUpwindEntrCorr EulerSystem_Shock/EulerSystemUpwind
+EulerSystem1D/EulerSystem1DUpwind EulerSystem1D/EulerSystem1DUpwindEntrCorr EulerSystem1D/EulerSystem1DConservativeStaggered EulerSystem_Shock/EulerSystemUpwind
 )
 
 install(DIRECTORY ${NICE_EXAMPLES_TO_INSTALL} DESTINATION share/examples)
@@ -57,6 +57,7 @@ IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
     ADD_SUBDIRECTORY(WaveSystem_Shock/WaveSystemCentered)
     ADD_SUBDIRECTORY(EulerSystem1D/EulerSystem1DUpwind)
     ADD_SUBDIRECTORY(EulerSystem1D/EulerSystem1DUpwindEntrCorr)
+    ADD_SUBDIRECTORY(EulerSystem1D/EulerSystem1DConservativeStaggered)
     ADD_SUBDIRECTORY(EulerSystem_Shock/EulerSystemUpwind)
 ENDIF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
