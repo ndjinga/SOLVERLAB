@@ -14,7 +14,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
-from matplotlib.ticker import FormatStrFormatter
 
 c0=330.#reference sound speed for water at 15 bars
 precision=1e-5
@@ -55,9 +54,14 @@ def main(meshName):
     M=Mesh(xmin,xmax,nx);
     dim=1
     
+    # initial time
+    time=0.;
+    # maximum time T
+    tmax=0.01;
+    it=0;
+    freqSortie=10;
     # CFL condition
     CFL=0.99;
-    # sound speed
     # conservative variable (unknown)
     UU=Field("Conservative variables",CELLS,M,2);
 
@@ -67,20 +71,14 @@ def main(meshName):
     vL=-300
     rhoR=1.45
     vR=-300
-    UU_L=Vector(2);
-    UU_L[0] = rhoL;
-    UU_L[1] = rhoL*vL;
-    UU_R=Vector(2);
-    UU_R[0] = rhoR;
-    UU_R[1] = rhoR*vR;
     for i in range(M.getNumberOfCells()):
         x=M.getCell(i).x();
         if x < (xmax-xmin)/2:
-            UU[i,0] = UU_L[0];
-            UU[i,1] = UU_L[1];
+            UU[i,0] = rhoL;
+            UU[i,1] = rhoL*vL;
         else:
-            UU[i,0] = UU_R[0];
-            UU[i,1] = UU_R[1];
+            UU[i,0] = rhoR;
+            UU[i,1] = rhoR*vR;
         pass
 
     rho_field = [ UU[i,0]          for i in range(nx)]
@@ -97,12 +95,15 @@ def main(meshName):
     max_initial_q=max(vL*rhoL,vR*rhoR)
     min_initial_q=min(vL*rhoL,vR*rhoR)
 
-    # initial time
-    time=0.;
-    # maximum time T
-    tmax=0.01;
-    it=0;
+    print( "Numerical solution of the 1D Euler equation")
 
+    # prepare some memory
+    UU_limL = Vector(2);
+    UU_limR = Vector(2);
+    Del_UU_RL = Vector(2);
+    UU_new = UU;
+    
+    # Picture settings
     fig, ([axDensity, axMomentum],[axVelocity, axPressure]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
     fig.suptitle('Explicit Upwind scheme')
     lineDensity, = axDensity.plot([xmin+0.5*dx + i*dx for i in range(nx)], rho_field, label='Density') #new picture for video # Returns a tuple of line objects, thus the comma
@@ -135,29 +136,17 @@ def main(meshName):
         writer.grab_frame()
         plt.savefig("EulerSystem"+str(dim)+"UpwindExplicit"+meshName+"_0"+".png")
 
-        print( "Numerical solution for the Euler equation, at time = ",time," ...")
-
-        freqSortie=10;
-        # prepare some memory
-        UU_limL = Vector(2);
-        UU_limR = Vector(2);
-        flux_iminus = Vector(2);
-        flux_iplus = Vector(2);
-        absRoe = Matrix(2,2);
-        Del_UU_RL = Vector(2);
-        UU_new = UU;
-    
         # loop in time
         while (it<ntmax and time <= tmax ):
             # time step
             dt=compTimeStep(UU,dx,CFL);
-            print( "-- Iter : ", it," Time : ",time," dt : ",dt)
             # Neumann boundary condition
             UU_limL[0] = UU[0,0];
             UU_limL[1] = UU[0,1];
             UU_limR[0] = UU[M.getNumberOfCells()-1,0];
             UU_limR[1] = UU[M.getNumberOfCells()-1,1];
             flux_iminus = flux(UU_limL[0],UU_limL[1]);
+            #Main loop on cells
             for i in range(0,M.getNumberOfCells()):
                 if (i<M.getNumberOfCells()-1):
                     Del_UU_RL[0]=UU[i+1,0]-UU[i,0];
@@ -188,6 +177,7 @@ def main(meshName):
             writer.grab_frame()
 
             if (it%freqSortie==0):
+                print( "-- Iter : ", it," Time : ",time," dt : ",dt)
                 plt.savefig("EulerSystem"+str(dim)+"UpwindExplicit"+meshName+"_"+str(it)+".png")
             pass
 

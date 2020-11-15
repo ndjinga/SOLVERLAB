@@ -14,7 +14,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
-from matplotlib.ticker import FormatStrFormatter
 
 c0=330.#reference sound speed for water at 15 bars
 precision=1e-5
@@ -55,9 +54,14 @@ def main(meshName):
     M=Mesh(xmin,xmax,nx);
     dim=1
     
+    # initial time
+    time=0.;
+    # maximum time T
+    tmax=0.01;
+    it=0;
+    freqSortie=10;
     # CFL condition
     CFL=0.9;
-    # sound speed
     # conservative variable (unknown)
     UU=Field("Conservative variables",CELLS,M,2);
 
@@ -67,20 +71,14 @@ def main(meshName):
     vL=-300
     rhoR=2
     vR=-300
-    UU_L=Vector(2);
-    UU_L[0] = rhoL;
-    UU_L[1] = rhoL*vL;
-    UU_R=Vector(2);
-    UU_R[0] = rhoR;
-    UU_R[1] = rhoR*vR;
     for i in range(M.getNumberOfCells()):
         x=M.getCell(i).x();
         if x < (xmax-xmin)/2:
-            UU[i,0] = UU_L[0];
-            UU[i,1] = UU_L[1];
+            UU[i,0] = rhoL;
+            UU[i,1] = rhoL*vL;
         else:
-            UU[i,0] = UU_R[0];
-            UU[i,1] = UU_R[1];
+            UU[i,0] = rhoR;
+            UU[i,1] = rhoR*vR;
         pass
 
     rho_field = [ UU[i,0]          for i in range(nx)]
@@ -97,12 +95,15 @@ def main(meshName):
     max_initial_q=max(vL*rhoL,vR*rhoR)
     min_initial_q=min(vL*rhoL,vR*rhoR)
 
-    # initial time
-    time=0.;
-    # maximum time T
-    tmax=0.01;
-    it=0;
+    print( "Numerical solution of the 1D Euler equation")
 
+    # prepare some memory
+    UU_limL = Vector(2);
+    UU_limR = Vector(2);
+    Del_UU_RL = Vector(2);
+    UU_new = UU;
+    
+    # Picture settings
     fig, ([axDensity, axMomentum],[axVelocity, axPressure]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
     fig.suptitle('Explicit Upwind scheme')
     lineDensity, = axDensity.plot([xmin+0.5*dx + i*dx for i in range(nx)], rho_field, label='Density') #new picture for video # Returns a tuple of line objects, thus the comma
@@ -118,7 +119,7 @@ def main(meshName):
     lineVelocity, = axVelocity.plot([xmin+0.5*dx + i*dx for i in range(nx)], v_field, label='Velocity')
     axVelocity.set(xlabel='x (m)', ylabel='Velocity')
     axVelocity.set_xlim(xmin,xmax)
-    axVelocity.set_ylim(min_initial_v - 0.25*abs(min_initial_v), max_initial_v +  0.05*abs(max_initial_v) )
+    axVelocity.set_ylim(min_initial_v - 0.4*abs(min_initial_v), max_initial_v +  0.05*abs(max_initial_v) )
     axVelocity.legend()
     linePressure, = axPressure.plot([xmin+0.5*dx + i*dx for i in range(nx)], p_field, label='Pressure')
     axPressure.set(xlabel='x (m)', ylabel='Pressure')
@@ -129,24 +130,12 @@ def main(meshName):
  
     # Video settings
     FFMpegWriter = manimation.writers['ffmpeg']
-    metadata = dict(title="Upwind (Roe) scheme with ebtropic correction for the 1D isothermal Euler System", artist = "CEA Saclay", comment="Shock tube")
+    metadata = dict(title="Upwind (Roe) scheme with entropic correction for the 1D isothermal Euler System", artist = "CEA Saclay", comment="Shock tube")
     writer=FFMpegWriter(fps=10, metadata=metadata, codec='h264')
     with writer.saving(fig, "1DEuler_System_Upwind"+".mp4", ntmax):
         writer.grab_frame()
         plt.savefig("EulerSystem"+str(dim)+"UpwindExplicit"+meshName+"_0"+".png")
 
-        print( "Numerical solution for the Euler equation, at time = ",time," ...")
-
-        freqSortie=10;
-        # prepare some memory
-        UU_limL = Vector(2);
-        UU_limR = Vector(2);
-        flux_iminus = Vector(2);
-        flux_iplus = Vector(2);
-        absRoe = Matrix(2,2);
-        Del_UU_RL = Vector(2);
-        UU_new = UU;
-    
         # loop in time
         while (it<ntmax and time <= tmax ):
             # time step
