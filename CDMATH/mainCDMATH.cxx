@@ -1,7 +1,7 @@
 //============================================================================
 // Author      : Michael NDJINGA
 // Date        : November 2020
-// Description : 2D linear wave system on cartesian grid
+// Description : 2D linear wave system
 //============================================================================
 
 #include <iostream>
@@ -228,34 +228,50 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
         cout<< "Temps maximum Tmax= "<< tmax<< " atteint"<<endl;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     cout << "RESOLUTION OF THE 2D WAVE SYSTEM: Upwind explicit scheme" << endl;
-    cout << "- DOMAIN: SQUARE" << endl;
-    cout << "- MESH: CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl;
-    cout << "- PERIODIC BC" << endl;
+    cout << "- WALLC BC" << endl;
 
     // Problem data
     double cfl=0.49;
     double tmax=1.;
     double ntmax=1000;
     int freqSortie=10;
+    string fileOutPut="SphericalWave";
 
-    cout << "Construction of a cartesian mesh …" << endl;
-    double xinf=0.0;
-    double xsup=1.0;
-    double yinf=0.0;
-    double ysup=1.0;
-    int nx=100;
-    int ny=100;
-    Mesh myMesh(xinf,xsup,nx,yinf,ysup,ny);
-    double eps=1.E-10;
-    myMesh.setGroupAtPlan(xsup,0,eps,"RightEdge");
-    myMesh.setGroupAtPlan(xinf,0,eps,"LeftEdge");
-    myMesh.setGroupAtPlan(yinf,1,eps,"BottomEdge");
-    myMesh.setGroupAtPlan(ysup,1,eps,"TopEdge");
-    string fileOutPutCart="SphericalWave";
-    WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPutCart);
+	if(argc<2)
+	{
+	    cout << "- DOMAIN: SQUARE" << endl;
+	    cout << "- MESH: CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl;
+	    cout << "Construction of a cartesian mesh …" << endl;
+	    double xinf=0.0;
+	    double xsup=1.0;
+	    double yinf=0.0;
+	    double ysup=1.0;
+	    int nx=100;
+	    int ny=100;
+	    Mesh myMesh(xinf,xsup,nx,yinf,ysup,ny);
+	    double eps=1.E-10;
+	    myMesh.setGroupAtPlan(xsup,0,eps,"RightEdge");
+	    myMesh.setGroupAtPlan(xinf,0,eps,"LeftEdge");
+	    myMesh.setGroupAtPlan(yinf,1,eps,"BottomEdge");
+	    myMesh.setGroupAtPlan(ysup,1,eps,"TopEdge");
+
+		WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
+	}
+	else
+	{
+	    cout << "- DOMAIN: HEXAGON" << endl;
+	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
+	    cout << "Loading of a mesh …" << endl;
+	    string filename = argv[1];
+	    Mesh myMesh(filename);
+
+		WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
+	}
+	
     cout << "Simulation complete." << endl;
+
     return 0;
 }
