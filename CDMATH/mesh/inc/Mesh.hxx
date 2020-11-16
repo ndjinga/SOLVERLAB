@@ -344,7 +344,7 @@ public: //----------------------------------------------------------------
 	/**
 	 * \brief Compute the minimum value over all cells of the ratio cell perimeter/cell vaolume
 	 */
-    double minRatioVolSurf();
+    double minRatioVolSurf() const;
     
 	/**
 	 * \brief Compute the maximum number of neighbours around an element (cells around a cell or nodes around a node)

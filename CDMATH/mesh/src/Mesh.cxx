@@ -1920,7 +1920,7 @@ bool Mesh::isIndexFacePeriodicSet() const
 }
 //----------------------------------------------------------------------
 double 
-Mesh::minRatioVolSurf()
+Mesh::minRatioVolSurf() const
 {
     double dx_min  = 1e30;
     for(int i=0; i<_numberOfCells; i++)

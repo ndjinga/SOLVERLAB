@@ -92,7 +92,7 @@ INCLUDE_DIRECTORIES(						   					    #
 SET(CoreFlowsMain_SOURCES										    #
     ${CoreFlows_SRC}/src/Fluide.cxx									    #
     ${CoreFlows_SRC}/src/DiffusionEquation.cxx								    #
-    ${CoreFlows_SRC}/src/StationaryDiffusionEquation.cx							    #
+    ${CoreFlows_SRC}/src/StationaryDiffusionEquation.cxx							    #
     ${CoreFlows_SRC}/src/ProblemFluid.cxx								    #
     ${CoreFlows_SRC}/src/IsothermalTwoFluid.cxx								    #
     ${CoreFlows_SRC}/src/utilitaire_algebre.cxx								    #
