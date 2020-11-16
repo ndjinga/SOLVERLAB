@@ -53,10 +53,20 @@ set(CDMATH_INCLUDES
 	${BASE_DIR}/inc ${MESH_DIR}/inc ${LINEARSOLVER_DIR}/inc 
 	PARENT_SCOPE 	)
 
+set(CDMATH_INCLUDES 
+	${MEDFILE_INCLUDE_DIRS} ${MEDCOUPLING_INCLUDE_DIR}
+	${BASE_DIR}/inc ${MESH_DIR}/inc ${LINEARSOLVER_DIR}/inc 
+	)
+
 set (CDMATH_LIBRARIES
 	medC medloader	medcoupling
 	base mesh 	linearsolver
 	PARENT_SCOPE    )
+ 
+set (CDMATH_LIBRARIES
+	medC medloader	medcoupling
+	base mesh 	linearsolver
+	)
  
 # Swig interface
 if   (CDMATH_WITH_PYTHON)
@@ -104,6 +114,22 @@ endif(CDMATH_WITH_PACKAGE)
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_POSTPRO)
   add_subdirectory (postprocessing)
 endif ()
+
+#--------------------- COMPILATION MAIN --------------------------------------------------------------------#
+													    #
+INCLUDE_DIRECTORIES(						   					    #
+  ${CDMATH_INCLUDES}											    #
+  ${PETSC_INCLUDES}
+  ${SLEPC_INCLUDES}
+  )													    #
+												    #
+SET(MAIN_SOURCES									   #
+  mainCDMATH.cxx									   #
+  )											   #
+ADD_EXECUTABLE(cdmathMainExe ${MAIN_SOURCES})						   #
+SET_TARGET_PROPERTIES(cdmathMainExe PROPERTIES COMPILE_FLAGS "")			   #
+TARGET_LINK_LIBRARIES(cdmathMainExe ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES})				   #
+INSTALL(TARGETS cdmathMainExe DESTINATION bin)						   #
 
 # Configuration file
 configure_file(
