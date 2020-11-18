@@ -340,8 +340,16 @@ SparseMatrixPetsc::operator* (const Vector& vec) const
 	MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
 	MatMult(_mat,X,Y);
+ 
+	//Clean memory
+	VecDestroy(&X);
 
-	return vecToVector(Y);
+    Vector result=vecToVector(Y);
+
+	//Clean memory
+	VecDestroy(&Y);
+
+	return result;
 }
 
 SparseMatrixPetsc&
