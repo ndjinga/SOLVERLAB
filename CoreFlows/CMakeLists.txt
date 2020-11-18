@@ -89,20 +89,6 @@ INCLUDE_DIRECTORIES(						   					    #
   ${SLEPC_INCLUDES}
   )													    #
 													    #
-SET(CoreFlowsMain_SOURCES										    #
-    ${CoreFlows_SRC}/src/Fluide.cxx									    #
-    ${CoreFlows_SRC}/src/DiffusionEquation.cxx								    #
-    ${CoreFlows_SRC}/src/StationaryDiffusionEquation.cxx							    #
-    ${CoreFlows_SRC}/src/ProblemFluid.cxx								    #
-    ${CoreFlows_SRC}/src/IsothermalTwoFluid.cxx								    #
-    ${CoreFlows_SRC}/src/utilitaire_algebre.cxx								    #
-    ${CoreFlows_SRC}/src/DriftModel.cxx									    #
-    ${CoreFlows_SRC}/src/SinglePhase.cxx								    #
-    ${CoreFlows_SRC}/src/ProblemCoreFlows.cxx								    #
-    ${CoreFlows_SRC}/src/FiveEqsTwoFluid.cxx								    #
-    ${CoreFlows_SRC}/src/TransportEquation.cxx								    #
-  )													    #
-													    #
 SET(MAIN_SOURCES											    #
   mainCoreFlows.cxx												    #
   )													    #
