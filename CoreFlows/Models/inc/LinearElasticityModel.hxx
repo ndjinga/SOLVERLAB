@@ -59,14 +59,12 @@ public :
 
 	void setConstantDensity(double rho) { _rho=rho; }
 	void setDensityField(Field densityField) { _densityField=densityField; _densityFieldSet=true;}
-	void setLameCoefficient(double lambda, double mu) { _lambda = lambda; _mu = mu;}
+	void setLameCoefficients(double lambda, double mu) { _lambda = lambda; _mu = mu;}
 	void setYoungAndPoissonModuli(double E, double nu) { _lambda = E*nu/(1+nu)/(1-2*nu); _mu = E/2/(1+nu);}
 	void setGravity(Vector gravite ) { _gravity=gravite; }
 
     void setMesh(const Mesh &M);
-    void setFileName(string fileName){
-	_fileName = fileName;
-    }
+    void setFileName(string fileName){	_fileName = fileName;    }
     bool solveStationaryProblem();
     Field getOutputDisplacementField();
     

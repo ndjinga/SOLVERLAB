@@ -221,11 +221,10 @@ void LinearElasticityModel::initialize()
 	PCSetType(_pc, _pctype);
 
     //Checking whether all boundary conditions are Neumann boundary condition
-    //if(_FECalculation) _onlyNeumannBC = _NdirichletNodes==0;
     if(!_neumannValuesSet)//Boundary conditions set via LimitField structure
     {
-        map<string, LimitFieldStationaryDiffusion>::iterator it = _limitField.begin();
-        while(it != _limitField.end() and (it->second).bcType == NeumannStationaryDiffusion)
+        map<string, LimitFieldLinearElasticity>::iterator it = _limitField.begin();
+        while(it != _limitField.end() and (it->second).bcType == NeumannLinearElasticity)
             it++;
         _onlyNeumannBC = (it == _limitField.end() && _limitField.size()>0);//what if _limitField.size()==0 ???
     }
@@ -235,11 +234,6 @@ void LinearElasticityModel::initialize()
         else
             _onlyNeumannBC = _neumannBoundaryValues.size()==_mesh.getBoundaryFaceIds().size();
 
-    //Checking whether all boundaries are Neumann boundaries
-    map<string, LimitFieldLinearElasticity>::iterator it = _limitField.begin();
-    while(it != _limitField.end() and (it->second).bcType == NeumannLinearElasticity)
-        it++;
-    _onlyNeumannBC = (it == _limitField.end() && _limitField.size()>0);
     //If only Neumann BC, then matrix is singular and solution should be sought in space of mean zero vectors
     if(_onlyNeumannBC)
     {
@@ -389,9 +383,9 @@ double LinearElasticityModel::computeStiffnessMatrixFE(bool & stop){
                 {
                     j_int=unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
                     if( _neumannValuesSet )
-                        coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
+                        coeff =Fi.getMeasure()/(_Ndim+1)*_neumannBoundaryValues[Fi.getNodeId(j)];
                     else    
-                        coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalForce;
+                        coeff =Fi.getMeasure()/(_Ndim+1)*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalForce;
                     VecSetValue(_b, j_int, coeff, ADD_VALUES);
                 }
             }
@@ -414,7 +408,7 @@ double LinearElasticityModel::computeStiffnessMatrixFV(bool & stop){
 	Cell Cell1,Cell2;
 	string nameOfGroup;
 	double inv_dxi, inv_dxj;
-	double barycenterDistance;
+	double barycenterDistance,coeff;
 	Vector normale(_Ndim);
 	double dn;
 	PetscInt idm, idn;
@@ -464,7 +458,12 @@ double LinearElasticityModel::computeStiffnessMatrixFV(bool & stop){
             {
                 nameOfGroup = Fj.getGroupName();
     
-                if (_limitField[nameOfGroup].bcType==NeumannLinearElasticity){//Nothing to do
+                if (_limitField[nameOfGroup].bcType==NeumannLinearElasticity){
+                    if( _neumannValuesSet )
+                        coeff =Fi.getMeasure()*_neumannBoundaryValues[j];
+                    else    
+                        coeff =Fi.getMeasure()*_limitField[nameOfGroup].normalForce;
+                    VecSetValue(_b,idm,    coeff, ADD_VALUES);
                 }
                 else if(_limitField[nameOfGroup].bcType==DirichletLinearElasticity){
                     barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
