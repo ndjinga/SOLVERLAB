@@ -27,10 +27,10 @@ points = [geompy.MakeVertex(r * cos(i * pi / 3), r * sin(i * pi / 3), 0) for i i
 edges = [geompy.MakeEdge(points[i], points[i + 1]) for i in range(6)]
 wire = geompy.MakeWire(edges)
 hexa = geompy.MakeFace(wire, True)
-geompy.addToStudy(hexa, "hexa")
-g = create_group_from("boundaries", hexa, [geompy.GetInPlace(hexa, wire, 1)])
+geompy.addToStudy(hexa, "Hexagon")
+g = create_group_from("Hexagon_boundaries", hexa, [geompy.GetInPlace(hexa, wire, 1)])
 
-mesh = smesh.Mesh(hexa, "mesh")
+mesh = smesh.Mesh(hexa, "Hexagon_mesh"+str(NumberOfSegments))
 msurf = mesh.Triangle(algo=smeshBuilder.NETGEN_1D2D)
 NETGEN_2D_Simple_Parameters_1 = msurf.Parameters(smeshBuilder.SIMPLE)
 NETGEN_2D_Simple_Parameters_1.SetNumberOfSegments( NumberOfSegments )
