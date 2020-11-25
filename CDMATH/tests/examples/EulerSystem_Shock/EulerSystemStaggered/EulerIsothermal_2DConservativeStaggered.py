@@ -94,7 +94,7 @@ def jacobianMatricesm_x(coeff,rho_l,q_lx,q_ly,rho_r,q_rx,q_ry):
     Dmacx[0,1] = 1
     Dmacx[0,2] = 0
     Dmacx[1,0] = -c0*c0-ux*ux
-    Dmacx[1,1] = 2*ux
+    Dmacx[1,1] = abs(ux)+ux
     Dmacx[1,2] = 0
     Dmacx[2,0] = -ux*uy
     Dmacx[2,1] = uy
@@ -130,7 +130,7 @@ def jacobianMatricesp_x(coeff,rho_l,q_lx,q_ly,rho_r,q_rx,q_ry):
     Dmacx[0,1] = 1
     Dmacx[0,2] = 0
     Dmacx[1,0] = -c0*c0-ux*ux
-    Dmacx[1,1] = 2*ux
+    Dmacx[1,1] = abs(ux)+ux
     Dmacx[1,2] = 0
     Dmacx[2,0] = -ux*uy
     Dmacx[2,1] = uy
