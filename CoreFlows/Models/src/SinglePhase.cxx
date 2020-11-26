@@ -310,7 +310,7 @@ void SinglePhase::computeNewtonVariation()
 	}
 }
 void SinglePhase::convectionState( const long &i, const long &j, const bool &IsBord){
-
+	//First conservative state then further down we will compute interface (Roe) state and then compute primitive state
 	_idm[0] = _nVar*i; 
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
@@ -339,6 +339,8 @@ void SinglePhase::convectionState( const long &i, const long &j, const bool &IsB
 		_runLogFile->close();
 		throw CdmathException("densite negative, arret de calcul");
 	}
+	
+	//Computation of Roe state
 	PetscScalar ri, rj, xi, xj, pi, pj;
 	PetscInt Ii;
 	ri = sqrt(_Ui[0]);//racine carre de phi_i rho_i
@@ -384,6 +386,43 @@ void SinglePhase::convectionState( const long &i, const long &j, const bool &IsB
 		cout<<"Convection interfacial state"<<endl;
 		for(int k=0;k<_nVar;k++)
 			cout<< _Uroe[k]<<" , "<<endl;
+	}
+	
+	//Extraction of primitive states
+	_idm[0] = _nVar*i; // Kieu
+	for(int k=1; k<_nVar; k++)
+		_idm[k] = _idm[k-1] + 1;
+
+	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "Convection state: variables primitives maille " << i<<endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Vi[q] << endl;
+		cout << endl;
+	}
+
+	if(!IsBord ){
+		for(int k=0; k<_nVar; k++)
+			_idn[k] = _nVar*j + k;
+
+		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
+	}
+	else
+	{
+		for(int k=0; k<_nVar; k++)
+			_idn[k] = k;
+
+		VecGetValues(_Uextdiff, _nVar, _idn, _phi);
+		consToPrim(_phi,_Vj,1);
+	}
+
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "Convection state: variables primitives maille " <<j <<endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Vj[q] << endl;
+		cout << endl;
 	}
 }
 
@@ -455,7 +494,6 @@ void SinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const b
 		}
 		_Diffusion[_nVar*_nVar-1]=-lambda/(_Udiff[0]*Cv);
 	}
-
 }
 void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *normale){
 	_idm[0] = _nVar*j;
@@ -997,46 +1035,12 @@ void SinglePhase::addDiffusionToSecondMember
 	double lambda=_fluides[0]->getConductivity(_Udiff[_nVar-1]);
 	double mu = _fluides[0]->getViscosity(_Udiff[_nVar-1]);
 
+	if(isBord )
+		lambda=max(lambda,_heatTransfertCoeff);//wall nucleate boing -> larger heat transfer
+
 	if(lambda==0 && mu ==0 && _heatTransfertCoeff==0)
 		return;
 
-	//extraction des valeurs
-	_idm[0] = _nVar*i; // Kieu
-	for(int k=1; k<_nVar; k++)
-		_idm[k] = _idm[k-1] + 1;
-
-	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	if (_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout << "Calcul diffusion: variables primitives maille " << i<<endl;
-		for(int q=0; q<_nVar; q++)
-			cout << _Vi[q] << endl;
-		cout << endl;
-	}
-
-	if(!isBord ){
-		for(int k=0; k<_nVar; k++)
-			_idn[k] = _nVar*j + k;
-
-		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
-	}
-	else
-	{
-		lambda=max(lambda,_heatTransfertCoeff);//wall nucleate boing -> larger heat transfer
-		for(int k=0; k<_nVar; k++)
-			_idn[k] = k;
-
-		VecGetValues(_Uextdiff, _nVar, _idn, _phi);
-		consToPrim(_phi,_Vj,1);
-	}
-
-	if (_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout << "Calcul diffusion: variables primitives maille " <<j <<endl;
-		for(int q=0; q<_nVar; q++)
-			cout << _Vj[q] << endl;
-		cout << endl;
-	}
 	//on n'a pas de contribution sur la masse
 	_phi[0]=0;
 	//contribution visqueuse sur la quantite de mouvement
@@ -1631,7 +1635,6 @@ void SinglePhase::entropicShift(double* n)//TO do: make sure _Vi and _Vj are wel
 		ur_n += _Vj[1+i]*n[i];
 		ur_2 += _Vj[1+i]*_Vj[1+i];
 	}
-
 
 	double cl = _fluides[0]->vitesseSonEnthalpie(_Vi[_Ndim+1]-ul_2/2);//vitesse du son a l'interface
 	double cr = _fluides[0]->vitesseSonEnthalpie(_Vj[_Ndim+1]-ur_2/2);//vitesse du son a l'interface
