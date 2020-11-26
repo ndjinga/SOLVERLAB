@@ -269,7 +269,7 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 		converged = _erreur_rel <= _precision_Newton;
 	}
 
-	double relaxation=1;//Uk+1=Uk+relaxation*daltaU
+	double relaxation=1;//Uk+1=Uk+relaxation*deltaU
 
 	VecAXPY(_conservativeVars,  relaxation, _newtonVariation);
 
@@ -679,7 +679,6 @@ double ProblemFluid::computeTimeStep(bool & stop){
 
 	stop=false;
 
-
 	/*
 	if(_nbTimeStep+1<_cfl)
 		return (_nbTimeStep+1)*_minl/_maxvp;
@@ -889,13 +888,13 @@ void ProblemFluid::addConvectionToSecondMember
 	for(int k=0; k<_nVar; k++)
 		_idm[k] = _nVar*i + k;
 	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
-	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
+	VecGetValues(_primitiveVars,    _nVar, _idm, _Vi);
 
 	if(!isBord){
 		for(int k=0; k<_nVar; k++)
 			_idn[k] = _nVar*j + k;
 		VecGetValues(_conservativeVars, _nVar, _idn, _Uj);
-		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
+		VecGetValues(_primitiveVars,    _nVar, _idn, _Vj);
 	}
 	else{
 		for(int k=0; k<_nVar; k++)
@@ -1057,10 +1056,10 @@ void ProblemFluid::addConvectionToSecondMember
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"ProblemFluid::addConvectionToSecondMember end : matrices de décentrement cellules i= " << i << ", et j= " << j<< "):"<<endl;
-		displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
+		displayMatrix(_absAroe,   _nVar,"Valeur absolue matrice de Roe");
 		displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus");
-		displayMatrix(_AroePlus, _nVar,"Matrice _AroePlus");
-		displayMatrix(_signAroe, _nVar,"Signe de la matrice de Roe");
+		displayMatrix(_AroePlus,  _nVar,"Matrice _AroePlus");
+		displayMatrix(_signAroe,  _nVar,"Signe de la matrice de Roe");
 	}
 }
 
@@ -1236,6 +1235,7 @@ void ProblemFluid::updatePrimitives()
 			_idm[k] = _idm[k-1] + 1;
 
 		VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
+		consToPrim(_Ui,_Vi,_porosityField(i-1));
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout << "ProblemFluid::updatePrimitives() cell " << i-1 << endl;
@@ -1249,7 +1249,6 @@ void ProblemFluid::updatePrimitives()
 			cout << endl;
 		}
 
-		consToPrim(_Ui,_Vi,_porosityField(i-1));
 		if(_nbPhases==2 && _Psat>-1e30){//Cas simulation flashing
 			double pressure;
 			VecGetValues(_primitiveVars, 1, _idm+1, &pressure);

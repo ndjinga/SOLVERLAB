@@ -433,12 +433,11 @@ void SinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const b
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
-	_idm[0] = _nVar*j;
-	for(int k=1; k<_nVar; k++)
-		_idm[k] = _idm[k-1] + 1;
+	for(int k=0; k<_nVar; k++)
+		_idn[k] = k;
 
 	if(IsBord)
-		VecGetValues(_Uextdiff, _nVar, _idm, _Uj);
+		VecGetValues(_Uextdiff, _nVar, _idn, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
 
@@ -1032,8 +1031,8 @@ void SinglePhase::addDiffusionToSecondMember
 		bool isBord)
 
 {
-	double lambda=_fluides[0]->getConductivity(_Udiff[_nVar-1]);
-	double mu = _fluides[0]->getViscosity(_Udiff[_nVar-1]);
+	double lambda = _fluides[0]->getConductivity(_Udiff[_nVar-1]);
+	double mu     = _fluides[0]->getViscosity(_Udiff[_nVar-1]);
 
 	if(isBord )
 		lambda=max(lambda,_heatTransfertCoeff);//wall nucleate boing -> larger heat transfer
@@ -1041,15 +1040,23 @@ void SinglePhase::addDiffusionToSecondMember
 	if(lambda==0 && mu ==0 && _heatTransfertCoeff==0)
 		return;
 
+	_idm[0] = 0;
+	for(int k=1; k<_nVar; k++)
+		_idm[k] = _idm[k-1] + 1;
+	if(isBord)
+	{
+		VecGetValues(_Uextdiff, _nVar, _idm, _Uj);
+		_inv_dxj=_inv_dxi;
+	}
+
 	//on n'a pas de contribution sur la masse
 	_phi[0]=0;
 	//contribution visqueuse sur la quantite de mouvement
 	for(int k=1; k<_nVar-1; k++)
 		_phi[k] = _inv_dxi*2/(1/_inv_dxi+1/_inv_dxj)*mu*(_porosityj*_Vj[k] - _porosityi*_Vi[k]);
-
 	//contribution visqueuse sur l'energie
 	_phi[_nVar-1] = _inv_dxi*2/(1/_inv_dxi+1/_inv_dxj)*lambda*(_porosityj*_Vj[_nVar-1] - _porosityi*_Vi[_nVar-1]);
-
+	
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
@@ -1066,8 +1073,8 @@ void SinglePhase::addDiffusionToSecondMember
 		//On change de signe pour l'autre contribution
 		for(int k=0; k<_nVar; k++)
 			_phi[k] *= -_inv_dxj/_inv_dxi;
-		_idn[0] = j;
 
+		_idn[0] = j;
 		VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
