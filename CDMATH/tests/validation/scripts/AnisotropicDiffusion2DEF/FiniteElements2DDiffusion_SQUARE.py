@@ -154,7 +154,7 @@ def solve(filename,resolution,meshType, testColor):
     
     # Résolution du système linéaire
     #=================================
-    LS=cdmath.LinearSolver(Rigidite,RHS,100,1.E-6,"CG","ILU")#Remplacer CG par CHOLESKY pour solveur direct
+    LS=cdmath.LinearSolver(Rigidite,RHS,200,1.E-5,"CG","ILU")#Remplacer CG par CHOLESKY pour solveur direct
     LS.setComputeConditionNumber()
     SolSyst=LS.solve()
     
