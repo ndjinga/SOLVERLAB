@@ -329,10 +329,10 @@ def WaveSystemStaggered(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolu
             velocity_field.writeVTK("WaveSystem"+str(dim)+"DStaggered"+meshName+"_velocity",False);
 
             print("Ecart au stationnaire exact : error_p= ",delta_press/p0," error_||u||= ",delta_v.maxVector()[0])
-            print
-    print"-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt)
+            print( )
+    print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt) )
     print("Variation temporelle relative : pressure ", max_dp/p0 ,", velocity ", max_dq/rho0 )
-    print
+    print( )
 
     if(it>=ntmax):
         print("Nombre de pas de temps maximum ntmax= ", ntmax, " atteint")
