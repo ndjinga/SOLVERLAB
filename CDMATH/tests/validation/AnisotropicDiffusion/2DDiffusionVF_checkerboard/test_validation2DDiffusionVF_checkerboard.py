@@ -57,7 +57,7 @@ def test_validation2DVF_checkerboard():
     a=( a3*b1-a2*b2)/det
     b=(-a2*b1+a1*b2)/det
     
-    print "FV for diffusion on 2D checkerboard meshes : scheme order is ", -a
+    print( "FV for diffusion on 2D checkerboard meshes : scheme order is ", -a)
     assert abs(a+0.5475)<0.001 #The scheme is not converging
     
     # Plot of convergence curve

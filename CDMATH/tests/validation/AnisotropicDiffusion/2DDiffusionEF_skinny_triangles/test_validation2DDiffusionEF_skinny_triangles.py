@@ -34,8 +34,8 @@ def test_validation2DEF_skinny_triangles():
         assert min_tab[i]>-0.01 
         assert max_tab[i]<1.2
         plt.plot(curv_abs, diag_data[i], label= str(mesh_size_tab[i]) + ' nodes')
-        error_tab[i]=log10(error_tab[i])
         time_tab[i]=log10(time_tab[i])
+        error_tab[i]=log10(error_tab[i])
         i=i+1
     
     end = time.time()
@@ -76,7 +76,7 @@ def test_validation2DEF_skinny_triangles():
     b=(-a2*b1+a1*b2)/det
     
     print( "FE on 2D skinny triangle mesh : scheme order is ", -a )
-    assert abs(a+1.397)<0.1
+    assert abs(a+1.54)<0.1
 
     # Plot of convergence curves
     plt.close()

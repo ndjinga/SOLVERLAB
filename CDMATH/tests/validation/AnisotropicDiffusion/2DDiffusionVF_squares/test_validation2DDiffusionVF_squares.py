@@ -62,7 +62,7 @@ def test_validation2DVF_squares():
     a=( a3*b1-a2*b2)/det
     b=(-a2*b1+a1*b2)/det
     
-    print "FV for diffusion on 2D rectangular meshes : scheme order is ", -a
+    print( "FV for diffusion on 2D rectangular meshes : scheme order is ", -a)
     assert abs(a+2)<0.1
     
     # Plot of convergence curve
