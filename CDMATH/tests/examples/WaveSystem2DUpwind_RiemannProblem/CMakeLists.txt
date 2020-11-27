@@ -8,7 +8,7 @@ SET(MESH_MED
   ../../ressources/squareWithHexagons.med
   )
 
-file(COPY ${MESH_MED} DESTINATION ${CMAKE_BINARY_DIR}/tests/examples/WaveSystemUpwind)
+file(COPY ${MESH_MED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 install(FILES ${MESH_MED} DESTINATION share/examples/WaveSystemUpwind)
 
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
