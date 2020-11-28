@@ -176,7 +176,6 @@ def solve(filename,resolution,meshType, testColor):
     #=================================
     LS=cdmath.LinearSolver(Rigidite,RHS,100,1.E-6,"CG","CHOLESKY")
     LS.setMatrixIsSingular()#En raison de l'absence de bord
-    LS.setComputeConditionNumber()
     SolSyst=LS.solve()
 
     print( "Preconditioner used : ", LS.getNameOfPc() )
@@ -190,7 +189,6 @@ def solve(filename,resolution,meshType, testColor):
     test_desc["Linear_solver_maximum_iterations"]=LS.getNumberMaxOfIter()
     test_desc["Linear_system_max_actual_iterations_number"]=LS.getNumberOfIter()
     test_desc["Linear_system_max_actual_error"]=LS.getResidu()
-    test_desc["Linear_system_max_actual_condition number"]=LS.getConditionNumber()
 
     # Création du champ résultat
     #===========================
