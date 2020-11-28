@@ -24,9 +24,9 @@ double precision=1e-5;
 
 void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity_field)
 {
-    double rayon=0.15;
-    double xcentre=0.5;
-    double ycentre=0.5;
+    double rayon=0.35;
+    double xcentre=0.;
+    double ycentre=0;
 
     int dim    =my_mesh.getMeshDimension();
     int nbCells=my_mesh.getNumberOfCells();
@@ -143,7 +143,7 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 	/* Retrieve mesh data */
     int dim=my_mesh.getMeshDimension();
     int nbCells = my_mesh.getNumberOfCells();
-    std::string meshName=my_mesh.getName();
+    std::string meshName="HEXAGON800";//my_mesh.getName();
     int nbVoisinsMax=my_mesh.getMaxNbNeighbours(CELLS);
     double dx_min=my_mesh.minRatioVolSurf();
 
@@ -227,17 +227,17 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
     else
         cout<< "Temps maximum Tmax= "<< tmax<< " atteint"<<endl;
 }
-
+ 
 int main(int argc, char *argv[])
 {
     cout << "RESOLUTION OF THE 2D WAVE SYSTEM: Upwind explicit scheme" << endl;
-    cout << "- WALLC BC" << endl;
+    cout << "- WALL BC" << endl;
 
     // Problem data
     double cfl=0.49;
     double tmax=1.;
-    double ntmax=1000;
-    int freqSortie=10;
+    double ntmax=20000;
+    int freqSortie=100;
     string fileOutPut="SphericalWave";
 
 	if(argc<2)
@@ -249,8 +249,8 @@ int main(int argc, char *argv[])
 	    double xsup=1.0;
 	    double yinf=0.0;
 	    double ysup=1.0;
-	    int nx=100;
-	    int ny=100;
+	    int nx=300;
+	    int ny=300;
 	    Mesh myMesh(xinf,xsup,nx,yinf,ysup,ny);
 	    double eps=1.E-10;
 	    myMesh.setGroupAtPlan(xsup,0,eps,"RightEdge");
@@ -262,7 +262,6 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-	    cout << "- DOMAIN: HEXAGON" << endl;
 	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
 	    cout << "Loading of a mesh …" << endl;
 	    string filename = argv[1];
