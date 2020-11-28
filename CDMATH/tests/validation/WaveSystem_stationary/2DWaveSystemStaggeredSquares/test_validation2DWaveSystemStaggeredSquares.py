@@ -40,7 +40,7 @@ def test_validation2DWaveSystemStaggered_squares(scaling):
         my_mesh=cdmath.Mesh(0,1,nx,0,1,nx)
         error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i], cond_number[i] =WaveSystemStaggered.solve(my_mesh,str(nx)+'x'+str(nx),resolution,scaling,meshType,testColor,cfl)
         #error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i], cond_number[i] =WaveSystemStaggered.solve_file(mesh_path+filename, mesh_name, resolution,scaling,meshType,testColor,cfl)
-        assert max_vel[i]>0.8 and max_vel[i]<1.5
+        assert max_vel[i]>0.1 and max_vel[i]<1.5
         if(error_p_tab[i]>0):
             error_p_tab[i]=log10(error_p_tab[i])
         else:
