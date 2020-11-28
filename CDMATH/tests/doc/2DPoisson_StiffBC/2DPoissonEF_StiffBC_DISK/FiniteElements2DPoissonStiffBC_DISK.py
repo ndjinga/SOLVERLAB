@@ -44,9 +44,9 @@ def gradientNodal(M, values):
 
     return result
 
-def solve(filename,resolution,meshType, testColor):
+def solve(filename,resolution,meshName, testColor):
     start = time.time()
-    test_desc["Mesh_type"]=meshType
+    test_desc["Mesh_name"]=meshName
     test_desc["Test_color"]=testColor
     
     #Chargement du maillage triangulaire du disque unité D(0,1)
@@ -88,7 +88,7 @@ def solve(filename,resolution,meshType, testColor):
         #Robust calculation of atan(2x/(x**2+y**2-1)
         #my_ExactSol[i]=atan2(2*x*sign(x**2+y**2-1),abs(x**2+y**2-1))#mettre la solution exacte de l'edp
         if x**2+y**2-1 > eps :
-            print("!!! Warning Mesh ", meshType," !!! Node is not in the unit disk.",", eps=",eps, ", x**2+y**2 - 1=",x**2+y**2 - 1)
+            print("!!! Warning Mesh ", meshName," !!! Node is not in the unit disk.",", eps=",eps, ", x**2+y**2-1=",x**2+y**2 - 1)
             #raise ValueError("!!! Domain should be the unit disk.")
         if x**2+y**2-1 < -eps :
             my_ExactSol[i] = atan(2*x/(x**2+y**2-1))
@@ -154,9 +154,9 @@ def solve(filename,resolution,meshType, testColor):
         values1=[0,1,0]
         values2=[0,0,1]
     
-        GradShapeFunc0 = gradientNodal(M,values0)/2
-        GradShapeFunc1 = gradientNodal(M,values1)/2
-        GradShapeFunc2 = gradientNodal(M,values2)/2
+        GradShapeFunc0 = gradientNodal(M,values0)*0.5
+        GradShapeFunc1 = gradientNodal(M,values1)*0.5
+        GradShapeFunc2 = gradientNodal(M,values2)*0.5
     
         #Création d'un tableau (numéro du noeud, gradient de la fonction de forme)
         GradShapeFuncs={nodeId0 : GradShapeFunc0}
@@ -189,7 +189,7 @@ def solve(filename,resolution,meshType, testColor):
                         else:
                             u2=0
                         boundaryContributionAdded=True#Contribution from the boundary to matrix line j is done in one step
-                        GradGh = gradientNodal(M,[u0,u1,u2])/2
+                        GradGh = gradientNodal(M,[u0,u1,u2])*0.5
                         RHS[j_int] += -(GradGh*GradShapeFuncs[j])/Ci.getMeasure()
 
     print("Linear system matrix building done")
@@ -221,8 +221,7 @@ def solve(filename,resolution,meshType, testColor):
     for j in range(nbBoundaryNodes):
         my_ResultField[boundaryNodes[j]]=my_ExactSol[boundaryNodes[j]];#remplissage des valeurs pour les noeuds frontière (condition limite)
     #sauvegarde sur le disque dur du résultat dans un fichier paraview
-    my_ResultField.writeVTK("FiniteElements2DPoissonStiffBC_DISK_"+meshType+str(nbNodes))
-    my_ExactSol.writeVTK("ExactSol2DPoissonStiffBC_DISK_"+meshType+str(nbNodes))
+    my_ResultField.writeVTK("FiniteElements2DPoissonStiffBC_DISK_"+meshName+str(nbNodes))
     
     print("Numerical solution of 2D Poisson equation on a disk using finite elements done")
     
@@ -242,14 +241,13 @@ def solve(filename,resolution,meshType, testColor):
     # Extraction of the diagonal data
     diag_data=VTK_routines.Extract_field_data_over_line_to_numpyArray(my_ResultField,[0,-1,0],[0,1,0], resolution)
     # save 2D picture
-    PV_routines.Save_PV_data_to_picture_file("FiniteElements2DPoissonStiffBC_DISK_"+meshType+str(nbNodes)+'_0.vtu',"ResultField",'NODES',"FiniteElements2DPoissonStiffBC_DISK_"+meshType+str(nbNodes))
-    PV_routines.Save_PV_data_to_picture_file("ExactSol2DPoissonStiffBC_DISK_"+meshType+str(nbNodes)+'_0.vtu',"Exact_field",'NODES',"ExactSol2DPoissonStiffBC_DISK_"+meshType+str(nbNodes))
+    PV_routines.Save_PV_data_to_picture_file("FiniteElements2DPoissonStiffBC_DISK_"+meshName+str(nbNodes)+'_0.vtu',"ResultField",'NODES',"FiniteElements2DPoissonStiffBC_DISK_"+meshName+str(nbNodes))
     
     test_desc["Computational_time_taken_by_run"]=end-start
     test_desc["Absolute_error"]=l2_error
     test_desc["Relative_error"]=l2_error/l2_norm_sol_exacte
 
-    with open('test_PoissonStiffBC'+str(my_mesh.getMeshDimension())+'D_EF_'+"DISK_"+meshType+str(nbCells)+ "Cells.json", 'w') as outfile:  
+    with open('test_PoissonStiffBC'+str(my_mesh.getMeshDimension())+'D_EF_'+"DISK_"+meshName+str(nbCells)+ "Cells.json", 'w') as outfile:  
         json.dump(test_desc, outfile)
 
     return l2_error/l2_norm_sol_exacte, nbNodes, diag_data, my_ResultField.min(), my_ResultField.max(), end - start
