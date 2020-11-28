@@ -28,11 +28,11 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
     SET(MESH_FILE  ../../../ressources/meshCube.med  )
 
-    ADD_TEST(ExampleEulerSystem_3DShock_UpwindExplicit_CUBE_tetrahedra ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
+    #ADD_TEST(ExampleEulerSystem_3DShock_UpwindExplicit_CUBE_tetrahedra ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
 
     SET(MESH_FILE  ../../../ressources/cubeWithCubes.med  )
 
-    ADD_TEST(ExampleEulerSystem_3DShock_UpwindExplicit_CUBE_cubes ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
+    #ADD_TEST(ExampleEulerSystem_3DShock_UpwindExplicit_CUBE_cubes ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
 
     SET(MESH_FILE  ../../../ressources/diskWithTriangles.med  )
 
@@ -66,11 +66,11 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
     SET(MESH_FILE  ../../../ressources/meshCube.med  )
 
-    ADD_TEST(ExampleEulerSystem_3DShock_UpwindImplicit_CUBE_tetrahedra ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
+    #ADD_TEST(ExampleEulerSystem_3DShock_UpwindImplicit_CUBE_tetrahedra ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
 
     SET(MESH_FILE  ../../../ressources/cubeWithCubes.med  )
 
-    ADD_TEST(ExampleEulerSystem_3DShock_UpwindImplicit_CUBE_cubes ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
+    #ADD_TEST(ExampleEulerSystem_3DShock_UpwindImplicit_CUBE_cubes ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystemUpwind.py  ${MESH_FILE} ${IMPLICIT_SCHEME})
 
     SET(MESH_FILE  ../../../ressources/diskWithTriangles.med  )
 
