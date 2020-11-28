@@ -297,7 +297,6 @@ def WaveSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolution,sc
         LS=cdmath.LinearSolver(divMat,Un+S*dt,iterGMRESMax, precision, "GMRES","ILU")
     else:
         LS=cdmath.LinearSolver(divMat,Vn+S*dt,iterGMRESMax, precision, "GMRES","ILU")
-    LS.setComputeConditionNumber()
 
     test_desc["Linear_solver_algorithm"]=LS.getNameOfMethod()
     test_desc["Linear_solver_preconditioner"]=LS.getNameOfPc()

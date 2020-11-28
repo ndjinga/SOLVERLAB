@@ -289,7 +289,6 @@ def WaveSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolution,sc
         LS=cdmath.LinearSolver(divMat,Un+S*dt,iterGMRESMax, precision, "GMRES","ILU")
     else:
         LS=cdmath.LinearSolver(divMat,Vn+S*dt,iterGMRESMax, precision, "GMRES","ILU")
-    LS.setComputeConditionNumber()
 
     test_desc["Linear_solver_algorithm"]=LS.getNameOfMethod()
     test_desc["Linear_solver_preconditioner"]=LS.getNameOfPc()
@@ -331,7 +330,6 @@ def WaveSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolution,sc
         
         test_desc["Linear_system_max_actual_iterations_number"]=max(LS.getNumberOfIter(),test_desc["Linear_system_max_actual_iterations_number"])
         test_desc["Linear_system_max_actual_error"]=max(LS.getResidu(),test_desc["Linear_system_max_actual_error"])
-        test_desc["Linear_system_max_actual_condition number"]=max(LS.getConditionNumber(),test_desc["Linear_system_max_actual_condition number"])
 
         maxVector=dUn.maxVector(dim+1)
 
@@ -383,7 +381,7 @@ def WaveSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolution,sc
             else:
                 print("Ecart au stationnaire exact : error_p= ",delta_press/p0," error_||u||= ",delta_v.maxVector()[0])
             print
-    print"-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt)
+    print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
     if(with_source):
         print("Variation temporelle relative : pressure ", maxVector[0]    ,", velocity x", maxVector[1]/rho0 ,", velocity y", maxVector[2]/rho0)
     else:
