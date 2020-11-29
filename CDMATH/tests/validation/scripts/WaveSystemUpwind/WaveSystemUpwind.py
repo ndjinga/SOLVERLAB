@@ -354,7 +354,7 @@ def WaveSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolution,sc
     
         #Sauvegardes
         if(it==1 or it%output_freq==0 or it>=ntmax or isStationary or time >=tmax):
-            print"-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt)
+            print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
             if(with_source):
                 print("Variation temporelle relative : pressure ", maxVector[0]    ,", velocity x", maxVector[1]/rho0 ,", velocity y", maxVector[2]/rho0)
             else:
