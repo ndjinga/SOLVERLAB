@@ -179,10 +179,10 @@ double TransportEquation::computeTransportMatrix(){
 			}
 			nameOfGroup = Fj.getGroupName();
 
-			if (_limitField[nameOfGroup].bcType==NeumannTransport){
+			if     (_limitField[nameOfGroup].bcType==NeumannTransport || _limitField[nameOfGroup].bcType==OutletTransport ){
 				MatSetValue(_A,idm,idm,inv_dxi*un, ADD_VALUES);
 			}
-			else if(_limitField[nameOfGroup].bcType==InletTransport){
+			else if(_limitField[nameOfGroup].bcType==InletTransport   || _limitField[nameOfGroup].bcType==DirichletTransport){
 				if(un>0){
 					MatSetValue(_A,idm,idm,inv_dxi*un, ADD_VALUES);
 				}
@@ -191,9 +191,9 @@ double TransportEquation::computeTransportMatrix(){
 					VecSetValue(_b0,idm,-inv_dxi*un*hk, ADD_VALUES);
 				}
 			}
-			else {
+			else {//bcType=NoneBCTransport
 				cout<<"!!!!!!!!!!!!!!! Error TransportEquation::computeTransportMatrix() !!!!!!!!!!"<<endl;
-				cout<<"!!!!!!!!! Boundary condition not treated for boundary named "<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<" !!!!!!!!!!!!!! "<<endl;
+				cout<<"!!!!!!!!! Boundary condition not set for boundary named "<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<" !!!!!!!!!!!!!! "<<endl;
 				cout<<"Accepted boundary conditions are NeumannTransport "<<NeumannTransport<< " and InletTransport "<< InletTransport <<endl;
 				throw CdmathException("Boundary condition not accepted");
 			}
