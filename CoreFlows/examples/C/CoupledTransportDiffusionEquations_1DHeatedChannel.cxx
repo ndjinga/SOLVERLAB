@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 	//Preprocessing: mesh and group creation
 	double xinf=0.0;
 	double xsup=4.2;
-	int nx=100;
+	int nx=2;//100;
 	double eps=1.E-6;
 	cout << "Building of the diffusion mesh with "<<nx<<" cells" << endl;
 	Mesh diffusionMesh(xinf,xsup,nx);
@@ -49,7 +49,10 @@ int main(int argc, char** argv)
 	LimitFieldTransport limitInlet;
 	limitInlet.bcType=InletTransport;
 	limitInlet.h =1.3e6;//Inlet water enthalpy
+	LimitFieldTransport limitTransportNeumann;
+	limitTransportNeumann.bcType=NeumannTransport;
 	boundaryFieldsTransport["Inlet"] = limitInlet;
+	boundaryFieldsTransport["Neumann"] = limitTransportNeumann;
 
 	//Set the fluid transport velocity
 	vector<double> transportVelocity(1,5);//Vitesse du fluide
