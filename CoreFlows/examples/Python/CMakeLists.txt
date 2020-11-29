@@ -158,8 +158,8 @@ function(CreatePythonConvergenceTest model convergenceTest pythonSolver MESHES_A
     file(COPY convergence_${model}_${convergenceTest}.py ../${pythonSolver} ${MY_MESHES_AND_PICTURES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE )
 
     add_test(convergence_${model}_${convergenceTest} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/convergence_${model}_${convergenceTest}.py)
-    SET_PROPERTY(TEST convergence_${model}_${convergenceTest}        PROPERTY ENVIRONMENT LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH} )
-    SET_PROPERTY(TEST convergence_${model}_${convergenceTest} APPEND PROPERTY ENVIRONMENT      PYTHONPATH=${TESTS_PYTHON_PATH} )
+    #SET_PROPERTY(TEST convergence_${model}_${convergenceTest}        PROPERTY ENVIRONMENT LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH} )
+    #SET_PROPERTY(TEST convergence_${model}_${convergenceTest} APPEND PROPERTY ENVIRONMENT      PYTHONPATH=${TESTS_PYTHON_PATH} )
 
 endfunction(CreatePythonConvergenceTest)
 
