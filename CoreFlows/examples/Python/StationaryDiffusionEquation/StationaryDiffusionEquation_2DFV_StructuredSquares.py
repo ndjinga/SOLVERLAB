@@ -31,7 +31,7 @@ def StationaryDiffusionEquation_2DFV_StructuredSquares():
 	M.setGroupAtPlan(ysup,1,eps,"Bord3")
 	M.setGroupAtPlan(yinf,1,eps,"Bord4")
 	
-	print "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells"
+	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
 
 	FEComputation=False
 	myProblem = cf.StationaryDiffusionEquation(spaceDim,FEComputation);
@@ -89,10 +89,10 @@ def StationaryDiffusionEquation_2DFV_StructuredSquares():
 		
 		print("Absolute error = max(| exact solution - numerical solution |) = ",erreur_abs )
 		print("Relative error = max(| exact solution - numerical solution |)/max(| exact solution |) = ",erreur_abs/max_abs_sol_exacte)
-		print ("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
+		print("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
 		
 		assert erreur_abs/max_abs_sol_exacte <1.
-        pass
+		pass
 
 	print( "------------ !!! End of calculation !!! -----------" );
 

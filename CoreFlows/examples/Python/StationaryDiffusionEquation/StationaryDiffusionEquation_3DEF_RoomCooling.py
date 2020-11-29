@@ -19,7 +19,7 @@ def StationaryDiffusionEquation_3DEF_RoomCooling():
 	#==============================================
 	my_mesh = cdmath.Mesh("../resources/RoomWithTetras2488.med")
 	
-	print "Loaded unstructured 3D mesh"
+	print( "Loaded unstructured 3D mesh")
 	
 	#Conditions limites
 	Tmur=20

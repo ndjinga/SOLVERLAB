@@ -36,7 +36,7 @@ def StationaryDiffusionEquation_3DEF_StructuredTriangles():
 	M.setGroupAtPlan(zsup,2,eps,"Bord5")
 	M.setGroupAtPlan(zinf,2,eps,"Bord6")
 	
-	print "Built a regular tetrahedra 3D mesh from a cube mesh with ", nx,"x" ,ny,"x" ,nz, " cells"
+	print( "Built a regular tetrahedra 3D mesh from a cube mesh with ", nx,"x" ,ny,"x" ,nz, " cells")
 
 	FEComputation=True
 	myProblem = cf.StationaryDiffusionEquation(spaceDim,FEComputation);
@@ -98,10 +98,10 @@ def StationaryDiffusionEquation_3DEF_StructuredTriangles():
 		
 		print("Absolute error = max(| exact solution - numerical solution |) = ",erreur_abs )
 		print("Relative error = max(| exact solution - numerical solution |)/max(| exact solution |) = ",erreur_abs/max_abs_sol_exacte)
-		print ("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
+		print("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
 		
 		assert erreur_abs/max_abs_sol_exacte <1.
-        pass
+		pass
 
 	print( "------------ !!! End of calculation !!! -----------" );
 

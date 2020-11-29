@@ -31,18 +31,12 @@ def StationaryDiffusionEquation_2DFV_StructuredSquares_Neumann():
 	M.setGroupAtPlan(ysup,1,eps,"Bord3")
 	M.setGroupAtPlan(yinf,1,eps,"Bord4")
 	
-	print "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells"
+	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
 
 	FEComputation=False
 	myProblem = cf.StationaryDiffusionEquation(spaceDim,FEComputation);
 	myProblem.setMesh(M);
 
-	# set the limit value for each boundary
-	T1=0;
-	T2=0;
-	T3=0;
-	T4=0;
-	
 	myProblem.setNeumannBoundaryCondition("Bord1")
 	myProblem.setNeumannBoundaryCondition("Bord2")
 	myProblem.setNeumannBoundaryCondition("Bord3")
@@ -89,10 +83,10 @@ def StationaryDiffusionEquation_2DFV_StructuredSquares_Neumann():
 		
 		print("Absolute error = max(| exact solution - numerical solution |) = ",erreur_abs )
 		print("Relative error = max(| exact solution - numerical solution |)/max(| exact solution |) = ",erreur_abs/max_abs_sol_exacte)
-		print ("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
+		print("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
 		
 		assert erreur_abs/max_abs_sol_exacte <1.
-        pass
+		pass
 
 	print( "------------ !!! End of calculation !!! -----------" );
 

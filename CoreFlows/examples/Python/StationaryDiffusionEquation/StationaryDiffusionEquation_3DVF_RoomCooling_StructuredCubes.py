@@ -19,7 +19,7 @@ def StationaryDiffusionEquation_3DVF_RoomCooling_StructuredCubes():
 	#==============================================
 	my_mesh = cdmath.Mesh("../resources/RoomWithCubes480.med")
 	
-	print "Loaded Structured 3D mesh"
+	print( "Loaded Structured 3D mesh")
 	
 	#Conditions limites
 	Tmur=20
