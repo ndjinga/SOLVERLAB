@@ -28,12 +28,6 @@ int main(int argc, char** argv)
 	M.setGroupAtPlan(ysup,1,eps,"Bord3");
 	M.setGroupAtPlan(yinf,1,eps,"Bord4");
 
-    /* set the boundary values for each boundary */
-	double T1=0;
-	double T2=0;
-	double T3=0;
-	double T4=0;
-
 	cout<< "Building of a regular triangular 2D mesh from a square mesh with "<< nx<<"x" <<ny<< " cells"<<endl;
 
     /* Create the problem */
