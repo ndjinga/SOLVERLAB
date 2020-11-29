@@ -17,12 +17,12 @@ int main(int argc, char** argv)
 	double ysup=1.0;
 	double zinf=0.0;
 	double zsup=1.0;
-	int nx=2;
-	int ny=2;
-	int nz=2;
+	int nx=10;
+	int ny=10;
+	int nz=10;
 
     /* Mesh construction : splitting polity to 0 yield all nodes considered boundary nodes */
-	Mesh M(xinf,xsup,nx,yinf,ysup,ny,zinf,zsup,nz,0); //Regular tetrahadral mesh
+	Mesh M(xinf,xsup,nx,yinf,ysup,ny,zinf,zsup,nz,1); //Regular tetrahadral mesh
 
 	/* set the limit field for each boundary */
 	double eps=1e-6;
