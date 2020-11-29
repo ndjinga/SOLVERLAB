@@ -21,8 +21,8 @@ def StationaryDiffusionEquation_2DEF_StructuredTriangles_Neumann():
 	xsup = 1.0;
 	yinf = 0.0;
 	ysup = 1.0;
-	nx=20;
-	ny=20; 
+	nx=3;
+	ny=3; 
 	M=cm.Mesh(xinf,xsup,nx,yinf,ysup,ny,0)#Regular triangular mesh
 	# set the limit field for each boundary
 	eps=1e-6;
@@ -31,7 +31,7 @@ def StationaryDiffusionEquation_2DEF_StructuredTriangles_Neumann():
 	M.setGroupAtPlan(ysup,1,eps,"Bord3")
 	M.setGroupAtPlan(yinf,1,eps,"Bord4")
 	
-	print "Built a regular triangular 2D mesh from a square mesh with ", nx,"x" ,ny, " cells"
+	print( "Built a regular triangular 2D mesh from a square mesh with ", nx,"x" ,ny, " cells")
 
 	FEComputation=True
 	myProblem = cf.StationaryDiffusionEquation(spaceDim,FEComputation);
@@ -86,7 +86,7 @@ def StationaryDiffusionEquation_2DEF_StructuredTriangles_Neumann():
 		print ("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
 		
 		assert erreur_abs/max_abs_sol_exacte <1.
-        pass
+		pass
 
 	print( "------------ !!! End of calculation !!! -----------" );
 
