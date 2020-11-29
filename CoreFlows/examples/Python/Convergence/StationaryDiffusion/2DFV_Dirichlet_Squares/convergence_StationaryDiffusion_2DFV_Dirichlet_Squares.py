@@ -27,18 +27,18 @@ def convergence_StationaryDiffusion_2DFV_Dirichlet_Squares():
     curv_abs=np.linspace(0,sqrt(2),resolution+1)
     plt.close('all')
     i=0
-    testColor="Green"		
+    testColor="Green"        
     # Storing of numerical errors, mesh sizes and diagonal values
     for nx in meshList:
-		my_mesh=cm.Mesh(0,1,nx,0,1,nx)
-		error_tab[i], mesh_size_tab[i], diag_data[i], min_sol_num, max_sol_num, time_tab[i] =validationStationaryDiffusionEquation.SolveStationaryDiffusionEquation(my_mesh,resolution,meshType,method,BC)
-		assert min_sol_num>	1e-5 
-		assert max_sol_num<1.04
-		plt.plot(curv_abs, diag_data[i], label= str(mesh_size_tab[i]) + ' cells')
-		error_tab[i]=log10(error_tab[i])
-		time_tab[i]=log10(time_tab[i])
-		mesh_size_tab[i] = 0.5*log10(mesh_size_tab[i])
-		i=i+1
+        my_mesh=cm.Mesh(0,1,nx,0,1,nx)
+        error_tab[i], mesh_size_tab[i], diag_data[i], min_sol_num, max_sol_num, time_tab[i] =validationStationaryDiffusionEquation.SolveStationaryDiffusionEquation(my_mesh,resolution,meshType,method,BC)
+        assert min_sol_num>    1e-5 
+        assert max_sol_num<1.04
+        plt.plot(curv_abs, diag_data[i], label= str(mesh_size_tab[i]) + ' cells')
+        error_tab[i]=log10(error_tab[i])
+        time_tab[i]=log10(time_tab[i])
+        mesh_size_tab[i] = 0.5*log10(mesh_size_tab[i])
+        i=i+1
         
     end = time.time()
 
@@ -63,7 +63,7 @@ def convergence_StationaryDiffusion_2DFV_Dirichlet_Squares():
     a=( a3*b1-a2*b2)/det
     b=(-a2*b1+a1*b2)/det
     
-    print "FV for diffusion on 2D square meshes: scheme order is ", -a
+    print( "FV for diffusion on 2D square meshes: scheme order is ", -a)
     assert abs(a+2)<0.1
     
     # Plot of convergence curve
@@ -107,4 +107,4 @@ def convergence_StationaryDiffusion_2DFV_Dirichlet_Squares():
     with open('Convergence_Poisson_2DFV_'+mesh_name+'.json', 'w') as outfile:  
         json.dump(convergence_synthesis, outfile)
 if __name__ == """__main__""":
-	convergence_StationaryDiffusion_2DFV_Dirichlet_Squares()
+    convergence_StationaryDiffusion_2DFV_Dirichlet_Squares()

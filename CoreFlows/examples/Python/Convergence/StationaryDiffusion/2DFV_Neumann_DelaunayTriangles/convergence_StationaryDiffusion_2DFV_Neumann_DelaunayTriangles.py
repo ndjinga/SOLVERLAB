@@ -31,16 +31,16 @@ def convergence_StationaryDiffusion_2DFV_Neumann_DelaunayTriangles():
     testColor="Red"#Linear solver fails
     # Storing of numerical errors, mesh sizes and diagonal values
     for filename in meshList:
-		my_mesh=cm.Mesh(mesh_path+filename+".med")
-		error_tab[i], mesh_size_tab[i], diag_data[i], min_sol_num, max_sol_num, time_tab[i] =validationStationaryDiffusionEquation.SolveStationaryDiffusionEquation(my_mesh,resolution,meshType,method,BC)
+        my_mesh=cm.Mesh(mesh_path+filename+".med")
+        error_tab[i], mesh_size_tab[i], diag_data[i], min_sol_num, max_sol_num, time_tab[i] =validationStationaryDiffusionEquation.SolveStationaryDiffusionEquation(my_mesh,resolution,meshType,method,BC)
 
-		assert min_sol_num>-1 
-		assert max_sol_num<1.2
-		plt.plot(curv_abs, diag_data[i], label= str(mesh_size_tab[i]) + ' cells')
-		error_tab[i]=log10(error_tab[i])
-		time_tab[i]=log10(time_tab[i])
-		mesh_size_tab[i] = 0.5*log10(mesh_size_tab[i])
-		i=i+1
+        assert min_sol_num>-1 
+        assert max_sol_num<1.2
+        plt.plot(curv_abs, diag_data[i], label= str(mesh_size_tab[i]) + ' cells')
+        error_tab[i]=log10(error_tab[i])
+        time_tab[i]=log10(time_tab[i])
+        mesh_size_tab[i] = 0.5*log10(mesh_size_tab[i])
+        i=i+1
     end = time.time()
         
    
@@ -66,7 +66,7 @@ def convergence_StationaryDiffusion_2DFV_Neumann_DelaunayTriangles():
     a=( a3*b1-a2*b2)/det
     b=(-a2*b1+a1*b2)/det
     
-    print "FV for diffusion on 2D Delaunay triangle meshes: scheme order is ", -a
+    print( "FV for diffusion on 2D Delaunay triangle meshes: scheme order is ", -a)
     assert abs(a+0.6)<0.02
     
     # Plot of convergence curve
