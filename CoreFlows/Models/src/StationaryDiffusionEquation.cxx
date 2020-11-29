@@ -273,14 +273,6 @@ void StationaryDiffusionEquation::initialize()
         *_runLogFile<<"### The system matrix being singular, we seek a zero sum solution, and exact (LU and CHOLESKY) and incomplete factorisations (ILU and ICC) may fail."<<std::endl<<endl;
         *_runLogFile<<"### Check the compatibility condition between the right hand side and the boundary data. For homogeneous Neumann BCs, the right hand side must have integral equal to zero."<<std::endl;
 
-		//Check that the matrix is symmetric
-		PetscBool isSymetric;
-		MatIsSymmetric(_A,_precision,&isSymetric);
-		if(!isSymetric)
-			{
-				cout<<"Singular matrix is not symmetric, tolerance= "<< _precision<<endl;
-				throw CdmathException("Singular matrix should be symmetric with kernel composed of constant vectors");
-			}
 		MatNullSpace nullsp;
 		MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, PETSC_NULL, &nullsp);
 		MatSetNullSpace(_A, nullsp);
@@ -289,9 +281,7 @@ void StationaryDiffusionEquation::initialize()
 		//PCFactorSetShiftType(_pc,MAT_SHIFT_NONZERO);
 		//PCFactorSetShiftAmount(_pc,1e-10);
     }
-
 	_initializedMemory=true;
-
 }
 
 double StationaryDiffusionEquation::computeTimeStep(bool & stop){
@@ -441,6 +431,17 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	VecAssemblyBegin(_b);
 	VecAssemblyEnd(_b);
 
+	if(_onlyNeumannBC)	//Check that the matrix is symmetric
+	{
+		PetscBool isSymetric;
+		MatIsSymmetric(_A,_precision,&isSymetric);
+		if(!isSymetric)
+		{
+			cout<<"Singular matrix is not symmetric, tolerance= "<< _precision<<endl;
+			throw CdmathException("Singular matrix should be symmetric with kernel composed of constant vectors");
+		}
+	}
+
 	_diffusionMatrixSet=true;
     stop=false ;
 
@@ -511,14 +512,15 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
                     MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                           , ADD_VALUES);
                     VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
                 }
-                else {
+                else {//Problem for 3D tetrahera 
+					//cout<< "Fj.getGroupNames().size()= "<<Fj.getGroupNames().size()<<", Fj.x()= "<<Fj.x()<<", Fj.y()= "<<Fj.y()<<", Fj.z()= "<<Fj.z()<<endl;
                     stop=true ;
                     cout<<"!!!!!!!!!!!!!!! Error StationaryDiffusionEquation::computeDiffusionMatrixFV !!!!!!!!!!"<<endl;
-                    cout<<"!!!!!! Boundary condition not accepted for boundary named !!!!!!!!!!"<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
+                    cout<<"!!!!!! No boundary condition set for boundary named "<<nameOfGroup<< "!!!!!!!!!! _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
                     cout<<"Accepted boundary conditions are NeumannStationaryDiffusion "<<NeumannStationaryDiffusion<< " and DirichletStationaryDiffusion "<<DirichletStationaryDiffusion<<endl;
-                    *_runLogFile<<"!!!!!! Boundary condition not accepted for boundary named !!!!!!!!!!"<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
+                    *_runLogFile<<"!!!!!! Boundary condition not set for boundary named "<<nameOfGroup<< "!!!!!!!!!! _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
                     _runLogFile->close();
-                    throw CdmathException("Boundary condition not accepted");
+                    throw CdmathException("Boundary condition not set");
                 }
             }
 			// if Fj is inside the domain
@@ -557,6 +559,17 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 	VecAssemblyBegin(_b);
 	VecAssemblyEnd(_b);
     
+	if(_onlyNeumannBC)	//Check that the matrix is symmetric
+	{
+		PetscBool isSymetric;
+		MatIsSymmetric(_A,_precision,&isSymetric);
+		if(!isSymetric)
+		{
+			cout<<"Singular matrix is not symmetric, tolerance= "<< _precision<<endl;
+			throw CdmathException("Singular matrix should be symmetric with kernel composed of constant vectors");
+		}
+	}
+
 	_diffusionMatrixSet=true;
     stop=false ;
 	
