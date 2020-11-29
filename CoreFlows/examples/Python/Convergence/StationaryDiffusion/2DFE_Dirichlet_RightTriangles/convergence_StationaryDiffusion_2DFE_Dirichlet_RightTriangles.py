@@ -15,7 +15,7 @@ def convergence_StationaryDiffusion_2DFE_Dirichlet_RightTriangles():
     ### 2D FE right triangles mesh
     method = 'FE' 
     BC = 'Dirichlet'
-    meshList=[5,20,50,100, 200,400]
+    meshList=[5,20,50,100, 200]
     nbMeshes=len(meshList)
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
