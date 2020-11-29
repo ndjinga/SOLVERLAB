@@ -95,6 +95,7 @@ void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool 
 		VecGetValues(_Uext, _nVar, _idm, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
+
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
@@ -832,6 +833,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		_Aroe[(_Ndim+1)*_nVar+1+idim]=0;
 		_Aroe[(_Ndim+1)*_nVar+1+idim+_Ndim+1]=_vec_normal[idim];
 	}
+
 	// Take into account the convection term in the momentum eqts
 	for(int idim=0; idim<_Ndim;idim++)
 		for (int jdim=0; jdim<_Ndim;jdim++){
@@ -844,6 +846,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 			_Aroe[(2+_Ndim+idim)*_nVar+_Ndim+1+jdim+1] += m_u2[idim]*_vec_normal[jdim];
 			_Aroe[(2+_Ndim+idim)*_nVar+_Ndim+1+idim+1] += m_u2[jdim]*_vec_normal[jdim];
 		}
+
 	// update \Delta alpha
 	for (int idim=0; idim<_Ndim; idim++){
 		_Aroe[ (1+idim)*_nVar] += dpi1*varrho_2*(1-m_alp1)*inv_a2_2*_vec_normal[idim];
@@ -866,6 +869,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 			_Aroe[(_Ndim+1)*_nVar+ (1+idim)*_nVar+i] += (1-alpha)*varrho_2*(-m_alp1*m_rho2*b1*Delta_e1[i] -(1-m_alp1)*m_rho1*b2*Delta_e2[i])*_vec_normal[idim];
 		}
 	}
+
 	// last row (total energy)
 	for (int i=0; i<_nVar; i++){
 		_Aroe[(2*_Ndim+2)*_nVar +i] += A5[i];
@@ -908,7 +912,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		*_runLogFile<<"FiveEqsTwoFluid::convectionMatrices: error dgeev_ : argument "<<-info<<" invalid"<<endl;
 		throw CdmathException("FiveEqsTwoFluid::convectionMatrices: dgeev_ unsuccessful computation of the eigenvalues ");
 	}
-	else if(info <0)
+	else if(info >0)
 	{
 		cout<<"Warning FiveEqsTwoFluid::convectionMatrices: dgeev_ did not compute all the eigenvalues, trying Rusanov scheme "<<endl;
 		cout<<"Converged eigenvalues are ";
@@ -1353,6 +1357,7 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne
+	VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 
 	for(k=0; k<_Ndim; k++){
 		q1_n+=_externalStates[(k+1)]*normale[k];
@@ -1373,7 +1378,6 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 	if (_limitField[nameOfGroup].bcType==Wall){
 
 		//Pour la convection, inversion du sens des vitesses
-		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 		for(k=0; k<_Ndim; k++){
 			_externalStates[(k+1)]-= 2*q1_n*normale[k];
 			_externalStates[(k+1+1+_Ndim)]-= 2*q2_n*normale[k];
@@ -1419,7 +1423,6 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		for(k=1; k<_nVar; k++)
 			_idm[k] = _idm[k-1] + 1;
 
-		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 		_idm[0] = 0;
 		for(k=1; k<_nVar; k++)
 			_idm[k] = _idm[k-1] + 1;
@@ -1441,7 +1444,6 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		for(k=1; k<_nVar; k++)
 			_idm[k] = _idm[k-1] + 1;
 
-		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 		double alpha=_limitField[nameOfGroup].alpha;//void fraction outside
 		double pression=_Vj[1];//pressure inside
 		double T=_limitField[nameOfGroup].T;//temperature outside
@@ -1471,7 +1473,6 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		}
 		_externalStates[_nVar-1] = _externalStates[0]      *(_fluides[0]->getInternalEnergy(T,rho_v) + v1_2/2)
     																																									+_externalStates[1+_Ndim]*(_fluides[1]->getInternalEnergy(T,rho_l) + v2_2/2);
-
 		// _Vj external primitives
 		_Vj[0] = alpha;
 		_Vj[_nVar-1] = T;
@@ -1506,7 +1507,6 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		hydroPress*=_externalStates[0]+_externalStates[_Ndim];//multiplication by rho the total density
 
 		//Building the external state
-		VecGetValues(_primitiveVars, _nVar, _idm,_Vj);
 		double alpha=_limitField[nameOfGroup].alpha;
 		double pression=_limitField[nameOfGroup].p+hydroPress;
 		double T=_limitField[nameOfGroup].T;
@@ -1523,7 +1523,6 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		}
 		_externalStates[_nVar-1]=    alpha *rho_v*(_fluides[0]->getInternalEnergy(T,rho_v)+v1_2/2)
 				                																																				+(1-alpha)*rho_l*(_fluides[1]->getInternalEnergy(T,rho_l)+v2_2/2);
-
 		// _Vj external primitives
 		_Vj[0] = alpha;
 		_Vj[1] = pression;
@@ -1558,7 +1557,6 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		hydroPress*=_externalStates[0]+_externalStates[_Ndim];//multiplication by rho the total density
 
 		//Building the external state
-		VecGetValues(_primitiveVars, _nVar, _idm,_Vj);
 		double pression_int=_Vj[1];
 		double pression_ext=_limitField[nameOfGroup].p+hydroPress;
 		double T=_Vj[_nVar-1];
