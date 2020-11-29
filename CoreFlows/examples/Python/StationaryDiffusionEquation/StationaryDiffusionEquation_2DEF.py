@@ -31,7 +31,7 @@ def StationaryDiffusionEquation_2DEF_StructuredTriangles():
 	M.setGroupAtPlan(ysup,1,eps,"Bord3")
 	M.setGroupAtPlan(yinf,1,eps,"Bord4")
 	
-	print "Built a regular triangular 2D mesh from a square mesh with ", nx,"x" ,ny, " cells"
+	print( "Built a regular triangular 2D mesh from a square mesh with ", nx,"x" ,ny, " cells")
 
 	FEComputation=True
 	myProblem = cf.StationaryDiffusionEquation(spaceDim,FEComputation);
@@ -91,7 +91,7 @@ def StationaryDiffusionEquation_2DEF_StructuredTriangles():
 		print ("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
 		
 		assert erreur_abs/max_abs_sol_exacte <1.
-        pass
+		pass
 
 	print( "------------ !!! End of calculation !!! -----------" );
 
