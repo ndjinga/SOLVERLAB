@@ -136,9 +136,9 @@ def test_validation2DWaveSystemSourcePStag_brickwall(scaling):
     bu=(-a2*b1u+a1*b2u)/det
     
     if(scaling==0):
-        print "FVPStag on 2D triangular meshes : scheme order for velocity without scaling is ", -au
+        print( "FVPStag on 2D triangular meshes : scheme order for velocity without scaling is ", -au)
     else:
-        print "FVPStag on 2D triangular meshes : scheme order for velocity with scaling is ", -au
+        print( "FVPStag on 2D triangular meshes : scheme order for velocity with    scaling is ", -au)
     
     # Plot of convergence curves
     plt.close()

@@ -136,7 +136,7 @@ def test_validation2DWaveSystemSourcePStagCheckerboard(scaling):
     if(scaling==0):
         print( "FV pseudo staggered on 2D checkerboard meshes : scheme order for pressure without scaling is ", -ap)
     else:
-        print( "FV pseudo staggered on 2D checkerboard meshes : scheme order for pressure with scaling is ", -ap)
+        print( "FV pseudo staggered on 2D checkerboard meshes : scheme order for pressure with    scaling is ", -ap)
 
     b1u=np.dot(error_u_tab,mesh_size_tab)   
     b2u=np.sum(error_u_tab)

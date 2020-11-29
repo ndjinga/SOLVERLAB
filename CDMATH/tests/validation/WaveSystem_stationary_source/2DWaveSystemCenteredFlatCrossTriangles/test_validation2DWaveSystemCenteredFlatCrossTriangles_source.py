@@ -136,9 +136,9 @@ def test_validation2DWaveSystemSourceCenteredFlatCrossTriangles(scaling):
     bu=(-a2*b1u+a1*b2u)/det
     
     if(scaling==0):
-        print "FVCentered on 2D flat cross triangle meshes : scheme order for velocity without scaling is ", -au
+        print( "FVCentered on 2D flat cross triangle meshes : scheme order for velocity without scaling is ", -au)
     else:
-        print "FVCentered on 2D flat cross triangle meshes : scheme order for velocity with scaling is ", -au
+        print( "FVCentered on 2D flat cross triangle meshes : scheme order for velocity with    scaling is ", -au)
     
     # Plot of convergence curves
     plt.close()

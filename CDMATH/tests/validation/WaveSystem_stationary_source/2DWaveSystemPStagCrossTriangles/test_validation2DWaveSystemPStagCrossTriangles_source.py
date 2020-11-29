@@ -136,9 +136,9 @@ def test_validation2DWaveSystemSourcePStagCrossTriangles(scaling):
     bu=(-a2*b1u+a1*b2u)/det
     
     if(scaling==0):
-        print "FVPStag on 2D cross triangle meshes : scheme order for velocity without scaling is ", -au
+        print( "FVPStag on 2D cross triangle meshes : scheme order for velocity without scaling is ", -au)
     else:
-        print "FVPStag on 2D cross triangle meshes : scheme order for velocity with scaling is ", -au
+        print( "FVPStag on 2D cross triangle meshes : scheme order for velocity with    scaling is ", -au)
     
     # Plot of convergence curves
     plt.close()

@@ -141,9 +141,9 @@ def test_validation2DWaveSystemSourceCentered_squares(scaling):
     bp=(-a2*b1p+a1*b2p)/det
     
     if(scaling==0):
-        print "FV Centered on 2D square meshes : scheme order for pressure without scaling is ", -ap
+        print( "FV Centered on 2D square meshes : scheme order for pressure without scaling is ", -ap)
     else:
-        print "FV Centered on 2D square meshes : scheme order for pressure with    scaling is ", -ap
+        print( "FV Centered on 2D square meshes : scheme order for pressure with    scaling is ", -ap)
 
     b1u=np.dot(error_u_tab,mesh_size_tab)   
     b2u=np.sum(error_u_tab)
@@ -151,9 +151,9 @@ def test_validation2DWaveSystemSourceCentered_squares(scaling):
     bu=(-a2*b1u+a1*b2u)/det
     
     if(scaling==0):
-        print "FVCentered on 2D square meshes : scheme order for velocity without scaling is ", -au
+        print( "FVCentered on 2D square meshes : scheme order for velocity without scaling is ", -au)
     else:
-        print "FVCentered on 2D square meshes : scheme order for velocity with    scaling is ", -au
+        print( "FVCentered on 2D square meshes : scheme order for velocity with    scaling is ", -au)
     
     # Plot of convergence curves
     plt.close()

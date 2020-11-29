@@ -110,14 +110,14 @@ def test_validation2DWaveSystemUpwindSquares_DISK(bctype,scaling):
     ap=( a3*b1p-a2*b2p)/det
     bp=(-a2*b1p+a1*b2p)/det
     
-    print "FV upwind on 2D DISK with square meshes : scheme order for pressure is ", -ap
+    print( "FV upwind on 2D DISK with square meshes : scheme order for pressure is ", -ap)
 
     b1u=np.dot(error_u_tab,mesh_size_tab)   
     b2u=np.sum(error_u_tab)
     au=( a3*b1u-a2*b2u)/det
     bu=(-a2*b1u+a1*b2u)/det
     
-    print "FV upwind on 2D DISK with square meshes : scheme order for velocity is ", -au
+    print( "FV upwind on 2D DISK with square meshes : scheme order for velocity is ", -au)
     
     # Plot of convergence curves
     plt.close()
