@@ -15,8 +15,8 @@ int main(int argc, char** argv)
 	double xsup=1.0;
 	double yinf=0.0;
 	double ysup=1.0;
-	int nx=20;
-	int ny=20;
+	int nx=3;
+	int ny=3;
 
     /* Mesh construction */
 	Mesh M(xinf,xsup,nx,yinf,ysup,ny,0); //Regular triangular mesh
@@ -27,12 +27,6 @@ int main(int argc, char** argv)
 	M.setGroupAtPlan(xinf,0,eps,"Bord2");
 	M.setGroupAtPlan(ysup,1,eps,"Bord3");
 	M.setGroupAtPlan(yinf,1,eps,"Bord4");
-
-    /* set the boundary values for each boundary */
-	double T1=0;
-	double T2=0;
-	double T3=0;
-	double T4=0;
 
 	cout<< "Built a regular triangular 2D mesh from a square mesh with "<< nx<<"x" <<ny<< " cells"<<endl;
 
@@ -63,7 +57,7 @@ int main(int argc, char** argv)
 	myProblem.setLinearSolver(GMRES,ILU);
 
     /* name the result file */
-	string fileName = "StationnaryDiffusion_2DFV_StructuredTriangles_Neumann";
+	string fileName = "StationnaryDiffusion_2DFE_StructuredTriangles_Neumann";
 	myProblem.setFileName(fileName);
 
 	/* Run the computation */
