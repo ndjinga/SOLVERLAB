@@ -15,7 +15,7 @@ def convergence_StationaryDiffusion_3DFE_Dirichlet_DelaunayTetrahedra():
     ### 3D FE Delaunay Tetrahedra meshes
     method = 'FE'
     BC = 'Dirichlet'
-    meshList=['meshCubeTetrahedra_0','meshCubeTetrahedra_1','meshCubeTetrahedra_2','meshCubeTetrahedra_3','meshCubeTetrahedra_4','meshCubeTetrahedra_5','meshCubeTetrahedra_6']
+    meshList=['meshCubeTetrahedra_0','meshCubeTetrahedra_1','meshCubeTetrahedra_2','meshCubeTetrahedra_3','meshCubeTetrahedra_4','meshCubeTetrahedra_5']
     mesh_path=os.environ['CDMATH_INSTALL']+'/share/meshes/3DTetrahedra/'
     mesh_name='cubeWithDelaunayTetrahedra'
     meshType="Unstructured_Tetrahedra"
