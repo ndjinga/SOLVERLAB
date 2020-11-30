@@ -15,7 +15,7 @@ def convergence_StationaryDiffusion_3DFV_Dirichlet_RegularCubes():
     ### 3D FV Regular Cubes meshes
     method = 'FV'
     BC = 'Dirichlet'
-    meshList=[5,20,50,100]
+    meshList=[5,10,20,30]
     mesh_name='cubeWithRegularCubes'
     meshType="Regular_Cubes"
     nbMeshes=len(meshList)
