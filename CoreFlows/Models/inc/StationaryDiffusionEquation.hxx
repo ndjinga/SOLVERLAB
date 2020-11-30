@@ -21,10 +21,6 @@
 
 #include "ProblemCoreFlows.hxx"
 
-/* For the laplacian spectrum */
-#include <slepceps.h>
-#include <slepcsvd.h>
-
 using namespace std;
 
 /*! Boundary condition type  */

@@ -22,7 +22,7 @@
 #include <string>
 #include <map>
 
-#include <petsc.h>
+#include <petscksp.h>
 #include <slepceps.h>
 #include <slepcsvd.h>
 
