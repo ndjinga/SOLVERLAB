@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 	//Preprocessing: mesh and group creation
 	double xinf=0.0;
 	double xsup=4.2;
-	int nx=2;//100;
+	int nx=100;
 	double eps=1.E-6;
 	cout << "Building of the diffusion mesh with "<<nx<<" cells" << endl;
 	Mesh diffusionMesh(xinf,xsup,nx);
