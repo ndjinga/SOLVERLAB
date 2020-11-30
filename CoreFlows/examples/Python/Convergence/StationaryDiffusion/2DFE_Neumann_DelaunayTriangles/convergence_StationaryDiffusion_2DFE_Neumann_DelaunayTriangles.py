@@ -28,13 +28,13 @@ def convergence_StationaryDiffusion_2DFE_Neumann_DelaunayTriangles():
     curv_abs=np.linspace(0,sqrt(2),resolution+1)
     plt.close('all')
     i=0
-    testColor="Orange (not order 2), singular matrix"
+    testColor="Red, to be investigated"
     # Storing of numerical errors, mesh sizes and diagonal values
     for filename in meshList:
         my_mesh=cm.Mesh(mesh_path+filename+".med")
         error_tab[i], mesh_size_tab[i], diag_data[i], min_sol_num, max_sol_num, time_tab[i] =validationStationaryDiffusionEquation.SolveStationaryDiffusionEquation(my_mesh,resolution,meshType,method,BC)
 
-        assert min_sol_num>-1 
+        assert min_sol_num>=-1 
         assert max_sol_num<1.2
         plt.plot(curv_abs, diag_data[i], label= str(mesh_size_tab[i]) + ' cells')
         error_tab[i]=log10(error_tab[i])

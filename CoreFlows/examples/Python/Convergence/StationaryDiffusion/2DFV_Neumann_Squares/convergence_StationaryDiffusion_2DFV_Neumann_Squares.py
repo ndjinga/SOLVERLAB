@@ -15,7 +15,7 @@ def convergence_StationaryDiffusion_2DFV_Neumann_Squares():
     ### 2D FV Square mesh
     method='FV'
     BC = 'Neumann'
-    meshList=[5,20,50,100, 200,400]
+    meshList=[5,20,50,100, 200]
     nbMeshes=len(meshList)
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
@@ -27,7 +27,7 @@ def convergence_StationaryDiffusion_2DFV_Neumann_Squares():
     curv_abs=np.linspace(0,sqrt(2),resolution+1)
     plt.close('all')
     i=0
-    testColor="Green, despite singular matrix"        
+    testColor="Red, to be investigated"        
     # Storing of numerical errors, mesh sizes and diagonal values
     for nx in meshList:
         my_mesh=cm.Mesh(0,1,nx,0,1,nx)

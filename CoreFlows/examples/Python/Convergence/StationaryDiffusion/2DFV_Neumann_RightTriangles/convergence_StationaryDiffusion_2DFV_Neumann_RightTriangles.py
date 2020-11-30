@@ -15,7 +15,7 @@ def convergence_StationaryDiffusion_2DFV_Neumann_RightTriangles():
     ### 2D FV right triangles mesh
     method = 'FV' 
     BC = 'Neumann'
-    meshList=[5,20,50,100, 200,400]
+    meshList=[5,20,50,100, 200]
     nbMeshes=len(meshList)
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
@@ -27,7 +27,7 @@ def convergence_StationaryDiffusion_2DFV_Neumann_RightTriangles():
     curv_abs=np.linspace(0,sqrt(2),resolution+1)
     plt.close('all')
     i=0
-    testColor="Orange \n (suspicious order 0 convergence), singular matrix"#Convergence of the linear solver if direct solver. Scheme seems to diverge (order -0.005)
+    testColor="Red, to be investigated"#Convergence of the linear solver if direct solver. Scheme seems to diverge (order -0.005)
     # Storing of numerical errors, mesh sizes and diagonal values
     for nx in meshList:
         my_mesh=cm.Mesh(0,1,nx,0,1,nx,1)

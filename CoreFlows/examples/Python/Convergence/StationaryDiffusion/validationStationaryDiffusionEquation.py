@@ -201,11 +201,11 @@ def SolveStationaryDiffusionEquation(my_mesh,resolution,MeshType,method,BC):
 		erreur_abs=0
 		if method =='FE':
 			for i in range(my_mesh.getNumberOfNodes()) :
-				if erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
+				if  erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
 					erreur_abs = abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i])
 		else:
 			for i in range(my_mesh.getNumberOfCells()) :
-				if erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
+				if  erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
 					erreur_abs = abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) 				
 		print("Absolute error = max(| exact solution - numerical solution |) = ",erreur_abs )
 		print("Relative error = max(| exact solution - numerical solution |)/max(| exact solution |) = ",erreur_abs/max_abs_sol_exacte)
