@@ -15,7 +15,7 @@ def convergence_StationaryDiffusion_3DFE_Dirichlet_RegularTetrahedra():
     ### 3D FE Regular Tetrahedra meshes
     method = 'FE'
     BC = 'Dirichlet'
-    meshList=[5,20,50]
+    meshList=[5,10,20]
     mesh_name='cubeWithRegularTetrahedra'
     meshType="Regular_Tetrahedra"
     nbMeshes=len(meshList)
@@ -65,7 +65,7 @@ def convergence_StationaryDiffusion_3DFE_Dirichlet_RegularTetrahedra():
     b=(-a2*b1+a1*b2)/det
     
     print( "FE for diffusion on 3D regular tetrahedron meshes: scheme order is ", -a)
-    assert abs(a+1.34)<0.001
+    assert abs(a+1.34)<0.003
     
     # Plot of convergence curve
     plt.close()
