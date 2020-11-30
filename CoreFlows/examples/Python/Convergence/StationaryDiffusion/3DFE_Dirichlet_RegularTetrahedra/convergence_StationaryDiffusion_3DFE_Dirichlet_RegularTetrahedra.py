@@ -15,7 +15,7 @@ def convergence_StationaryDiffusion_3DFE_Dirichlet_RegularTetrahedra():
     ### 3D FE Regular Tetrahedra meshes
     method = 'FE'
     BC = 'Dirichlet'
-    meshList=[5,20,50,70]
+    meshList=[5,20,50]
     mesh_name='cubeWithRegularTetrahedra'
     meshType="Regular_Tetrahedra"
     nbMeshes=len(meshList)
