@@ -225,6 +225,12 @@ class Field
 
     const double* getValues ( void ) const ;
 
+    void getValues ( Vector myVector ) const ;
+
+    void setValues ( Vector values ) ;
+
+    void setValues ( double * values, int nbValues ) ;
+
     const std::string getName ( void ) const;
 
     const Mesh& getMesh ( void ) const ;

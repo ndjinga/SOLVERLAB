@@ -17,6 +17,8 @@
 
 #include <fstream>
 #include <sstream>
+#include <cstring>
+
 using namespace MEDCoupling;
 using namespace std;
 
@@ -680,6 +682,39 @@ Field::getValues ( void ) const
 //----------------------------------------------------------------------
 {
 	return _field->getArray()->getConstPointer() ;
+}
+
+//----------------------------------------------------------------------
+void
+Field::getValues ( Vector myVector ) const
+//----------------------------------------------------------------------
+{
+	if( myVector.size() != _field->getNumberOfTuples() * _field->getNumberOfComponents() )
+		throw CdmathException("Error : Field::getValues requires a vector having the same number of component as fiedl values");
+
+    const double * fieldValues = _field->getArray()->getConstPointer();
+	double * vectorValues = myVector.getValues().getValues();
+    
+	memcpy(vectorValues, fieldValues,myVector.size()*sizeof(double)) ;	
+}
+
+void 
+Field::setValues ( Vector myVector )
+//----------------------------------------------------------------------
+{
+	if( myVector.size() != _field->getNumberOfTuples() * _field->getNumberOfComponents() )
+		throw CdmathException("Error : Field::setValues requires a vector having the same number of component as fiedl values");
+		
+	double * vectorValues = myVector.getValues().getValues();
+
+	setValues ( vectorValues, myVector.size() );
+}
+
+void 
+Field::setValues ( double * values, int nbValues )
+{
+	double * fieldValues = _field->getArray()->getPointer() ;
+	memcpy(fieldValues,values,nbValues*sizeof(double)) ;	
 }
 
 //----------------------------------------------------------------------
