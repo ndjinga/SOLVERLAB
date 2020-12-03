@@ -100,4 +100,5 @@ CreateTestExecAndInstall(StationaryDiffusionEquation_3DEF_StructuredTetrahedra.c
 CreateTestExecAndInstall(StationaryDiffusionEquation_3DFV_StructuredTetrahedra.cxx  "${libs_for_tests}" )
 CreateTestExecAndInstall(testEOS.cxx  "${libs_for_tests}" )
 CreateTestExecAndInstall(WaveSystem_2DFV_SphericalExplosion_CDMATH.cxx  "${libs_for_tests}" )
+CreateTestExecAndInstall(WaveSystem_2DFV_SphericalExplosion_MPI.cxx  "${libs_for_tests}" )
 
