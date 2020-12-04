@@ -3,6 +3,11 @@ project(test)
 file(GLOB MESHES_TO_INSTALL resources )
 install(DIRECTORY ${MESHES_TO_INSTALL} DESTINATION share/examples)
 
+file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR} 
+    FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE
+)
+
+
 add_subdirectory (C)
 
 if (COREFLOWS_WITH_PYTHON )

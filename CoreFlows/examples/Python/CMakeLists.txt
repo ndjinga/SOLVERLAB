@@ -73,11 +73,6 @@ file(COPY ${pythonTestFiles} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
     FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE
 )
 
-# copy all mesh files before build
-file(COPY ../resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR} 
-    FILE_PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE
-)
-
 CreatePythonTest(DiffusionEquation/DiffusionEquation_1DHeatedRod.py)
 CreatePythonTest(DiffusionEquation/DiffusionEquation_1DHeatedRod_FE.py)
 
