@@ -44,6 +44,14 @@ public :
 	//	double trace(const int &numBord, Vec &out)=0;
 	void testConservation();
 
+	/** \fn saveAllFields
+	 * \brief saves every interesting field in a separate file
+	 * @param boolean saveAllFields
+	 * */
+	void saveAllFields(bool saveAllFields=true){
+		_saveAllFields=saveAllFields;
+	}
+
 	void save();
 
 	/** \fn setIntletBoundaryCondition
