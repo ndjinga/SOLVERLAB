@@ -2,10 +2,27 @@ cmake_minimum_required (VERSION 3.1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# In case of use with MPI quickly change compiler to avoir cmake erors
+if( DEFINED ENV{MPI_HOME} OR MPI_HOME )
+  if( DEFINED ENV{MPI_HOME} )
+    set(CMAKE_C_COMPILER $ENV{MPI_HOME}/bin/mpicc)
+  else( DEFINED ENV{MPI_HOME} )
+    set(CMAKE_C_COMPILER ${MPI_HOME}/bin/mpicc)
+  endif( DEFINED ENV{MPI_HOME} )
+  set(SOLVERLAB_WITH_MPI ON)
+  set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
+       CACHE STRING           "OPENMPI tarball path/url" )
+  set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.20.0.zip
+       CACHE STRING           "HYPRE tarball path/url" )
+else( DEFINED ENV{MPI_HOME} OR MPI_HOME )
+  set(SOLVERLAB_WITH_MPI OFF)
+endif( DEFINED ENV{MPI_HOME} OR MPI_HOME )
+
 # Project name
 project (SOLVERLAB C CXX)
-set (SOLVERLAB_VERSION_MAJOR 0)
-set (SOLVERLAB_VERSION_MINOR 1)
+set (SOLVERLAB_VERSION_MAJOR 9)
+set (SOLVERLAB_VERSION_MINOR 7)
+set (SOLVERLAB_VERSION_SUBMINOR alpha)
 
 option (SOLVERLAB_WITH_DOCUMENTATION "Generate SOLVERLAB documentation" ON)
 option (SOLVERLAB_WITH_PYTHON        "Compile Python interface of SOLVERLAB" ON)
@@ -38,9 +55,17 @@ set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCou
 
 set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
 
+include(ExternalProject)#For PETSc, MED and MEDCoupling
+
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 
-include(ExternalProject)#For PETSc, MED and MEDCoupling
+if( SOLVERLAB_WITH_MPI )
+  find_package(MPI)
+  message ( STATUS "MPI compiler is ${MPI_COMPILER}" )
+  message ( STATUS "MPI C compiler is ${MPI_C_COMPILER}" )
+  message ( STATUS "MPI executable is ${MPIEXEC}" )
+  message ( STATUS "MPI library is ${MPI_LIBRARY}" )
+endif( SOLVERLAB_WITH_MPI )
 
 ######################################################
 # Detection or compilation of PETSc+SLEPc+HDF5       #
@@ -57,6 +82,9 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
     petsc_get_version ()
 
     message ( STATUS "PETSc found. Version is ${PETSC_VERSION_MAJOR}.${PETSC_VERSION_MINOR}.${PETSC_VERSION_SUBMINOR}" )
+    message ( STATUS "PETSc compiler is ${PETSC_COMPILER}" )
+    message ( STATUS "PETSc executable is ${PETSC_MPIEXEC}")
+
     set(PETSC_INSTALL ${PETSC_DIR})
 
     #Define and search slepc variables
@@ -168,7 +196,7 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       URL               ${DOWNLOAD_PETSC}   
       SOURCE_DIR        ${PETSC_DIR}
       BUILD_IN_SOURCE   TRUE
-      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --with-mpi=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE} --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}
       BUILD_COMMAND     make all
       TEST_COMMAND      make check
       INSTALL_COMMAND   make install
@@ -195,8 +223,8 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 
       #define slepc variables
       set(SLEPC_DIR ${PETSC_INSTALL})
-      set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/include ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/installed-arch-linux2-c-opt/include)
-      set(SLEPC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.13.4/installed-arch-linux2-c-opt/lib/libslepc.so)
+      set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.0/include ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.0/installed-arch-linux2-c-opt/include)
+      set(SLEPC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.0/installed-arch-linux2-c-opt/lib/libslepc.so)
       message( STATUS "SLEPc includes ${SLEPC_INCLUDES}")
 
       #define hdf5 variables
@@ -209,6 +237,12 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
       endif( NOT HDF5_ROOT )
       set(HDF5_LIBRARY_DIR ${HDF5_ROOT}/lib)
       set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
+
+      #define MPI variables
+      set(SOLVERLAB_WITH_MPI ON)
+      set(MPI_HOME ${PETSC_DIR}/${PETSC_ARCH})
+      set(MPI_LIBRARY ${PETSC_DIR}/${PETSC_ARCH}/lib/libmpi.so)
+      set(MPIEXEC ${PETSC_DIR}/${PETSC_ARCH}/bin/mpiexec)
 
     endif ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )
   endif ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
