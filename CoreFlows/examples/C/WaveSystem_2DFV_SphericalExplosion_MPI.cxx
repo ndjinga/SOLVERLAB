@@ -152,65 +152,77 @@ void computeDivergenceMatrix(Mesh my_mesh, Mat * implMat, double dt)
 
 void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size)
 {
-	/* Retrieve mesh data */
-    int dim=my_mesh.getMeshDimension();
-    int nbCells = my_mesh.getNumberOfCells();
-    int nbComp=dim+1;
-    std::string meshName=my_mesh.getName();
-    int nbVoisinsMax=my_mesh.getMaxNbNeighbours(CELLS);
-    double dx_min=my_mesh.minRatioVolSurf();
-
-    /* Initial conditions */
-    cout << "Construction of the initial condition …" << endl;
-    
-    Field pressure_field("Pressure",CELLS,my_mesh,1) ;
-    Field velocity_field("Velocity",CELLS,my_mesh,1) ;
-    initial_conditions_shock(my_mesh,pressure_field, velocity_field);
-
-    /* iteration vectors */
-	Vec Un, dUn;
-	VecCreate(PETSC_COMM_WORLD,&Un);
-	VecSetSizes(Un,PETSC_DECIDE,nbCells*nbComp);
-	VecSetFromOptions(Un);
-	VecDuplicate (Un,&dUn);
-	int idx;//Index where to add the block of values
-	double value;//value to add in the vector
-
-    for(int k =0; k<nbCells; k++)
-    {
-		idx = k*nbComp;
-		value=pressure_field[k];//vale to add in the vector
-		VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
-		for(int idim =0; idim<dim; idim++)
-		{
-			idx = k*nbComp+1+idim;
-			value =rho0*velocity_field[k,idim];
-			VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
-		}
+	int globalNbUnknowns;
+	
+	if(rank != 0)
+	{
+		MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		cout<<"process "<< rank << " just received globalNbUnknowns= "<< globalNbUnknowns<<endl;
 	}
-
-	VecAssemblyBegin(Un);
-	VecAssemblyEnd(Un);
-
-    /*
-     * MED output of the initial condition at t=0 and iter = 0
-     */
-    int it=0;
-    bool isStationary=false;
-    double time=0.;
-    double dt = cfl * dx_min / c0;
-    double norm;
-    
-    cout << "Saving the solution at T=" << time << "…" << endl;
-    pressure_field.setTime(time,it);
-    pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
-    velocity_field.setTime(time,it);
-    velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity");
-    /* --------------------------------------------- */
-
-    Mat divMat;
-   	MatCreateSeqAIJ(PETSC_COMM_WORLD,nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp,NULL,&divMat);
-    computeDivergenceMatrix(my_mesh,&divMat,dt);
+	else
+	{
+		/* Retrieve mesh data */
+	    int nbCells = my_mesh.getNumberOfCells();
+	    int dim=my_mesh.getMeshDimension();
+	    int nbComp=dim+1;
+	    globalNbUnknowns=nbCells*nbComp;
+		int buffer[1];
+		MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		cout<<"process "<< rank << " just sent globalNbUnknowns= "<< globalNbUnknowns<<endl;
+	    
+	    std::string meshName=my_mesh.getName();
+	    int nbVoisinsMax=my_mesh.getMaxNbNeighbours(CELLS);
+	    double dx_min=my_mesh.minRatioVolSurf();
+	
+		/* time iteration variables */
+	    int it=0;
+	    bool isStationary=false;
+	    double time=0.;
+	    double dt = cfl * dx_min / c0;
+	    double norm;
+	    
+	    /* Initial conditions */
+	    cout << "Construction of the initial condition …" << endl;
+	    
+	    Field pressure_field("Pressure",CELLS,my_mesh,1) ;
+	    Field velocity_field("Velocity",CELLS,my_mesh,1) ;
+	    initial_conditions_shock(my_mesh,pressure_field, velocity_field);
+	
+	    cout << "Saving the solution at T=" << time << "…" << endl;
+	    pressure_field.setTime(time,it);
+	    pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
+	    velocity_field.setTime(time,it);
+	    velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity");
+	    /* --------------------------------------------- */
+	
+	    /* iteration vectors */
+		Vec Un, dUn;
+		VecCreate(PETSC_COMM_WORLD,&Un);
+		VecSetSizes(Un,PETSC_DECIDE,nbCells*nbComp);
+		VecSetFromOptions(Un);
+		VecDuplicate (Un,&dUn);
+		int idx;//Index where to add the block of values
+		double value;//value to add in the vector
+	
+	    for(int k =0; k<nbCells; k++)
+	    {
+			idx = k*nbComp;
+			value=pressure_field[k];//vale to add in the vector
+			VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
+			for(int idim =0; idim<dim; idim++)
+			{
+				idx = k*nbComp+1+idim;
+				value =rho0*velocity_field[k,idim];
+				VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
+			}
+		}
+	
+		VecAssemblyBegin(Un);
+		VecAssemblyEnd(Un);
+	
+	    Mat divMat;
+	   	MatCreateSeqAIJ(PETSC_COMM_WORLD,nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp,NULL,&divMat);
+	    computeDivergenceMatrix(my_mesh,&divMat,dt);
 
     /* Time loop */
     cout<< "Starting computation of the linear wave system with an explicit UPWIND scheme …" << endl;
@@ -257,6 +269,7 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
         cout<< "Temps maximum Tmax= "<< tmax<< " atteint"<<endl;
 
 	MatDestroy(&divMat);
+	}
 }
  
 int main(int argc, char *argv[])
@@ -276,6 +289,9 @@ int main(int argc, char *argv[])
     string fileOutPut="SphericalWave";
     Mesh myMesh;
 
+	if(size>1)
+		PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected, running parallel simulation -----\n");
+		
 	if(rank == 0)
 	{
 	    cout << "RESOLUTION OF THE 2D WAVE SYSTEM: Upwind explicit scheme" << endl;
@@ -310,7 +326,8 @@ int main(int argc, char *argv[])
 	}
 	WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut, rank, size);
 
-    cout << "Simulation complete." << endl;
+	if(rank == 0)
+		cout << "Simulation complete." << endl;
 
 	PetscFinalize();
     return 0;
