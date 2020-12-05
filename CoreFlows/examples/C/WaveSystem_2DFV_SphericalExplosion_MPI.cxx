@@ -294,7 +294,8 @@ int main(int argc, char *argv[])
 		
 	if(rank == 0)
 	{
-	    cout << "RESOLUTION OF THE 2D WAVE SYSTEM: Upwind explicit scheme" << endl;
+	    cout << "RESOLUTION OF THE 2D WAVE SYSTEM on "<< size <<" processors"<<endl;
+	    cout << "- Upwind explicit scheme" << endl;
 	    cout << "- WALL BC" << endl;
 	
 		if(argc<2)

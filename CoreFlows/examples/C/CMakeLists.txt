@@ -7,9 +7,6 @@ INCLUDE_DIRECTORIES(
 )
 
 
-SET(_extra_lib_CoreFlows CoreFlowsLibs )
-
-
 if(CMAKE_COMPILER_IS_GNUCXX)
     if (CMAKE_BUILD_TYPE STREQUAL Debug)
     include(CodeCoverage)
@@ -44,7 +41,7 @@ function(CreateTestExecAndInstall SourceTestFile libList)
 endfunction(CreateTestExecAndInstall)
 
 
-set( libs_for_tests ${_extra_lib_CoreFlows} )
+set( libs_for_tests CoreFlowsLibs )
 
 # copy tests resources (med files etc.) into the build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -100,5 +97,13 @@ CreateTestExecAndInstall(StationaryDiffusionEquation_3DEF_StructuredTetrahedra.c
 CreateTestExecAndInstall(StationaryDiffusionEquation_3DFV_StructuredTetrahedra.cxx  "${libs_for_tests}" )
 CreateTestExecAndInstall(testEOS.cxx  "${libs_for_tests}" )
 CreateTestExecAndInstall(WaveSystem_2DFV_SphericalExplosion_CDMATH.cxx  "${libs_for_tests}" )
-CreateTestExecAndInstall(WaveSystem_2DFV_SphericalExplosion_MPI.cxx  "${libs_for_tests}" )
+
+ 
+if( SOLVERLAB_WITH_MPI )
+  add_executable(WaveSystem_2DFV_SphericalExplosion_MPI.exe WaveSystem_2DFV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
+  target_link_libraries(WaveSystem_2DFV_SphericalExplosion_MPI.exe CoreFlowsLibs  ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
+  install(TARGETS WaveSystem_2DFV_SphericalExplosion_MPI.exe DESTINATION share/examples)
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_SEQ COMMAND                       "./WaveSystem_2DFV_SphericalExplosion_MPI.exe")     # adding a ctest Test
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_PAR COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe")     # adding a ctest Test
+endif( SOLVERLAB_WITH_MPI )
 
