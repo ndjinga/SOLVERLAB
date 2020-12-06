@@ -153,11 +153,27 @@ void computeDivergenceMatrix(Mesh my_mesh, Mat * implMat, double dt)
 void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size)
 {
 	int globalNbUnknowns;
+	Vec Un, dUn;
+	Vec Un_PAR;
+	VecScatter scat;
 	
 	if(rank != 0)
 	{
 		MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		cout<<"process "<< rank << " just received globalNbUnknowns= "<< globalNbUnknowns<<endl;
+		VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE,globalNbUnknowns,&Un_PAR);
+		//VecCreateMPI(PETSC_COMM_WORLD,0           ,0               ,&Un);
+		VecCreateSeq(PETSC_COMM_SELF,0,&Un);
+		VecScatterCreateToZero(Un_PAR,&scat,&Un);
+		
+		VecScatterBegin(scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterEnd(  scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
+
+		VecView(Un_PAR, 	PETSC_VIEWER_STDOUT_WORLD );
+
+		VecScatterDestroy(&scat);
+		VecDestroy(&Un);
+		VecDestroy(&Un_PAR);
 	}
 	else
 	{
@@ -169,6 +185,12 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 		int buffer[1];
 		MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		cout<<"process "<< rank << " just sent globalNbUnknowns= "<< globalNbUnknowns<<endl;
+	    /* iteration vectors */
+    	VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,globalNbUnknowns,&Un_PAR);
+		//VecCreateMPI(PETSC_COMM_WORLD,globalNbUnknowns,globalNbUnknowns,&Un);
+		VecCreateSeq(PETSC_COMM_SELF,globalNbUnknowns,&Un);
+		VecDuplicate (Un,&dUn);
+		VecScatterCreateToZero(Un_PAR,&scat,&Un);
 	    
 	    std::string meshName=my_mesh.getName();
 	    int nbVoisinsMax=my_mesh.getMaxNbNeighbours(CELLS);
@@ -195,10 +217,6 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 	    velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity");
 	    /* --------------------------------------------- */
 	
-	    /* iteration vectors */
-		Vec Un, dUn;
-		VecCreateSeq(PETSC_COMM_SELF,nbCells*nbComp,&Un);
-		VecDuplicate (Un,&dUn);
 
 		int idx;//Index where to add the block of values
 		double value;//value to add in the vector	
@@ -216,6 +234,13 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 		}
 		VecAssemblyBegin(Un);
 		VecAssemblyEnd(Un);
+
+		VecView(Un, 	PETSC_VIEWER_STDOUT_SELF );
+
+		VecScatterBegin(scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterEnd(  scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
+		
+		VecView(Un_PAR, 	PETSC_VIEWER_STDOUT_WORLD );
 
 	    Mat divMat;
 	   	MatCreateSeqAIJ(PETSC_COMM_SELF,nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp,NULL,&divMat);
@@ -265,6 +290,9 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
     else
         cout<< "Temps maximum Tmax= "<< tmax<< " atteint"<<endl;
 
+	VecDestroy(&Un);
+	VecDestroy(&Un_PAR);
+	VecScatterDestroy(&scat);
 	MatDestroy(&divMat);
 	}
 }
@@ -304,8 +332,8 @@ int main(int argc, char *argv[])
 		    double xsup=1.0;
 		    double yinf=0.0;
 		    double ysup=1.0;
-		    int nx=10;
-		    int ny=10;
+		    int nx=2;
+		    int ny=2;
 		    myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
 		    
 		    double eps=1.E-10;
