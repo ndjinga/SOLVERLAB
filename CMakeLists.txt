@@ -7,13 +7,9 @@ if( DEFINED ENV{MPI_HOME} OR MPI_HOME )
   if( DEFINED ENV{MPI_HOME} )
     set(CMAKE_C_COMPILER $ENV{MPI_HOME}/bin/mpicc)
   else( DEFINED ENV{MPI_HOME} )
-    set(CMAKE_C_COMPILER ${MPI_HOME}/bin/mpicc)
+    set(CMAKE_C_COMPILER    ${MPI_HOME}/bin/mpicc)
   endif( DEFINED ENV{MPI_HOME} )
   set(SOLVERLAB_WITH_MPI ON)
-  set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
-       CACHE STRING           "OPENMPI tarball path/url" )
-  set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.20.0.zip
-       CACHE STRING           "HYPRE tarball path/url" )
 else( DEFINED ENV{MPI_HOME} OR MPI_HOME )
   set(SOLVERLAB_WITH_MPI OFF)
 endif( DEFINED ENV{MPI_HOME} OR MPI_HOME )
@@ -52,6 +48,10 @@ set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.
      CACHE STRING           "MED tarball path/url")
 set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.4.0.tar.gz
      CACHE STRING           "MEDCoupling tarball path/url" )
+set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
+     CACHE STRING           "OPENMPI tarball path/url" )
+set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.20.0.zip
+     CACHE STRING           "HYPRE tarball path/url" )
 
 set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
 
@@ -196,7 +196,7 @@ endif( SOLVERLAB_WITH_MPI )
       URL               ${DOWNLOAD_PETSC}   
       SOURCE_DIR        ${PETSC_DIR}
       BUILD_IN_SOURCE   TRUE
-      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE} --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5} --with-mpi=0 #--download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE}
       BUILD_COMMAND     make all
       TEST_COMMAND      make check
       INSTALL_COMMAND   make install
@@ -239,10 +239,10 @@ endif( SOLVERLAB_WITH_MPI )
       set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
 
       #define MPI variables
-      set(SOLVERLAB_WITH_MPI ON)
-      set(MPI_HOME ${PETSC_DIR}/${PETSC_ARCH})
-      set(MPI_LIBRARY ${PETSC_DIR}/${PETSC_ARCH}/lib/libmpi.so)
-      set(MPIEXEC ${PETSC_DIR}/${PETSC_ARCH}/bin/mpiexec)
+      #set(SOLVERLAB_WITH_MPI ON)
+      #set(MPI_HOME    ${PETSC_INSTALL} )
+      #set(MPI_LIBRARY ${PETSC_INSTALL}/lib/libmpi.so)
+      #set(MPIEXEC     ${PETSC_INSTALL}/bin/mpiexec)
 
     endif ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )
   endif ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
@@ -287,7 +287,7 @@ else( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
         URL               ${DOWNLOAD_MED}  #location of med tarball
         SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${MED_TARBALL_NAME}
         BUILD_IN_SOURCE   TRUE
-        CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${MEDFILE_ROOT_DIR}  --with-hdf5=${HDF5_ROOT} --with-hdf5-include=${HDF5_ROOT}/include --with-hdf5-lib=${HDF5_LIBRARY_DIR} --with-hdf5-bin=${HDF5_ROOT}/bin  --with-swig=yes 
+        CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${MEDFILE_ROOT_DIR}  --with-hdf5=${HDF5_ROOT} --with-hdf5-include=${HDF5_ROOT}/include --with-hdf5-lib=${HDF5_LIBRARY_DIR} --with-hdf5-bin=${HDF5_ROOT}/bin  --with-swig=yes --disable-fortran #CC=${PETSC_INSTALL}/bin/mpicc
         BUILD_COMMAND     make
         INSTALL_COMMAND   make install
         INSTALL_DIR       ${MEDFILE_ROOT_DIR}
@@ -362,7 +362,7 @@ else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
         URL               ${DOWNLOAD_MEDCOUPLING}  #location of medcoupling tarball
         SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${MEDCOUPLING_TARBALL_NAME}
 #        BUILD_IN_SOURCE   FALSE
-        CONFIGURE_COMMAND cmake <SOURCE_DIR>/${MEDCOUPLING_TARBALL_NAME} -DCMAKE_INSTALL_PREFIX=${MEDCOUPLING_ROOT_DIR} -DCONFIGURATION_ROOT_DIR=<SOURCE_DIR>/configuration-${MEDCoupling_VERSION} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ENABLE_PARTITIONER=OFF -DMEDCOUPLING_PARTITIONER_METIS=OFF -DMEDCOUPLING_PARTITIONER_SCOTCH=OFF -DMEDCOUPLING_ENABLE_RENUMBER=OFF -DMEDCOUPLING_BUILD_DOC=OFF -DHDF5_ROOT_DIR=${HDF5_ROOT}
+        CONFIGURE_COMMAND cmake <SOURCE_DIR>/${MEDCOUPLING_TARBALL_NAME} -DCMAKE_INSTALL_PREFIX=${MEDCOUPLING_ROOT_DIR} -DCONFIGURATION_ROOT_DIR=<SOURCE_DIR>/configuration-${MEDCoupling_VERSION} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ENABLE_PARTITIONER=OFF -DMEDCOUPLING_PARTITIONER_METIS=OFF -DMEDCOUPLING_PARTITIONER_SCOTCH=OFF -DMEDCOUPLING_ENABLE_RENUMBER=OFF -DMEDCOUPLING_BUILD_DOC=OFF -DHDF5_ROOT_DIR=${HDF5_ROOT} #-DSALOME_USE_MPI=ON
         BUILD_COMMAND     make
         INSTALL_COMMAND   make install
         INSTALL_DIR       ${MEDCOUPLING_ROOT_DIR}
