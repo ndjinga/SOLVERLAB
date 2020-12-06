@@ -197,13 +197,11 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 	
 	    /* iteration vectors */
 		Vec Un, dUn;
-		VecCreate(PETSC_COMM_WORLD,&Un);
-		VecSetSizes(Un,PETSC_DECIDE,nbCells*nbComp);
-		VecSetFromOptions(Un);
+		VecCreateSeq(PETSC_COMM_SELF,nbCells*nbComp,&Un);
 		VecDuplicate (Un,&dUn);
+
 		int idx;//Index where to add the block of values
-		double value;//value to add in the vector
-	
+		double value;//value to add in the vector	
 	    for(int k =0; k<nbCells; k++)
 	    {
 			idx = k*nbComp;
@@ -216,12 +214,11 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 				VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
 			}
 		}
-	
 		VecAssemblyBegin(Un);
 		VecAssemblyEnd(Un);
-	
+
 	    Mat divMat;
-	   	MatCreateSeqAIJ(PETSC_COMM_WORLD,nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp,NULL,&divMat);
+	   	MatCreateSeqAIJ(PETSC_COMM_SELF,nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp,NULL,&divMat);
 	    computeDivergenceMatrix(my_mesh,&divMat,dt);
 
     /* Time loop */
@@ -307,8 +304,8 @@ int main(int argc, char *argv[])
 		    double xsup=1.0;
 		    double yinf=0.0;
 		    double ysup=1.0;
-		    int nx=50;
-		    int ny=50;
+		    int nx=10;
+		    int ny=10;
 		    myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
 		    
 		    double eps=1.E-10;
