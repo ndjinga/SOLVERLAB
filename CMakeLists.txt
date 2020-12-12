@@ -2,18 +2,6 @@ cmake_minimum_required (VERSION 3.1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# In case of use with MPI quickly change compiler to avoir cmake erors
-if( DEFINED ENV{MPI_HOME} OR MPI_HOME )
-  if( DEFINED ENV{MPI_HOME} )
-    set(CMAKE_C_COMPILER $ENV{MPI_HOME}/bin/mpicc)
-  else( DEFINED ENV{MPI_HOME} )
-    set(CMAKE_C_COMPILER    ${MPI_HOME}/bin/mpicc)
-  endif( DEFINED ENV{MPI_HOME} )
-  set(SOLVERLAB_WITH_MPI ON)
-else( DEFINED ENV{MPI_HOME} OR MPI_HOME )
-  set(SOLVERLAB_WITH_MPI OFF)
-endif( DEFINED ENV{MPI_HOME} OR MPI_HOME )
-
 # Project name
 project (SOLVERLAB C CXX)
 set (SOLVERLAB_VERSION_MAJOR 9)
@@ -36,9 +24,9 @@ set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
 set (PYTHON_ROOT_DIR      OFF CACHE STRING "Python library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.0.tar.gz 
+set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.2.tar.gz 
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.14.0.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.14.1.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
@@ -59,13 +47,22 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 
-if( SOLVERLAB_WITH_MPI )
+# In case of use with MPI quickly change compiler to avoir cmake erors
+if( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
+  #if( DEFINED ENV{MPI_HOME} )
+  #  set(CMAKE_C_COMPILER $ENV{MPI_HOME}/bin/mpicc)
+  #else( DEFINED ENV{MPI_HOME} )
+  #  set(CMAKE_C_COMPILER    ${MPI_HOME}/bin/mpicc)
+  #endif( DEFINED ENV{MPI_HOME} )
+  set(SOLVERLAB_WITH_MPI ON)
   find_package(MPI)
-  message ( STATUS "MPI compiler is ${MPI_COMPILER}" )
-  message ( STATUS "MPI C compiler is ${MPI_C_COMPILER}" )
+  if(   ${MPI_LIBRARY} STREQUAL "MPI_LIBRARY-NOTFOUND")
+    set ( MPI_LIBRARY ${MPI_HOME}/lib/libmpi.so )
+  endif(${MPI_LIBRARY} STREQUAL "MPI_LIBRARY-NOTFOUND")
   message ( STATUS "MPI executable is ${MPIEXEC}" )
-  message ( STATUS "MPI library is ${MPI_LIBRARY}" )
-endif( SOLVERLAB_WITH_MPI )
+else( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
+  set(SOLVERLAB_WITH_MPI OFF)
+endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
 
 ######################################################
 # Detection or compilation of PETSc+SLEPc+HDF5       #
@@ -116,7 +113,7 @@ endif( SOLVERLAB_WITH_MPI )
     endif( NOT HDF5_ROOT )
     set(HDF5_LIBRARY_DIR  ${HDF5_ROOT}/lib)
     set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
-  else ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
+  else ( DEFINED ENV{PETSC_DIR} ORPETSC_DIR )
     message ( STATUS "PETSC_DIR not set, searching PETSc and SLEPc in the system" )
 
     if ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )  #Case fedora/redhat system install
@@ -343,7 +340,7 @@ if( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
   find_package(MEDCoupling CONFIG REQUIRED)   # CONFIG is important !
   message( STATUS "MEDCoupling found. Version is ${MEDCoupling_VERSION}")
 
-else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
+else( DEFINED MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
   message(STATUS "MEDCoupling will be downloaded and installed from ${DOWNLOAD_MEDCOUPLING}")
   set(MEDCOUPLING_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/share/medcoupling) # Location of the final install
   SET(ENV{HDF5_ROOT} ${HDF5_ROOT})#MEDCoupling install process seems to require an environment variable
