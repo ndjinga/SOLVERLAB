@@ -276,11 +276,13 @@ int main(int argc,char *argv[]) {
   PetscErrorCode ierr;
   TS ts;
 
+  /*
   ierr = PetscInitialize(&argc,&argv,0,help);${_PETSC_ERR_FUNC};
   ierr = TSCreate(PETSC_COMM_WORLD,&ts);${_PETSC_ERR_FUNC};
   ierr = TSSetFromOptions(ts);${_PETSC_ERR_FUNC};
   ierr = ${_PETSC_TSDestroy};${_PETSC_ERR_FUNC};
   ierr = PetscFinalize();${_PETSC_ERR_FUNC};
+  */
   return 0;
 }
 ")
