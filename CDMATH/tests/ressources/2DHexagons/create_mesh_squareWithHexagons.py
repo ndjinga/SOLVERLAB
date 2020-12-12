@@ -79,10 +79,10 @@ def mesh_square_with_hexagons(xmin=0,xmax=1,ymin=0,ymax=1,ny=14,mesh_name="squar
         else:
             raise ValueError("Pb with boundary construction : barycenter does not belong to any border group")
         
-    arr_left = mc.DataArrayInt(ids_left)
-    arr_right = mc.DataArrayInt(ids_right)
-    arr_bottom = mc.DataArrayInt(ids_bottom)
-    arr_top = mc.DataArrayInt(ids_top)
+    arr_left = mc.DataArrayIdType(ids_left)
+    arr_right = mc.DataArrayIdType(ids_right)
+    arr_bottom = mc.DataArrayIdType(ids_bottom)
+    arr_top = mc.DataArrayIdType(ids_top)
     
     arr_left.setName("Left")
     arr_right.setName("Right")

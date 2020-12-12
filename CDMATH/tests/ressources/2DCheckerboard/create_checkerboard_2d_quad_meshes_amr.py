@@ -88,10 +88,10 @@ def createCheckerboardMesh(nb_segs_x, mesh_name=""):
     elif abs(y-1) < tol:
       ids_top.append(i)
 
-  arr_left = MC.DataArrayInt(ids_left)
-  arr_right = MC.DataArrayInt(ids_right)
-  arr_bottom = MC.DataArrayInt(ids_bottom)
-  arr_top = MC.DataArrayInt(ids_top)
+  arr_left = MC.DataArrayIdType(ids_left)
+  arr_right = MC.DataArrayIdType(ids_right)
+  arr_bottom = MC.DataArrayIdType(ids_bottom)
+  arr_top = MC.DataArrayIdType(ids_top)
   
   arr_left.setName("Left")
   arr_right.setName("Right")

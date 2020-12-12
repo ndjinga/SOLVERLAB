@@ -80,7 +80,7 @@ def mesh_disk_with_squares(xcenter=0.,ycenter=0., Radius=1.,n=17,mesh_name="disk
     # Ecrit le maillage 1D
     meshMEDFile.setMeshAtLevel(-1,mesh_1d)
     # Ecrit les groupes
-    arr_circle = mc.DataArrayInt(range(mesh_1d.getNumberOfCells()))
+    arr_circle = mc.DataArrayIdType(range(mesh_1d.getNumberOfCells()))
     arr_circle.setName("Circle")
     meshMEDFile.addGroup(-1, arr_circle)
     

@@ -54,7 +54,7 @@ def mesh_disk_with_hexagons(xcenter=0., ycenter=0.,Radius=1.,ny=16,mesh_name="di
     a = cI.deltaShiftIndex()
     b = a - 1
     myNewNbOfTuples = oldNbOfTuples - sum(b.getValues())
-    o2n, newNbOfTuples = mc.DataArrayInt.ConvertIndexArrayToO2N(oldNbOfTuples,c,cI)
+    o2n, newNbOfTuples = mc.DataArrayIdType.ConvertIndexArrayToO2N(oldNbOfTuples,c,cI)
     print( "Have I got the right number of tuples ?" )
     print( "myNewNbOfTuples = %d, newNbOfTuples = %d" % (myNewNbOfTuples, newNbOfTuples) )
     assert(myNewNbOfTuples == newNbOfTuples)
@@ -90,7 +90,7 @@ def mesh_disk_with_hexagons(xcenter=0., ycenter=0.,Radius=1.,ny=16,mesh_name="di
     # Ecrit le maillage 1D
     meshMEDFile.setMeshAtLevel(-1,mesh_1d)
     # Ecrit les groupes
-    arr_circle = mc.DataArrayInt(range(mesh_1d.getNumberOfCells()))
+    arr_circle = mc.DataArrayIdType(range(mesh_1d.getNumberOfCells()))
     arr_circle.setName("Circle")
     meshMEDFile.addGroup(-1, arr_circle)
     

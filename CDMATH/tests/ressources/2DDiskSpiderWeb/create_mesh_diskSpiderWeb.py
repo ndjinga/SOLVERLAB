@@ -55,7 +55,7 @@ def drawPolarGrid(center_x, center_y, r0, r1, angle0, angle1, n_r, n_theta):
   # Ecrit le maillage 1D
   meshMEDFile.setMeshAtLevel(-1,mesh_1d)
   # Ecrit les groupes
-  arr_circle = mc.DataArrayInt(range(mesh_1d.getNumberOfCells()))
+  arr_circle = mc.DataArrayIdType(range(mesh_1d.getNumberOfCells()))
   arr_circle.setName("Circle")
   meshMEDFile.addGroup(-1, arr_circle)
 

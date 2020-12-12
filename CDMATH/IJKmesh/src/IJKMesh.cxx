@@ -619,7 +619,7 @@ Mesh::getNameOfNodeGroups( void )  const
 	return _nodeGroupNames;
 }
 
-vector<MEDCoupling::DataArrayInt *>
+vector<MEDCoupling::DataArrayIdType *>
 Mesh::getNodeGroups( void )  const
 {
 	return _nodeGroups;

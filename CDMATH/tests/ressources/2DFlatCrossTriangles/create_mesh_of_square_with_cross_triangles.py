@@ -47,7 +47,7 @@ def mesh_square_with_cross_triangles(xmin,xmax,nx,ymin,ymax,ny,mesh_name="square
     
     nCells = myQuadMesh.getNumberOfCells()
     c, cI = myQuadMesh.getNodalConnectivity(), myQuadMesh.getNodalConnectivityIndex()
-    cNew, cINew = mc.DataArrayInt(nCells*16), mc.DataArrayInt(nCells*4+1)
+    cNew, cINew = mc.DataArrayIdType(nCells*16), mc.DataArrayIdType(nCells*4+1)
     
     # Et hop:
     cINew.iota()
@@ -88,10 +88,10 @@ def mesh_square_with_cross_triangles(xmin,xmax,nx,ymin,ymax,ny,mesh_name="square
         else:
             raise ValueError("Pb with boundary construction : barycenter does not belong to any border group")
         
-    arr_left = mc.DataArrayInt(ids_left)
-    arr_right = mc.DataArrayInt(ids_right)
-    arr_bottom = mc.DataArrayInt(ids_bottom)
-    arr_top = mc.DataArrayInt(ids_top)
+    arr_left = mc.DataArrayIdType(ids_left)
+    arr_right = mc.DataArrayIdType(ids_right)
+    arr_bottom = mc.DataArrayIdType(ids_bottom)
+    arr_top = mc.DataArrayIdType(ids_top)
     
     arr_left.setName("Left")
     arr_right.setName("Right")

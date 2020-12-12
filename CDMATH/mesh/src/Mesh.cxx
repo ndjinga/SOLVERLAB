@@ -10,13 +10,9 @@
 #include "Cell.hxx"
 #include "Face.hxx"
 
+#include "CdmathException.hxx"
 #include "MEDFileMesh.hxx"
 #include "MEDLoader.hxx"
-#include "MEDCouplingUMesh.hxx"
-#include "MEDCouplingIMesh.hxx"
-#include "MEDCouplingFieldDouble.hxx"
-
-#include "CdmathException.hxx"
 
 #include <iostream>
 #include <stdio.h>
@@ -104,7 +100,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 
 	double *originPtr = new double[_spaceDim];
 	double *dxyzPtr = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
+	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
 
 	for(int i=0;i<_spaceDim;i++)
 	{
@@ -552,10 +548,10 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 	for (unsigned int i=0;i<faceGroups.size();i++ )
 	{
 		string groupName=faceGroups[i];
-		vector<int> nonEmptyGrp(medmesh->getGrpNonEmptyLevels(groupName));
+		vector<mcIdType> nonEmptyGrp(medmesh->getGrpNonEmptyLevels(groupName));
 		//We check if the group has a relative dimension equal to -1 
 		//before call to the function getGroup(-1,groupName.c_str())
-		vector<int>::iterator it = find(nonEmptyGrp.begin(), nonEmptyGrp.end(), -1);
+		vector<mcIdType>::iterator it = find(nonEmptyGrp.begin(), nonEmptyGrp.end(), -1);
 		if (it != nonEmptyGrp.end())
 		{
 			cout<<"Boundary face group named "<< groupName << " found"<<endl;
@@ -614,8 +610,8 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 	for (unsigned int i=0;i<nodeGroups.size();i++ )
 	{
 		string groupName=nodeGroups[i];
-		DataArrayInt * nodeGroup=medmesh->getNodeGroupArr( groupName );
-		const int *nodeids=nodeGroup->getConstPointer();
+		DataArrayIdType * nodeGroup=medmesh->getNodeGroupArr( groupName );
+		const mcIdType *nodeids=nodeGroup->getConstPointer();
 
 		if(nodeids!=NULL)
 		{
@@ -659,10 +655,10 @@ MEDCouplingUMesh*
 Mesh::setMesh( void )
 //----------------------------------------------------------------------
 {
-	DataArrayInt *desc  = DataArrayInt::New();
-	DataArrayInt *descI = DataArrayInt::New();
-	DataArrayInt *revDesc  = DataArrayInt::New();
-	DataArrayInt *revDescI = DataArrayInt::New();
+	DataArrayIdType *desc  = DataArrayIdType::New();
+	DataArrayIdType *descI = DataArrayIdType::New();
+	DataArrayIdType *revDesc  = DataArrayIdType::New();
+	DataArrayIdType *revDescI = DataArrayIdType::New();
 	MEDCouplingUMesh* mu = _mesh->buildUnstructured();
 
 	mu->unPolyze();
@@ -671,11 +667,11 @@ Mesh::setMesh( void )
 	
 	MEDCouplingUMesh* mu2=mu->buildDescendingConnectivity2(desc,descI,revDesc,revDescI);//mesh of dimension N-1 containing the cell interfaces
     
-    const int *tmp = desc->getConstPointer();
-    const int *tmpI=descI->getConstPointer();
+    const mcIdType *tmp = desc->getConstPointer();
+    const mcIdType *tmpI=descI->getConstPointer();
 
-	const int *tmpA =revDesc->getConstPointer();
-	const int *tmpAI=revDescI->getConstPointer();
+	const mcIdType *tmpA =revDesc->getConstPointer();
+	const mcIdType *tmpAI=revDescI->getConstPointer();
 
     //const int *work=tmp+tmpI[id];//corresponds to buildDescendingConnectivity
 
@@ -707,22 +703,22 @@ Mesh::setMesh( void )
 	DataArrayDouble *coo = mu->getCoords() ;
 	const double    *cood=coo->getConstPointer();
 
-	DataArrayInt *revNode =DataArrayInt::New();
-	DataArrayInt *revNodeI=DataArrayInt::New();
+	DataArrayIdType *revNode =DataArrayIdType::New();
+	DataArrayIdType *revNodeI=DataArrayIdType::New();
 	mu->getReverseNodalConnectivity(revNode,revNodeI) ;
-	const int *tmpN =revNode->getConstPointer();
-	const int *tmpNI=revNodeI->getConstPointer();
+	const mcIdType *tmpN =revNode->getConstPointer();
+	const mcIdType *tmpNI=revNodeI->getConstPointer();
 
-	DataArrayInt *revCell =DataArrayInt::New();
-	DataArrayInt *revCellI=DataArrayInt::New();
+	DataArrayIdType *revCell =DataArrayIdType::New();
+	DataArrayIdType *revCellI=DataArrayIdType::New();
 	mu2->getReverseNodalConnectivity(revCell,revCellI) ;
-	const int *tmpC =revCell->getConstPointer();
-	const int *tmpCI=revCellI->getConstPointer();
+	const mcIdType *tmpC =revCell->getConstPointer();
+	const mcIdType *tmpCI=revCellI->getConstPointer();
 
-	const DataArrayInt *nodal  = mu2->getNodalConnectivity() ;
-	const DataArrayInt *nodalI = mu2->getNodalConnectivityIndex() ;
-	const int *tmpNE =nodal->getConstPointer();
-	const int *tmpNEI=nodalI->getConstPointer();
+	const DataArrayIdType *nodal  = mu2->getNodalConnectivity() ;
+	const DataArrayIdType *nodalI = mu2->getNodalConnectivityIndex() ;
+	const mcIdType *tmpNE =nodal->getConstPointer();
+	const mcIdType *tmpNEI=nodalI->getConstPointer();
 
 	_numberOfCells = mu->getNumberOfCells() ;
 	_cells      = new Cell[_numberOfCells] ;
@@ -736,14 +732,14 @@ Mesh::setMesh( void )
     _indexFacePeriodicSet=false;
 
     //Definition used if _meshDim =3 to determine the edges
-    DataArrayInt *desc2 =DataArrayInt::New();
-    DataArrayInt *descI2=DataArrayInt::New();
-    DataArrayInt *revDesc2 =DataArrayInt::New();
-    DataArrayInt *revDescI2=DataArrayInt::New();
-    DataArrayInt *revNode2 =DataArrayInt::New();
-    DataArrayInt *revNodeI2=DataArrayInt::New();
-    const int *tmpN2 ;
-    const int *tmpNI2;
+    DataArrayIdType *desc2 =DataArrayIdType::New();
+    DataArrayIdType *descI2=DataArrayIdType::New();
+    DataArrayIdType *revDesc2 =DataArrayIdType::New();
+    DataArrayIdType *revDescI2=DataArrayIdType::New();
+    DataArrayIdType *revNode2 =DataArrayIdType::New();
+    DataArrayIdType *revNodeI2=DataArrayIdType::New();
+    const mcIdType *tmpN2 ;
+    const mcIdType *tmpNI2;
     MEDCouplingUMesh* mu3;
     
 	if (_meshDim == 1)
@@ -764,14 +760,14 @@ Mesh::setMesh( void )
 	{
 		for( int id=0;id<_numberOfCells;id++ )
 		{
-			const int *work=tmp+tmpI[id];
+			const mcIdType *work=tmp+tmpI[id];
             int nbFaces=tmpI[id+1]-tmpI[id];
 			
 			int nbVertices=mu->getNumberOfNodesInCell(id) ;
             
 			Cell ci( nbVertices, nbFaces, surf[id], Point(coorBary[id], 0.0, 0.0) ) ;
 
-			std::vector<int> nodeIdsOfCell ;
+			std::vector<mcIdType> nodeIdsOfCell ;
 			mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
 			for( int el=0;el<nbVertices;el++ )
             {
@@ -796,13 +792,13 @@ Mesh::setMesh( void )
 		for( int id(0), k(0); id<_numberOfNodes; id++, k+=_spaceDim)
 		{
 			Point p(cood[k], 0.0, 0.0) ;
-			const int *workc=tmpN+tmpNI[id];
-			int nbCells=tmpNI[id+1]-tmpNI[id];
+			const mcIdType *workc=tmpN+tmpNI[id];
+			mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
 
-			const int *workf=tmpC+tmpCI[id];
-			int nbFaces=tmpCI[id+1]-tmpCI[id];
-            const int *workn=tmpA+tmpAI[id];
-            int nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
+			const mcIdType *workf=tmpC+tmpCI[id];
+			mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+            const mcIdType *workn=tmpA+tmpAI[id];
+            mcIdType nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
 			Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
 
 			for( int el=0;el<nbCells;el++ )
@@ -819,10 +815,10 @@ Mesh::setMesh( void )
 		for(int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim)
 		{
 			Point p(cood[k], 0.0, 0.0) ;
-			const int *workc=tmpA+tmpAI[id];
-			int nbCells=tmpAI[id+1]-tmpAI[id];
+			const mcIdType *workc=tmpA+tmpAI[id];
+			mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
 
-			const int *workv=tmpNE+tmpNEI[id]+1;
+			const mcIdType *workv=tmpNE+tmpNEI[id]+1;
 			Face fi( 1, nbCells, 1.0, p, 1.0, 0.0, 0.0) ;
 			fi.addNodeId(0,workv[0]) ;
 
@@ -854,10 +850,10 @@ Mesh::setMesh( void )
 		/*Building mesh cells */
 		for(int id(0), k(0); id<_numberOfCells; id++, k+=_spaceDim)
 		{
-            const int *work=tmp+tmpI[id];      
-			int nbFaces=tmpI[id+1]-tmpI[id];
+            const mcIdType *work=tmp+tmpI[id];      
+			mcIdType nbFaces=tmpI[id+1]-tmpI[id];
             
-			int nbVertices=mu->getNumberOfNodesInCell(id) ;
+			mcIdType nbVertices=mu->getNumberOfNodesInCell(id) ;
 
 			vector<double> coorBaryXyz(3,0);
 			for (int d=0; d<_spaceDim; d++)
@@ -867,7 +863,7 @@ Mesh::setMesh( void )
 			Cell ci( nbVertices, nbFaces, surf[id], p ) ;
 
 			/* Filling cell nodes */
-			std::vector<int> nodeIdsOfCell ;
+			std::vector<mcIdType> nodeIdsOfCell ;
 			mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
 			for( int el=0;el<nbVertices;el++ )
 				ci.addNodeId(el,nodeIdsOfCell[el]) ;
@@ -876,7 +872,7 @@ Mesh::setMesh( void )
 			if(_spaceDim==_meshDim)//use the normal field generated by buildOrthogonalField()
 				for( int el=0;el<nbFaces;el++ )
 				{
-                    int faceIndex=(abs(work[el])-1);//=work[el] since Fortran type numbering was used, and negative sign means anticlockwise numbering
+                    mcIdType faceIndex=(abs(work[el])-1);//=work[el] since Fortran type numbering was used, and negative sign means anticlockwise numbering
 					vector<double> xyzn(3,0);//Outer normal to the cell
 					if (work[el]<0)
 						for (int d=0; d<_spaceDim; d++)
@@ -891,10 +887,10 @@ Mesh::setMesh( void )
 			{
 				if(_meshDim==1)//we know in this case there are only two faces around the cell id, each face is composed of a single node
 				{//work[0]= first face global number, work[1]= second face global number
-                    int indexFace0=abs(work[0])-1;//=work[0] since Fortran type numbering was used, and negative sign means anticlockwise numbering
-                    int indexFace1=abs(work[1])-1;//=work[1] since Fortran type numbering was used, and negative sign means anticlockwise numbering
-					int idNodeA=(tmpNE+tmpNEI[indexFace0]+1)[0];//global number of the first  face node work[0]=(abs(work[0])-1)
-					int idNodeB=(tmpNE+tmpNEI[indexFace1]+1)[0];//global number of the second face node work[1]=(abs(work[1])-1)
+                    mcIdType indexFace0=abs(work[0])-1;//=work[0] since Fortran type numbering was used, and negative sign means anticlockwise numbering
+                    mcIdType indexFace1=abs(work[1])-1;//=work[1] since Fortran type numbering was used, and negative sign means anticlockwise numbering
+					mcIdType idNodeA=(tmpNE+tmpNEI[indexFace0]+1)[0];//global number of the first  face node work[0]=(abs(work[0])-1)
+					mcIdType idNodeB=(tmpNE+tmpNEI[indexFace1]+1)[0];//global number of the second face node work[1]=(abs(work[1])-1)
 					Vector vecAB(3);
 					for(int i=0;i<_spaceDim;i++)
 						vecAB[i]=coo->getIJ(idNodeB,i) - coo->getIJ(idNodeA,i);
@@ -912,8 +908,8 @@ Mesh::setMesh( void )
 					for( int el=0;el<nbFaces;el++ )
 					{
                         int faceIndex=(abs(work[el])-1);//=work[el] since Fortran type numbering was used, and negative sign means anticlockwise numbering
-						const int *workv=tmpNE+tmpNEI[faceIndex]+1;
-						int nbNodes= tmpNEI[faceIndex+1]-tmpNEI[faceIndex]-1;
+						const mcIdType *workv=tmpNE+tmpNEI[faceIndex]+1;
+						mcIdType nbNodes= tmpNEI[faceIndex+1]-tmpNEI[faceIndex]-1;
 						if(nbNodes!=2)//We want to compute the normal to a straight line, not a curved interface composed of more thant 2 points
 						{
 							cout<<"Mesh name "<< mu->getName()<< " space dim= "<< _spaceDim <<" mesh dim= "<< _meshDim <<endl;
@@ -921,8 +917,8 @@ Mesh::setMesh( void )
 							throw CdmathException("Mesh::setMesh number of nodes around a face should be 2");
 						}
 
-						int idNodeA=workv[0];
-						int idNodeB=workv[1];
+						mcIdType idNodeA=workv[0];
+						mcIdType idNodeB=workv[1];
 						vector<double> nodeA(_spaceDim), nodeB(_spaceDim), nodeP(_spaceDim);
 						for(int i=0;i<_spaceDim;i++)
 						{
@@ -971,8 +967,8 @@ Mesh::setMesh( void )
 			for (int d=0; d<_spaceDim; d++)
 				coorBarySegXyz[d] = coorBarySeg[k+d];
 			Point p(coorBarySegXyz[0],coorBarySegXyz[1],coorBarySegXyz[2]) ;
-			const int *workc=tmpA+tmpAI[id];
-			int nbCells=tmpAI[id+1]-tmpAI[id];
+			const mcIdType *workc=tmpA+tmpAI[id];
+			mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
             
             if (nbCells>2 && _spaceDim==_meshDim)
             {
@@ -986,8 +982,8 @@ Mesh::setMesh( void )
             if (nbCells==1)
                 _boundaryFaceIds.push_back(id);
                 
-			const int *workv=tmpNE+tmpNEI[id]+1;
-			int nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;
+			const mcIdType *workv=tmpNE+tmpNEI[id]+1;
+			mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;
 
 			Face fi;
 			if(_spaceDim==_meshDim)//Euclidean flat mesh geometry
@@ -1023,12 +1019,12 @@ Mesh::setMesh( void )
 				coorP[d] = cood[k+d];
 			Point p(coorP[0],coorP[1],coorP[2]) ;
 
-			const int *workc=tmpN+tmpNI[id];
-			int nbCells=tmpNI[id+1]-tmpNI[id];
-			const int *workf=tmpC+tmpCI[id];
-			int nbFaces=tmpCI[id+1]-tmpCI[id];
-			const int *workn;
-			int nbNeighbourNodes;
+			const mcIdType *workc=tmpN+tmpNI[id];
+			mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
+			const mcIdType *workf=tmpC+tmpCI[id];
+			mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+			const mcIdType *workn;
+			mcIdType nbNeighbourNodes;
             if (_meshDim == 1)
             {
                 workn=tmpA+tmpAI[id];
@@ -1151,7 +1147,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 
 	double *originPtr = new double[_spaceDim];
 	double *dxyzPtr = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
+	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
 
 	originPtr[0]=xmin;
 	nodeStrctPtr[0]=nx+1;
@@ -1169,18 +1165,18 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 	delete [] dxyzPtr;
 	delete [] nodeStrctPtr;
 
-	DataArrayInt *desc=DataArrayInt::New();
-	DataArrayInt *descI=DataArrayInt::New();
-	DataArrayInt *revDesc=DataArrayInt::New();
-	DataArrayInt *revDescI=DataArrayInt::New();
+	DataArrayIdType *desc=DataArrayIdType::New();
+	DataArrayIdType *descI=DataArrayIdType::New();
+	DataArrayIdType *revDesc=DataArrayIdType::New();
+	DataArrayIdType *revDescI=DataArrayIdType::New();
 	MEDCouplingUMesh* mu=_mesh->buildUnstructured();
 	MEDCouplingUMesh *mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
 
-	const int *tmp=desc->getConstPointer();
-	const int *tmpI=descI->getConstPointer();
+	const mcIdType *tmp=desc->getConstPointer();
+	const mcIdType *tmpI=descI->getConstPointer();
 
-	const int *tmpA =revDesc->getConstPointer();
-	const int *tmpAI=revDescI->getConstPointer();
+	const mcIdType *tmpA =revDesc->getConstPointer();
+	const mcIdType *tmpAI=revDescI->getConstPointer();
 
 	_eltsTypes=mu->getAllGeoTypesSorted();
 
@@ -1212,7 +1208,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 		Point p(coorBary[id],0.0,0.0) ;
 		Cell ci( nbVertices, nbVertices, lon[id], p ) ;
 
-		std::vector<int> nodeIdsOfCell ;
+		std::vector<mcIdType> nodeIdsOfCell ;
 		mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
 		for( int el=0;el<nbVertices;el++ )
 		{
@@ -1222,8 +1218,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 
         double xn = (cood[nodeIdsOfCell[nbVertices-1]] - cood[nodeIdsOfCell[0]] > 0.0) ? -1.0 : 1.0;
 
-        int nbFaces=tmpI[id+1]-tmpI[id];
-        const int *work=tmp+tmpI[id];
+        mcIdType nbFaces=tmpI[id+1]-tmpI[id];
+        const mcIdType *work=tmp+tmpI[id];
 		
         for( int el=0;el<nbFaces;el++ )
 		{
@@ -1238,22 +1234,22 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 	}
 
     //Suppress the following since tmpN=tmpA
-	DataArrayInt *revNode=DataArrayInt::New();
-	DataArrayInt *revNodeI=DataArrayInt::New();
+	DataArrayIdType *revNode=DataArrayIdType::New();
+	DataArrayIdType *revNodeI=DataArrayIdType::New();
 	mu->getReverseNodalConnectivity(revNode,revNodeI) ;
-	const int *tmpN=revNode->getConstPointer();
-	const int *tmpNI=revNodeI->getConstPointer();
+	const mcIdType *tmpN=revNode->getConstPointer();
+	const mcIdType *tmpNI=revNodeI->getConstPointer();
 
 	for( int id=0;id<_numberOfNodes;id++ )
 	{
 		std::vector<double> coo ;
 		mu->getCoordinatesOfNode(id,coo);
 		Point p(coo[0],0.0,0.0) ;
-		const int *workc=tmpN+tmpNI[id];
-		int nbCells=tmpNI[id+1]-tmpNI[id];
-		int nbFaces=1;
-        const int *workn=tmpA+tmpAI[id];
-        int nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
+		const mcIdType *workc=tmpN+tmpNI[id];
+		mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
+		mcIdType nbFaces=1;
+        const mcIdType *workn=tmpA+tmpAI[id];
+        mcIdType nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
         
 		Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
         for( int el=0;el<nbCells;el++ )
@@ -1328,7 +1324,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     MEDCouplingUMesh * mesh1d = MEDCouplingUMesh::New(meshName, 1);
     mesh1d->allocateCells(nx - 1);
     double * coords = new double[nx];
-    int * nodal_con = new int[2];
+    mcIdType * nodal_con = new mcIdType[2];
     coords[0]=points[0];
     for(int i=0; i<nx- 1 ; i++)
     {
@@ -1349,10 +1345,10 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 
     _mesh=mesh1d;
     
-	DataArrayInt *desc=DataArrayInt::New();
-	DataArrayInt *descI=DataArrayInt::New();
-	DataArrayInt *revDesc=DataArrayInt::New();
-	DataArrayInt *revDescI=DataArrayInt::New();
+	DataArrayIdType *desc=DataArrayIdType::New();
+	DataArrayIdType *descI=DataArrayIdType::New();
+	DataArrayIdType *revDesc=DataArrayIdType::New();
+	DataArrayIdType *revDescI=DataArrayIdType::New();
     MEDCouplingUMesh* mu=_mesh->buildUnstructured();
 	MEDCouplingUMesh *mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
 
@@ -1377,7 +1373,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 		Point p(coorBary[id],0.0,0.0) ;
 		Cell ci( nbVertices, nbVertices, lon[id], p ) ;
 
-		std::vector<int> nodeIdsOfCell ;
+		std::vector<mcIdType> nodeIdsOfCell ;
 		mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
 		for( int el=0;el<nbVertices;el++ )
 		{
@@ -1390,11 +1386,11 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 
 
     //Suppress the following since tmpN=tmpA
-	DataArrayInt *revNode=DataArrayInt::New();
-	DataArrayInt *revNodeI=DataArrayInt::New();
+	DataArrayIdType *revNode=DataArrayIdType::New();
+	DataArrayIdType *revNodeI=DataArrayIdType::New();
 	mu->getReverseNodalConnectivity(revNode,revNodeI) ;
-	const int *tmpN=revNode->getConstPointer();
-	const int *tmpNI=revNodeI->getConstPointer();
+	const mcIdType *tmpN=revNode->getConstPointer();
+	const mcIdType *tmpNI=revNodeI->getConstPointer();
 
 	_numberOfNodes = mu->getNumberOfNodes() ;
 	_nodes    = new Node[_numberOfNodes] ;
@@ -1406,11 +1402,11 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 		std::vector<double> coo ;
 		mu->getCoordinatesOfNode(id,coo);
 		Point p(coo[0],0.0,0.0) ;
-		const int *workc=tmpN+tmpNI[id];
-		int nbCells=tmpNI[id+1]-tmpNI[id];
-		int nbFaces=1;
-        const int *workn=tmpN+tmpNI[id];
-        int nbNeighbourNodes=tmpNI[id+1]-tmpNI[id];
+		const mcIdType *workc=tmpN+tmpNI[id];
+		mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
+		mcIdType nbFaces=1;
+        const mcIdType *workn=tmpN+tmpNI[id];
+        mcIdType nbNeighbourNodes=tmpNI[id+1]-tmpNI[id];
 		Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
 		int nbVertices=1;
 		/* provisoire !!!!!!!!!!!!*/
@@ -1488,7 +1484,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 
 	double *originPtr = new double[_spaceDim];
 	double *dxyzPtr   = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
+	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
 
 	originPtr[0]=xmin;
 	originPtr[1]=ymin;
@@ -1565,7 +1561,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 
 	double *originPtr = new double[_spaceDim];
 	double *dxyzPtr = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
+	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
 
 	originPtr[0]=xmin;
 	originPtr[1]=ymin;
@@ -1634,7 +1630,7 @@ Mesh::getDXYZ() const
 	return _dxyz;
 }
 
-std::vector<int>
+std::vector<mcIdType>
 Mesh::getCellGridStructure() const
 {
     if(!_isStructured)
@@ -1834,7 +1830,7 @@ Mesh::getNameOfNodeGroups( void )  const
 	return _nodeGroupNames;
 }
 
-vector<MEDCoupling::DataArrayInt *>
+vector<MEDCoupling::DataArrayIdType *>
 Mesh::getNodeGroups( void )  const
 {
 	return _nodeGroups;

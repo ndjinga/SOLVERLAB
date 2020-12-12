@@ -35,11 +35,11 @@ namespace MEDCoupling
 class MEDFileCMesh;
 class MEDCouplingMesh;
 class MEDCouplingIMesh;
-class DataArrayInt32;
+class DataArrayIdType;
 }
 namespace ParaMEDMEM
 {
-class DataArrayInt;
+class DataArrayIdType;
 }
 #include <MCAuto.hxx>
 #include "NormalizedGeometricTypes"
@@ -356,7 +356,7 @@ private: //----------------------------------------------------------------
 	/*
 	 * The list of node groups.
 	 */
-	std::vector<MEDCoupling::DataArrayInt32 *> _nodeGroups;
+	std::vector<MEDCoupling::DataArrayIdType *> _nodeGroups;
 	/*
 	 * The mesh MEDCouplingIMesh
 	 */

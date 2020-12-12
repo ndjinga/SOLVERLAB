@@ -32,7 +32,7 @@ def read_typ2(fichier, nom_med):
     nb_vois = ri.deltaShiftIndex()
     for i in range(mf.getNumberOfCells()):
         if nb_vois[i] == 1: g.append(i)
-    grp = ml.DataArrayInt.New(g)
+    grp = ml.DataArrayIdType.New(g)
     grp.setName("boundary")
     mm.addGroup(-1, grp)
 
@@ -106,7 +106,7 @@ def read_typ3(fichier, nom_med):
     nb_vois = ri.deltaShiftIndex()
     for i in range(mf.getNumberOfCells()):
         if nb_vois[i] == 1: g.append(i)
-    grp = ml.DataArrayInt.New(g)
+    grp = ml.DataArrayIdType.New(g)
     grp.setName("boundary")
     mm.addGroup(-1, grp)
 

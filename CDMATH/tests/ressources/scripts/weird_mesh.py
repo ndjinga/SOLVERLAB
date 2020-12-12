@@ -76,7 +76,7 @@ def getWeirdMesh(xmin, xmax, ymin, ymax, lx, ly, str, func=None, extr=-1, unpo=F
             for idx, b in enumerate(bf):
                 if abs(b[i] - [[xmin, xmax], [ymin, ymax], [0., 1.]][i][j]) < 1e-5:
                     g.append(idx)
-            grp = ml.DataArrayInt.New(g)
+            grp = ml.DataArrayIdType.New(g)
             grp.setName(noms_cl[i][j])
             mm.addGroup(-1, grp)
 

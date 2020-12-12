@@ -172,19 +172,19 @@ class VTURawReader:
         m.setCoords(coo)
         # connectivity
         offsets=np.memmap(fd,dtype=rd._type_off,mode='r',offset=ref+rd._off_off,shape=(rd._nb_cells,))
-        offsets=self.__swapIfNecessary(rd._bo,offsets) ; connLgth=offsets[-1] ; offsets2=DataArrayInt(rd._nb_cells+1) ; offsets2.setIJ(0,0,0)
-        offsets2[1:]=DataArrayInt([int(o) for o in offsets])
+        offsets=self.__swapIfNecessary(rd._bo,offsets) ; connLgth=offsets[-1] ; offsets2=DataArrayIdType(rd._nb_cells+1) ; offsets2.setIJ(0,0,0)
+        offsets2[1:]=DataArrayIdType([int(o) for o in offsets])
         offsets3=offsets2.deltaShiftIndex() ; offsets2=offsets3.deepCopy() ; offsets3+=1 ; offsets3.computeOffsetsFull()
         offsets=offsets3
-        tmp1=DataArrayInt(len(offsets2),2) ; tmp1[:,0]=1 ; tmp1[:,1]=offsets2 ; tmp1.rearrange(1) ; tmp1.computeOffsetsFull()
-        tmp1=DataArrayInt.Range(1,2*len(offsets2),2).buildExplicitArrByRanges(tmp1)
+        tmp1=DataArrayIdType(len(offsets2),2) ; tmp1[:,0]=1 ; tmp1[:,1]=offsets2 ; tmp1.rearrange(1) ; tmp1.computeOffsetsFull()
+        tmp1=DataArrayIdType.Range(1,2*len(offsets2),2).buildExplicitArrByRanges(tmp1)
         conn=np.memmap(fd,dtype=rd._type_conn,mode='r',offset=ref+rd._off_conn,shape=(connLgth,))
         conn=self.__swapIfNecessary(rd._bo,conn)
-        types=np.array(types,dtype='int32') ; types=DataArrayInt(types) ; 
+        types=np.array(types,dtype='int32') ; types=DataArrayIdType(types) ; 
         types.transformWithIndArr(self.VTKTypes_2_MC)
-        conn2=DataArrayInt(offsets.back())
+        conn2=DataArrayIdType(offsets.back())
         conn2[offsets[0:-1]]=types
-        conn2[tmp1]=DataArrayInt([int(c) for c in conn])
+        conn2[tmp1]=DataArrayIdType([int(c) for c in conn])
         m.setConnectivity(conn2,offsets,True)
         m.checkConsistencyLight() ; mm=MEDFileUMesh() ; mm.setMeshAtLevel(0,m) ; ms.pushMesh(mm)
         # Fields on nodes and on cells

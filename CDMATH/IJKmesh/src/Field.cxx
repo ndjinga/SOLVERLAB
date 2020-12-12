@@ -68,10 +68,10 @@ void Field::buildFieldMemoryStructure()
 	{
 		_field=MEDCouplingFieldDouble::New(ON_CELLS);
 		array->alloc(_mesh.getNumberOfFaces(),_numberOfComponents);
-		DataArrayInt *desc=DataArrayInt::New();
-		DataArrayInt *descI=DataArrayInt::New();
-		DataArrayInt *revDesc=DataArrayInt::New();
-		DataArrayInt *revDescI=DataArrayInt::New();
+		DataArrayIdType *desc=DataArrayIdType::New();
+		DataArrayIdType *descI=DataArrayIdType::New();
+		DataArrayIdType *revDesc=DataArrayIdType::New();
+		DataArrayIdType *revDescI=DataArrayIdType::New();
 		MEDCouplingUMesh *m3=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
 		_field->setMesh(m3);
 		desc->decrRef();

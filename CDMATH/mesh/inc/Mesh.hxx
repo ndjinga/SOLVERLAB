@@ -8,6 +8,10 @@
 #ifndef MESH_HXX_
 #define MESH_HXX_
 
+#include "MEDCouplingUMesh.hxx"
+#include "MEDCouplingIMesh.hxx"
+#include "MEDCouplingFieldDouble.hxx"
+
 /**
  * Mesh class is defined by
  * - case 1: file name of mesh med file (general unstructured)
@@ -25,11 +29,11 @@ class MEDFileUMesh;
 class MEDCouplingMesh;
 class MEDCouplingIMesh;
 class MEDCouplingUMesh;
-class DataArrayInt32;
+class DataArrayIdType;
 }
 namespace ParaMEDMEM
 {
-class DataArrayInt;
+class DataArrayIdType;
 }
 #include <MCAuto.hxx>
 #include "NormalizedGeometricTypes"
@@ -237,7 +241,7 @@ public: //----------------------------------------------------------------
 
 	std::vector<double> getDXYZ() const ;// for structured meshes
 
-	std::vector<int> getCellGridStructure() const;// for structured meshes
+	std::vector<mcIdType> getCellGridStructure() const;// for structured meshes
 
 	/**
 	 * \brief surcharge operator =
@@ -278,7 +282,7 @@ public: //----------------------------------------------------------------
 	 * \brief return the list of node groups
 	 * @return _nodeGroups
 	 */
-	std::vector<MEDCoupling::DataArrayInt32 *> getNodeGroups( void )  const ;
+	std::vector<MEDCoupling::DataArrayIdType *> getNodeGroups( void )  const ;
 
     /*
      * Functions to extract boundary nodes and faces Ids
@@ -387,7 +391,7 @@ private: //----------------------------------------------------------------
 
 	double _zMax;
 
-	std::vector<int> _nxyz;
+	std::vector<mcIdType> _nxyz;
 
 	std::vector<double> _dxyz;
 	/*
@@ -442,7 +446,7 @@ private: //----------------------------------------------------------------
 	/*
 	 * The list of node groups.
 	 */
-	std::vector<MEDCoupling::DataArrayInt32 *> _nodeGroups;
+	std::vector<MEDCoupling::DataArrayIdType *> _nodeGroups;
 	/*
 	 * The mesh MEDCoupling
 	 */
