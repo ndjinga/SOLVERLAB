@@ -18,7 +18,7 @@ are the study of
 - The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
 
 CDMATH-CoreFlows relies on the numerical toolbox [CDMATH-Toolbox](https://github.com/ndjinga/CDMATH) of the project [CDMATH](http://cdmath.jimdo.com) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
-You will need the packages 'doxygen' if you want to generate de documentation and 'swig' if you want to use python scripts.  The software is currently developed for linux distributions and is maintained on Ubuntu 16.04 LTS and 18.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
+You will need the packages 'doxygen' if you want to generate de documentation and 'swig' if you want to use python scripts.  The software is currently developed for linux distributions and is maintained on Ubuntu 16.04 LTS, 18.04 LTS and 20.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
 
 User guide
 ----------
@@ -84,7 +84,7 @@ Either of these latter commands results in the creation of a directory `~/worksp
 
 In the following steps we assume that [PETSC](https://www.mcs.anl.gov/petsc/) (version 3.4 or more recent) has been installed with CDMATH with the process described above.
 You need to set the following variables 
-- `CDMATH_INSTALL`, the path to your CDMATH installation, for example  `~/workspace/cdmath/cdmath_install//share/petsc-3.8.3 `
+- `CDMATH_INSTALL`, the path to your CDMATH installation, for example  `~/workspace/cdmath/cdmath_install//share/petsc-3.14.2 `
 - `PETSC_DIR`, the path to your PETSc installation. If [PETSC](https://www.mcs.anl.gov/petsc/) was installed by CDMATH then [CDMATH-Toolbox](https://github.com/ndjinga/CDMATH) can be defined as `~/workspace/cdmath/cdmath_install`
 - `PETSC_ARCH`, the type of installation used (usually arch-linux2-c-opt or linux-gnu-c-opt)
 

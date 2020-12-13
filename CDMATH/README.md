@@ -1,7 +1,7 @@
 CDMATH
 ======
 
-CDMATH is a geometrical and numerical toolbox designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The library originates from [CDMATH](http://cdmath.jimdo.com), a collaborative workgroup with the same name. It is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of matrices and linear solvers. The library is currently developed for linux distributions and is maintained on Ubuntu 14.04 LTS, 16.04 LTS and 18.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
+CDMATH is a geometrical and numerical toolbox designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The library originates from [CDMATH](http://cdmath.jimdo.com), a collaborative workgroup with the same name. It is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of matrices and linear solvers. The library is currently developed for linux distributions and is maintained on Ubuntu 14.04 LTS, 16.04 LTS, 18.04 LTSand 20.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
 
 - [The physical models](./Documentation/PhysicalModels.md)
     - [The linear scalar problems](./Documentation/PhysicalModels/ScalarModelsPage.ipynb)
@@ -73,11 +73,11 @@ Compile and install CDMATH
 Simpler build for a minimum version:
 * `cmake ../cdmath-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PETSC=ON -DCDMATH_WITH_PYTHON=ON `  
 > This will download and build the following dependencies
-> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.13.2.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.13.2.tar.gz
-> - HDF5 http://files.salome-platform.org/Salome/other/med-4.0.0.tar.gz
-> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.0.0.tar.gz
-> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.4.0.tar.gz
+> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.14.2.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.14.1.tar.gz
+> - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
+> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
+> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.6.0.tar.gz
 
 Advanced build for an all-options version:
 * `cmake ../cdmath-master -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DCDMATH_WITH_PETSC=ON -DCDMATH_WITH_PYTHON=ON  -DCDMATH_WITH_POSTPRO=ON -DCDMATH_WITH_TESTS=ON -DCDMATH_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}`  
