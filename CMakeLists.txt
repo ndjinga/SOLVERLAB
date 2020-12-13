@@ -22,6 +22,7 @@ set (HDF5_ROOT            OFF CACHE STRING "HDF5 library path" )#For the compila
 set (MEDFILE_ROOT_DIR     OFF CACHE STRING "MED library path" )
 set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
 set (PYTHON_ROOT_DIR      OFF CACHE STRING "Python library path" )
+set (PARAVIEW_ROOT_DIR    OFF CACHE STRING "PARAVIEW library path" )
 
 #url of tarball librairies
 set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.2.tar.gz 
@@ -408,20 +409,20 @@ ENDIF(MEDCOUPLING_USE_64BIT_IDS)
 ####################                                  
 
 # Paraview variables to choose python version and for env_SOLVERLAB.sh  
-if  ( DEFINED PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
-  if  ( DEFINED PARAVIEW_ROOT_DIR )
+if  ( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
+  if  ( PARAVIEW_ROOT_DIR )
     set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
     set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
-  else( DEFINED PARAVIEW_ROOT_DIR )
+  else( PARAVIEW_ROOT_DIR )
     set( PARAVIEW_ROOT_DIR      $ENV{PARAVIEW_ROOT_DIR} )
     set( PARAVIEW_INCLUDE_DIR   $ENV{PARAVIEW_ROOT_DIR}/include)
     set( PARAVIEW_LIBRARIES_DIR $ENV{PARAVIEW_ROOT_DIR}/lib)
-  endif( DEFINED PARAVIEW_ROOT_DIR )
-else( DEFINED PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
+  endif( PARAVIEW_ROOT_DIR )
+else( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
   message(STATUS "PARAVIEW_ROOT_DIR not set. Trying to detect paraview.")
   set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
   set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/)
-endif( DEFINED PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
+endif( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
 
 if  ( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   if   ( NOT DEFINED PARAVIEW_VERSION )
