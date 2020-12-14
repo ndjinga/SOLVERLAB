@@ -138,7 +138,7 @@ SparseMatrixPetsc computeDivergenceMatrix(Mesh my_mesh, int nbVoisinsMax, double
     return implMat;
 }
 
-void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file)
+void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file)
 {
 	/* Retrieve mesh data */
     int dim=my_mesh.getMeshDimension();
@@ -149,7 +149,7 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 
 
     /* Initial conditions */
-    cout << "Construction of the initial condition …" << endl;
+    cout << "Construction of the initial condition" << endl;
     
     Field pressure_field("Pressure",CELLS,my_mesh,1) ;
     Field velocity_field("Velocity",CELLS,my_mesh,1) ;
@@ -176,7 +176,7 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
     double time=0.;
     double dt = cfl * dx_min / c0;
     
-    cout << "Saving the solution at T=" << time << "…" << endl;
+    cout << "Saving the solution at T=" << time << endl;
     pressure_field.setTime(time,it);
     pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
     velocity_field.setTime(time,it);
@@ -186,8 +186,8 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
     SparseMatrixPetsc divMat=computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt);
 
     /* Time loop */
-    cout<< "Starting computation of the linear wave system with an explicit UPWIND scheme …" << endl;
-    while (it<ntmax && time <= tmax )
+    cout<< "Starting computation of the linear wave system with an explicit UPWIND scheme" << endl;
+    while (it<ntmax && time <= tmax && ! isStationary)
     {
         dUn=divMat*Un;
         Un-=dUn;
@@ -230,8 +230,9 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
  
 int main(int argc, char *argv[])
 {
-    cout << "RESOLUTION OF THE 2D WAVE SYSTEM: Upwind explicit scheme" << endl;
-    cout << "- WALL BC" << endl;
+	    cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM"<<endl;
+	    cout << "- Numerical scheme : Upwind explicit scheme" << endl;
+	    cout << "- Boundary conditions : WALL" << endl;
 
     // Problem data
     double cfl=0.49;
@@ -242,9 +243,9 @@ int main(int argc, char *argv[])
 
 	if(argc<2)
 	{
-	    cout << "- DOMAIN: SQUARE" << endl;
-	    cout << "- MESH: CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl;
-	    cout << "Construction of a cartesian mesh …" << endl;
+		    cout << "- DOMAIN : SQUARE" << endl;
+		    cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
+		    cout << "Construction of a cartesian mesh" << endl;
 	    double xinf=0.0;
 	    double xsup=1.0;
 	    double yinf=0.0;
@@ -263,7 +264,7 @@ int main(int argc, char *argv[])
 	else
 	{
 	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
-	    cout << "Loading of a mesh …" << endl;
+	    cout << "Loading of a mesh named "<<argv[1] << endl;
 	    string filename = argv[1];
 	    Mesh myMesh(filename);
 
