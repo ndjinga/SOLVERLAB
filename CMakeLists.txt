@@ -48,13 +48,7 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 
-# In case of use with MPI quickly change compiler to avoir cmake erors
 if( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
-  #if( DEFINED ENV{MPI_HOME} )
-  #  set(CMAKE_C_COMPILER $ENV{MPI_HOME}/bin/mpicc)
-  #else( DEFINED ENV{MPI_HOME} )
-  #  set(CMAKE_C_COMPILER    ${MPI_HOME}/bin/mpicc)
-  #endif( DEFINED ENV{MPI_HOME} )
   set(SOLVERLAB_WITH_MPI ON)
   find_package(MPI)
   if(   ${MPI_LIBRARY} STREQUAL "MPI_LIBRARY-NOTFOUND")
@@ -114,7 +108,7 @@ endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
     endif( NOT HDF5_ROOT )
     set(HDF5_LIBRARY_DIR  ${HDF5_ROOT}/lib)
     set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
-  else ( DEFINED ENV{PETSC_DIR} ORPETSC_DIR )
+  else ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
     message ( STATUS "PETSC_DIR not set, searching PETSc and SLEPc in the system" )
 
     if ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )  #Case fedora/redhat system install
