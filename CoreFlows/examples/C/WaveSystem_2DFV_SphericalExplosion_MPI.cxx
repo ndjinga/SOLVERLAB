@@ -146,71 +146,79 @@ void computeDivergenceMatrix(Mesh my_mesh, Mat * implMat, double dt)
             }
         }   
     }     
-	MatAssemblyBegin(*implMat, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(  *implMat, MAT_FINAL_ASSEMBLY);
 }
 
-void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size)
+void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size)
 {
+	/* Time iteration variables */
+    int it=0;
+    bool isStationary=false;
+    double time=0.;
+    double dt;
+    double norm;
+	    
+	/* PETSc variables */
 	int globalNbUnknowns;
-	Vec Un, dUn;
-	Vec Un_PAR;
+	int  localNbUnknowns;
+	int d_nnz, o_nnz;
+	Vec Un, dUn, Un_seq;
+    Mat divMat;
 	VecScatter scat;
+
 	
-	if(rank != 0)
+	/* Mesh parameters managed only by proc 0 */
+    int nbCells;
+    int dim;
+    int nbComp;	    
+	int idx;//Index where to add the vector values
+	double value;//value to add in the vector	
+    Field pressure_field, velocity_field;
+    std::string meshName;
+
+	if(rank == 0)
+	    globalNbUnknowns=my_mesh.getNumberOfCells()*(my_mesh.getMeshDimension()+1);//nbCells*nbComp
+	
+	MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
+ 
+    /* iteration vectors */
+	VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,globalNbUnknowns,&Un);
+	VecDuplicate (Un,&dUn);
+	if(rank == 0)
+		VecCreateSeq(PETSC_COMM_SELF,globalNbUnknowns,&Un_seq);//For saving results on proc 0
+
+	VecScatterCreateToZero(Un,&scat,&Un_seq);
+
+	/* System matrix */
+	VecGetLocalSize(Un, &localNbUnknowns);
+
+	if(rank == 0)
 	{
-		MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		cout<<"process "<< rank << " just received globalNbUnknowns= "<< globalNbUnknowns<<endl;
-		VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE,globalNbUnknowns,&Un_PAR);
-		//VecCreateMPI(PETSC_COMM_WORLD,0           ,0               ,&Un);
-		VecCreateSeq(PETSC_COMM_SELF,0,&Un);
-		VecScatterCreateToZero(Un_PAR,&scat,&Un);
-		
-		VecScatterBegin(scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
-		VecScatterEnd(  scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
-
-		VecView(Un_PAR, 	PETSC_VIEWER_STDOUT_WORLD );
-
-		VecScatterDestroy(&scat);
-		VecDestroy(&Un);
-		VecDestroy(&Un_PAR);
+	    d_nnz=(my_mesh.getMaxNbNeighbours(CELLS)+1)*(my_mesh.getMeshDimension()+1);//(nbVoisinsMax+1)*nbComp
+	    o_nnz=                                       my_mesh.getMeshDimension()+1 ;//                 nbComp
 	}
-	else
-	{
+	MPI_Bcast(&d_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&o_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+   	MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz,NULL,&divMat);
+
+	if(rank == 0)
+		{
 		/* Retrieve mesh data */
-	    int nbCells = my_mesh.getNumberOfCells();
-	    int dim=my_mesh.getMeshDimension();
-	    int nbComp=dim+1;
-	    globalNbUnknowns=nbCells*nbComp;
-		int buffer[1];
-		MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		cout<<"process "<< rank << " just sent globalNbUnknowns= "<< globalNbUnknowns<<endl;
-	    /* iteration vectors */
-    	VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,globalNbUnknowns,&Un_PAR);
-		//VecCreateMPI(PETSC_COMM_WORLD,globalNbUnknowns,globalNbUnknowns,&Un);
-		VecCreateSeq(PETSC_COMM_SELF,globalNbUnknowns,&Un);
-		VecDuplicate (Un,&dUn);
-		VecScatterCreateToZero(Un_PAR,&scat,&Un);
-	    
-	    std::string meshName=my_mesh.getName();
-	    int nbVoisinsMax=my_mesh.getMaxNbNeighbours(CELLS);
+	    nbCells = my_mesh.getNumberOfCells();
+	    dim=my_mesh.getMeshDimension();
+	    nbComp=dim+1;	    
+	    meshName=my_mesh.getName();
 	    double dx_min=my_mesh.minRatioVolSurf();
-	
-		/* time iteration variables */
-	    int it=0;
-	    bool isStationary=false;
-	    double time=0.;
-	    double dt = cfl * dx_min / c0;
-	    double norm;
-	    
+		dt = cfl * dx_min / c0;
+		
 	    /* Initial conditions */
-	    cout << "Construction of the initial condition …" << endl;
+	    cout<<"Building the initial condition on processor 0" << endl;
 	    
-	    Field pressure_field("Pressure",CELLS,my_mesh,1) ;
-	    Field velocity_field("Velocity",CELLS,my_mesh,1) ;
+	    pressure_field=Field("Pressure",CELLS,my_mesh,1) ;
+	    velocity_field=Field("Velocity",CELLS,my_mesh,1) ;
 	    initial_conditions_shock(my_mesh,pressure_field, velocity_field);
 	
-	    cout << "Saving the solution at T=" << time << "…" << endl;
+	    cout << "Saving the solution at T=" << time <<"  on processor 0"<<endl;
 	    pressure_field.setTime(time,it);
 	    pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
 	    velocity_field.setTime(time,it);
@@ -218,8 +226,6 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 	    /* --------------------------------------------- */
 	
 
-		int idx;//Index where to add the block of values
-		double value;//value to add in the vector	
 	    for(int k =0; k<nbCells; k++)
 	    {
 			idx = k*nbComp;
@@ -232,23 +238,24 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
 				VecSetValues(Un,1,&idx,&value,INSERT_VALUES);
 			}
 		}
-		VecAssemblyBegin(Un);
-		VecAssemblyEnd(Un);
-
-		VecView(Un, 	PETSC_VIEWER_STDOUT_SELF );
-
-		VecScatterBegin(scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
-		VecScatterEnd(  scat,Un_PAR,Un,INSERT_VALUES,SCATTER_FORWARD);
-		
-		VecView(Un_PAR, 	PETSC_VIEWER_STDOUT_WORLD );
-
-	    Mat divMat;
-	   	MatCreateSeqAIJ(PETSC_COMM_SELF,nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp,NULL,&divMat);
 	    computeDivergenceMatrix(my_mesh,&divMat,dt);
+	}		
+
+	VecAssemblyBegin(Un);
+	VecAssemblyEnd(Un);
+	
+	//VecView(Un, PETSC_VIEWER_STDOUT_WORLD );
+
+	MatAssemblyBegin(divMat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(  divMat, MAT_FINAL_ASSEMBLY);
+
+	//MatView(divMat,	PETSC_VIEWER_STDOUT_WORLD );
+
+	MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     /* Time loop */
-    cout<< "Starting computation of the linear wave system with an explicit UPWIND scheme …" << endl;
-    while (it<ntmax && time <= tmax )
+	PetscPrintf(PETSC_COMM_WORLD,"Starting computation of the linear wave system on all processors : \n\n");
+    while (it<ntmax && time <= tmax && !isStationary)
     {
 		MatMult(divMat,Un,dUn);
         VecAXPY(Un,-1,dUn);
@@ -257,44 +264,48 @@ void WaveSystem2D(double tmax, double ntmax, double cfl, int output_freq, const 
         it=it+1;
  
 		VecNorm(dUn,NORM_2,&norm);
-         isStationary = norm<precision;
+        isStationary = norm<precision;
         /* Sauvegardes */
-        if(it%output_freq==0 or it>=ntmax or isStationary or time >=tmax)
+        if(it%output_freq==0 or it>=ntmax or isStationary or time >=tmax )
         {
-            cout<<"-- Iteration: " << it << ", Time: " << time << ", dt: " << dt<<endl;
+			PetscPrintf(PETSC_COMM_WORLD,"-- Iteration: %d, Time: %f, dt: %f, saving results on processor 0 \n", it, time, dt);
+			VecScatterBegin(scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
+			VecScatterEnd(  scat,Un,Un_seq,INSERT_VALUES,SCATTER_FORWARD);
 
-            for(int k=0; k<nbCells; k++)
-            {
-				idx = k*(dim+1)+0;
-				VecGetValues(Un,1,&idx,&value);
-                pressure_field[k]  =value;
-				for(int idim =0; idim<dim; idim++)
-				{
-					idx = k*nbComp+1+idim;
-					VecGetValues(Un,1,&idx,&value);
-					velocity_field[k,idim] = value/rho0;
+			if(rank == 0)
+			{
+	            for(int k=0; k<nbCells; k++)
+	            {
+					idx = k*(dim+1)+0;
+					VecGetValues(Un_seq,1,&idx,&value);
+	                pressure_field[k]  =value;
+					for(int idim =0; idim<dim; idim++)
+					{
+						idx = k*nbComp+1+idim;
+						VecGetValues(Un_seq,1,&idx,&value);
+						velocity_field[k,idim] = value/rho0;
+					}
 				}
+	            pressure_field.setTime(time,it);
+	            pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
+	            velocity_field.setTime(time,it);
+	            velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
 			}
-            pressure_field.setTime(time,it);
-            pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
-            velocity_field.setTime(time,it);
-            velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
 		}
     }
-    cout<<"End of calculation -- Iteration: " << it << ", Time: "<< time<< ", dt: " << dt<<endl;
 
+	PetscPrintf(PETSC_COMM_WORLD,"\n End of calculations at iteration: %d, and time: %f\n", it, time);
     if(it>=ntmax)
-        cout<< "Nombre de pas de temps maximum ntmax= "<< ntmax<< " atteint"<<endl;
+        PetscPrintf(PETSC_COMM_WORLD, "Nombre de pas de temps maximum ntmax= %d atteint\n", ntmax);
     else if(isStationary)
-        cout<< "Régime stationnaire atteint au pas de temps "<< it<< ", t= "<< time<<endl;       
+        PetscPrintf(PETSC_COMM_WORLD, "Régime stationnaire atteint au pas de temps %d, t= %f\n", it, time);       
     else
-        cout<< "Temps maximum Tmax= "<< tmax<< " atteint"<<endl;
+        PetscPrintf(PETSC_COMM_WORLD, "Temps maximum tmax= %f atteint\n", tmax);
 
 	VecDestroy(&Un);
-	VecDestroy(&Un_PAR);
-	VecScatterDestroy(&scat);
+	VecDestroy(&Un_seq);
+	VecDestroy(&dUn);
 	MatDestroy(&divMat);
-	}
 }
  
 int main(int argc, char *argv[])
@@ -309,31 +320,34 @@ int main(int argc, char *argv[])
     // Problem data
     double cfl=0.49;
     double tmax=1.;
-    double ntmax=3;//20000;
-    int freqSortie=100;
+    int ntmax=80;//20000;
+    int freqSortie=10;
     string fileOutPut="SphericalWave";
     Mesh myMesh;
 
 	if(size>1)
-		PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected, running parallel simulation -----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected : running a parallel simulation ----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- Limited parallelism : input and output remain sequential ----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- Only the matrix-vector products are done in parallel ----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- Processor 0 is in charge of building the mesh, saving the results, filling and then distributing the matrix to other processors.\n\n");
 		
 	if(rank == 0)
 	{
-	    cout << "RESOLUTION OF THE 2D WAVE SYSTEM on "<< size <<" processors"<<endl;
-	    cout << "- Upwind explicit scheme" << endl;
-	    cout << "- WALL BC" << endl;
+	    cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM on "<< size <<" processors"<<endl;
+	    cout << "- Numerical scheme : Upwind explicit scheme" << endl;
+	    cout << "- Boundary conditions : WALL" << endl;
 	
 		if(argc<2)
 		{
-		    cout << "- DOMAIN: SQUARE" << endl;
-		    cout << "- MESH: CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl;
-		    cout << "Construction of a cartesian mesh …" << endl;
+		    cout << "- DOMAIN : SQUARE" << endl;
+		    cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
+		    cout << "Construction of a cartesian mesh on processor 0" << endl;
 		    double xinf=0.0;
 		    double xsup=1.0;
 		    double yinf=0.0;
 		    double ysup=1.0;
-		    int nx=2;
-		    int ny=2;
+		    int nx=50;
+		    int ny=50;
 		    myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
 		    
 		    double eps=1.E-10;
@@ -344,8 +358,8 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-		    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
-		    cout << "Loading of a mesh …" << endl;
+		    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl<< endl;
+		    cout << "Loading of mesh named "<<argv[1]<<" on processor 0" << endl;
 		    string filename = argv[1];
 		    myMesh=Mesh(filename);
 		}
