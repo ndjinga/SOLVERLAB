@@ -103,7 +103,9 @@ if( SOLVERLAB_WITH_MPI )
   add_executable(WaveSystem_2DFV_SphericalExplosion_MPI.exe WaveSystem_2DFV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
   target_link_libraries(WaveSystem_2DFV_SphericalExplosion_MPI.exe CoreFlowsLibs  ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
   install(TARGETS WaveSystem_2DFV_SphericalExplosion_MPI.exe DESTINATION share/examples)
-  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_SEQ COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe")     # adding a ctest Test
-  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_PAR COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe")     # adding a ctest Test
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_SEQ_SQUARE  COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe")     
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_SEQ_HEXAGON COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe" resources/meshHexagonWithTriangles10.med) 
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_PAR_SQUARE  COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe")
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_PAR_HEXAGON COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe" resources/meshHexagonWithTriangles10.med)
 endif( SOLVERLAB_WITH_MPI )
 
