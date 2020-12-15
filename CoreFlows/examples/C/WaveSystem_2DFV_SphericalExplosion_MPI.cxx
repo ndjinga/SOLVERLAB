@@ -193,8 +193,9 @@ void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mes
 
 	if(rank == 0)
 	{
-	    d_nnz=(my_mesh.getMaxNbNeighbours(CELLS)+1)*(my_mesh.getMeshDimension()+1);//(nbVoisinsMax+1)*nbComp
-	    o_nnz=                                       my_mesh.getMeshDimension()+1 ;//                 nbComp
+		int nbVoisinsMax = my_mesh.getMaxNbNeighbours(CELLS);
+	    d_nnz=(nbVoisinsMax+1)*(my_mesh.getMeshDimension()+1);//(nbVoisinsMax+1)*nbComp
+	    o_nnz= nbVoisinsMax   *(my_mesh.getMeshDimension()+1);//                 nbComp
 	}
 	MPI_Bcast(&d_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&o_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -320,7 +321,7 @@ int main(int argc, char *argv[])
     // Problem data
     double cfl=0.49;
     double tmax=1.;
-    int ntmax=80;//20000;
+    int ntmax=2000;
     int freqSortie=10;
     string fileOutPut="SphericalWave";
     Mesh myMesh;
