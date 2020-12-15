@@ -473,6 +473,16 @@ public :
 		_saveFormat=saveFileFormat;
 	}
 
+	/** \fn setResultDirectory
+	 * \brief sets the directory where the results will be saved
+	 * \details
+	 * \param [in] resultsPath
+	 * \param [out] void
+	 *  */
+	void setResultDirectory(string resultsPath){
+		_path=resultsPath;
+	}
+
 	//Couplages Thermohydraulique-thermique-neutronique *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 	/** \fn setHeatPowerField
