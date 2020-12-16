@@ -21,7 +21,7 @@ def create_group_from(name, mother_shape, list_elem, type="EDGE"):
 
 
 r = 1.
-NumberOfSegments = 200
+NumberOfSegments = 10
 
 points = [geompy.MakeVertex(r * cos(i * pi / 3), r * sin(i * pi / 3), 0) for i in range(7)]
 edges = [geompy.MakeEdge(points[i], points[i + 1]) for i in range(6)]
@@ -30,7 +30,7 @@ hexa = geompy.MakeFace(wire, True)
 geompy.addToStudy(hexa, "Hexagon")
 g = create_group_from("Hexagon_boundaries", hexa, [geompy.GetInPlace(hexa, wire, 1)])
 
-mesh = smesh.Mesh(hexa, "Hexagon_mesh"+str(NumberOfSegments))
+mesh = smesh.Mesh(hexa, "HexagonWith"+str(NumberOfSegments)+"Triangles")
 msurf = mesh.Triangle(algo=smeshBuilder.NETGEN_1D2D)
 NETGEN_2D_Simple_Parameters_1 = msurf.Parameters(smeshBuilder.SIMPLE)
 NETGEN_2D_Simple_Parameters_1.SetNumberOfSegments( NumberOfSegments )
