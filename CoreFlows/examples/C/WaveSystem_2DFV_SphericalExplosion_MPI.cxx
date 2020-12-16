@@ -221,9 +221,9 @@ void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mes
 	
 	    cout << "Saving the solution at T=" << time <<"  on processor 0"<<endl;
 	    pressure_field.setTime(time,it);
-	    pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure");
+	    pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure");
 	    velocity_field.setTime(time,it);
-	    velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity");
+	    velocity_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity");
 	    /* --------------------------------------------- */
 	
 
@@ -288,9 +288,9 @@ void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mes
 					}
 				}
 	            pressure_field.setTime(time,it);
-	            pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
+	            pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure",false);
 	            velocity_field.setTime(time,it);
-	            velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
+	            velocity_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity",false);
 			}
 		}
     }
