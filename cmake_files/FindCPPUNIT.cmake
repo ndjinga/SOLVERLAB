@@ -115,10 +115,10 @@ IF(CPPUNIT_STATUS)
       FIND_LIBRARY(CPPUNIT_LIB cppunit_dll PATHS ${CPPUNIT_LIB_PATHS} ${CPPUNIT_FIND_PATHS_OPTION})
     ENDIF(CMAKE_BUILD_TYPE STREQUAL Debug)
   ELSE(WINDOWS)
-    FIND_LIBRARY(CPPUNIT_LIB cppunit PATHS ${CPPUNIT_LIB_PATHS} ${CPPUNIT_FIND_PATHS_OPTION}
+    FIND_LIBRARY(CPPUNIT_LIB cppunit PATHS ${CPPUNIT_LIB_PATHS}
                                            /usr/lib/x86_64-linux-gnu # Path for ubuntu 20 and debian 10
                                            /usr/lib64                # Path for CentOs 8
-						)
+                                           ${CPPUNIT_FIND_PATHS_OPTION} )
   ENDIF(WINDOWS)
   SET(CPPUNIT_LIBS)
   IF(CPPUNIT_LIB)
