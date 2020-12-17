@@ -1,7 +1,7 @@
 //============================================================================
 // Author      : Michael NDJINGA
 // Date        : November 2020
-// Description : 2D linear wave system
+// Description : multiD linear wave system
 //============================================================================
 
 #include <iostream>
@@ -27,18 +27,39 @@ void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity
     double rayon=0.35;
     double xcentre=0.;
     double ycentre=0;
-
+    double zcentre=0;
+	
+	double x, y, z;
+	double val, valX, valY, valZ;
+	
     int dim    =my_mesh.getMeshDimension();
     int nbCells=my_mesh.getNumberOfCells();
 
     for (int j=0 ; j<nbCells ; j++)
     {
-        double x = my_mesh.getCell(j).x() ;
-        double y = my_mesh.getCell(j).y() ;
-        double valX=(x-xcentre)*(x-xcentre);
-        double valY=(y-ycentre)*(y-ycentre);
-        double val=sqrt(valX+valY);
+        x = my_mesh.getCell(j).x() ;
+		if(dim>1)
+		{
+			y = my_mesh.getCell(j).y() ;
+			if(dim==3)
+				z = my_mesh.getCell(j).z() ;
+		}
 
+        valX=(x-xcentre)*(x-xcentre);
+		if(dim==1)
+			val=sqrt(valX);
+		else if(dim==2)
+		{
+			valY=(y-ycentre)*(y-ycentre);
+			val=sqrt(valX+valY);		
+		}
+		else if(dim==3)
+		{
+			valY=(y-ycentre)*(y-ycentre);
+			valZ=(z-zcentre)*(z-zcentre);
+			val=sqrt(valX+valY+valZ);		
+		}
+		
 		for(int idim=0; idim<dim; idim++)
 			velocity_field[j,idim]=0;
 			
@@ -138,7 +159,7 @@ SparseMatrixPetsc computeDivergenceMatrix(Mesh my_mesh, int nbVoisinsMax, double
     return implMat;
 }
 
-void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file)
+void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file)
 {
 	/* Retrieve mesh data */
     int dim=my_mesh.getMeshDimension();
@@ -164,9 +185,9 @@ void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mes
         Un[k*(dim+1)+1] =rho0*velocity_field[k,0];
         if(dim>=2)
             Un[k + 2*nbCells] = rho0*velocity_field[k,1] ;
-            if(dim==3)
-                Un[k + 3*nbCells] = rho0*velocity_field[k,2];
-			}
+        if(dim==3)
+            Un[k + 3*nbCells] = rho0*velocity_field[k,2];
+		}
 
     /*
      * MED output of the initial condition at t=0 and iter = 0
@@ -230,9 +251,9 @@ void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mes
  
 int main(int argc, char *argv[])
 {
-	    cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM"<<endl;
-	    cout << "- Numerical scheme : Upwind explicit scheme" << endl;
-	    cout << "- Boundary conditions : WALL" << endl;
+	cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM"<<endl;
+	cout << "- Numerical scheme : Upwind explicit scheme" << endl;
+	cout << "- Boundary conditions : WALL" << endl;
 
     // Problem data
     double cfl=0.49;
@@ -241,6 +262,8 @@ int main(int argc, char *argv[])
     int freqSortie=100;
     string fileOutPut="SphericalWave";
 
+	Mesh myMesh;
+	
 	if(argc<2)
 	{
 		    cout << "- DOMAIN : SQUARE" << endl;
@@ -252,24 +275,22 @@ int main(int argc, char *argv[])
 	    double ysup=1.0;
 	    int nx=50;
 	    int ny=50;
-	    Mesh myMesh(xinf,xsup,nx,yinf,ysup,ny);
+	    myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
 	    double eps=1.E-10;
 	    myMesh.setGroupAtPlan(xsup,0,eps,"RightEdge");
 	    myMesh.setGroupAtPlan(xinf,0,eps,"LeftEdge");
 	    myMesh.setGroupAtPlan(yinf,1,eps,"BottomEdge");
 	    myMesh.setGroupAtPlan(ysup,1,eps,"TopEdge");
-
-		WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
 	}
 	else
 	{
 	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
 	    cout << "Loading of a mesh named "<<argv[1] << endl;
 	    string filename = argv[1];
-	    Mesh myMesh(filename);
-
-		WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
+	    myMesh=Mesh(filename);
 	}
+
+	WaveSystem(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
 	
     cout << "Simulation complete." << endl;
 

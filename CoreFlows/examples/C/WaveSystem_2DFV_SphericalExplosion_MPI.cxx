@@ -1,7 +1,8 @@
 //============================================================================
 // Author      : Michael NDJINGA
 // Date        : November 2020
-// Description : 2D linear wave system
+// Description : multiD linear wave system run in parallel with calls to MPI
+//               Test used in the MPI version of the Salome platform
 //============================================================================
 
 #include <iostream>
@@ -28,18 +29,39 @@ void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity
     double rayon=0.35;
     double xcentre=0.;
     double ycentre=0;
-
+    double zcentre=0;
+	
+	double x, y, z;
+	double val, valX, valY, valZ;
+	
     int dim    =my_mesh.getMeshDimension();
     int nbCells=my_mesh.getNumberOfCells();
 
     for (int j=0 ; j<nbCells ; j++)
     {
-        double x = my_mesh.getCell(j).x() ;
-        double y = my_mesh.getCell(j).y() ;
-        double valX=(x-xcentre)*(x-xcentre);
-        double valY=(y-ycentre)*(y-ycentre);
-        double val=sqrt(valX+valY);
+        x = my_mesh.getCell(j).x() ;
+		if(dim>1)
+		{
+			y = my_mesh.getCell(j).y() ;
+			if(dim==3)
+				z = my_mesh.getCell(j).z() ;
+		}
 
+        valX=(x-xcentre)*(x-xcentre);
+		if(dim==1)
+			val=sqrt(valX);
+		else if(dim==2)
+		{
+			valY=(y-ycentre)*(y-ycentre);
+			val=sqrt(valX+valY);		
+		}
+		else if(dim==3)
+		{
+			valY=(y-ycentre)*(y-ycentre);
+			valZ=(z-zcentre)*(z-zcentre);
+			val=sqrt(valX+valY+valZ);		
+		}
+		
 		for(int idim=0; idim<dim; idim++)
 			velocity_field[j,idim]=0;
 			
@@ -148,7 +170,7 @@ void computeDivergenceMatrix(Mesh my_mesh, Mat * implMat, double dt)
     }     
 }
 
-void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size, string resultDirectory)
+void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size, string resultDirectory)
 {
 	/* Time iteration variables */
     int it=0;
@@ -362,7 +384,7 @@ int main(int argc, char *argv[])
 		else
 		{
 		    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl<< endl;
-		    cout << "Loading of mesh named "<<argv[1]<<" on processor 0" << endl;
+		    cout << "Loading of a mesh named "<<argv[1]<<" on processor 0" << endl;
 		    string filename = argv[1];
 		    myMesh=Mesh(filename);
 		}
@@ -371,7 +393,8 @@ int main(int argc, char *argv[])
 		if(argc>2)
 		    resultDirectory = argv[2];
 	}
-	WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut, rank, size, resultDirectory);
+	
+	WaveSystem(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut, rank, size, resultDirectory);
 
 	if(rank == 0)
 		cout << "Simulation complete." << endl;
