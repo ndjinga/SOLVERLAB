@@ -148,7 +148,7 @@ void computeDivergenceMatrix(Mesh my_mesh, Mat * implMat, double dt)
     }     
 }
 
-void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size)
+void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file, int rank, int size, string resultDirectory)
 {
 	/* Time iteration variables */
     int it=0;
@@ -221,9 +221,9 @@ void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mes
 	
 	    cout << "Saving the solution at T=" << time <<"  on processor 0"<<endl;
 	    pressure_field.setTime(time,it);
-	    pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure");
+	    pressure_field.writeMED(resultDirectory+"WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure");
 	    velocity_field.setTime(time,it);
-	    velocity_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity");
+	    velocity_field.writeMED(resultDirectory+"WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity");
 	    /* --------------------------------------------- */
 	
 
@@ -288,9 +288,9 @@ void WaveSystem2D(double tmax, int ntmax, double cfl, int output_freq, const Mes
 					}
 				}
 	            pressure_field.setTime(time,it);
-	            pressure_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure",false);
+	            pressure_field.writeMED(resultDirectory+"WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_pressure",false);
 	            velocity_field.setTime(time,it);
-	            velocity_field.writeMED("WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity",false);
+	            velocity_field.writeMED(resultDirectory+"WaveSystem"+to_string(dim)+"DUpwind_"+to_string(size)+"Procs_"+meshName+"_velocity",false);
 			}
 		}
     }
@@ -325,7 +325,8 @@ int main(int argc, char *argv[])
     int freqSortie=10;
     string fileOutPut="SphericalWave";
     Mesh myMesh;
-
+	string resultDirectory="./";
+	
 	if(size>1)
 		PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected : running a parallel simulation ----\n");
 		PetscPrintf(PETSC_COMM_WORLD,"---- Limited parallelism : input and output remain sequential ----\n");
@@ -338,6 +339,7 @@ int main(int argc, char *argv[])
 	    cout << "- Numerical scheme : Upwind explicit scheme" << endl;
 	    cout << "- Boundary conditions : WALL" << endl;
 	
+		/* Read or create mesh */
 		if(argc<2)
 		{
 		    cout << "- DOMAIN : SQUARE" << endl;
@@ -364,8 +366,12 @@ int main(int argc, char *argv[])
 		    string filename = argv[1];
 		    myMesh=Mesh(filename);
 		}
+
+		/*Detect directory where to same results*/
+		if(argc>2)
+		    resultDirectory = argv[2];
 	}
-	WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut, rank, size);
+	WaveSystem2D(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut, rank, size, resultDirectory);
 
 	if(rank == 0)
 		cout << "Simulation complete." << endl;
