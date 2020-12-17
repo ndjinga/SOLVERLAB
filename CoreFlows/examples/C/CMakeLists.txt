@@ -98,14 +98,14 @@ CreateTestExecAndInstall(StationaryDiffusionEquation_3DFV_StructuredTetrahedra.c
 CreateTestExecAndInstall(testEOS.cxx  "${libs_for_tests}" )
 
  
-  add_executable(WaveSystem_FV_SphericalExplosion_CDMATH.exe WaveSystem_2DFV_SphericalExplosion_CDMATH.cxx)
+  add_executable(WaveSystem_FV_SphericalExplosion_CDMATH.exe WaveSystem_FV_SphericalExplosion_CDMATH.cxx)
   target_link_libraries(WaveSystem_FV_SphericalExplosion_CDMATH.exe CoreFlowsLibs )
   install(TARGETS WaveSystem_FV_SphericalExplosion_CDMATH.exe DESTINATION share/examples)
   add_test(NAME WaveSystem_2DFV_SphericalExplosion_CDMATH_SQUARE  COMMAND "./WaveSystem_FV_SphericalExplosion_CDMATH.exe")     
   add_test(NAME WaveSystem_3DFV_SphericalExplosion_CDMATH_CUBE    COMMAND "./WaveSystem_FV_SphericalExplosion_CDMATH.exe" resources/meshCube.med)     
 
 if( SOLVERLAB_WITH_MPI )
-  add_executable(WaveSystem_2DFV_SphericalExplosion_MPI.exe WaveSystem_2DFV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
+  add_executable(WaveSystem_2DFV_SphericalExplosion_MPI.exe WaveSystem_FV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
   target_link_libraries(WaveSystem_2DFV_SphericalExplosion_MPI.exe CoreFlowsLibs  ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
   install(TARGETS WaveSystem_2DFV_SphericalExplosion_MPI.exe DESTINATION share/examples)
   add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_SEQ_SQUARE  COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_2DFV_SphericalExplosion_MPI.exe")     
