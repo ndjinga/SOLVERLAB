@@ -238,7 +238,7 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
 	    cout<<"Building the initial condition on processor 0" << endl;
 	    
 	    pressure_field=Field("Pressure",CELLS,my_mesh,1) ;
-	    velocity_field=Field("Velocity",CELLS,my_mesh,1) ;
+	    velocity_field=Field("Velocity",CELLS,my_mesh,dim) ;
 	    initial_conditions_shock(my_mesh,pressure_field, velocity_field);
 	
 	    cout << "Saving the solution at T=" << time <<"  on processor 0"<<endl;
@@ -367,15 +367,15 @@ int main(int argc, char *argv[])
 		    cout << "- DOMAIN : SQUARE" << endl;
 		    cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
 		    cout << "Construction of a cartesian mesh on processor 0" << endl;
-		    double xinf=0.0;
-		    double xsup=1.0;
-		    double yinf=0.0;
-		    double ysup=1.0;
+		    double xinf=-0.5;
+		    double xsup= 0.5;
+		    double yinf=-0.5;
+		    double ysup= 0.5;
 		    int nx=50;
 		    int ny=50;
 		    myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
 		    
-		    double eps=1.E-10;
+		    double eps=precision;
 		    myMesh.setGroupAtPlan(xsup,0,eps,"RightEdge");
 		    myMesh.setGroupAtPlan(xinf,0,eps,"LeftEdge");
 		    myMesh.setGroupAtPlan(yinf,1,eps,"BottomEdge");
