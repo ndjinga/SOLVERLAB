@@ -11,5 +11,6 @@ SET(include_models_HXX
     Fluide.h
     ProblemFluid.hxx
     utilitaire_algebre.h
+    IAPWS-IF97.h
   )
 INSTALL(FILES ${include_models_HXX} DESTINATION include)

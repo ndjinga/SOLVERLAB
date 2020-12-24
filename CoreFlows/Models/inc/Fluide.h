@@ -3,6 +3,7 @@
 
 #include <string>
 #include "math.h"
+#include "IAPWS-IF97.h"
 #include "CdmathException.hxx"
 
 /*! \class Fluide Fluide.hxx "Fluide.hxx"

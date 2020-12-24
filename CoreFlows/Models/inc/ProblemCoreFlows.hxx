@@ -49,7 +49,7 @@ enum preconditioner
 {
 	ILU,/**< preconditioner is ILU(0) */
 	LU,/**< preconditioner is actually a direct solver (LU factorisation)*/
-	NONE,/**< no preconditioner used */
+	NOPC,/**< no preconditioner used */
 	ICC,/**< preconditioner is ICC(0) */
 	CHOLESKY/**< preconditioner is actually a direct solver for symmetric matrices (CHOLESKY factorisation)*/
 };
@@ -440,7 +440,7 @@ public :
 	 * \brief sets the linear solver and preconditioner
 	 * \details virtual function overloaded by intanciable classes
 	 * @param kspType linear solver type (GMRES or BICGSTAB)
-	 * @param pcType preconditioner (ILU,LU or NONE)
+	 * @param pcType preconditioner (ILU,LU or NOPC)
 	 */
 	void setLinearSolver(linearSolver solverName, preconditioner pcType);
 
