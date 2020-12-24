@@ -1,3 +1,6 @@
+/* Copyright (C) 2015 Ian H. Bell and the CoolProp team */
+/* MIT-style license */
+
 #ifndef IF97HEADER_H
 #define IF97HEADER_H
 
