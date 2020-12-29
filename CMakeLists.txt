@@ -231,10 +231,10 @@ endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
       set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
 
       #define MPI variables
-      set(SOLVERLAB_WITH_MPI ON)
-      set(MPI_HOME    ${PETSC_INSTALL} )
-      set(MPI_LIBRARY ${PETSC_INSTALL}/lib/libmpi.so)
-      set(MPIEXEC     ${PETSC_INSTALL}/bin/mpiexec)
+      #set(SOLVERLAB_WITH_MPI ON)
+      #set(MPI_HOME    ${PETSC_INSTALL} )
+      #set(MPI_LIBRARY ${PETSC_INSTALL}/lib/libmpi.so)
+      #set(MPIEXEC     ${PETSC_INSTALL}/bin/mpiexec)
 
     endif ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )
   endif ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
