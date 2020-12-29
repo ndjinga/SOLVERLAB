@@ -352,9 +352,6 @@ else( DEFINED MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
         LOG_INSTALL       TRUE           # Wrap install in script to log output
   )
 
-  #set(MEDCoupling_DIR  ${MEDCOUPLING_ROOT_DIR}/cmake_files)
-  #find_package(MEDCoupling CONFIG REQUIRED)   # CONFIG is important !
-
   add_library(medloader   SHARED IMPORTED )
   set_property(TARGET medloader   PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so)
 
@@ -507,7 +504,6 @@ if (SOLVERLAB_WITH_TESTS)                                                       
   enable_testing ()
   find_package (CPPUNIT REQUIRED)
 endif()			
-find_package (XDR REQUIRED)
 				    
 # Enter subdirectories
 add_subdirectory (CDMATH)
