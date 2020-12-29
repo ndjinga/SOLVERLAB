@@ -215,7 +215,7 @@ endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
 
       #define slepc variables
       set(SLEPC_DIR ${PETSC_INSTALL})
-      set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.1/include ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.1/installed-arch-linux2-c-opt/include)
+      set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.1/include )
       set(SLEPC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.1/installed-arch-linux2-c-opt/lib/libslepc.so)
       message( STATUS "SLEPc includes ${SLEPC_INCLUDES}")
 
