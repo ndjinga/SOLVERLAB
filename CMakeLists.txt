@@ -417,7 +417,7 @@ else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   #extraction of the paraview version"
   IF   ( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
     message(WARNING "Could not find ParaView configuration file vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR} and subdirectories  ${PARAVIEW_SUFFIXES}. Postprocessing may not work")
-    set( PARAVIEW_VERSION  "5.0")
+    set( PARAVIEW_VERSION  "5.8")
   ELSE ( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
     message( STATUS "Found vtkPVConfig.h in ${vtkConfig_file}")
     file(STRINGS ${vtkConfig_file} vtkConfig)
