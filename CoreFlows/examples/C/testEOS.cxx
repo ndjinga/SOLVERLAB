@@ -1,4 +1,4 @@
-#include "Fluide.h"
+#include "StiffenedGas.hxx"
 #include <cstdlib>
 
 #include <iostream>

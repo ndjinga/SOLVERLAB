@@ -1,4 +1,4 @@
-#include "Fluide.h"
+#include "StiffenedGas.hxx"
 #include <iostream>
 
 //Perfect gas EOS Loi d'etat gaz parfait

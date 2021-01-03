@@ -15,9 +15,10 @@ SET(src_models_CXX
     DiffusionEquation.cxx
     StationaryDiffusionEquation.cxx
 #    LinearElasticityModel.cxx
-    Fluide.cxx
     ProblemFluid.cxx
     utilitaire_algebre.cxx
+    EOS/StiffenedGas.cxx
+#    EOS/IAPWS97.cxx
   )
 
 ADD_LIBRARY(CoreFlowsLibs SHARED ${src_models_CXX})

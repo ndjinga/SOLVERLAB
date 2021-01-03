@@ -6,6 +6,7 @@
  */
 #include "FiveEqsTwoFluid.hxx"
 #include <cstdlib>
+#include "StiffenedGas.hxx"
 
 using namespace std;
 

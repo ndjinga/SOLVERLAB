@@ -6,6 +6,7 @@
  */
 
 #include "IsothermalTwoFluid.hxx"
+#include "StiffenedGas.hxx"
 
 using namespace std;
 

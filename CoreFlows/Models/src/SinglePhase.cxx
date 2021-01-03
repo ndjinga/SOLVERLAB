@@ -6,6 +6,7 @@
  */
 
 #include "SinglePhase.hxx"
+#include "StiffenedGas.hxx"
 
 using namespace std;
 

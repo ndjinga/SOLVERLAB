@@ -5,6 +5,7 @@
  *      Author: Michael Ndjinga
  */
 #include "DriftModel.hxx"
+#include "StiffenedGas.hxx"
 
 using namespace std;
 

@@ -8,9 +8,10 @@ SET(include_models_HXX
     DiffusionEquation.hxx
     StationaryDiffusionEquation.hxx
     LinearElasticityModel.hxx
-    Fluide.h
     ProblemFluid.hxx
     utilitaire_algebre.h
-    IAPWS-IF97.h
+    EOS/Fluide.h
+    EOS/StiffenedGas.hxx
+#    EOS/IAPWS97.h
   )
 INSTALL(FILES ${include_models_HXX} DESTINATION include)

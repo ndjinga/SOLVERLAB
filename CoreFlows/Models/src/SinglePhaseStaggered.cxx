@@ -3,6 +3,7 @@
  */
 
 #include "SinglePhaseStaggered.hxx"
+#include "StiffenedGas.hxx"
 
 using namespace std;
 

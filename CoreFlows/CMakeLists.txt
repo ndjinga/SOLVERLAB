@@ -46,6 +46,7 @@ set( CoreFlows_INCLUDES
   ${CDMATH_INCLUDES}											    #
   ${PETSC_INCLUDES}											    #
   ${CoreFlows_SRC}/inc											    #    
+  ${CoreFlows_SRC}/inc/EOS   										    #    
   )													    #
 
 add_subdirectory (${CoreFlows_SRC})
