@@ -20,11 +20,12 @@ def create_group_from(name, mother_shape, list_elem, type="EDGE"):
     geompy.addToStudyInFather(mother_shape, new, name)
     return new
 
+# We build a regular tetrahedron with center of mass at (0,0,0) and 
+r = 1.#distance between any two vertices
+h = sqrt(6.) / 3. * r # height of the tetrahedron (distance between a vertex and the opposite plane)
 
-r = 1.
-
-points = [geompy.MakeVertex(r * cos(2 * i * pi / 3), r * sin(2 * i * pi / 3), 0) for i in range(3)]
-points.append(geompy.MakeVertex(0., 0., sqrt(2. / 3.) * r))
+points = [geompy.MakeVertex(r * cos(2 * i * pi / 3), r * sin(2 * i * pi / 3), -1./4 * h) for i in range(3)]
+points.append(geompy.MakeVertex(0., 0., 3./4 * h))
 
 faces_connectivity = [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 3, 0]]
 
@@ -40,11 +41,11 @@ geompy.addToStudy(tetra, "Tetrahedron")
 g = create_group_from("TetrahedronBoundary", tetra, [geompy.GetInPlace(tetra, tetra_skin, 1)], type="FACE")
 
 ### Mesh ###
-TetrahedronMesh = smesh.Mesh(tetra, "Tetrahedron"+str(NumberOfSegments))
+number_of_segments = 50
+
+TetrahedronMesh = smesh.Mesh(tetra, "Tetrahedron"+str(number_of_segments))
 NETGEN_1D_2D_3D = TetrahedronMesh.Tetrahedron(algo=smeshBuilder.NETGEN_1D2D3D)
 NETGEN_3D_Simple_Parameters_1 = NETGEN_1D_2D_3D.Parameters(smeshBuilder.SIMPLE)
-
-number_of_segments = 15
 
 NETGEN_3D_Simple_Parameters_1.SetNumberOfSegments(number_of_segments)
 NETGEN_3D_Simple_Parameters_1.LengthFromEdges()
