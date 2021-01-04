@@ -42,7 +42,7 @@ def SinglePhase_2DSphericalExplosion_HEXAGON():
 	wallVelocityY=0;
 	wallTemperature=InitialTemperature;
 
-	myProblem.setWallBoundaryCondition("boundaries", wallTemperature, wallVelocityX, wallVelocityY);
+	myProblem.setWallBoundaryCondition("BoundaryFaces", wallTemperature, wallVelocityX, wallVelocityY);
 
 	# set the numerical method
 	myProblem.setNumericalScheme(cf.upwind, cf.Explicit);
