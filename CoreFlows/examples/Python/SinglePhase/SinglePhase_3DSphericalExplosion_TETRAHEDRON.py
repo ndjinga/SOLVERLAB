@@ -56,7 +56,7 @@ def SinglePhase_3DSphericalExplosion_TETRAHEDRON():
 	# parameters calculation
 	MaxNbOfTimeStep = 3 ;
 	freqSave = 1;
-	cfl = 0.5;
+	cfl = 0.3;
 	maxTime = 5;
 	precision = 1e-6;
 
