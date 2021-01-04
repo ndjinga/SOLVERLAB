@@ -24,7 +24,7 @@ double precision=1e-5;
 
 void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity_field)
 {
-    double rayon=0.35;
+    double rayon=0.15;
     double xcentre=0.;
     double ycentre=0;
     double zcentre=0;
@@ -256,7 +256,6 @@ int main(int argc, char *argv[])
 	cout << "- Boundary conditions : WALL" << endl;
 
     // Problem data
-    double cfl=0.49;
     double tmax=1.;
     double ntmax=3;//20000;
     int freqSortie=100;
@@ -290,6 +289,7 @@ int main(int argc, char *argv[])
 	    myMesh=Mesh(filename);
 	}
 
+    double cfl=1./myMesh.getSpaceDimension();
 	WaveSystem(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
 	
     cout << "Simulation complete." << endl;

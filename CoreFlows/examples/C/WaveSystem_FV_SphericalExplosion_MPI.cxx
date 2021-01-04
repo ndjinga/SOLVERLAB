@@ -26,7 +26,7 @@ double precision=1e-5;
 
 void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity_field)
 {
-    double rayon=0.35;
+    double rayon=0.15;
     double xcentre=0.;
     double ycentre=0;
     double zcentre=0;
@@ -341,7 +341,6 @@ int main(int argc, char *argv[])
 	MPI_Comm_size(PETSC_COMM_WORLD,&size);
 	
     // Problem data
-    double cfl=0.49;
     double tmax=1.;
     int ntmax=2000;
     int freqSortie=10;
@@ -394,6 +393,7 @@ int main(int argc, char *argv[])
 		    resultDirectory = argv[2];
 	}
 	
+    double cfl=1./myMesh.getSpaceDimension();
 	WaveSystem(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut, rank, size, resultDirectory);
 
 	if(rank == 0)
