@@ -40,7 +40,7 @@ geompy.addToStudy(tetra, "Tetrahedron")
 g = create_group_from("TetrahedronBoundary", tetra, [geompy.GetInPlace(tetra, tetra_skin, 1)], type="FACE")
 
 ### Mesh ###
-TetrahedronMesh = smesh.Mesh(tetra)
+TetrahedronMesh = smesh.Mesh(tetra, "Tetrahedron"+str(NumberOfSegments))
 NETGEN_1D_2D_3D = TetrahedronMesh.Tetrahedron(algo=smeshBuilder.NETGEN_1D2D3D)
 NETGEN_3D_Simple_Parameters_1 = NETGEN_1D_2D_3D.Parameters(smeshBuilder.SIMPLE)
 

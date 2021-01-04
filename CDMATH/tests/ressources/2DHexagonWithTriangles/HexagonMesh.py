@@ -7,6 +7,7 @@ import sys
 import os
 
 from math import pi, cos, sin
+import SMESH
 
 geompy = geomBuilder.New()
 smesh = smeshBuilder.New()
@@ -28,14 +29,15 @@ edges = [geompy.MakeEdge(points[i], points[i + 1]) for i in range(6)]
 wire = geompy.MakeWire(edges)
 hexa = geompy.MakeFace(wire, True)
 geompy.addToStudy(hexa, "Hexagon")
-g = create_group_from("Hexagon_boundaries", hexa, [geompy.GetInPlace(hexa, wire, 1)])
+g = create_group_from("HexagonBoundary", hexa, [geompy.GetInPlace(hexa, wire, 1)])
 
 mesh = smesh.Mesh(hexa, "HexagonWith"+str(NumberOfSegments)+"Triangles")
 msurf = mesh.Triangle(algo=smeshBuilder.NETGEN_1D2D)
 NETGEN_2D_Simple_Parameters_1 = msurf.Parameters(smeshBuilder.SIMPLE)
 NETGEN_2D_Simple_Parameters_1.SetNumberOfSegments( NumberOfSegments )
 
-mesh.Group(g)
+HexagonBoundary_1 = mesh.GroupOnGeom(g, 'BoundaryFaces', SMESH.EDGE)
+HexagonBoundary_2 = mesh.GroupOnGeom(g, 'BoundaryNodes', SMESH.NODE)
 
 mesh.Compute()
 mesh.ExportMED("meshHexagonWithTriangles"+str(NumberOfSegments)+".med")
