@@ -41,7 +41,7 @@ if (COREFLOWS_WITH_GUI)
 	ENDIF()
 	
 	SET(_all_SCRIPTS
-	    main_tests.py
+	    SinglePhase/SOLVERLAB_2DSphericalExplosion_HEXAGON.py
 	    )
 	
 	SALOME_INSTALL_SCRIPTS("${_all_SCRIPTS}" ${SALOME_INSTALL_SCRIPT_PYTHON}/tests)
@@ -49,7 +49,7 @@ if (COREFLOWS_WITH_GUI)
 	SALOME_ACCUMULATE_ENVIRONMENT(PYTHONPATH ${PROJECT_BINARY_DIR}/src) 
 	SALOME_GENERATE_TESTS_ENVIRONMENT(tests_env)
 	
-	ADD_TEST(PythonTests ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/main_tests.py)
+	ADD_TEST(PythonTests ${PYTHON_EXECUTABLE} ${SALOME_INSTALL_SCRIPT_PYTHON}/tests/SOLVERLAB_2DSphericalExplosion_HEXAGON.py ${CMAKE_INSTALL_PREFIX}/share/meshes/2DHexagonWithTriangles/meshHexagonWithTriangles200.med)
 	SET_TESTS_PROPERTIES(PythonTests PROPERTIES ENVIRONMENT "${tests_env}")
 						    								#
 endif (COREFLOWS_WITH_GUI)                                                                                                        #
