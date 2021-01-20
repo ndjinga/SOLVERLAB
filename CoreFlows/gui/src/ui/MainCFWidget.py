@@ -1,27 +1,28 @@
-from PyQt4 import QtGui, QtCore
-from PyQt4.uic import loadUi
+# -*- coding: utf-8 -*-
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.uic import loadUi
 from utils import completeResPath
 
 import CoreFlows as cf
 import cdmath as cm
 
-class MainCFWidget(QtGui.QTabWidget):
+class MainCFWidget(QtWidgets.QTabWidget):
   def __init__(self):
-    QtGui.QTabWidget.__init__(self)
+    QtWidgets.QTabWidget.__init__(self)
     loadUi(completeResPath("MainCFWidget.ui"), self)
     self._python_dump = []
     
   def scanWidgets(self):
-    print self.tabModel
+    print(self.tabModel)
     dictCF={}
     for k in self.__dict__:
       att = self.__dict__[k] 
-      if isinstance(att, QtGui.QWidget):
+      if isinstance(att, QtWidgets.QWidget):
         name = str(att.objectName())
         if name != "":
 #          print(name)
           if name.endswith("RadioButton"):
-            assert(isinstance(att, QtGui.QRadioButton))
+            assert(isinstance(att, QtWidgets.QRadioButton))
             if att.isChecked() :
               # parse name
               name=name[:len(name)-len("_RadioButton")]#On retire le suffixe _Radiobutton
@@ -34,7 +35,7 @@ class MainCFWidget(QtGui.QTabWidget):
               elif name=="MeshCreation" :
                 dictCF["MeshCreation"]=True
           elif name.endswith("spinBox") :
-            assert(isinstance(att, QtGui.QSpinBox))
+            assert(isinstance(att, QtWidgets.QSpinBox))
             val = att.value()
             # parse name
             name=name[:len(name)-len("_spinBox")]#On retire le suffixe _SpinBox
@@ -49,7 +50,7 @@ class MainCFWidget(QtGui.QTabWidget):
             elif name=="NO_FreqSave" :
               dictCF["FreqSave"]=val
           elif name.endswith("doubleSpinBox"):
-            assert(isinstance(att, QtGui.QDoubleSpinBox))
+            assert(isinstance(att, QtWidgets.QDoubleSpinBox))
             val = att.value()
             # parse name
             name=name[:len(name)-len("_doubleSpinBox")]#On retire le suffixe _doubleSpinBox
@@ -113,7 +114,7 @@ class MainCFWidget(QtGui.QTabWidget):
               name=name[3:len(name)-len("_BC")]#On retire le préfixe SP_ ou DM_ au début et le suffixe _BC à la fin
               dictCF[name]=val
           elif name.endswith('comboBox'):
-            assert(isinstance(att, QtGui.QComboBox))
+            assert(isinstance(att, QtWidgets.QComboBox))
             val = att.currentText()
             # parse name
             name=name[:len(name)-len("_comboBox")]#On retire le suffixe _comboBox
@@ -135,7 +136,7 @@ class MainCFWidget(QtGui.QTabWidget):
             elif name=="NO_Preconditioner" :
               dictCF["Preconditioner"]=val 
           elif name.endswith('lineEdit'):
-            assert(isinstance(att, QtGui.QLineEdit))
+            assert(isinstance(att, QtWidgets.QLineEdit))
             val = str(att.text())
             # parse name
             name=name[:len(name)-len("_lineEdit")]#On retire le suffixe _comboBox
@@ -148,13 +149,13 @@ class MainCFWidget(QtGui.QTabWidget):
     return dictCF  
           
   def onLaunchSimu(self):
-    print "Reading widgets"
+    print("Reading widgets")
     dictCF = self.scanWidgets()
 
-    print "Setting Model and VV_Constant"
+    print("Setting Model and VV_Constant")
     ######## Setting Model and VV_Constant #########################
     if dictCF["ModelName"]=="SinglePhase" :
-      exec "myProblem = cf.%s(cf.%s,cf.%s,%s)" % (dictCF["ModelName"],dictCF["fluidType"],dictCF["pressureEstimate"],dictCF["spaceDim"])
+      exec("myProblem = cf.%s(cf.%s,cf.%s,%s)" % (dictCF["ModelName"],dictCF["fluidType"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
       nVar =  myProblem.getNumberOfVariables()
       VV_Constant =[0]*nVar
       VV_Constant[0] = dictCF["InitialPressure"]
@@ -165,7 +166,7 @@ class MainCFWidget(QtGui.QTabWidget):
           VV_Constant[3] = dictCF["InitialVelocity_3d"]
       VV_Constant[nVar-1] = dictCF["InitialTemperature"]
     elif dictCF["ModelName"]=="DriftModel" :
-      exec "myProblem = cf.%s(cf.%s,%s)" % (dictCF["ModelName"],dictCF["pressureEstimate"],dictCF["spaceDim"])
+      exec("myProblem = cf.%s(cf.%s,%s)" % (dictCF["ModelName"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
       nVar =  myProblem.getNumberOfVariables()
       VV_Constant =[0]*nVar
       VV_Constant[0] = dictCF["InitialConcentration"]
@@ -177,18 +178,18 @@ class MainCFWidget(QtGui.QTabWidget):
           VV_Constant[4] = dictCF["InitialVelocity_3d"]
       VV_Constant[nVar-1] = dictCF["InitialTemperature"]
     else :
-      raise NameError('Model not yet handled', dictCF["ModelName"])  
+      raise NameError('Model not yet handled', dictCF["ModelName"])
 
-    print "Setting initial data"
+    print("Setting initial data")
     ############ setting initial data ################################
     if dictCF["spaceDim"] ==1 :
-      print "spaceDim= ", dictCF["spaceDim"]
-      print "VV_Constant= ", VV_Constant
-      print "Xinf= ", dictCF["Xinf"]
-      print "Xsup= ", dictCF["Xsup"]
-      print "Nx= ", dictCF["Nx"]
+      print("spaceDim= ", dictCF["spaceDim"])
+      print("VV_Constant= ", VV_Constant)
+      print("Xinf= ", dictCF["Xinf"])
+      print("Xsup= ", dictCF["Xsup"])
+      print("Nx= ", dictCF["Nx"])
       myProblem.setInitialFieldConstant( dictCF["spaceDim"], VV_Constant, dictCF["Xinf"], dictCF["Xsup"], dictCF["Nx"],"Left","Right");
-      print "Initial field set"
+      print("Initial field set")
     elif dictCF["spaceDim"] ==2 :
       myProblem.setInitialFieldConstant( dictCF["spaceDim"], VV_Constant, dictCF["Xinf"], dictCF["Xsup"], dictCF["Nx"],"Left","Right", dictCF["Yinf"], dictCF["Ysup"], dictCF["Ny"],"Bottom","Top");
     elif dictCF["spaceDim"] ==3 :
@@ -198,7 +199,7 @@ class MainCFWidget(QtGui.QTabWidget):
 
 #    for k, v in dictCF.items():
 #        line = "cf.set%s(%s)" % (k, v)
-#        #exec line
+#        #exec(line)
 #        self._python_dump.append(line)
 
     ######## 1D for the moment ######################
@@ -220,7 +221,7 @@ class MainCFWidget(QtGui.QTabWidget):
     myProblem.setGravity(gravite)
 
     ########## Numerical options ###############
-    exec "myProblem.setNumericalScheme(cf.%s, cf.%s)" % (dictCF["Scheme"],dictCF["Method"])
+    exec("myProblem.setNumericalScheme(cf.%s, cf.%s)" % (dictCF["Scheme"],dictCF["Method"]))
     myProblem.setWellBalancedCorrection(True);  
 
     myProblem.setCFL(dictCF["CFL"]);

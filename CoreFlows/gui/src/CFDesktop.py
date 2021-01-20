@@ -23,8 +23,8 @@
 # Author : A. Bruneton
 #
 
-from PyQt4.QtCore import Qt 
-from PyQt4.QtGui import QMainWindow,QMenu, QDockWidget
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow,QMenu, QDockWidget
 from MainCFWidget import MainCFWidget
 
 class CFDesktop(QMainWindow):

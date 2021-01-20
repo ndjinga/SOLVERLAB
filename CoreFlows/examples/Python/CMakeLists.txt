@@ -1,14 +1,19 @@
 # Graphic interface---------------------------------------------------------------------------------------------#
 														#
-if (COREFLOWS_WITH_GUI)													    			 
+if (COREFLOWS_WITH_GUI)
+
+	SET(CONFIGURATION_ROOT_DIR $ENV{CONFIGURATION_ROOT_DIR} CACHE PATH "Path to the Salome CMake configuration files")
+	IF(EXISTS ${CONFIGURATION_ROOT_DIR})
+	  LIST(APPEND CMAKE_MODULE_PATH "${CONFIGURATION_ROOT_DIR}/cmake")
+	  INCLUDE(SalomeMacros NO_POLICY_SCOPE)
+	ELSE()
+	  MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
+	ENDIF()
 						    								#
 	# Find KERNEL 
 	# ==============
 	SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
 	IF( EXISTS ${KERNEL_ROOT_DIR} )
-	  LIST(APPEND CMAKE_MODULE_PATH "${KERNEL_ROOT_DIR}/salome_adm/cmake_files")
-	  LIST(APPEND CMAKE_PREFIX_PATH "${KERNEL_ROOT_DIR}/salome_adm/cmake_files")
-	  INCLUDE(SalomeMacros)
 	  FIND_PACKAGE(SalomeKERNEL REQUIRED)
 	ELSE( EXISTS ${KERNEL_ROOT_DIR} )
 	  MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR!")
@@ -18,8 +23,6 @@ if (COREFLOWS_WITH_GUI)
 	# ==============
 	SET(GUI_ROOT_DIR $ENV{GUI_ROOT_DIR} CACHE PATH "Path to the Salome GUI")
 	IF(EXISTS ${GUI_ROOT_DIR})
-	  LIST(APPEND CMAKE_MODULE_PATH "${GUI_ROOT_DIR}/adm_local/cmake_files")
-	  LIST(APPEND CMAKE_PREFIX_PATH "${GUI_ROOT_DIR}/adm_local/cmake_files")
 	  FIND_PACKAGE(SalomeGUI)
 	ELSE(EXISTS ${GUI_ROOT_DIR})
 	  MESSAGE(FATAL_ERROR "We absolutely need a Salome GUI, please define GUI_ROOT_DIR!")
@@ -33,12 +36,8 @@ if (COREFLOWS_WITH_GUI)
 	# =============
 	
 	# Mandatory products
-	IF(  $ENV{PARAVIEW_VERSION} STRLESS "5")
-	         FIND_PACKAGE(SalomePython REQUIRED)
-	ELSE()
-	         FIND_PACKAGE(SalomePythonInterp REQUIRED)
-	         FIND_PACKAGE(SalomePythonLibs REQUIRED)
-	ENDIF()
+	FIND_PACKAGE(SalomePythonInterp REQUIRED)
+	FIND_PACKAGE(SalomePythonLibs REQUIRED)
 	
 	SET(_all_SCRIPTS
 	    SinglePhase/SOLVERLAB_2DSphericalExplosion_HEXAGON.py

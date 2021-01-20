@@ -16,6 +16,9 @@
 #
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
+cmake_minimum_required (VERSION 3.1)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 INCLUDE(CMakeDependentOption)
 
 # Versioning
@@ -35,13 +38,20 @@ SET(${PROJECT_NAME_UC}_VERSION_DEV 1)
 OPTION(SALOME_BUILD_DOC "Generate SALOME CoreFlows documentation" ON)
 OPTION(SALOME_BUILD_TESTS "Generate SALOME CoreFlows tests" ON)
 
+# Common CMake macros
+# ===================
+SET(CONFIGURATION_ROOT_DIR $ENV{CONFIGURATION_ROOT_DIR} CACHE PATH "Path to the Salome CMake configuration files")
+IF(EXISTS ${CONFIGURATION_ROOT_DIR})
+  LIST(APPEND CMAKE_MODULE_PATH "${CONFIGURATION_ROOT_DIR}/cmake")
+  INCLUDE(SalomeMacros NO_POLICY_SCOPE)
+ELSE()
+  MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
+ENDIF()
 
 # Find KERNEL 
 # ==============
 SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
 IF( EXISTS ${KERNEL_ROOT_DIR} )
-  LIST(APPEND CMAKE_MODULE_PATH "${KERNEL_ROOT_DIR}/salome_adm/cmake_files")
-  INCLUDE(SalomeMacros)
   FIND_PACKAGE(SalomeKERNEL REQUIRED)
 ELSE( EXISTS ${KERNEL_ROOT_DIR} )
   MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR!")
@@ -51,7 +61,6 @@ ENDIF( EXISTS ${KERNEL_ROOT_DIR} )
 # ==============
 SET(GUI_ROOT_DIR $ENV{GUI_ROOT_DIR} CACHE PATH "Path to the Salome GUI")
 IF(EXISTS ${GUI_ROOT_DIR})
-  LIST(APPEND CMAKE_MODULE_PATH "${GUI_ROOT_DIR}/adm_local/cmake_files")
   FIND_PACKAGE(SalomeGUI)
 ELSE(EXISTS ${GUI_ROOT_DIR})
   MESSAGE(FATAL_ERROR "We absolutely need a Salome GUI, please define GUI_ROOT_DIR!")
@@ -73,8 +82,8 @@ ELSE()
 ENDIF()
 MESSAGE(STATUS "SalomeKERNEL_VERSION is ${SalomeKERNEL_VERSION}")
 
-# Qt4
-FIND_PACKAGE(SalomeQt4 REQUIRED COMPONENTS QtCore QtGui)
+# Qt5
+FIND_PACKAGE(SalomeQt5 REQUIRED COMPONENTS QtCore QtGui)
 
 IF(SALOME_BUILD_DOC)
 #  FIND_PACKAGE(SalomeDoxygen)

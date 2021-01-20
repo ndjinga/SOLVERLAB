@@ -22,9 +22,11 @@
 # Author : A. Bruneton
 #
 
-from PyQt4.QtGui import QApplication, QTabWidget 
-from PyQt4.QtGui import QAction, QMenu, QIcon, QPixmap, QDesktopWidget, QFileDialog
-from PyQt4.QtCore import SIGNAL, SLOT, QObject, pyqtSlot, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QTabWidget
+from PyQt5.QtWidgets import QAction, QMenu, QDesktopWidget, QFileDialog
+from PyQt5.QtGui import QIcon, QPixmap
+#from PyQt5.QtCore import SIGNAL, SLOT, QObject, pyqtSlot, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
 
 RESOURCE_DIR = "@SGPYQT_RES_DIR@"
 
@@ -47,7 +49,8 @@ class SalomePyQt(QObject):
     if self._mainWindow:
       self._menuBar = self._mainWindow.menuBar()
       self._mainWindow.setCentralWidget(self._tabWidget)
-    self.connect(self._tabWidget, SIGNAL("currentChanged(int)"), self, SLOT("onTabChanged(int)"))
+#    self.connect(self._tabWidget, SIGNAL("currentChanged(int)"), self, SLOT("onTabChanged(int)"))
+    self._tabWidget.currentChanged.connect(self.onTabChanged)
     self._blockSignal = False
   
   def getDesktop(self):
@@ -63,7 +66,8 @@ class SalomePyQt(QObject):
     if self._blockSignal:
       return
     invDict = dict([(v, k) for k,v in self._viewIDs.items()])
-    if invDict.has_key(index):
+    if index in invDict:
+#    if invDict.has_key(index):
       self._blockSignal = True
       self.currentTabChanged.emit(invDict[index])
       self._blockSignal = False

@@ -23,12 +23,12 @@
 # Author : A. Bruneton
 #
 import sys, os
-from PyQt4.QtGui import QApplication 
-from PyQt4.QtCore import SIGNAL, SLOT
+from PyQt5.QtWidgets import QApplication
+#from PyQt5.QtCore import SIGNAL, SLOT
 
 from CFDesktop import CFDesktop
 import SalomePyQt_MockUp
-from PyQt4.QtCore import QTimer, QTranslator, Qt
+from PyQt5.QtCore import QTimer, QTranslator, Qt
 
 desktop = None
 
@@ -52,7 +52,8 @@ def main(args) :
     
     
     #
-    app.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
+#    app.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
+    app.lastWindowClosed.connect(quit)
     app.exec_()
 
 if __name__ == "__main__" :
