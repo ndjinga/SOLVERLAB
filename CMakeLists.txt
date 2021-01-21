@@ -106,8 +106,13 @@ endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
         set(HDF5_ROOT ${PETSC_DIR}/${PETSC_ARCH})# define hint for hdf5/med installation in petsc external packages
       endif( DEFINED ENV{HDF5_ROOT} )
     endif( NOT HDF5_ROOT )
-    set(HDF5_LIBRARY_DIR  ${HDF5_ROOT}/lib)
-    set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
+
+    find_package(HDF5 COMPONENTS CXX HL)
+    if ( NOT HDF5_FOUND)
+      set(HDF5_LIBRARY_DIR  ${HDF5_ROOT}/lib)
+      set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
+    endif( NOT HDF5_FOUND)
+  
   else ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
     message ( STATUS "PETSC_DIR not set, searching PETSc and SLEPc in the system" )
 
