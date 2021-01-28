@@ -28,7 +28,7 @@ class MainCFWidget(QtWidgets.QTabWidget):
               name=name[:len(name)-len("_RadioButton")]#On retire le suffixe _Radiobutton
               if name.startswith("Dim") :
                 dictCF["spaceDim"]=int(name[len("Dim")])
-              elif name=="DriftModel" or "name==SinglePhase" or name.endswith("Equation") or name.endswith("TwoFluid") :
+              elif name.endswith("Model") or name.startswith("SinglePhase") or name.endswith("Equation") or name.endswith("TwoFluid") :
                 dictCF["ModelName"]=name
               elif name=="InputFileName" :
                 dictCF["InputFileName"]=True
@@ -152,10 +152,10 @@ class MainCFWidget(QtWidgets.QTabWidget):
     print("Reading widgets")
     dictCF = self.scanWidgets()
 
-    print("Setting Model and VV_Constant")
-    ######## Setting Model and VV_Constant #########################
+    print("Setting Model, ModelName = ", dictCF["ModelName"], ", pressureEstimate = ", dictCF["pressureEstimate"], ", InitialPressure = ", dictCF["InitialPressure"], ", InitialVelocity_1d = ", dictCF["InitialVelocity_1d"], ", InitialTemperature= ", dictCF["InitialTemperature"])
+    ######## Setting Model and initil state #########################
     if dictCF["ModelName"]=="SinglePhase" :
-      exec("myProblem = cf.%s(cf.%s,cf.%s,%s)" % (dictCF["ModelName"],dictCF["fluidType"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
+      myProblem = eval('cf.%s(cf.%s,cf.%s,%s)' % (dictCF["ModelName"],dictCF["fluidType"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
       nVar =  myProblem.getNumberOfVariables()
       VV_Constant =[0]*nVar
       VV_Constant[0] = dictCF["InitialPressure"]
@@ -166,7 +166,7 @@ class MainCFWidget(QtWidgets.QTabWidget):
           VV_Constant[3] = dictCF["InitialVelocity_3d"]
       VV_Constant[nVar-1] = dictCF["InitialTemperature"]
     elif dictCF["ModelName"]=="DriftModel" :
-      exec("myProblem = cf.%s(cf.%s,%s)" % (dictCF["ModelName"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
+      myProblem = eval("cf.%s(cf.%s,%s)" % (dictCF["ModelName"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
       nVar =  myProblem.getNumberOfVariables()
       VV_Constant =[0]*nVar
       VV_Constant[0] = dictCF["InitialConcentration"]
@@ -178,16 +178,11 @@ class MainCFWidget(QtWidgets.QTabWidget):
           VV_Constant[4] = dictCF["InitialVelocity_3d"]
       VV_Constant[nVar-1] = dictCF["InitialTemperature"]
     else :
-      raise NameError('Model not yet handled', dictCF["ModelName"])
+        raise NameError('Model not yet handled', dictCF["ModelName"])
 
-    print("Setting initial data")
+    print("Setting initial data, spaceDim = ", dictCF["spaceDim"], ", Nx = ", dictCF["Nx"], ", Xinf= ", dictCF["Xinf"], ", Xsup = ", dictCF["Xsup"])
     ############ setting initial data ################################
     if dictCF["spaceDim"] ==1 :
-      print("spaceDim= ", dictCF["spaceDim"])
-      print("VV_Constant= ", VV_Constant)
-      print("Xinf= ", dictCF["Xinf"])
-      print("Xsup= ", dictCF["Xsup"])
-      print("Nx= ", dictCF["Nx"])
       myProblem.setInitialFieldConstant( dictCF["spaceDim"], VV_Constant, dictCF["Xinf"], dictCF["Xsup"], dictCF["Nx"],"Left","Right");
       print("Initial field set")
     elif dictCF["spaceDim"] ==2 :
@@ -202,14 +197,16 @@ class MainCFWidget(QtWidgets.QTabWidget):
 #        #exec(line)
 #        self._python_dump.append(line)
 
+    print("Setting boundary conditions, Temperature_Left = ", dictCF["Temperature_Left"], ", Velocity_1d_Left = ", dictCF["Velocity_1d_Left"], ", Pressure_Right = ", dictCF["Pressure_Right"])
     ######## 1D for the moment ######################
     if dictCF["ModelName"]=="SinglePhase" :
-      myProblem.setInletBoundaryCondition("Left",dictCF["Temperature_Left"],dictCF["Concentration_Left"],dictCF["Velocity_1d_Left"])
+      myProblem.setInletBoundaryCondition("Left",dictCF["Temperature_Left"],dictCF["Velocity_1d_Left"])
       myProblem.setOutletBoundaryCondition("Right", dictCF["Pressure_Right"]);
     elif dictCF["ModelName"]=="DriftModel" :
-      myProblem.setInletBoundaryCondition("Left",dictCF["DM_Temperature_Left"],dictCF["DM_Velocity_1d_Left"])
+      myProblem.setInletBoundaryCondition("Left",dictCF["DM_Temperature_Left"],dictCF["DM_Concentration_Left"],dictCF["DM_Velocity_1d_Left"])
       myProblem.setOutletBoundaryCondition("Right", dictCF["DM_Pressure_Right"]);
 
+    print("Setting source terms, HeatSource = ", dictCF["HeatSource"], ", Gravity_1d = ", dictCF["Gravity_1d"])
     ########## Physical forces #################
     myProblem.setHeatSource(dictCF["HeatSource"]);
     gravite=[0]*dictCF["spaceDim"]
@@ -220,8 +217,9 @@ class MainCFWidget(QtWidgets.QTabWidget):
         gravite[2]=dictCF["Gravity_3d"]
     myProblem.setGravity(gravite)
 
+    print("Setting numerical options, NumericalScheme = ", dictCF["Scheme"], ", NumericalMethod = ", dictCF["Method"], ", CFL = ", dictCF["CFL"])
     ########## Numerical options ###############
-    exec("myProblem.setNumericalScheme(cf.%s, cf.%s)" % (dictCF["Scheme"],dictCF["Method"]))
+    eval("myProblem.setNumericalScheme(cf.%s, cf.%s)" % (dictCF["Scheme"],dictCF["Method"]))
     myProblem.setWellBalancedCorrection(True);  
 
     myProblem.setCFL(dictCF["CFL"]);
