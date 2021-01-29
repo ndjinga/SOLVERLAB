@@ -25,7 +25,7 @@ SALOME_CONFIGURE_FILE(SalomePyQt_MockUp.py.in mockup/SalomePyQt_MockUp.py)
 SALOME_CONFIGURE_FILE(utils.py.in ${CMAKE_CURRENT_BINARY_DIR}/utils.py)
 
 SET(_bin_SCRIPTS
-    COREFLOWSGUI.py
+    SOLVERLABGUI.py
     CoreFlows_Standalone.py
 )
 

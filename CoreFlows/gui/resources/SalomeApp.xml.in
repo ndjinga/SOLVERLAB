@@ -22,15 +22,15 @@
 
 -->
 <document>
-  <section name="COREFLOWS">
+  <section name="SOLVERLAB">
     <!-- Major module parameters -->
-    <parameter name="name"            value="COREFLOWS"/>
+    <parameter name="name"            value="SOLVERLAB"/>
     <parameter name="icon"            value="icon.png"/>
     <parameter name="library"         value="SalomePyQtGUILight"/>
-    <parameter name="version"         value="@SALOMECOREFLOWS_VERSION@"/>
+    <parameter name="version"         value="@SALOMESOLVERLAB_VERSION@"/>
   </section>
   <section name="resources">
     <!-- Module resources -->
-    <parameter name="COREFLOWS"    value="%COREFLOWS_ROOT_DIR%/share/salome/resources/coreflows"/>
+    <parameter name="SOLVERLAB"    value="%SOLVERLAB_ROOT_DIR%/share/salome/resources/coreflows"/>
   </section>
 </document>
