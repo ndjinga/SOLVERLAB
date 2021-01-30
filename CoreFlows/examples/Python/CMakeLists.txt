@@ -1,6 +1,6 @@
 # Graphic interface---------------------------------------------------------------------------------------------#
 														#
-if (COREFLOWS_WITH_GUI)
+if  ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
 
 	SET(CONFIGURATION_ROOT_DIR $ENV{CONFIGURATION_ROOT_DIR} CACHE PATH "Path to the Salome CMake configuration files")
 	IF(EXISTS ${CONFIGURATION_ROOT_DIR})
@@ -51,7 +51,7 @@ if (COREFLOWS_WITH_GUI)
 	ADD_TEST(PythonTests ${PYTHON_EXECUTABLE} ${SALOME_INSTALL_SCRIPT_PYTHON}/tests/SOLVERLAB_2DSphericalExplosion_HEXAGON.py ${CMAKE_INSTALL_PREFIX}/share/meshes/2DHexagonWithTriangles/meshHexagonWithTriangles200.med)
 	SET_TESTS_PROPERTIES(PythonTests PROPERTIES ENVIRONMENT "${tests_env}")
 						    								#
-endif (COREFLOWS_WITH_GUI)                                                                                                        #
+endif( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )                                                                                                        #
 #---------------------------------------------------------------------------------------------------------------#
 
 
