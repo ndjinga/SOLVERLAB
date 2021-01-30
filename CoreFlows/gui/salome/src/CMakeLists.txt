@@ -18,19 +18,17 @@
 #
 
 
-ADD_SUBDIRECTORY(ui)
-
 SET(SGPYQT_RES_DIR "${SALOME_INSTALL_RES}")
 SALOME_CONFIGURE_FILE(SalomePyQt_MockUp.py.in mockup/SalomePyQt_MockUp.py)
 SALOME_CONFIGURE_FILE(utils.py.in ${CMAKE_CURRENT_BINARY_DIR}/utils.py)
 
 SET(_bin_SCRIPTS
     SOLVERLABGUI.py
-    CoreFlows_Standalone.py
+    ${GUI_bin_SCRIPTS}
 )
 
 SET(_lib_SCRIPTS
-    CFDesktop.py
+    ${GUI_lib_SCRIPTS}
     ${CMAKE_CURRENT_BINARY_DIR}/mockup/SalomePyQt_MockUp.py
     ${CMAKE_CURRENT_BINARY_DIR}/utils.py
 )
