@@ -17,20 +17,22 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-# --- resources ---
-
 # uic files 
 SET(_pyuic_files
-  MainCFWidget.ui
+  ${CMAKE_CURRENT_SOURCE_DIR}/MainCFWidget.ui
 )
 
 # --- scripts ---
 SET(_all_lib_SCRIPTS
-    MainCFWidget.py      
+  ${CMAKE_CURRENT_SOURCE_DIR}/MainCFWidget.py      
 )
 
-# --- rules ---
-SALOME_INSTALL_SCRIPTS("${_pyuic_SCRIPTS}" ${SALOME_INSTALL_PYTHON})
-SALOME_INSTALL_SCRIPTS("${_all_lib_SCRIPTS}" ${SALOME_INSTALL_PYTHON})
 
-INSTALL(FILES ${_pyuic_files} DESTINATION ${SALOME_INSTALL_PYTHON})
+IF   ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
+  SALOME_INSTALL_SCRIPTS("${_pyuic_SCRIPTS}"   ${SALOME_INSTALL_PYTHON})#file MainCFWidget.ui
+  SALOME_INSTALL_SCRIPTS("${_all_lib_SCRIPTS}" ${SALOME_INSTALL_PYTHON})#file MainCFWidget.py
+ELSE ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
+  INSTALL(FILES ${_pyuic_files}     DESTINATION lib/python)
+  INSTALL(FILES ${_all_lib_SCRIPTS} DESTINATION lib/python)
+ENDIF( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
+

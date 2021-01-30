@@ -29,7 +29,7 @@
    <string notr="true"/>
   </property>
   <property name="currentIndex">
-   <number>8</number>
+   <number>0</number>
   </property>
   <widget class="QWidget" name="tabModel">
    <attribute name="title">
@@ -209,7 +209,7 @@
        </size>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:18pt; font-weight:600; text-decoration: underline;&quot;&gt;COREFLOWS&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:18pt; font-weight:600; text-decoration: underline;&quot;&gt;SOLVERLAB&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </item>
@@ -1471,7 +1471,7 @@
        </size>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:22pt; font-weight:600; text-decoration: underline;&quot;&gt;Single Phase&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:22pt; font-weight:600; text-decoration: underline;&quot;&gt;Navier-Stokes&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
     </item>
