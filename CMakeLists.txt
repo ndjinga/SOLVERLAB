@@ -187,7 +187,7 @@ endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
 
       set(PETSC_DIR ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${PETSC_TARBALL_NAME}) # Location of the final install 
       set(PETSC_ARCH arch-linux-c-opt)
-      set(PETSC_INSTALL ${CMAKE_INSTALL_PREFIX}/share/petsc)#folder to copy petsc libraries and include files
+      set(PETSC_INSTALL ${CMAKE_INSTALL_PREFIX}/lib/petsc)#folder to copy petsc libraries and include files
 
       ExternalProject_Add (PETSc
       URL               ${DOWNLOAD_PETSC}   
@@ -271,7 +271,7 @@ else( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
   message(STATUS "MED will be downloaded and installed from ${DOWNLOAD_MED}")
   set(MACHINE PCLINUX)
   set(MEDFILE_DEFINITIONS "-D${MACHINE} -DMEDFILE_INSTALL_DOC=OFF")#Comment ne pas compiler la doc ?
-  set(MEDFILE_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/share/med) # Location of the final install
+  set(MEDFILE_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/lib/med) # Location of the final install
   
   #extraction of the tarball archive name
   string(LENGTH "${DOWNLOAD_MED}" tarball_url_length)#length of the name of the tarball
@@ -327,7 +327,7 @@ if( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
 
 else( DEFINED MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
   message(STATUS "MEDCoupling will be downloaded and installed from ${DOWNLOAD_MEDCOUPLING}")
-  set(MEDCOUPLING_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/share/medcoupling) # Location of the final install
+  set(MEDCOUPLING_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/lib/medcoupling) # Location of the final install
   SET(ENV{HDF5_ROOT} ${HDF5_ROOT})#MEDCoupling install process seems to require an environment variable
 
   #extraction of the tarball archive name
