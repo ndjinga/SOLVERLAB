@@ -243,6 +243,7 @@ class MainCFWidget(QtWidgets.QTabWidget):
     myProblem.saveConservativeField(True);
     #myProblem.setVerbose(True);
     myProblem.usePrimitiveVarsInNewton(True);
+    myProblem.setSaveFileFormat(cf.MED)
     if(dictCF["spaceDim"]>1):
       myProblem.saveVelocity();
       pass
