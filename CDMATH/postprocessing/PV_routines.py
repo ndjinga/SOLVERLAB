@@ -16,7 +16,14 @@ def Extract_PV_data_over_line_to_txt_file(inputFileName, outputFileName,
     PlotOverLine1.Source.Point2 = point2
     PlotOverLine1.Source.Resolution = resolution
     writer = pvs.CreateWriter(outputFileName, PlotOverLine1)
-    writer.FieldAssociation = "Point Data"  # or "Cell Data"
+    
+    ParaViewVersion = pvs.GetParaViewVersion()
+    
+    if(ParaViewVersion <5.8) :
+        writer.FieldAssociation = "Points"  # or "Cell Data"
+    else:
+        writer.FieldAssociation = "Point Data"  # or "Cells"
+
     writer.UpdatePipeline()
     
 def Extract_PV_data_over_line_to_numpyArray(inputFileName, point1, point2, resolution):
@@ -54,7 +61,14 @@ def Slice_PV_data_to_txt_file(inputFileName,
     CellCenters1 = pvs.CellCenters()    
     writer = pvs.CreateWriter(outputFileName, CellCenters1)
     writer.Precision=resolution
-    writer.FieldAssociation = "Point Data"  # or "Cell Data"
+
+    ParaViewVersion = pvs.GetParaViewVersion()
+    
+    if(ParaViewVersion <5.8) :
+        writer.FieldAssociation = "Points"  # or "Cell Data"
+    else:
+        writer.FieldAssociation = "Point Data"  # or "Cells"
+
     writer.UpdatePipeline()
  
 def Slice_PV_field_data_to_numpyArray(field,
