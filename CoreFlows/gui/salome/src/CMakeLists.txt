@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014  CEA/DEN, EDF R&D
+# Copyright (C) 2012-2021  CEA/DEN, EDF R&D
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -19,8 +19,8 @@
 
 
 SET(SGPYQT_RES_DIR "${SALOME_INSTALL_RES}")
-SALOME_CONFIGURE_FILE(SalomePyQt_MockUp.py.in mockup/SalomePyQt_MockUp.py)
-SALOME_CONFIGURE_FILE(utils.py.in ${CMAKE_CURRENT_BINARY_DIR}/utils.py)
+SALOME_CONFIGURE_FILE(../../SalomePyQt_MockUp.py.in mockup/SalomePyQt_MockUp.py)
+SALOME_CONFIGURE_FILE(../../utils.py.in             utils.py)
 
 SET(_bin_SCRIPTS
     SOLVERLABGUI.py
