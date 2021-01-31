@@ -521,7 +521,7 @@
   </widget>
   <widget class="QWidget" name="Mesh">
    <attribute name="title">
-    <string>Mesh</string>
+    <string>Mesh choice</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_59">
     <item row="0" column="0">
@@ -856,7 +856,7 @@
                      <double>1000000099.990000009536743</double>
                     </property>
                     <property name="value">
-                     <double>-5.000000000000000</double>
+                     <double>-1.000000000000000</double>
                     </property>
                    </widget>
                   </widget>
@@ -919,7 +919,7 @@
                      <double>1000000099.990000009536743</double>
                     </property>
                     <property name="value">
-                     <double>5.000000000000000</double>
+                     <double>1.000000000000000</double>
                     </property>
                    </widget>
                   </widget>
@@ -979,7 +979,7 @@
                      <number>2147483647</number>
                     </property>
                     <property name="value">
-                     <number>20</number>
+                     <number>50</number>
                     </property>
                    </widget>
                   </widget>
@@ -1067,7 +1067,7 @@
                      <double>1000000099.990000009536743</double>
                     </property>
                     <property name="value">
-                     <double>-5.000000000000000</double>
+                     <double>-1.000000000000000</double>
                     </property>
                    </widget>
                   </widget>
@@ -1130,7 +1130,7 @@
                      <double>1000000099.990000009536743</double>
                     </property>
                     <property name="value">
-                     <double>5.000000000000000</double>
+                     <double>1.000000000000000</double>
                     </property>
                    </widget>
                   </widget>
@@ -1190,7 +1190,7 @@
                      <number>2147483647</number>
                     </property>
                     <property name="value">
-                     <number>20</number>
+                     <number>50</number>
                     </property>
                    </widget>
                   </widget>
@@ -1278,7 +1278,7 @@
                      <double>1000000099.990000009536743</double>
                     </property>
                     <property name="value">
-                     <double>-5.000000000000000</double>
+                     <double>-1.000000000000000</double>
                     </property>
                    </widget>
                   </widget>
@@ -1341,7 +1341,7 @@
                      <double>1000000099.990000009536743</double>
                     </property>
                     <property name="value">
-                     <double>5.000000000000000</double>
+                     <double>1.000000000000000</double>
                     </property>
                    </widget>
                   </widget>
@@ -1401,7 +1401,7 @@
                      <number>2147483647</number>
                     </property>
                     <property name="value">
-                     <number>20</number>
+                     <number>50</number>
                     </property>
                    </widget>
                   </widget>
@@ -1453,7 +1453,7 @@
   </widget>
   <widget class="QWidget" name="SinglePhaseModel">
    <attribute name="title">
-    <string>Physical</string>
+    <string>Physical model</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_79">
     <item row="0" column="0" colspan="2">
@@ -1804,7 +1804,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Porosity friction</string>
+              <string>Friction coefficient</string>
              </property>
             </widget>
            </item>
@@ -1863,7 +1863,7 @@
          </font>
         </property>
         <property name="title">
-         <string>Initial condition</string>
+         <string>Initial conditions</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_78">
          <item row="0" column="0">
@@ -2161,6 +2161,9 @@
              <pointsize>11</pointsize>
             </font>
            </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
            <item>
             <property name="text">
              <string>Liquid</string>
@@ -2173,7 +2176,7 @@
            </item>
            <item>
             <property name="text">
-             <string>Vapour</string>
+             <string>Gas</string>
             </property>
            </item>
           </widget>
@@ -2200,7 +2203,7 @@
             </font>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Estimate pressure&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Pressure regime&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -2254,7 +2257,7 @@
          </font>
         </property>
         <property name="title">
-         <string>Boundary condition</string>
+         <string>Boundary conditions</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_64">
          <item row="0" column="0">
@@ -4322,7 +4325,7 @@
   </widget>
   <widget class="QWidget" name="DriftModel">
    <attribute name="title">
-    <string>Physical</string>
+    <string>Physical model</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_69">
     <item row="0" column="0" rowspan="2" colspan="3">
@@ -4742,7 +4745,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Porosity friction coefficient</string>
+              <string>Friction coefficients</string>
              </property>
             </widget>
            </item>
@@ -4843,7 +4846,7 @@
          </font>
         </property>
         <property name="title">
-         <string>Initial condition</string>
+         <string>Initial conditions</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_67">
          <item row="0" column="0">
@@ -5163,7 +5166,7 @@
             </font>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Estimate pressure&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Pressure regime&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -5212,7 +5215,7 @@
          </font>
         </property>
         <property name="title">
-         <string>Boundary condition</string>
+         <string>Boundary conditions</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_47">
          <item row="0" column="0">
@@ -6657,7 +6660,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>1.000000000000000</double>
+                <double>0.000000000000000</double>
                </property>
               </widget>
              </widget>
@@ -7066,7 +7069,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>1.000000000000000</double>
+                <double>0.000000000000000</double>
                </property>
               </widget>
              </widget>
@@ -7475,7 +7478,7 @@
                 <double>0.010000000000000</double>
                </property>
                <property name="value">
-                <double>1.000000000000000</double>
+                <double>0.000000000000000</double>
                </property>
               </widget>
              </widget>
@@ -7672,7 +7675,7 @@
   </widget>
   <widget class="QWidget" name="FiveEqsTwoFluidModel">
    <attribute name="title">
-    <string>Physical</string>
+    <string>Physical model</string>
    </attribute>
    <widget class="QGroupBox" name="FEqs_InitialCondition">
     <property name="geometry">
@@ -7961,30 +7964,8 @@
        </font>
       </property>
       <property name="text">
-       <string>Liquid/Fluid</string>
+       <string>Pressure regime</string>
       </property>
-     </widget>
-     <widget class="QComboBox" name="FEqs_FluidOrLiquid">
-      <property name="font">
-       <font>
-        <pointsize>11</pointsize>
-       </font>
-      </property>
-      <item>
-       <property name="text">
-        <string>--</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Fluid</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Liquid</string>
-       </property>
-      </item>
      </widget>
      <widget class="QComboBox" name="FEqs_1barOr155bar">
       <property name="font">
@@ -7999,12 +7980,12 @@
       </item>
       <item>
        <property name="text">
-        <string>Arround1bar</string>
+        <string>Arround1bar300K</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>Arround155bar</string>
+        <string>Arround155bars600K</string>
        </property>
       </item>
      </widget>
@@ -8028,7 +8009,7 @@
      </font>
     </property>
     <property name="title">
-     <string>Boundary condition</string>
+     <string>Boundary conditions</string>
     </property>
     <layout class="QGridLayout" name="gridLayout_20">
      <item row="0" column="0">
@@ -8545,7 +8526,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Viscosity ( Pa*s )</string>
+            <string>Viscosities ( Pa*s )</string>
            </property>
           </widget>
          </item>
@@ -8557,7 +8538,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Conductivity ( W/m/K )</string>
+            <string>Conductivities ( W/m/K )</string>
            </property>
           </widget>
          </item>
@@ -8581,7 +8562,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Interfacial friction coefficients</string>
+            <string>Friction coefficients</string>
            </property>
           </widget>
          </item>
@@ -8743,7 +8724,7 @@
   </widget>
   <widget class="QWidget" name="IsothermalTwoFluidModel">
    <attribute name="title">
-    <string>Physical</string>
+    <string>Physical model</string>
    </attribute>
    <widget class="QSplitter" name="splitter_2">
     <property name="geometry">
@@ -8825,18 +8806,6 @@
                <item>
                 <layout class="QVBoxLayout" name="Iso2F_PhysicalOptionsLayoutV_2">
                  <item>
-                  <widget class="QLabel" name="Iso2F_HeatSource">
-                   <property name="font">
-                    <font>
-                     <pointsize>11</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Heat Source ( W/m^dim )</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <widget class="QLabel" name="Iso2F_Viscosity">
                    <property name="font">
                     <font>
@@ -8845,18 +8814,6 @@
                    </property>
                    <property name="text">
                     <string>Viscosity ( Pa *s )</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="Iso2F_Conductivity">
-                   <property name="font">
-                    <font>
-                     <pointsize>11</pointsize>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>Conductivity ( W/m/K )</string>
                    </property>
                   </widget>
                  </item>
@@ -8889,31 +8846,7 @@
                <item>
                 <layout class="QVBoxLayout" name="Iso2F_PhysicalOptionsLayoutV">
                  <item>
-                  <widget class="QDoubleSpinBox" name="Iso2F_HeatSource_doubleSpinBox">
-                   <property name="font">
-                    <font>
-                     <pointsize>11</pointsize>
-                    </font>
-                   </property>
-                   <property name="maximum">
-                    <double>1000000000.000000000000000</double>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <widget class="QDoubleSpinBox" name="Iso2F_ViscositydoubleSpinBox">
-                   <property name="font">
-                    <font>
-                     <pointsize>11</pointsize>
-                    </font>
-                   </property>
-                   <property name="maximum">
-                    <double>1000000000.000000000000000</double>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QDoubleSpinBox" name="Iso2F_Conductivity_doubleSpinBox">
                    <property name="font">
                     <font>
                      <pointsize>11</pointsize>
@@ -9003,7 +8936,7 @@
              </font>
             </property>
             <property name="title">
-             <string>Initial condition</string>
+             <string>Initial conditions</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_24">
              <item row="0" column="0">
@@ -9244,12 +9177,12 @@
             </item>
             <item>
              <property name="text">
-              <string>Arround1bar</string>
+              <string>Arround1bar300K</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Arround155bar</string>
+              <string>Arround155bar600K</string>
              </property>
             </item>
            </widget>
@@ -9267,7 +9200,7 @@
            </font>
           </property>
           <property name="title">
-           <string>Boundary condition</string>
+           <string>Boundary conditions</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_26">
            <item row="0" column="0">
@@ -9701,7 +9634,7 @@
   </widget>
   <widget class="QWidget" name="DiffusionEquationModel">
    <attribute name="title">
-    <string>Physical</string>
+    <string>Physical model</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_48">
     <item row="0" column="0" colspan="2">
@@ -10100,7 +10033,7 @@
        </font>
       </property>
       <property name="title">
-       <string>Boundary condition</string>
+       <string>Boundary conditions</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_37">
        <item row="0" column="0">
@@ -10803,7 +10736,7 @@
   </widget>
   <widget class="QWidget" name="TransportEquationModel">
    <attribute name="title">
-    <string>Physical</string>
+    <string>Physical model</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_54">
     <item row="0" column="0" colspan="2">
@@ -10976,7 +10909,7 @@
              </font>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Estimate pressure&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;Pressure regime&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -11001,12 +10934,12 @@
             </property>
             <item>
              <property name="text">
-              <string>Arround 1bar 300K</string>
+              <string>Arround 1bar300K</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Arround 155bar 600K</string>
+              <string>Arround 155bars600K</string>
              </property>
             </item>
            </widget>
@@ -11259,7 +11192,7 @@
        </font>
       </property>
       <property name="title">
-       <string>Boundary condition</string>
+       <string>Boundary conditions</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_9">
        <item row="0" column="0">
@@ -11970,7 +11903,7 @@
   </widget>
   <widget class="QWidget" name="NumercalOptions">
    <attribute name="title">
-    <string>Numerical</string>
+    <string>Numerical options</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_8">
     <item row="0" column="0">
@@ -12249,7 +12182,7 @@
           <double>0.000001000000000</double>
          </property>
          <property name="value">
-          <double>0.000100000000000</double>
+          <double>0.000001000000000</double>
          </property>
         </widget>
        </item>
@@ -12533,7 +12466,7 @@
           </size>
          </property>
          <property name="text">
-          <string>MyCoreFlowsSimulation</string>
+          <string>MySolverLabSimulation</string>
          </property>
         </widget>
        </item>
@@ -12705,7 +12638,6 @@
   <tabstop>FEqs_Gravity_3d_doubleSpinBox</tabstop>
   <tabstop>FEqs_FrictionCoefficients_Phase1_doubleSpinBox</tabstop>
   <tabstop>FEqs_FrictionCoefficients_Phase2_doubleSpinBox</tabstop>
-  <tabstop>FEqs_FluidOrLiquid</tabstop>
   <tabstop>FEqs_1barOr155bar</tabstop>
   <tabstop>FEqs_BC_Wall_GroupName_lineEdit</tabstop>
   <tabstop>FEqs_BC_Wall_Temperature_doubleSpinBox</tabstop>
@@ -12727,9 +12659,7 @@
   <tabstop>FEqs_BC_Neumann_GroupName_lineEdit</tabstop>
   <tabstop>FEqs_BC_Outlet_GroupNamelineEdit</tabstop>
   <tabstop>FEqs_BC_Outlet_PressuredoubleSpinBox</tabstop>
-  <tabstop>Iso2F_HeatSource_doubleSpinBox</tabstop>
   <tabstop>Iso2F_ViscositydoubleSpinBox</tabstop>
-  <tabstop>Iso2F_Conductivity_doubleSpinBox</tabstop>
   <tabstop>Iso2F_Gravity_1d_doubleSpinBox</tabstop>
   <tabstop>Iso2F_Gravity_2d_doubleSpinBox</tabstop>
   <tabstop>Iso2F_Gravity_3d_doubleSpinBox</tabstop>

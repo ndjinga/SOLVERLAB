@@ -55,27 +55,27 @@ class MainCFWidget(QtWidgets.QTabWidget):
             # parse name
             name=name[:len(name)-len("_doubleSpinBox")]#On retire le suffixe _doubleSpinBox
             if name.endswith("Conductivity") :
-              dictCF["Conductivity"]=val
+              dictCF[name]=val
             elif name.endswith("Conductivity_Phase1") :
-              dictCF["Conductivity1"]=val
+              dictCF[name]=val
             elif name.endswith("Conductivity_Phase2") :
-              dictCF["Conductivity2"]=val
+              dictCF[name]=val
             elif name.endswith("Viscosity") :
-              dictCF["Viscosity"]=val
+              dictCF[name]=val
             elif name.endswith("Viscosity_Phase1") :
-              dictCF["Viscosity1"]=val
+              dictCF[name]=val
             elif name.endswith("Viscosity_Phase2") :
-              dictCF["Viscosity2"]=val
+              dictCF[name]=val
             elif name.endswith("HeatSource") :
-              dictCF["HeatSource"]=val
+              dictCF[name]=val
             elif name.endswith("FrictionCoefficients") :
-              dictCF["FrictionCoefficients"]=val
+              dictCF[name]=val
             elif name.endswith("Gravity_1d") :
-              dictCF["Gravity_1d"]=val
+              dictCF[name]=val
             elif name.endswith("Gravity_2d") :
-              dictCF["Gravity_2d"]=val
+              dictCF[name]=val
             elif name.endswith("Gravity_3d") :
-              dictCF["Gravity_3d"]=val
+              dictCF[name]=val
             elif name=="Xinf" :
               dictCF["Xinf"]=val
             elif name=="Xsup" :
@@ -97,21 +97,21 @@ class MainCFWidget(QtWidgets.QTabWidget):
             elif name.endswith("_IC") :#Initial conditions
               name=name[:len(name)-len("_IC")]#On retire le suffixe _IC
               if name.endswith("Concentration") :
-                dictCF["InitialConcentration"]=val
+                dictCF[name]=val
               elif name.endswith("Alpha") :
-                dictCF["InitialAlpha"]=val
+                dictCF[name]=val
               elif name.endswith("Pressure") :
-                dictCF["InitialPressure"]=val
+                dictCF[name]=val
               elif name.endswith("Temperature") :
-                dictCF["InitialTemperature"]=val
+                dictCF[name]=val
               elif name.endswith("Velocity_1d") :
-                dictCF["InitialVelocity_1d"]=val
+                dictCF[name]=val
               elif name.endswith("Velocity_2d") :
-                dictCF["InitialVelocity_2d"]=val
+                dictCF[name]=val
               elif name.endswith("Velocity_3d") :
-                dictCF["InitialVelocity_3d"]=val
+                dictCF[name]=val
             elif name.endswith("_BC") :#Boundary conditions
-              name=name[3:len(name)-len("_BC")]#On retire le préfixe SP_ ou DM_ au début et le suffixe _BC à la fin
+              name=name[:len(name)-len("_BC")]#On retire le suffixe _BC à la fin
               dictCF[name]=val
           elif name.endswith('comboBox'):
             assert(isinstance(att, QtWidgets.QComboBox))
@@ -123,7 +123,7 @@ class MainCFWidget(QtWidgets.QTabWidget):
             elif name.endswith("GasOrLiquid") :
               dictCF["fluidType"]=val
             elif name.endswith("_BC") :#Boundary conditions
-              name=name[4:len(name)-len("_BC")]#On retire le préfixe SP_ ou DM_ au début et le suffixe _BC à la fin
+              name=name[:len(name)-len("_BC")]#On retire le suffixe _BC à la fin
               dictCF[name]=val
             elif name=="NO_Method" :
               dictCF["Method"]=val
@@ -152,31 +152,31 @@ class MainCFWidget(QtWidgets.QTabWidget):
     print("Reading widgets")
     dictCF = self.scanWidgets()
 
-    print("Setting Model, ModelName = ", dictCF["ModelName"], ", pressureEstimate = ", dictCF["pressureEstimate"], ", InitialPressure = ", dictCF["InitialPressure"], ", InitialVelocity_1d = ", dictCF["InitialVelocity_1d"], ", InitialTemperature= ", dictCF["InitialTemperature"])
+    print("Setting Model, ModelName = ", dictCF["ModelName"], ", pressureEstimate = ", dictCF["pressureEstimate"])#, ", InitialPressure = ", dictCF["InitialPressure"], ", InitialVelocity_1d = ", dictCF["InitialVelocity_1d"], ", InitialTemperature= ", dictCF["InitialTemperature"])
     ######## Setting Model and initil state #########################
     if dictCF["ModelName"]=="SinglePhase" :
       myProblem = eval('cf.%s(cf.%s,cf.%s,%s)' % (dictCF["ModelName"],dictCF["fluidType"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
       nVar =  myProblem.getNumberOfVariables()
       VV_Constant =[0]*nVar
-      VV_Constant[0] = dictCF["InitialPressure"]
-      VV_Constant[1] = dictCF["InitialVelocity_1d"]
+      VV_Constant[0] = dictCF["SP_Pressure"]
+      VV_Constant[1] = dictCF["SP_Velocity_1d"]
       if dictCF["spaceDim"] >1 :
-        VV_Constant[2] = dictCF["InitialVelocity_2d"]
+        VV_Constant[2] = dictCF["SP_Velocity_2d"]
         if dictCF["spaceDim"] >2 :
-          VV_Constant[3] = dictCF["InitialVelocity_3d"]
-      VV_Constant[nVar-1] = dictCF["InitialTemperature"]
+          VV_Constant[3] = dictCF["SP_Velocity_3d"]
+      VV_Constant[nVar-1] = dictCF["SP_Temperature"]
     elif dictCF["ModelName"]=="DriftModel" :
       myProblem = eval("cf.%s(cf.%s,%s)" % (dictCF["ModelName"],dictCF["pressureEstimate"],dictCF["spaceDim"]))
       nVar =  myProblem.getNumberOfVariables()
       VV_Constant =[0]*nVar
-      VV_Constant[0] = dictCF["InitialConcentration"]
-      VV_Constant[1] = dictCF["InitialPressure"]
-      VV_Constant[2] = dictCF["InitialVelocity_1d"]
+      VV_Constant[0] = dictCF["DM_Concentration"]
+      VV_Constant[1] = dictCF["DM_Pressure"]
+      VV_Constant[2] = dictCF["DM_Velocity_1d"]
       if dictCF["spaceDim"] >1 :
-        VV_Constant[3] = dictCF["InitialVelocity_2d"]
+        VV_Constant[3] = dictCF["DM_Velocity_2d"]
         if dictCF["spaceDim"] >2 :
-          VV_Constant[4] = dictCF["InitialVelocity_3d"]
-      VV_Constant[nVar-1] = dictCF["InitialTemperature"]
+          VV_Constant[4] = dictCF["DM_Velocity_3d"]
+      VV_Constant[nVar-1] = dictCF["DM_Temperature"]
     else :
         raise NameError('Model not yet handled', dictCF["ModelName"])
 
@@ -197,24 +197,36 @@ class MainCFWidget(QtWidgets.QTabWidget):
 #        #exec(line)
 #        self._python_dump.append(line)
 
-    print("Setting boundary conditions, Temperature_Left = ", dictCF["Temperature_Left"], ", Velocity_1d_Left = ", dictCF["Velocity_1d_Left"], ", Pressure_Right = ", dictCF["Pressure_Right"])
+    print("Setting boundary conditions")#", Temperature_Left = ", dictCF["Temperature_Left"], ", Velocity_1d_Left = ", dictCF["Velocity_1d_Left"], ", Pressure_Right = ", dictCF["Pressure_Right"])
     ######## 1D for the moment ######################
     if dictCF["ModelName"]=="SinglePhase" :
-      myProblem.setInletBoundaryCondition("Left",dictCF["Temperature_Left"],dictCF["Velocity_1d_Left"])
-      myProblem.setOutletBoundaryCondition("Right", dictCF["Pressure_Right"]);
+      myProblem.setInletBoundaryCondition("Left",dictCF["SP_Temperature_Left"],dictCF["SP_Velocity_1d_Left"])
+      myProblem.setOutletBoundaryCondition("Right", dictCF["SP_Pressure_Right"]);
     elif dictCF["ModelName"]=="DriftModel" :
       myProblem.setInletBoundaryCondition("Left",dictCF["DM_Temperature_Left"],dictCF["DM_Concentration_Left"],dictCF["DM_Velocity_1d_Left"])
       myProblem.setOutletBoundaryCondition("Right", dictCF["DM_Pressure_Right"]);
 
-    print("Setting source terms, HeatSource = ", dictCF["HeatSource"], ", Gravity_1d = ", dictCF["Gravity_1d"])
+    print("Setting source terms")#", HeatSource = ", dictCF["HeatSource"], ", Gravity_1d = ", dictCF["Gravity_1d"])
     ########## Physical forces #################
-    myProblem.setHeatSource(dictCF["HeatSource"]);
-    gravite=[0]*dictCF["spaceDim"]
-    gravite[0]=dictCF["Gravity_1d"]
-    if dictCF["spaceDim"] >1 :
-      gravite[1]=dictCF["Gravity_2d"]
-      if dictCF["spaceDim"] >2 :
-        gravite[2]=dictCF["Gravity_3d"]
+    if dictCF["ModelName"]=="SinglePhase" :
+      myProblem.setHeatSource(dictCF["SP_HeatSource"]);
+      gravite=[0]*dictCF["spaceDim"]
+      gravite[0]=dictCF["SP_Gravity_1d"]
+      if dictCF["spaceDim"] >1 :
+        gravite[1]=dictCF["SP_Gravity_2d"]
+        if dictCF["spaceDim"] >2 :
+          gravite[2]=dictCF["SP_Gravity_3d"]
+    elif dictCF["ModelName"]=="DriftModel" :
+      myProblem.setHeatSource(dictCF["DM_HeatSource"]);
+      gravite=[0]*dictCF["spaceDim"]
+      gravite[0]=dictCF["DM_Gravity_1d"]
+      if dictCF["spaceDim"] >1 :
+        gravite[1]=dictCF["DM_Gravity_2d"]
+        if dictCF["spaceDim"] >2 :
+          gravite[2]=dictCF["DM_Gravity_3d"]
+    else :
+        raise NameError('Model not yet handled', dictCF["ModelName"])
+
     myProblem.setGravity(gravite)
 
     print("Setting numerical options, NumericalScheme = ", dictCF["Scheme"], ", NumericalMethod = ", dictCF["Method"], ", CFL = ", dictCF["CFL"])
