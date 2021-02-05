@@ -114,7 +114,7 @@ SET(SALOME_INSTALL_DOC "${SALOME_INSTALL_DOC}" CACHE PATH "Install path: SALOME 
 SET(SALOME_INSTALL_HEADERS ${SALOME_INSTALL_HEADERS} CACHE PATH "Install path: SALOME headers")
  
 # Specific to CoreFlows:   
-SET(SALOME_CoreFlows_INSTALL_RES_DATA ${SALOME_INSTALL_RES}/coreflows CACHE PATH "Install path: SALOME COREFLOWS specific resources")
+SET(SALOME_CoreFlows_INSTALL_RES_DATA ${SALOME_INSTALL_RES}/solverlab CACHE PATH "Install path: SALOME SOLVERLAB specific resources")
 
 # Sources 
 # ========

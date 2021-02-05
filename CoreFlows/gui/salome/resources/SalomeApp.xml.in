@@ -31,6 +31,6 @@
   </section>
   <section name="resources">
     <!-- Module resources -->
-    <parameter name="SOLVERLAB"    value="%SOLVERLAB_ROOT_DIR%/share/salome/resources/coreflows"/>
+    <parameter name="SOLVERLAB"    value="%SOLVERLAB_ROOT_DIR%/share/salome/resources/solverlab"/>
   </section>
 </document>
