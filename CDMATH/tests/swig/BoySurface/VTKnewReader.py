@@ -157,14 +157,14 @@ class VTURawReader:
         if meshDim == -1:
             raise Exception("Could not find a valid cell type in the mesh !")
         if i > 0:
-            print "WARNING: some invalid/incompatible cell types were detected - trying to have them as polygons ..."
+            print("WARNING: some invalid/incompatible cell types were detected - trying to have them as polygons ...")
         for typ in types2:
             if self.VTKTypes_2_MC[typ] != -1:
                 md=MEDCouplingMesh.GetDimensionOfGeometricType(self.VTKTypes_2_MC[typ])
                 if md!=meshDim:
                     raise Exception("MultiLevel umeshes not managed yet !")
             else:
-                print "WARNING: invalid/incompatible cell type detected: VTK type number: %d" % typ
+                print("WARNING: invalid/incompatible cell type detected: VTK type number: %d" % typ)
         m=MEDCouplingUMesh("mesh",meshDim)
         # coordinates
         coo=np.memmap(fd,dtype=rd._type_coords,mode='r',offset=ref+rd._off_coords,shape=(rd._nb_nodes*rd._space_dim,))
@@ -273,7 +273,7 @@ class VTURawReader:
                     if str(attrs["encoding"])=="raw":
                         raise VTURawReader.NormalException(self._loc.getLineNumber())
                     else:
-                        print attrs["encoding"]
+                        print(attrs["encoding"])
                         raise VTURawReader.NotRawVTUException("The file is not a raw VTU ! Change reader !")
                 pass
             pass
