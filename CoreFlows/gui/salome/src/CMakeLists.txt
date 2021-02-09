@@ -20,7 +20,7 @@
 
 SET(SGPYQT_RES_DIR "${SALOME_INSTALL_RES}")
 SALOME_CONFIGURE_FILE(../../SalomePyQt_MockUp.py.in mockup/SalomePyQt_MockUp.py)
-SALOME_CONFIGURE_FILE(../../utils.py.in             utils.py)
+SALOME_CONFIGURE_FILE(../../slutils.py.in             slutils.py)
 
 SET(_bin_SCRIPTS
     SOLVERLABGUI.py
@@ -30,7 +30,7 @@ SET(_bin_SCRIPTS
 SET(_lib_SCRIPTS
     ${GUI_lib_SCRIPTS}
     ${CMAKE_CURRENT_BINARY_DIR}/mockup/SalomePyQt_MockUp.py
-    ${CMAKE_CURRENT_BINARY_DIR}/utils.py
+    ${CMAKE_CURRENT_BINARY_DIR}/slutils.py
 )
 
 SALOME_INSTALL_SCRIPTS("${_bin_SCRIPTS}" ${SALOME_INSTALL_SCRIPT_PYTHON})

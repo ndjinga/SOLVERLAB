@@ -42,14 +42,14 @@ ELSE ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) 
       @ONLY
   )
   INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/SalomePyQt_MockUp.py DESTINATION lib/python)
-  # Configure file utils.py
+  # Configure file slutils.py
   SET(SALOME_INSTALL_PYTHON "lib/python"${PYTHON_VERSION}"/site-packages/salome")#This is to use the same variable as salome
   configure_file(
-      utils.py.in
-      utils.py
+      slutils.py.in
+      slutils.py
       @ONLY
   )
-  INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/utils.py DESTINATION lib/python)
+  INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/slutils.py DESTINATION lib/python)
 ENDIF( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
 
 ADD_SUBDIRECTORY(ui)

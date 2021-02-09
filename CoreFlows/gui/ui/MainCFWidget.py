@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.uic import loadUi
-from utils import completeResPath
+from slutils import completeResPath
 
 import CoreFlows as cf
 import cdmath as cm
