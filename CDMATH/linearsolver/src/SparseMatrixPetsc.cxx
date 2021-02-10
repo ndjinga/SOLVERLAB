@@ -663,7 +663,7 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, SVDWhich which, double to
   SVDGetType(svd,&type);
   PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n\n",type);
   SVDGetDimensions(svd,&nsv,NULL,NULL);
-  PetscPrintf(PETSC_COMM_WORLD," Number of requested eingular values: %D\n",nsv);
+  PetscPrintf(PETSC_COMM_WORLD," Number of requested singular values: %D\n",nsv);
   SVDGetTolerances(svd,&tol,&maxit);
   PetscPrintf(PETSC_COMM_WORLD," Stopping condition: tol=%.4g, maxit=%D\n",(double)tol,maxit);
 
