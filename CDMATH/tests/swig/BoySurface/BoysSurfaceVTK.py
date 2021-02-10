@@ -92,7 +92,7 @@ writer.SetFileName("BoySurface"+".vtu")
 writer.SetInputData(unstructuredGrid)
 #writer.SetDataModeToBinary()
 #writer.SetDataModeToAppended()
-writer.EncodeAppendedDataOn()
+#writer.EncodeAppendedDataOn()
 writer.Write()
 
 #Generate binary vtu file in append mode
