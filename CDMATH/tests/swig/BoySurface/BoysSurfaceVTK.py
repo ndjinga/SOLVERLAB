@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
    
 import vtk
-import VTKnewReader#To generate med file
-#import paraview.simple as pvs#to obtain a binary vtu file in append mode
+import VTKReader#To generate a med file from a vtk file
 
 # ------------------------------------------------------------
 # Create Boy's surface
@@ -100,6 +99,6 @@ writer.Write()
 #pvs.SaveData('./BoySurface2.vtu', proxy=boySurfaceBisvtu, DataMode='Binary',EncodeAppendedData=1)
 
 #Generate med file
-vtu = VTKnewReader.VTURawReader('./BoySurface.vtu')
+vtu = VTKReader.VTURawReader('./BoySurface.vtu')
 med = vtu.loadInMEDFileDS()
 med.write("./BoySurface.med", 2)
