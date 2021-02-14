@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*-coding:utf-8 -*
 #===============================================================================================================================
 # Name        : Résolution VF de l'équation de Poisson 1D -\triangle u = f avec conditions aux limites de Dirichlet u=0
@@ -11,6 +12,8 @@
 import cdmath
 from math import sin, pi
 from numpy import linspace
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import PV_routines
 import VTK_routines

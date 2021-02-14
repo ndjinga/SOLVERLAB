@@ -11,6 +11,8 @@
 import cdmath
 from math import atan, pi
 from numpy import sign, linspace
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import PV_routines
 import VTK_routines

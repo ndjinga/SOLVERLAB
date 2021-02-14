@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*-coding:utf-8 -*
 #===============================================================================================================================
 # Name        : Résolution EF de l'équation de Laplace-Beltrami -\triangle u = f sur une sphere 

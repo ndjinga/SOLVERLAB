@@ -1,4 +1,6 @@
 import TransportEquation1DCenteredImplicit
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from math import log10, sqrt

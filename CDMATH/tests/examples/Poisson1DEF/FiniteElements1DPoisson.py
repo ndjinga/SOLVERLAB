@@ -11,6 +11,8 @@
 import cdmath
 from math import sin, pi, sqrt
 from numpy import linspace
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import PV_routines
 import VTK_routines

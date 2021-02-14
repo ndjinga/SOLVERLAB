@@ -1,5 +1,7 @@
 import FiniteElements2DPoisson_SQUARE
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("Agg")
 import numpy as np
 from math import log10, sqrt
 import time, json

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*-coding:utf-8 -*
 #===============================================================================================================================
 # Name        : Résolution VF de l'équation de Poisson -\triangle u = f sur la boule unité  avec conditions aux limites de Dirichlet u=0
@@ -11,6 +12,8 @@
 import cdmath
 from math import sin, cos, pi, sqrt, atan2
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import PV_routines
 import VTK_routines
