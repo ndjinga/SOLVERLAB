@@ -1,6 +1,6 @@
 import FiniteVolumes2DPoisson_SQUARE
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use("nbAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 from math import log10,sqrt

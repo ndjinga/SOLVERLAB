@@ -12,7 +12,7 @@ def test_validation2DEF_skinny_triangles():
     start = time.time()
     #### 2D FE skinny triangle mesh
     #meshList=[5,9,15,21,31]
-    meshList=['squareWithSkinnyTriangles_0','squareWithSkinnyTriangles_1','squareWithSkinnyTriangles_2','squareWithSkinnyTriangles_3']#,'squareWithSkinnyTriangles_4'
+    meshList=['squareWithSkinnyTriangles_0','squareWithSkinnyTriangles_1','squareWithSkinnyTriangles_2']#,'squareWithSkinnyTriangles_3','squareWithSkinnyTriangles_4'
     mesh_path='../../../ressources/2DSkinnyTriangles/'
     meshType="Regular_skinny_triangles"
     mesh_name='squareWithSkinnyTriangles'
@@ -78,7 +78,7 @@ def test_validation2DEF_skinny_triangles():
     b=(-a2*b1+a1*b2)/det
     
     print( "FE on 2D skinny triangle mesh : scheme order is ", -a )
-    assert abs(a+1.397)<0.1
+    assert abs(a+1.41)<0.01
 
     # Plot of convergence curves
     plt.close()
