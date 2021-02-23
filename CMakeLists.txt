@@ -178,7 +178,7 @@ endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
       message (STATUS "SLEPC will be downloaded and compiled from ${DOWNLOAD_SLEPC}" )
       message (STATUS "HDF5  will be downloaded and compiled from ${DOWNLOAD_HDF5}" )
 
-      #extract tarball name
+      #extract petsc tarball name
       string(LENGTH "${DOWNLOAD_PETSC}" tarball_url_length)#length of the tarball
       string(FIND   "${DOWNLOAD_PETSC}" "/" start_tarball_name REVERSE )# last occurence of "/"
       MATH(EXPR start_tarball_name  "${start_tarball_name}+1")#start after the occurence of "/"
@@ -218,10 +218,24 @@ endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
       set(PETSC_INCLUDES  ${PETSC_DIR}/${PETSC_ARCH}/include ${PETSC_DIR}/include)
       set(PETSC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/lib/libpetsc.so)
 
+      #extract slepc tarball name 
+      string(LENGTH "${DOWNLOAD_SLEPC}" tarball_url_length)#length of the tarball
+      string(FIND   "${DOWNLOAD_SLEPC}" "/" start_tarball_name REVERSE )# last occurence of "/"
+      MATH(EXPR start_tarball_name  "${start_tarball_name}+1")#start after the occurence of "/"
+      MATH(EXPR tarball_name_length "${tarball_url_length}-${start_tarball_name}-7")#name ends before .tar.gz that counts for 7 characters
+      string(SUBSTRING ${DOWNLOAD_SLEPC} ${start_tarball_name} ${tarball_name_length} SLEPC_TARBALL_NAME)
+
+      #extract slepc version
+      string(LENGTH "${SLEPC_TARBALL_NAME}" tarball_name_length)#length of the tarball
+      string(FIND   "${SLEPC_TARBALL_NAME}" "-" start_version_name REVERSE )# last occurence of "-"
+      MATH(EXPR start_version_name  "${start_version_name}+1")#start after the occurence of "/"
+      string(SUBSTRING ${SLEPC_TARBALL_NAME} ${start_version_name} ${tarball_name_length} SLEPC_VERSION)
+      message( STATUS "SLEPc version ${SLEPC_VERSION}  will be installed" )
+
       #define slepc variables
       set(SLEPC_DIR ${PETSC_INSTALL})
-      set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.1/include )
-      set(SLEPC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-3.14.1/installed-arch-linux2-c-opt/lib/libslepc.so)
+      set(SLEPC_INCLUDES ${SLEPC_DIR}/include  ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-${SLEPC_TARBALL_NAME}/include )
+      set(SLEPC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/externalpackages/slepc-${SLEPC_TARBALL_NAME}/installed-arch-linux2-c-opt/lib/libslepc.so)
       message( STATUS "SLEPc includes ${SLEPC_INCLUDES}")
 
       #define hdf5 variables
