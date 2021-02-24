@@ -154,6 +154,7 @@ public :
 	Field& getMomentumField();
 	Field& getTotalEnergyField();
 	Field& getEnthalpyField();
+	Field& getMachNumberField();
 
 protected :
 	double  _drho_sur_dp,   _drho_sur_dT;//derivatives of the density rho wrt cv, p, T

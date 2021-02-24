@@ -3134,6 +3134,33 @@ Field& SinglePhase::getVelocityField()
 	return _Vitesse;
 }
 
+Field& SinglePhase::getMachNumberField()
+{
+	Field MachNumberField=Field("Mach number",CELLS,_mesh,1);
+	int Ii;
+	double p,T,rho,h, temp, u2=0;
+	for (long i = 0; i < _Nmailles; i++){
+		Ii = i*_nVar;
+		VecGetValues(_primitiveVars,1,&Ii,&p);
+		Ii = i*_nVar +_nVar-1;
+		VecGetValues(_primitiveVars,1,&Ii,&T);
+		
+		for (int j = 0; j < _Ndim; j++)//On récupère les composantes de vitesse
+		{
+			int Ii = i*_nVar +1+j;
+			VecGetValues(_primitiveVars,1,&Ii,&temp);
+			u2+=temp;
+		}
+
+		rho=_fluides[0]->getDensity(p,T);
+		h  =_fluides[0]->getEnthalpy(T,rho);
+		MachNumberField[i]  =sqrt(u2)/_fluides[0]->vitesseSonEnthalpie(h);
+	}
+	_Vitesse.setTime(_time,_nbTimeStep);
+
+	return MachNumberField;
+}
+
 Field& SinglePhase::getVelocityXField()
 {
 	if(!_saveAllFields )
