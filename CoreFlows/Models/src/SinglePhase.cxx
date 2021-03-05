@@ -3149,14 +3149,15 @@ Field& SinglePhase::getMachNumberField()
 		{
 			int Ii = i*_nVar +1+j;
 			VecGetValues(_primitiveVars,1,&Ii,&temp);
-			u2+=temp;
+			u2+=temp*temp;
 		}
 
 		rho=_fluides[0]->getDensity(p,T);
 		h  =_fluides[0]->getEnthalpy(T,rho);
 		MachNumberField[i]  =sqrt(u2)/_fluides[0]->vitesseSonEnthalpie(h);
 	}
-	_Vitesse.setTime(_time,_nbTimeStep);
+	MachNumberField.setTime(_time,_nbTimeStep);
+
 
 	return MachNumberField;
 }
