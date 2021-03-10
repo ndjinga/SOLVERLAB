@@ -125,6 +125,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	}
 
 	_VV=VV;
+	_VV.setName("SOLVERLAB results");
 	_time=_VV.getTime();
 	_mesh=_VV.getMesh();
 	_Nmailles = _mesh.getNumberOfCells();
@@ -184,7 +185,7 @@ void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int ti
 void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<double> Vconstant)
 {
 	Mesh M(fileName);
-	Field VV("Primitive", CELLS, M, Vconstant.size());
+	Field VV("SOLVERLAB results", CELLS, M, Vconstant.size());
 
 	for (int j = 0; j < M.getNumberOfCells(); j++) {
 		for (int i=0; i< VV.getNumberOfComponents(); i++)
@@ -195,7 +196,7 @@ void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<dou
 }
 void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant)
 {
-	Field VV("Primitive", CELLS, M, Vconstant.getNumberOfRows());
+	Field VV("SOLVERLAB results", CELLS, M, Vconstant.getNumberOfRows());
 
 	for (int j = 0; j < M.getNumberOfCells(); j++) {
 		for (int i=0; i< VV.getNumberOfComponents(); i++)
@@ -205,7 +206,7 @@ void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vcon
 }
 void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant)
 {
-	Field VV("Primitive", CELLS, M, Vconstant.size());
+	Field VV("SOLVERLAB results", CELLS, M, Vconstant.size());
 
 	for (int j = 0; j < M.getNumberOfCells(); j++) {
 		for (int i=0; i< VV.getNumberOfComponents(); i++)
@@ -255,7 +256,7 @@ void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV
 		_runLogFile->close();
 		throw CdmathException( "ProblemCoreFlows::setStepFunctionInitialField: Vectors VV_Left and VV_Right have different sizes");
 	}
-	Field VV("Primitive", CELLS, M, VV_Left.getNumberOfRows());
+	Field VV("SOLVERLAB results", CELLS, M, VV_Left.getNumberOfRows());
 
 	double component_value;
 
