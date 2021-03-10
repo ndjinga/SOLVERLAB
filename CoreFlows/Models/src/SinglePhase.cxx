@@ -3198,6 +3198,48 @@ Field& SinglePhase::getVelocityXField()
 	return _VitesseX;
 }
 
+Field& SinglePhase::getVelocityYField()
+{
+	if(_Ndim<2)
+        throw CdmathException("SinglePhase::getVelocityYField() error : dimension should be at least 2");	
+	else
+		if(!_saveAllFields )
+		{
+			_VitesseY=Field("Velocity Y",CELLS,_mesh,1);
+			int Ii;
+			for (long i = 0; i < _Nmailles; i++)
+			{
+				int Ii = i*_nVar +2;
+				VecGetValues(_primitiveVars,1,&Ii,&_VitesseY(i));
+			}
+			_VitesseY.setTime(_time,_nbTimeStep);
+			_VitesseY.setInfoOnComponent(0,"Velocity_y_(m/s)");
+		}
+		
+		return _VitesseY;
+}
+
+Field& SinglePhase::getVelocityZField()
+{
+	if(_Ndim<3)
+        throw CdmathException("SinglePhase::getvelocityZField() error : dimension should be 3");	
+	else
+		if(!_saveAllFields )
+		{
+			_VitesseZ=Field("Velocity Z",CELLS,_mesh,1);
+			int Ii;
+			for (long i = 0; i < _Nmailles; i++)
+			{
+				int Ii = i*_nVar +3;
+				VecGetValues(_primitiveVars,1,&Ii,&_VitesseZ(i));
+			}
+			_VitesseZ.setTime(_time,_nbTimeStep);
+			_VitesseZ.setInfoOnComponent(0,"Velocity_z_(m/s)");
+		}
+		
+		return _VitesseZ;
+}
+
 Field& SinglePhase::getDensityField()
 {
 	if(!_saveAllFields )
@@ -3287,6 +3329,10 @@ Field& SinglePhase::getOutputField(const string& nameField )
 		return getVelocityField();
 	else if(nameField=="velocityX" || nameField=="VelocityX" || nameField=="VELOCITYX" || nameField=="VitesseX" || nameField=="VITESSEX" || nameField=="vitesseX" )
 		return getVelocityXField();
+	else if(nameField=="velocityY" || nameField=="VelocityY" || nameField=="VELOCITYY" || nameField=="VitesseY" || nameField=="VITESSEY" || nameField=="vitesseY" )
+		return getVelocityYField();
+	else if(nameField=="velocityZ" || nameField=="VelocityZ" || nameField=="VELOCITYZ" || nameField=="VitesseZ" || nameField=="VITESSEZ" || nameField=="vitesseZ" )
+		return getVelocityZField();
 	else if(nameField=="temperature" || nameField=="Temperature" || nameField=="TEMPERATURE" || nameField=="temperature" )
 		return getTemperatureField();
 	else if(nameField=="density" || nameField=="Density" || nameField=="DENSITY" || nameField=="Densite" || nameField=="DENSITE" || nameField=="densite" )

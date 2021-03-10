@@ -149,6 +149,8 @@ public :
 	Field& getPressureField();
 	Field& getVelocityField();
 	Field& getVelocityXField();
+	Field& getVelocityYField();
+	Field& getVelocityZField();
 	Field& getTemperatureField();
 	Field& getDensityField();
 	Field& getMomentumField();
