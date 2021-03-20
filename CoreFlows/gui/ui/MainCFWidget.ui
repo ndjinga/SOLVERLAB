@@ -29,7 +29,7 @@
    <string notr="true"/>
   </property>
   <property name="currentIndex">
-   <number>0</number>
+   <number>1</number>
   </property>
   <widget class="QWidget" name="tabModel">
    <attribute name="title">
@@ -12751,12 +12751,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>618</x>
-     <y>212</y>
+     <x>194</x>
+     <y>70</y>
     </hint>
     <hint type="destinationlabel">
-     <x>858</x>
-     <y>377</y>
+     <x>832</x>
+     <y>371</y>
     </hint>
    </hints>
   </connection>
@@ -12767,12 +12767,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>482</x>
-     <y>212</y>
+     <x>194</x>
+     <y>70</y>
     </hint>
     <hint type="destinationlabel">
-     <x>608</x>
-     <y>377</y>
+     <x>582</x>
+     <y>371</y>
     </hint>
    </hints>
   </connection>
@@ -12783,28 +12783,28 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>346</x>
-     <y>212</y>
+     <x>194</x>
+     <y>70</y>
     </hint>
     <hint type="destinationlabel">
-     <x>358</x>
-     <y>377</y>
+     <x>331</x>
+     <y>371</y>
     </hint>
    </hints>
   </connection>
   <connection>
    <sender>MeshCreation_RadioButton</sender>
    <signal>toggled(bool)</signal>
-   <receiver>Mesh_Creation</receiver>
-   <slot>setEnabled(bool)</slot>
+   <receiver>TabWidget</receiver>
+   <slot>onCreationMesh(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>183</x>
-     <y>249</y>
+     <x>228</x>
+     <y>270</y>
     </hint>
     <hint type="destinationlabel">
-     <x>604</x>
-     <y>370</y>
+     <x>610</x>
+     <y>425</y>
     </hint>
    </hints>
   </connection>
@@ -12815,12 +12815,140 @@
    <slot>onLaunchSimu()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>989</x>
-     <y>753</y>
+     <x>349</x>
+     <y>80</y>
     </hint>
     <hint type="destinationlabel">
      <x>918</x>
      <y>551</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DriftModel_RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>TabWidget</receiver>
+   <slot>onDriftModelSelected(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>314</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>SinglePhase_RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>TabWidget</receiver>
+   <slot>onSinglePhaseSelected(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>314</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>TransportEquation_RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>TabWidget</receiver>
+   <slot>onTransportSelected(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>314</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>DiffusionEquation_RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>TabWidget</receiver>
+   <slot>onDiffusionSelected(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>314</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>IsothermalTwoFluid_RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>TabWidget</receiver>
+   <slot>onIsothermal2FluidSelected(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>314</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>FiveEqsTwoFluid_RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>TabWidget</receiver>
+   <slot>on5Eq2FluidSelected(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>314</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MeshInputFileName_RadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>TabWidget</receiver>
+   <slot>onMeshFile(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>183</x>
+     <y>153</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MeshInputFileName_toolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>TabWidget</receiver>
+   <slot>onSelectMeshFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>601</x>
+     <y>153</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>425</y>
     </hint>
    </hints>
   </connection>
@@ -12835,6 +12963,9 @@
   <slot>Dim_1(bool)</slot>
   <slot>Dim_2(bool)</slot>
   <slot>Dim_3(bool)</slot>
+  <slot>onMeshFile(bool)</slot>
+  <slot>onSelectMeshFile()</slot>
+  <slot>onCreationMesh(bool)</slot>
   <slot>onLaunchSimu()</slot>
  </slots>
 </ui>

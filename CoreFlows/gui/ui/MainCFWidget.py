@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QFileDialog
 from PyQt5.uic import loadUi
 from slutils import completeResPath
 
@@ -11,6 +12,12 @@ class MainCFWidget(QtWidgets.QTabWidget):
     QtWidgets.QTabWidget.__init__(self)
     loadUi(completeResPath("MainCFWidget.ui"), self)
     self._python_dump = []
+    self.models = []
+    for i in range(6):
+      self.models += [self.widget(2+i)]
+    for i in range(5):
+      self.removeTab(3)
+    self.setCurrentIndex(0)
     
   def scanWidgets(self):
     print(self.tabModel)
@@ -264,3 +271,52 @@ class MainCFWidget(QtWidgets.QTabWidget):
     myProblem.terminate()
     
     # TODO use a helper object here.
+    
+  def onSinglePhaseSelected(self,isChecked):
+    if(isChecked):
+      print("SinglePhaseSelected")
+      self.removeTab(2)
+      self.insertTab(2,self.models[0],"Physical model")
+
+  def onDriftModelSelected(self,isChecked):
+    if(isChecked):
+      print("DriftModelSelected")
+      self.removeTab(2)
+      self.insertTab(2,self.models[1],"Physical model")
+
+  def onTransportSelected(self,isChecked):
+    if(isChecked):
+      print("TransportSelected")
+      self.removeTab(2)
+      self.insertTab(2,self.models[5],"Physical model")
+
+  def onIsothermal2FluidSelected(self,isChecked):
+    if(isChecked):
+      print("Isothermal2FluidSelected")
+      self.removeTab(2)
+      self.insertTab(2,self.models[3],"Physical model")
+
+  def onDiffusionSelected(self,isChecked):
+    if(isChecked):
+      print("DiffusionSelected")
+      self.removeTab(2)
+      self.insertTab(2,self.models[4],"Physical model")
+
+  def on5Eq2FluidSelected(self,isChecked):
+    if(isChecked):
+      print("5Eq2FluidSelected")
+      self.removeTab(2)
+      self.insertTab(2,self.models[2],"Physical model")
+
+  def onCreationMesh(self,isChecked):
+    if(isChecked):
+      print("CreationMesh")
+
+  def onMeshFile(self,isChecked):
+    if(isChecked):
+      print("Input Mesh File")
+
+  def onSelectMeshFile(self):
+    print("Select Mesh File")
+    fname = QFileDialog.getOpenFileName(self, 'Open file','',"Image files (*.med)")
+    print(fname[0])
