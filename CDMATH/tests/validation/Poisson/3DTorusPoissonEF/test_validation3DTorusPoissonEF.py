@@ -30,7 +30,7 @@ def test_validation3DTorusEF():
         assert max_sol_num<1.15
         error_tab[i]=log10(error_tab[i])
         time_tab[i]=log10(time_tab[i])
-        with open('./FiniteElementsOnTorusPoisson_PlotOnSortedLines'+meshType+str(mesh_size_tab[i])+'0.csv') as f:
+        with open('./FiniteElementsOnTorusPoisson_PlotOnSortedLines'+meshType+str(mesh_size_tab[i])+'.csv') as f:
             lines = f.readlines()
             y = [float(line.split(",")[0]) for line in lines[1:]]
             x = [float(line.split(",")[1]) for line in lines[1:]]
