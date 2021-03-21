@@ -11,7 +11,7 @@ convergence_synthesis=dict(FiniteElements2DPoissonStiffBC_DISK.test_desc)
 def test_validation2DEF_StiffBC_Delaunay_triangles():
     start = time.time()
     #### 2D FE Delaunay triangle mesh of a disk
-    meshList=['diskWithTriangles_1','diskWithTriangles_2','diskWithTriangles_3','diskWithTriangles_4','diskWithTriangles_5']
+    meshList=['diskWithTriangles_1','diskWithTriangles_2','diskWithTriangles_3','diskWithTriangles_4']#,'diskWithTriangles_5'
     meshType="Unstructured_triangles"
     testColor="Green"
     nbMeshes=len(meshList)
