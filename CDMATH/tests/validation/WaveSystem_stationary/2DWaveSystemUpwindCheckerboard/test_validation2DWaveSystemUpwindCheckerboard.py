@@ -10,7 +10,7 @@ import time, json
 def test_validation2DWaveSystemUpwindCheckerboard(bctype,scaling):
     start = time.time()
     #### 2D checkerboard mesh
-    meshList=['checkerboard_5x5','checkerboard_9x9','checkerboard_17x17','checkerboard_33x33','checkerboard_65x65']
+    meshList=['checkerboard_5x5','checkerboard_9x9','checkerboard_17x17']#,'checkerboard_33x33','checkerboard_65x65'
     meshType="Regular checkerboard"
     testColor="Green"
     nbMeshes=len(meshList)
@@ -34,7 +34,7 @@ def test_validation2DWaveSystemUpwindCheckerboard(bctype,scaling):
     # Storing of numerical errors, mesh sizes and diagonal values
     for filename in meshList:
         error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i] =WaveSystemUpwind.solve_file(mesh_path+filename, mesh_name, resolution,scaling,meshType,testColor,cfl,bctype)
-        assert max_vel[i]>0.01 and max_vel[i]<1
+        assert max_vel[i]>0.0001 and max_vel[i]<1
         error_p_tab[i]=log10(error_p_tab[i])
         error_u_tab[i]=log10(error_u_tab[i])
         time_tab[i]=log10(time_tab[i])

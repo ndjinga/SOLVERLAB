@@ -41,7 +41,7 @@ def test_validation3DWaveSystemUpwindTetrahedra(bctype,scaling):
         #my_mesh=cdmath.Mesh(0.,1.,nx,0.,1.,nx,0.,1.,nx,6)
         #error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i] =WaveSystemUpwind.solve(my_mesh, mesh_name+str(my_mesh.getNumberOfCells()), resolution,scaling,meshType,testColor,cfl,bctype)
         error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i] =WaveSystemUpwind.solve_file(mesh_path+filename, mesh_name, resolution,scaling,meshType,testColor,cfl,bctype)
-        assert max_vel[i]>1.7 and max_vel[i]<2
+        assert max_vel[i]>0.5 and max_vel[i]<2
         error_p_tab[i]=log10(error_p_tab[i])
         error_u_tab[i]=log10(error_u_tab[i])
         i=i+1

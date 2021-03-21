@@ -10,7 +10,7 @@ import time, json
 def test_validation2DWaveSystemUpwindBrickWall(bctype,scaling):
     start = time.time()
     #### 2D brick wall mesh
-    meshList=['squareWithBrickWall_1','squareWithBrickWall_2','squareWithBrickWall_3','squareWithBrickWall_4']
+    meshList=['squareWithBrickWall_1','squareWithBrickWall_2','squareWithBrickWall_3']#,'squareWithBrickWall_4'
     meshType="Regular brick wall"
     testColor="Green"
     nbMeshes=len(meshList)
@@ -34,7 +34,7 @@ def test_validation2DWaveSystemUpwindBrickWall(bctype,scaling):
     # Storing of numerical errors, mesh sizes and diagonal values
     for filename in meshList:
         error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i] =WaveSystemUpwind.solve_file(mesh_path+filename, mesh_name, resolution,scaling,meshType,testColor,cfl,bctype)
-        assert max_vel[i]>0.002 and max_vel[i]<1
+        assert max_vel[i]>6e-5 and max_vel[i]<1
         error_p_tab[i]=log10(error_p_tab[i])
         error_u_tab[i]=log10(error_u_tab[i])
         time_tab[i]=log10(time_tab[i])
