@@ -10,7 +10,7 @@ import time, json
 def test_validation2DWaveSystemPStagDeformedQuadrangles(bctype,scaling):
     start = time.time()
     #### 2D deformed quadrangles mesh
-    meshList=['squareWithDeformedQuadrangles_1','squareWithDeformedQuadrangles_2','squareWithDeformedQuadrangles_3','squareWithDeformedQuadrangles_4','squareWithDeformedQuadrangles_5']#,'squareWithDeformedQuadrangles_6'
+    meshList=['squareWithDeformedQuadrangles_1','squareWithDeformedQuadrangles_2','squareWithDeformedQuadrangles_3','squareWithDeformedQuadrangles_4']#,'squareWithDeformedQuadrangles_5','squareWithDeformedQuadrangles_6'
     meshType="Deformed quadrangles"
     testColor="Orange : Pb with wall BC (no mass conservation)"
     nbMeshes=len(meshList)

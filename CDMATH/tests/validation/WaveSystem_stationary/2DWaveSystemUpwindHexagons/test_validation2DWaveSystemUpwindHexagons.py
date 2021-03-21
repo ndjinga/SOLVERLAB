@@ -10,7 +10,7 @@ import time, json
 def test_validation2DWaveSystemUpwindHexagons(bctype,scaling):
     start = time.time()
     #### 2D hexagonal mesh
-    meshList=['squareWithHexagons_1','squareWithHexagons_2','squareWithHexagons_3','squareWithHexagons_4']#,'squareWithHexagons_5'
+    meshList=['squareWithHexagons_1','squareWithHexagons_2','squareWithHexagons_3']#,'squareWithHexagons_4','squareWithHexagons_5'
     meshType="Regular hexagons"
     testColor="Green"
     nbMeshes=len(meshList)
