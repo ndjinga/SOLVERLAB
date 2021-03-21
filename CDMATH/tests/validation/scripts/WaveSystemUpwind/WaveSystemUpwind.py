@@ -391,7 +391,7 @@ def WaveSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolution,sc
             else:
                 print("Ecart au stationnaire exact : error_p= ",delta_press/p0," error_||u||= ",delta_v.maxVector()[0])
             print
-    print"-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt)
+    print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
     if(with_source):
         print("Variation temporelle relative : pressure ", maxVector[0]    ,", velocity x", maxVector[1]/rho0 ,", velocity y", maxVector[2]/rho0)
     else:
