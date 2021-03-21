@@ -1,4 +1,6 @@
 import WaveSystemPStag
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from math import log10, sqrt
@@ -9,7 +11,7 @@ import time, json
 def test_validation2DWaveSystemPStagCrossTriangles(scaling):
     start = time.time()
     #### 2D cross triangle meshes
-    meshList=['squareWithCrossTriangles_0','squareWithCrossTriangles_1','squareWithCrossTriangles_2','squareWithCrossTriangles_3']#,'squareWithCrossTriangles_4'
+    meshList=['squareWithCrossTriangles_0','squareWithCrossTriangles_1','squareWithCrossTriangles_2']#,'squareWithCrossTriangles_3','squareWithCrossTriangles_4'
     meshType="Unstructured_cross_triangles"
     testColor="Green"
     nbMeshes=len(meshList)

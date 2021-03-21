@@ -1,4 +1,6 @@
 import WaveSystemPStag
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from math import log10, sqrt
@@ -9,7 +11,7 @@ import time, json
 def test_validation2DWaveSystemPStagTriangles(scaling):
     start = time.time()
     #### 2D Delaunay triangles meshes
-    meshList=['squareWithTriangles_1','squareWithTriangles_2','squareWithTriangles_3','squareWithTriangles_4']
+    meshList=['squareWithTriangles_1','squareWithTriangles_2','squareWithTriangles_3']
     meshType="Unstructured_Delaunay_triangles"
     testColor="Green"
     nbMeshes=len(meshList)

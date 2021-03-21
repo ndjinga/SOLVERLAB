@@ -1,5 +1,6 @@
-import cdmath
 import WaveSystemPStag
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from math import log10, sqrt
@@ -10,7 +11,6 @@ import time, json
 def test_validation2DWaveSystemPStag_squares(scaling):
     start = time.time()
     #### 2D square mesh
-    #meshList=[7,15,31,51]#,81,101
     meshList=['squareWithSquares_1','squareWithSquares_2','squareWithSquares_3','squareWithSquares_4']#,'squareWithSquares_5'
     mesh_path='../../../ressources/2DCartesien/'
     meshType="Regular squares"
@@ -36,9 +36,6 @@ def test_validation2DWaveSystemPStag_squares(scaling):
     cfl=0.5
     # Storing of numerical errors, mesh sizes and diagonal values
     for filename in meshList:
-    #for nx in meshList:
-        #my_mesh=cdmath.Mesh(0,1,nx,0,1,nx)
-        #error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i], cond_number[i] =WaveSystemPStag.solve(my_mesh,"square"+str(nx)+'x'+str(nx),resolution,scaling,meshType,testColor,cfl,"Periodic",)
         error_p_tab[i], error_u_tab[i], mesh_size_tab[i], t_final[i], ndt_final[i], max_vel[i], diag_data_press[i], diag_data_vel[i], time_tab[i], cond_number[i] =WaveSystemPStag.solve_file(mesh_path+filename, mesh_name, resolution,scaling,meshType,testColor,cfl,"Periodic")
         assert max_vel[i]>0.5 and max_vel[i]<1.1
         error_p_tab[i]=log10(error_p_tab[i])
