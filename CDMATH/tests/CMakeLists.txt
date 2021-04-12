@@ -61,7 +61,7 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
   add_subdirectory (${examples_dir})
   add_subdirectory (validation)
 
-  add_custom_target (tests_CDMATH COMMAND ctest -O tests.log)
+  add_custom_target (tests_CDMATH COMMAND ctest -O testsCDMATH.log)
   add_custom_target (check COMMAND ctest -E 'validation|Example')# may be replace ctest -E with ctest -LE
   add_custom_target (examples COMMAND ctest -R Example)# may be replace ctest -R with ctest -L
   add_custom_target (validation COMMAND ctest -R validation)# may be replace ctest -R with ctest -L
