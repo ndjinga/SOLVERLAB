@@ -53,6 +53,7 @@ ProblemCoreFlows::ProblemCoreFlows()
 	int _PetscIts=0;//the number of iterations of the linear solver
 	_ksptype = (char*)&KSPGMRES;
 	_pctype = (char*)&PCLU;
+	_snestype = (char*)&SNESNEWTONLS;
 	_heatPowerFieldSet=false;
 	_heatTransfertCoeff=0;
 	_rodTemperatureFieldSet=false;
@@ -402,6 +403,30 @@ void ProblemCoreFlows::setLinearSolver(linearSolver kspType, preconditioner pcTy
 		throw CdmathException("!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" );
 	}
 }
+
+void ProblemCoreFlows::setNewtonSolver(double precision, int iterations, nonLinearSolver solverName)
+{
+	_maxNewtonIts=iterations;
+	_precision_Newton=precision;
+
+	// set nonlinear solver
+	if (solverName == Newton_PETSC_LINESEARCH)
+		_snestype = (char*)&SNESNEWTONLS;
+	else if (solverName == Newton_PETSC_TRUSTREGION)
+		_snestype = (char*)&SNESNEWTONTR;
+	else if (solverName == Newton_PETSC_NGMRES)
+		_snestype = (char*)&SNESNGMRES;
+	else if (solverName ==Newton_PETSC_ASPIN)
+		_snestype = (char*)&SNESASPIN;
+	else if(solverName != Newton_SOLVERLAB)
+	{
+		cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+		*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+		_runLogFile->close();
+		throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
+	}
+}
+
 
 // Description:
 // Cette methode lance une execution du ProblemCoreFlows
