@@ -430,13 +430,13 @@ public :
 	};
 
 	/** \fn getNonLinearSolver
-	 * \brief renvoie _snestype (le type du solveur de Newton utilisé)
+	 * \brief renvoie _nonLinearSolver (le type du solveur de Newton utilisé)
 	 * \details
 	 * \param [in] void
 	 * \param [out] string
 	 *  */
-	string getNonLinearSolver() {
-		return _snestype;
+	nonLinearSolver getNonLinearSolver() {
+		return _nonLinearSolver;
 	};
 
 	/** \fn getNumberOfVariables
@@ -673,13 +673,12 @@ protected :
 	PC _pc;
 	PCType _pctype;
 	string _pc_hypre;
-	SNES _snes;
-	SNESType _snestype;
+	nonLinearSolver _nonLinearSolver;
 	int _maxPetscIts;//nombre maximum d'iteration gmres autorise au cours d'une resolution de systeme lineaire
 	int _PetscIts;//the number of iterations of the linear solver
 	int _maxNewtonIts;//nombre maximum d'iteration de Newton autorise au cours de la resolution d'un pas de temps
 	int _NEWTON_its;
-	Mat  _A;//Linear system matrix
+	Mat _A;//Linear system matrix
 	Vec _b;//Linear system right hand side
 	double _MaxIterLinearSolver;//nombre maximum d'iteration gmres obtenu au cours par les resolution de systemes lineaires au cours d'un pas de tmeps
 	bool _conditionNumber;//computes an estimate of the condition number
@@ -711,6 +710,9 @@ protected :
 
 	string _path;//path to execution directory used for saving results
 	saveFormat _saveFormat;//file saving format : MED, VTK or CSV
+	
+	bool solveNewtonSolverLab();//Use solverlab approximate Newton method to solve time step
+	bool solveNewtonPETSc();//Use PETSc Newton methods to solve time step
 };
 
 #endif /* PROBLEMCOREFLOWS_HXX_ */

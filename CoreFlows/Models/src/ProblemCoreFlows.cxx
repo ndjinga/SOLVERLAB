@@ -53,7 +53,7 @@ ProblemCoreFlows::ProblemCoreFlows()
 	int _PetscIts=0;//the number of iterations of the linear solver
 	_ksptype = (char*)&KSPGMRES;
 	_pctype = (char*)&PCLU;
-	_snestype = (char*)&SNESNEWTONLS;
+	_nonLinearSolver = Newton_SOLVERLAB;
 	_heatPowerFieldSet=false;
 	_heatTransfertCoeff=0;
 	_rodTemperatureFieldSet=false;
@@ -408,23 +408,7 @@ void ProblemCoreFlows::setNewtonSolver(double precision, int iterations, nonLine
 {
 	_maxNewtonIts=iterations;
 	_precision_Newton=precision;
-
-	// set nonlinear solver
-	if (solverName == Newton_PETSC_LINESEARCH)
-		_snestype = (char*)&SNESNEWTONLS;
-	else if (solverName == Newton_PETSC_TRUSTREGION)
-		_snestype = (char*)&SNESNEWTONTR;
-	else if (solverName == Newton_PETSC_NGMRES)
-		_snestype = (char*)&SNESNGMRES;
-	else if (solverName ==Newton_PETSC_ASPIN)
-		_snestype = (char*)&SNESASPIN;
-	else if(solverName != Newton_SOLVERLAB)
-	{
-		cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
-		*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
-		_runLogFile->close();
-		throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
-	}
+	_nonLinearSolver=solverName;
 }
 
 
@@ -559,7 +543,15 @@ void ProblemCoreFlows::setFileName(string fileName){
 void ProblemCoreFlows::setFreqSave(int freqSave){
 	_freqSave = freqSave;
 }
+
 bool ProblemCoreFlows::solveTimeStep(){
+	if(_nonLinearSolver == Newton_SOLVERLAB)
+		return solveNewtonSolverLab();
+	else
+		return solveNewtonPETSc();
+}
+
+bool ProblemCoreFlows::solveNewtonSolverLab(){
 	_NEWTON_its=0;
 	bool converged=false, ok=true;
 	while(!converged && ok && _NEWTON_its < _maxNewtonIts){
@@ -601,6 +593,31 @@ bool ProblemCoreFlows::solveTimeStep(){
 	}
 
 	return converged;
+}
+
+bool ProblemCoreFlows::solveNewtonPETSc()
+{
+	SNES snes;
+	SNESType snestype;
+
+	// set nonlinear solver
+	if (_nonLinearSolver == Newton_PETSC_LINESEARCH)
+		snestype = (char*)&SNESNEWTONLS;
+	else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
+		snestype = (char*)&SNESNEWTONTR;
+	else if (_nonLinearSolver == Newton_PETSC_NGMRES)
+		snestype = (char*)&SNESNGMRES;
+	else if (_nonLinearSolver ==Newton_PETSC_ASPIN)
+		snestype = (char*)&SNESASPIN;
+	else if(_nonLinearSolver != Newton_SOLVERLAB)
+	{
+		cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+		*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+		_runLogFile->close();
+		throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
+	}
+	
+	return true;
 }
 ProblemCoreFlows::~ProblemCoreFlows()
 {
