@@ -1,9 +1,11 @@
 #include "utilitaire_algebre.h"
 #include <iostream>
+#include <cfloat>
+
 using namespace std;
 
-roots_polynoms::roots_polynoms(): smalno(1.2e-38), infin(3.4e38), 
-				  eta(2.22e-16), base(2) 
+roots_polynoms::roots_polynoms(): smalno(DBL_MIN), infin(DBL_MAX), //Parameters associated to the type double. 
+				  eta(DBL_EPSILON), base(FLT_RADIX) 
 {
 }
 
