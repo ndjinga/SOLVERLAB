@@ -48,16 +48,39 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 
-if( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
+
+#####################
+# Detection of MPI  #
+#####################
+if   ( DEFINED ENV{MPI_ROOT_DIR} OR DEFINED MPI_ROOT_DIR )
+  if   ( DEFINED  ENV{MPI_ROOT_DIR} )
+    set(MPI_HOME $ENV{MPI_ROOT_DIR})
+  else ( DEFINED  ENV{MPI_ROOT_DIR} )
+    set(MPI_HOME    ${MPI_ROOT_DIR})
+  endif( DEFINED  ENV{MPI_ROOT_DIR} )
+endif( DEFINED ENV{MPI_ROOT_DIR} OR DEFINED MPI_ROOT_DIR )
+
+if(    DEFINED ENV{MPI_HOME} OR MPI_HOME )
   set(SOLVERLAB_WITH_MPI ON)
   find_package(MPI)
   if(   ${MPI_LIBRARY} STREQUAL "MPI_LIBRARY-NOTFOUND")
     set ( MPI_LIBRARY ${MPI_HOME}/lib/libmpi.so )
   endif(${MPI_LIBRARY} STREQUAL "MPI_LIBRARY-NOTFOUND")
   message ( STATUS "MPI executable is ${MPIEXEC}" )
-else( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
+else(  DEFINED ENV{MPI_HOME} OR MPI_HOME )
   set(SOLVERLAB_WITH_MPI OFF)
-endif( DEFINED ENV{MPI_HOME} OR DEFINED MPI_HOME )
+endif( DEFINED ENV{MPI_HOME} OR MPI_HOME )
+
+############################
+# Definition of HDF5_HOME  #
+############################
+if   ( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
+  if   ( DEFINED  ENV{HDF5_ROOT_DIR} )
+    set(HDF5_ROOT $ENV{HDF5_ROOT_DIR})
+  else ( DEFINED  ENV{HDF5_ROOT_DIR} )
+    set(HDF5_ROOT    ${HDF5_ROOT_DIR})
+  endif( DEFINED  ENV{HDF5_ROOT_DIR} )
+endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
 
 ######################################################
 # Detection or compilation of PETSc+SLEPc+HDF5       #
@@ -463,13 +486,13 @@ ELSE ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6
 ENDIF( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )
 
 # Find python
-IF  ( DEFINED PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
-  IF  ( DEFINED PYTHON_ROOT_DIR )
+IF   ( PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
+  IF  ( PYTHON_ROOT_DIR )
     set(Python_ROOT_DIR ${PYTHON_ROOT_DIR} ) 
-  ELSE( DEFINED PYTHON_ROOT_DIR )
+  ELSE( PYTHON_ROOT_DIR )
     set(Python_ROOT_DIR $ENV{PYTHON_ROOT_DIR} ) 
-  ENDIF( DEFINED PYTHON_ROOT_DIR)
-ENDIF(DEFINED PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
+  ENDIF( PYTHON_ROOT_DIR)
+ENDIF( PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
 
 IF   (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   find_package(Python ${PYTHON2OR3} REQUIRED COMPONENTS Interpreter Development )
@@ -484,17 +507,17 @@ ELSE (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   set(Python_VERSION_MINOR ${PYTHON_VERSION_MINOR})
 ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 
-#PyQt5
-IF  ( NOT PYQT5_ROOT_DIR )
+#PyQt5 root dir
+IF   ( NOT DEFINED PYQT5_ROOT_DIR )
     set(PYQT5_ROOT_DIR $ENV{PYQT5_ROOT_DIR} )
-ENDIF( NOT PYQT5_ROOT_DIR )
+ENDIF( NOT DEFINED PYQT5_ROOT_DIR )
 
-#Matplotlib
-IF   ( NOT MATPLOTLIB_ROOT_DIR )
+#Matplotlib root dir
+IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
     set(MATPLOTLIB_ROOT_DIR $ENV{MATPLOTLIB_ROOT_DIR} )
-ENDIF( NOT MATPLOTLIB_ROOT_DIR )
+ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
 
-#HDF5_ROOT_DIR
+#define HDF5_ROOT_DIR
 IF   ( NOT HDF5_ROOT_DIR )
   IF  ( ENV{HDF5_ROOT_DIR} )
     set(HDF5_ROOT_DIR $ENV{HDF5_ROOT_DIR} )
@@ -509,20 +532,45 @@ set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR
 set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/:${MATPLOTLIB_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages:${PYQT5_ROOT_DIR}:${PYQT5_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
 
 message(STATUS "Python version found is ${Python_VERSION}")
+
+# Find SWIG
+IF   ( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
+  IF   ( DEFINED SWIG_ROOT_DIR )
+    set(SWIG_EXECUTABLE    ${SWIG_ROOT_DIR}/bin/swig ) 
+  ELSE ( DEFINED SWIG_ROOT_DIR )
+    set(SWIG_EXECUTABLE $ENV{SWIG_ROOT_DIR}/bin/swig ) 
+  ENDIF( DEFINED SWIG_ROOT_DIR)
+ENDIF( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
 find_package (SWIG 3.0 REQUIRED)
 
+# Find Doxygen
 if (SOLVERLAB_WITH_DOCUMENTATION)                                                                           #
+ IF   ( DEFINED DOXYGEN_ROOT_DIR OR DEFINED ENV{DOXYGEN_ROOT_DIR})
+   IF   ( DEFINED DOXYGEN_ROOT_DIR )
+     set(DOXYGEN_EXECUTABLE    ${DOXYGEN_ROOT_DIR}/bin/doxygen ) 
+   ELSE ( DEFINED DOXYGEN_ROOT_DIR )
+     set(DOXYGEN_EXECUTABLE $ENV{DOXYGEN_ROOT_DIR}/bin/doxygen ) 
+   ENDIF( DEFINED DOXYGEN_ROOT_DIR)
+ ENDIF( DEFINED DOXYGEN_ROOT_DIR OR DEFINED ENV{DOXYGEN_ROOT_DIR})
   find_package (Doxygen)                                                                                    #
   set (CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, doxygen, graphviz, mscgen")
   set (CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, doxygen, graphviz, mscgen")
   if   (NOT DOXYGEN_FOUND)
     message (FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly.")
   endif(NOT DOXYGEN_FOUND)
-endif()			
+endif(SOLVERLAB_WITH_DOCUMENTATION)			
+
 if (SOLVERLAB_WITH_TESTS)                                                                                  #
   enable_testing ()
+ IF   ( DEFINED CPPUNIT_ROOT_DIR OR DEFINED ENV{CPPUNIT_ROOT_DIR})
+   IF   ( DEFINED CPPUNIT_ROOT_DIR )
+     set(CPPUNIT_ROOT_USER    ${CPPUNIT_ROOT_DIR} ) 
+   ELSE ( DEFINED CPPUNIT_ROOT_DIR )
+     set(CPPUNIT_ROOT_USER $ENV{CPPUNIT_ROOT_DIR} ) 
+   ENDIF( DEFINED CPPUNIT_ROOT_DIR)
+ ENDIF( DEFINED CPPUNIT_ROOT_DIR OR DEFINED ENV{CPPUNIT_ROOT_DIR})
   find_package (CPPUNIT REQUIRED)
-endif()			
+endif(SOLVERLAB_WITH_TESTS)			
 				    
 # Enter subdirectories
 add_subdirectory (CDMATH)
