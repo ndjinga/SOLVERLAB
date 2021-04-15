@@ -16,27 +16,6 @@
 #
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
-cmake_minimum_required (VERSION 3.1)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-INCLUDE(CMakeDependentOption)
-
-# Versioning
-# ===========
-# Project name, upper case
-STRING(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
-
-SET(${PROJECT_NAME_UC}_MAJOR_VERSION 7)
-SET(${PROJECT_NAME_UC}_MINOR_VERSION 8)
-SET(${PROJECT_NAME_UC}_PATCH_VERSION 0)
-SET(${PROJECT_NAME_UC}_VERSION
-  ${${PROJECT_NAME_UC}_MAJOR_VERSION}.${${PROJECT_NAME_UC}_MINOR_VERSION}.${${PROJECT_NAME_UC}_PATCH_VERSION})
-SET(${PROJECT_NAME_UC}_VERSION_DEV 1)
-
-# User options
-# ============
-OPTION(SALOME_BUILD_DOC "Generate SALOME CoreFlows documentation" ON)
-OPTION(SALOME_BUILD_TESTS "Generate SALOME CoreFlows tests" ON)
 
 # Common CMake macros
 # ===================
@@ -74,12 +53,9 @@ INCLUDE(SalomeSetupPlatform)   # From KERNEL
 # =============
 
 # Mandatory products
-IF(  ${SalomeKERNEL_VERSION} STRLESS "7.8.0")
-         FIND_PACKAGE(SalomePython REQUIRED)
-ELSE()
-         FIND_PACKAGE(SalomePythonInterp REQUIRED)
-         FIND_PACKAGE(SalomePythonLibs REQUIRED)
-ENDIF()
+ FIND_PACKAGE(SalomePythonInterp REQUIRED)
+ FIND_PACKAGE(SalomePythonLibs REQUIRED)
+
 MESSAGE(STATUS "SalomeKERNEL_VERSION is ${SalomeKERNEL_VERSION}")
 
 # Qt5
