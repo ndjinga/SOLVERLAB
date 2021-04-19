@@ -142,6 +142,14 @@ public :
 	 *  */
 	virtual void validateTimeStep();
 
+	/** \fn solveTimeStep
+	 * \brief calcule les valeurs inconnues au pas de temps +1 .
+	 *  \details c'est une fonction virtuelle, qui surcharge  celle de la classe ProblemCoreFlows
+	 *  @param  void
+	 *  \return Renvoie false en cas de problème durant le calcul (valeurs non physiques..)
+	 *  */
+	virtual bool solveTimeStep();//
+
 	/* Boundary conditions */
 	/** \fn setNeumannBoundaryCondition
 	 * \brief adds a new boundary condition of type Neumann
@@ -488,6 +496,7 @@ protected :
 	SpaceScheme _spaceScheme;
 	/** the formulation used to compute the non viscous fluxes **/
 	NonLinearFormulation _nonLinearFormulation;
+	SNES _snes;
 
 	map<string, LimitField> _limitField;
 
@@ -536,6 +545,8 @@ protected :
 	bool _isBoundary;// la face courante est elle une face de bord ?
 	double _maxvploc;
 
+	bool solveNewtonPETSc();//Use PETSc Newton methods to solve time step
+
 	/** \fn computeNewtonVariation
 	 * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk in a Newton scheme
 	 * @param void
@@ -546,13 +557,13 @@ protected :
 	 * \brief Builds the right hand side F_X(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
 	 * @param void
 	 * */
-	virtual int computeNewtonRHS(Vec X, Vec F_X, void *ctx=NULL);
+	int computeNewtonRHS(SNES snes, Vec X, Vec F_X, void *ctx=NULL);
 
 	/** \fn computeNewtonJacobian
 	 * \brief Builds the matrix A(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
 	 * @param void
 	 * */
-	virtual int computeNewtonJacobian( Vec X, Mat A, Mat Aapprox, void *ctx=NULL);
+	int computeNewtonJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx=NULL);
 
 	/** \fn convectionState
 	 * \brief calcule l'etat de Roe entre deux cellules voisinnes

@@ -135,6 +135,32 @@ void ProblemFluid::initialize()
 
 	/**********Petsc structures:  ****************/
 
+	// Creation du solveur de Newton de PETSc
+	if(_nonLinearSolver != Newton_SOLVERLAB)
+	{
+		SNESType snestype;
+	
+		// set nonlinear solver
+		if (_nonLinearSolver == Newton_PETSC_LINESEARCH)
+			snestype = (char*)&SNESNEWTONLS;
+		else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
+			snestype = (char*)&SNESNEWTONTR;
+		else if (_nonLinearSolver == Newton_PETSC_NGMRES)
+			snestype = (char*)&SNESNGMRES;
+		else if (_nonLinearSolver ==Newton_PETSC_ASPIN)
+			snestype = (char*)&SNESASPIN;
+		else if(_nonLinearSolver != Newton_SOLVERLAB)
+		{
+			cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+			*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+			_runLogFile->close();
+			throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
+		}
+
+		SNESCreate(PETSC_COMM_WORLD, &_snes);
+		SNESSetType( _snes, snestype);
+	}
+
 	//creation de la matrice
 	if(_timeScheme == Implicit)
 		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNb), PETSC_NULL, &_A);
@@ -204,6 +230,28 @@ void ProblemFluid::initialize()
 bool ProblemFluid::initTimeStep(double dt){
 	_dt = dt;
 	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
+}
+
+bool ProblemFluid::solveTimeStep(){
+	if(_nonLinearSolver == Newton_SOLVERLAB)
+		return ProblemCoreFlows::solveTimeStep();
+	else
+		return solveNewtonPETSc();
+}
+
+bool ProblemFluid::solveNewtonPETSc()
+{	
+	SNESCreate(PETSC_COMM_WORLD,&_snes);
+	//SNESSetFunction(_snes,_conservativeVars,computeNewtonRHS,NULL);
+	//SNESSetJacobian(_snes,_A,_A,computeNewtonJacobian,NULL);
+	
+    SNESSolve(_snes,NULL,_conservativeVars);
+
+		int its;
+    SNESGetIterationNumber(_snes,&its);
+    PetscPrintf(PETSC_COMM_WORLD,"number of SNES iterations = %D\n\n",its);
+
+	return true;
 }
 
 bool ProblemFluid::iterateTimeStep(bool &converged)
@@ -798,7 +846,7 @@ void ProblemFluid::computeNewtonVariation()
 	}
 }
 
-int ProblemFluid::computeNewtonRHS(Vec X, Vec F_X, void *ctx){//dt is known and will contribute to the right hand side of the Newton scheme
+int ProblemFluid::computeNewtonRHS(SNES snes, Vec X, Vec F_X, void *ctx){//dt is known and will contribute to the right hand side of the Newton scheme
 
 	VecCopy(X,_conservativeVars);
 	VecAssemblyBegin(_conservativeVars);
@@ -1016,7 +1064,7 @@ int ProblemFluid::computeNewtonRHS(Vec X, Vec F_X, void *ctx){//dt is known and 
 	return 0;
 }
 
-int ProblemFluid::computeNewtonJacobian(Vec X, Mat A, Mat Aapprox, void *ctx){//dt is known and will contribute to the jacobian matrix of the Newton scheme
+int ProblemFluid::computeNewtonJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx){//dt is known and will contribute to the jacobian matrix of the Newton scheme
 
 	if(_timeScheme == Explicit){
 		MatCreateConstantDiagonal(PETSC_COMM_SELF, _nVar, _nVar, _nVar*_Nmailles, _nVar*_Nmailles,1., &A);
@@ -2068,4 +2116,8 @@ void ProblemFluid::terminate(){
 	KSPDestroy(&_ksp);
 	for(int i=0;i<_nbPhases;i++)
 		delete _fluides[i];
+
+	// Destruction du solveur de Newton de PETSc
+	if(_nonLinearSolver != Newton_SOLVERLAB)
+		SNESDestroy(&_snes);
 }

@@ -127,7 +127,7 @@ public :
 
 	/** \fn solveTimeStep
 	 * \brief calcule les valeurs inconnues au pas de temps +1 .
-	 *  \details c'est une fonction virtuelle ,
+	 *  \details c'est une fonction virtuelle
 	 *  @param  void
 	 *  \return Renvoie false en cas de problème durant le calcul (valeurs non physiques..)
 	 *  */
@@ -711,8 +711,6 @@ protected :
 	string _path;//path to execution directory used for saving results
 	saveFormat _saveFormat;//file saving format : MED, VTK or CSV
 	
-	bool solveNewtonSolverLab();//Use solverlab approximate Newton method to solve time step
-	bool solveNewtonPETSc();//Use PETSc Newton methods to solve time step
 };
 
 #endif /* PROBLEMCOREFLOWS_HXX_ */
