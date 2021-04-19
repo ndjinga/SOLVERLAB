@@ -242,12 +242,12 @@ bool ProblemFluid::solveTimeStep(){
 bool ProblemFluid::solveNewtonPETSc()
 {	
 	SNESCreate(PETSC_COMM_WORLD,&_snes);
-	//SNESSetFunction(_snes,_conservativeVars,computeNewtonRHS,NULL);
-	//SNESSetJacobian(_snes,_A,_A,computeNewtonJacobian,NULL);
+	SNESSetFunction(_snes,_conservativeVars,computeSnesRHS,this);
+	SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);
 	
     SNESSolve(_snes,NULL,_conservativeVars);
 
-		int its;
+	int its;
     SNESGetIterationNumber(_snes,&its);
     PetscPrintf(PETSC_COMM_WORLD,"number of SNES iterations = %D\n\n",its);
 
@@ -845,7 +845,7 @@ void ProblemFluid::computeNewtonVariation()
 	}
 }
 
-int ProblemFluid::computeNewtonRHS(SNES snes, Vec X, Vec F_X, void *ctx){//dt is known and will contribute to the right hand side of the Newton scheme
+void ProblemFluid::computeNewtonRHS( Vec X, Vec F_X){//dt is known and will contribute to the right hand side of the Newton scheme
 
 	VecCopy(X,_conservativeVars);
 	VecAssemblyBegin(_conservativeVars);
@@ -1059,15 +1059,21 @@ int ProblemFluid::computeNewtonRHS(SNES snes, Vec X, Vec F_X, void *ctx){//dt is
 	VecAssemblyEnd(_conservativeVars);
 	VecAssemblyEnd(_b);
 	VecCopy(_b,F_X);
+}
 
+int ProblemFluid::computeSnesRHS(SNES snes, Vec X, Vec F_X, void *ctx)
+{
+	ProblemFluid * myProblem = (ProblemFluid *) ctx;
+	myProblem->computeNewtonRHS( X, F_X);
+	
 	return 0;
 }
 
-int ProblemFluid::computeNewtonJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx){//dt is known and will contribute to the jacobian matrix of the Newton scheme
+void ProblemFluid::computeNewtonJacobian( Vec X, Mat A){//dt is known and will contribute to the jacobian matrix of the Newton scheme
 
 	if(_timeScheme == Explicit){
 		MatCreateConstantDiagonal(PETSC_COMM_SELF, _nVar, _nVar, _nVar*_Nmailles, _nVar*_Nmailles,1., &A);
-		return 0;
+		return ;
 	}
 
 	MatZeroEntries(A);
@@ -1392,13 +1398,16 @@ int ProblemFluid::computeNewtonJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, vo
 	MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
 	MatShift(A, 1/_dt);
+}
 
-	if (Aapprox != A) {
-	     MatAssemblyBegin(Aapprox,MAT_FINAL_ASSEMBLY);
-	     MatAssemblyEnd(Aapprox,MAT_FINAL_ASSEMBLY);
-	   }
+int ProblemFluid::computeSnesJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx)
+{
+	ProblemFluid * myProblem = (ProblemFluid *) ctx;
+	myProblem->computeNewtonJacobian( X, A);
 
-	return 0;
+	Aapprox = A;
+
+	return 0;	
 }
 
 void ProblemFluid::validateTimeStep()

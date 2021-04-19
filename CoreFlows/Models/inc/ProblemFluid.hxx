@@ -557,13 +557,25 @@ protected :
 	 * \brief Builds the right hand side F_X(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
 	 * @param void
 	 * */
-	int computeNewtonRHS(SNES snes, Vec X, Vec F_X, void *ctx=NULL);
+	void computeNewtonRHS( Vec X, Vec F_X);
+
+	/** \fn computeSnesRHS
+	 * \brief Static function calling computeNewtonRHS to match PETSc nonlinear solver (SNES) structure
+	 * @param void
+	 * */
+	static int computeSnesRHS(SNES snes, Vec X, Vec F_X, void *ctx);
 
 	/** \fn computeNewtonJacobian
+	 * \brief Static function calling computeNewtonJacobian to match PETSc nonlinear solver (SNES) structure
+	 * @param void
+	 * */
+	void computeNewtonJacobian( Vec X, Mat A);
+
+	/** \fn computeSnesJacobian
 	 * \brief Builds the matrix A(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
 	 * @param void
 	 * */
-	int computeNewtonJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx=NULL);
+	static int computeSnesJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx);
 
 	/** \fn convectionState
 	 * \brief calcule l'etat de Roe entre deux cellules voisinnes
