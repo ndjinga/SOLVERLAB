@@ -244,12 +244,6 @@ public :
 		return _nbPhases;
 	};
 
-	/** \fn computeNewtonVariation
-	 * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk in a Newton scheme
-	 * @param void
-	 * */
-	virtual void computeNewtonVariation();
-
 	/** \fn testConservation
 	 * \brief Teste et affiche la conservation de masse et de la quantité de mouvement
 	 * \Details la fonction est virtuelle pure, on la surcharge dans chacun des modèles
@@ -542,6 +536,24 @@ protected :
 	bool _isBoundary;// la face courante est elle une face de bord ?
 	double _maxvploc;
 
+	/** \fn computeNewtonVariation
+	 * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk in a Newton scheme
+	 * @param void
+	 * */
+	virtual void computeNewtonVariation();
+
+	/** \fn computeNewtonRHS
+	 * \brief Builds the right hand side of the linear system in the Newton method to obtain the variation Ukp1-Uk
+	 * @param void
+	 * */
+	virtual int computeNewtonRHS();
+
+	/** \fn computeNewtonJacobian
+	 * \brief Builds the matrix of the linear system in the Newton method to obtain the variation Ukp1-Uk
+	 * @param void
+	 * */
+	virtual int computeNewtonJacobian();
+
 	/** \fn convectionState
 	 * \brief calcule l'etat de Roe entre deux cellules voisinnes
 	 * \Details c'ets une fonction virtuelle, on la surcharge dans chacun des modèles
@@ -623,8 +635,6 @@ protected :
 	 * @return
 	 * */
 	virtual void porosityGradientSourceVector()=0;
-
-	//matrice de gravite
 
 	/** \fn jacobian
 	 * \brief Calcule la jacobienne de la ConditionLimite convection
