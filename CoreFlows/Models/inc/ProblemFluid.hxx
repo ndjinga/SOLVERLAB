@@ -543,16 +543,16 @@ protected :
 	virtual void computeNewtonVariation();
 
 	/** \fn computeNewtonRHS
-	 * \brief Builds the right hand side of the linear system in the Newton method to obtain the variation Ukp1-Uk
+	 * \brief Builds the right hand side F_X(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
 	 * @param void
 	 * */
-	virtual int computeNewtonRHS();
+	virtual int computeNewtonRHS(Vec X, Vec F_X, void *ctx=NULL);
 
 	/** \fn computeNewtonJacobian
-	 * \brief Builds the matrix of the linear system in the Newton method to obtain the variation Ukp1-Uk
+	 * \brief Builds the matrix A(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
 	 * @param void
 	 * */
-	virtual int computeNewtonJacobian();
+	virtual int computeNewtonJacobian( Vec X, Mat A, Mat Aapprox, void *ctx=NULL);
 
 	/** \fn convectionState
 	 * \brief calcule l'etat de Roe entre deux cellules voisinnes

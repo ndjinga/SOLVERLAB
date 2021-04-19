@@ -144,14 +144,14 @@ void ProblemFluid::initialize()
 	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Uextdiff);
 	//	  VecCreateSeq(PETSC_COMM_SELF, _nVar*_Nmailles, &_conservativeVars);
-	VecCreate(PETSC_COMM_SELF, &_conservativeVars);
+	VecCreate(PETSC_COMM_SELF, &_conservativeVars);//Current conservative variables at Newton iteration k between time steps n and n+1
 	VecSetSizes(_conservativeVars,PETSC_DECIDE,_nVar*_Nmailles);
 	VecSetBlockSize(_conservativeVars,_nVar);
 	VecSetFromOptions(_conservativeVars);
-	VecDuplicate(_conservativeVars, &_old);
-	VecDuplicate(_conservativeVars, &_newtonVariation);
-	VecDuplicate(_conservativeVars, &_b);
-	VecDuplicate(_conservativeVars, &_primitiveVars);
+	VecDuplicate(_conservativeVars, &_old);//Old conservative variables at time step n
+	VecDuplicate(_conservativeVars, &_newtonVariation);//Newton variation Uk+1-Uk to be computed between time steps n and n+1
+	VecDuplicate(_conservativeVars, &_b);//Right hand side of Newton method at iteration k between time steps n and n+1
+	VecDuplicate(_conservativeVars, &_primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
 
 	if(_isScaling)
 	{
@@ -798,12 +798,14 @@ void ProblemFluid::computeNewtonVariation()
 	}
 }
 
-int ProblemFluid::computeNewtonRHS(){//dt is known and will contribute to the right hand side of the Newton scheme
+int ProblemFluid::computeNewtonRHS(Vec X, Vec F_X, void *ctx){//dt is known and will contribute to the right hand side of the Newton scheme
+
+	VecCopy(X,_conservativeVars);
+	VecAssemblyBegin(_conservativeVars);
 
 	VecAssemblyBegin(_b);
 	VecZeroEntries(_b);
 
-	VecAssemblyBegin(_conservativeVars);
 	std::vector< int > idCells(2);
 	PetscInt idm, idn, size = 1;
 
@@ -1009,20 +1011,22 @@ int ProblemFluid::computeNewtonRHS(){//dt is known and will contribute to the ri
 	}
 	VecAssemblyEnd(_conservativeVars);
 	VecAssemblyEnd(_b);
+	VecCopy(_b,F_X);
 
 	return 0;
 }
 
-int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to the jacobian matrix of the Newton scheme
+int ProblemFluid::computeNewtonJacobian(Vec X, Mat A, Mat Aapprox, void *ctx){//dt is known and will contribute to the jacobian matrix of the Newton scheme
 
 	if(_timeScheme == Explicit){
-		MatCreateConstantDiagonal(PETSC_COMM_SELF, _nVar, _nVar, _nVar*_Nmailles, _nVar*_Nmailles,1., &_A);
+		MatCreateConstantDiagonal(PETSC_COMM_SELF, _nVar, _nVar, _nVar*_Nmailles, _nVar*_Nmailles,1., &A);
 		return 0;
 	}
 
-	MatZeroEntries(_A);
-
+	MatZeroEntries(A);
+	VecCopy(X,_conservativeVars);
 	VecAssemblyBegin(_conservativeVars);
+	
 	std::vector< int > idCells(2);
 	PetscInt idm, idn, size = 1;
 
@@ -1116,7 +1120,7 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 					Polynoms Poly;
 					//calcul et insertion de A^-*Jcb
 					Poly.matrixProduct(_AroeMinusImplicit, _nVar, _nVar, _Jcb, _nVar, _nVar, _a);
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _a, ADD_VALUES);
+					MatSetValuesBlocked(A, size, &idm, size, &idm, _a, ADD_VALUES);
 
 					if(_verbose)
 						displayMatrix(_a, _nVar, "produit A^-*Jcb pour CL");
@@ -1125,16 +1129,16 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 					for(int k=0; k<_nVar*_nVar;k++){
 						_AroeMinusImplicit[k] *= -1;
 					}
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
+					MatSetValuesBlocked(A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
 					if(_verbose)
 						displayMatrix(_AroeMinusImplicit, _nVar,"-_AroeMinusImplicit: ");
 
 					//calcul et insertion de D*JcbDiff
 					Poly.matrixProduct(_Diffusion, _nVar, _nVar, _JcbDiff, _nVar, _nVar, _a);
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _a, ADD_VALUES);
+					MatSetValuesBlocked(A, size, &idm, size, &idm, _a, ADD_VALUES);
 					for(int k=0; k<_nVar*_nVar;k++)
 						_Diffusion[k] *= -1;
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
+					MatSetValuesBlocked(A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
 				}
 		} else 	if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 			// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
@@ -1198,8 +1202,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 				idm = idCells[0];
 				idn = idCells[1];
 				//cout<<"idm= "<<idm<<"idn= "<<idn<<"nbvoismax= "<<_neibMaxNb<<endl;
-				MatSetValuesBlocked(_A, size, &idm, size, &idn, _AroeMinusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idm, size, &idn, _Diffusion, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idm, size, &idn, _AroeMinusImplicit, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idm, size, &idn, _Diffusion, ADD_VALUES);
 
 				if(_verbose){
 					displayMatrix(_AroeMinusImplicit, _nVar, "+_AroeMinusImplicit: ");
@@ -1209,8 +1213,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 					_AroeMinusImplicit[k] *= -1;
 					_Diffusion[k] *= -1;
 				}
-				MatSetValuesBlocked(_A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
 				if(_verbose){
 					displayMatrix(_AroeMinusImplicit, _nVar, "-_AroeMinusImplicit: ");
 					displayMatrix(_Diffusion, _nVar, "-_Diffusion: ");
@@ -1220,8 +1224,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 					_AroePlusImplicit[k]  *= _inv_dxj;
 					_Diffusion[k] *=_inv_dxj/_inv_dxi;
 				}
-				MatSetValuesBlocked(_A, size, &idn, size, &idn, _AroePlusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idn, size, &idn, _Diffusion, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idn, size, &idn, _AroePlusImplicit, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idn, size, &idn, _Diffusion, ADD_VALUES);
 				if(_verbose)
 					displayMatrix(_AroePlusImplicit, _nVar, "+_AroePlusImplicit: ");
 
@@ -1229,8 +1233,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 					_AroePlusImplicit[k] *= -1;
 					_Diffusion[k] *= -1;
 				}
-				MatSetValuesBlocked(_A, size, &idn, size, &idm, _AroePlusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idn, size, &idm, _Diffusion, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idn, size, &idm, _AroePlusImplicit, ADD_VALUES);
+				MatSetValuesBlocked(A, size, &idn, size, &idm, _Diffusion, ADD_VALUES);
 
 				if(_verbose)
 					displayMatrix(_AroePlusImplicit, _nVar, "-_AroePlusImplicit: ");
@@ -1286,8 +1290,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 							_AroeMinusImplicit[k] *= _inv_dxi;
 							_Diffusion[k] *=_inv_dxi*2/(1/_inv_dxi+1/_inv_dxj);//use sqrt as above
 						}
-						MatSetValuesBlocked(_A, size, &idm, size, &idn, _AroeMinusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idm, size, &idn, _Diffusion, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idm, size, &idn, _AroeMinusImplicit, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idm, size, &idn, _Diffusion, ADD_VALUES);
 
 						if(_verbose){
 							displayMatrix(_AroeMinusImplicit, _nVar, "+_AroeMinusImplicit: ");
@@ -1297,8 +1301,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 							_AroeMinusImplicit[k] *= -1;
 							_Diffusion[k] *= -1;
 						}
-						MatSetValuesBlocked(_A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
 						if(_verbose){
 							displayMatrix(_AroeMinusImplicit, _nVar, "-_AroeMinusImplicit: ");
 							displayMatrix(_Diffusion, _nVar, "-_Diffusion: ");
@@ -1308,8 +1312,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 							_AroePlusImplicit[k] *= _inv_dxj;
 							_Diffusion[k] *=_inv_dxj/_inv_dxi;//use sqrt as above
 						}
-						MatSetValuesBlocked(_A, size, &idn, size, &idn, _AroePlusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idn, size, &idn, _Diffusion, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idn, size, &idn, _AroePlusImplicit, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idn, size, &idn, _Diffusion, ADD_VALUES);
 						if(_verbose)
 							displayMatrix(_AroePlusImplicit, _nVar, "+_AroePlusImplicit: ");
 
@@ -1317,8 +1321,8 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 							_AroePlusImplicit[k] *= -1;
 							_Diffusion[k] *= -1;
 						}
-						MatSetValuesBlocked(_A, size, &idn, size, &idm, _AroePlusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idn, size, &idm, _Diffusion, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idn, size, &idm, _AroePlusImplicit, ADD_VALUES);
+						MatSetValuesBlocked(A, size, &idn, size, &idm, _Diffusion, ADD_VALUES);
 
 						if(_verbose)
 							displayMatrix(_AroePlusImplicit, _nVar, "-_AroePlusImplicit: ");
@@ -1336,12 +1340,17 @@ int ProblemFluid::computeNewtonJacobian(){//dt is known and will contribute to t
 	VecAssemblyEnd(_conservativeVars);
 
 	for(int imaille = 0; imaille<_Nmailles; imaille++)
-		MatSetValuesBlocked(_A, size, &imaille, size, &imaille, _GravityImplicitationMatrix, ADD_VALUES);
+		MatSetValuesBlocked(A, size, &imaille, size, &imaille, _GravityImplicitationMatrix, ADD_VALUES);
 
-	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-	MatShift(_A, 1/_dt);
+	MatShift(A, 1/_dt);
+
+	if (Aapprox != A) {
+	     MatAssemblyBegin(Aapprox,MAT_FINAL_ASSEMBLY);
+	     MatAssemblyEnd(Aapprox,MAT_FINAL_ASSEMBLY);
+	   }
 
 	return 0;
 }
