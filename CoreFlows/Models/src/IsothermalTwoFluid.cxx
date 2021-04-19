@@ -269,8 +269,7 @@ void IsothermalTwoFluid::convectionMatrices()
 	_Uroe[_nVar]=dpi1 ;
 
 	/***********Calcul des valeurs propres ********/
-	Polynoms Poly;
-	vector< double > pol_car= Poly.polynome_caracteristique(alpha,  1-alpha, u1_n, u2_n, rho1, rho2,invcsq1,invcsq2, dpi1, dpi2, g2press, g2alpha, g2,_precision);
+	vector< double > pol_car= Polynoms::polynome_caracteristique(alpha,  1-alpha, u1_n, u2_n, rho1, rho2,invcsq1,invcsq2, dpi1, dpi2, g2press, g2alpha, g2,_precision);
 	for(int ct=0;ct<4;ct++){
 		if (abs(pol_car[ct])<_precision*_precision)
 			pol_car[ct]=0;
@@ -290,9 +289,9 @@ void IsothermalTwoFluid::convectionMatrices()
 	//On ajoute les valeurs propres triviales
 	if(_Ndim>1)
 	{
-		if( !Poly.belongTo(u1_n,valeurs_propres, _precision) )
+		if( !Polynoms::belongTo(u1_n,valeurs_propres, _precision) )
 			valeurs_propres.push_back(u1_n);//vp vapor energy
-		if( !Poly.belongTo(u2_n,valeurs_propres, _precision) )
+		if( !Polynoms::belongTo(u2_n,valeurs_propres, _precision) )
 			valeurs_propres.push_back(u2_n);//vp liquid energy
 	}
 	bool doubleeigenval = norm(valeurs_propres[0] - valeurs_propres[1])<_precision;//norm= suqare of the magnitude
@@ -302,7 +301,7 @@ void IsothermalTwoFluid::convectionMatrices()
 		valeurs_propres.pop_back();
 	}
 
-	int taille_vp = Poly.new_tri_selectif(valeurs_propres,valeurs_propres.size(),_precision);//valeurs_propres.size();//
+	int taille_vp = Polynoms::new_tri_selectif(valeurs_propres,valeurs_propres.size(),_precision);//valeurs_propres.size();//
 
 	_maxvploc=0;
 	for(int i =0; i<taille_vp; i++)
@@ -448,9 +447,8 @@ void IsothermalTwoFluid::convectionMatrices()
 	if(_spaceScheme==upwind || _spaceScheme ==lowMach)
 	{
 		vector< complex< double > > y (taille_vp,0);
-		Polynoms Poly;
 		for( int i=0 ; i<taille_vp ; i++)
-			y[i] = Poly.abs_generalise(valeurs_propres[i]);
+			y[i] = Polynoms::abs_generalise(valeurs_propres[i]);
 
 		if(_entropicCorrection)
 		{
@@ -461,7 +459,7 @@ void IsothermalTwoFluid::convectionMatrices()
 				y[i] +=_entropicShift[1];
 		}
 
-		Poly.abs_par_interp_directe(taille_vp,valeurs_propres, _Aroe, _nVar,_precision, _absAroe,y);
+		Polynoms::abs_par_interp_directe(taille_vp,valeurs_propres, _Aroe, _nVar,_precision, _absAroe,y);
 		if( _spaceScheme ==pressureCorrection){
 			for( int i=0 ; i<_Ndim ; i++)
 				for( int j=0 ; j<_Ndim ; j++){
@@ -486,7 +484,7 @@ void IsothermalTwoFluid::convectionMatrices()
 
 	if(_entropicCorrection || _spaceScheme ==pressureCorrection || _spaceScheme ==lowMach){
 		InvMatriceRoe( valeurs_propres_dist);
-		Poly.matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
+		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
 	}
 	else if (_spaceScheme==upwind)//upwind sans entropic
 		SigneMatriceRoe( valeurs_propres_dist);
@@ -1087,14 +1085,13 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	double invcsq2 = 1/_fluides[1]->vitesseSonTemperature(_Temperature,rho2);
 	invcsq2*=invcsq2;
 
-	Polynoms Poly;
-	pol_car= Poly.polynome_caracteristique(alpha,  1-alpha, u1_n, u2_n, rho1, rho2, invcsq1, invcsq2, dpi1, dpi2);
+	pol_car= Polynoms::polynome_caracteristique(alpha,  1-alpha, u1_n, u2_n, rho1, rho2, invcsq1, invcsq2, dpi1, dpi2);
 	for(int ct=0;ct<4;ct++){
 		if (abs(pol_car[ct])<_precision*_precision)
 			pol_car[ct]=0;
 	}
 	vector< complex<double> > vp_left = getRacines(pol_car);
-	int taille_vp_left = Poly.new_tri_selectif(vp_left,vp_left.size(),_precision);
+	int taille_vp_left = Polynoms::new_tri_selectif(vp_left,vp_left.size(),_precision);
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -1127,13 +1124,13 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	invcsq2 = 1/_fluides[1]->vitesseSonTemperature(_Temperature,rho2);
 	invcsq2*=invcsq2;
 
-	pol_car= Poly.polynome_caracteristique(alpha,  1-alpha, u1_n, u2_n, rho1, rho2, invcsq1, invcsq2, dpi1, dpi2);
+	pol_car= Polynoms::polynome_caracteristique(alpha,  1-alpha, u1_n, u2_n, rho1, rho2, invcsq1, invcsq2, dpi1, dpi2);
 	for(int ct=0;ct<4;ct++){
 		if (abs(pol_car[ct])<_precision*_precision)
 			pol_car[ct]=0;
 	}
 	vector< complex<double> > vp_right = getRacines(pol_car);
-	int taille_vp_right = Poly.new_tri_selectif(vp_right,vp_right.size(),_precision);
+	int taille_vp_right = Polynoms::new_tri_selectif(vp_right,vp_right.size(),_precision);
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{

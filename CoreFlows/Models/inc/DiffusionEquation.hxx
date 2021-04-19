@@ -141,9 +141,9 @@ protected :
     /*********** Functions for finite element method ***********/
     Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
 	double computeDiffusionMatrixFE(bool & stop);
-    int fact(int n);
-    int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
-    int globalNodeIndex(int unknownIndex, std::vector< int > dirichletNodes);
+    static int fact(int n);
+    static int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
+    static int globalNodeIndex(int unknownIndex, std::vector< int > dirichletNodes);
 
 	TimeScheme _timeScheme;
 	map<string, LimitFieldDiffusion> _limitField;

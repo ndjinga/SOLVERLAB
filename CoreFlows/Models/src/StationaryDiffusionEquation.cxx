@@ -12,7 +12,7 @@ int StationaryDiffusionEquation::fact(int n)
 {
   return (n == 1 || n == 0) ? 1 : fact(n - 1) * n;
 }
-int StationaryDiffusionEquation::unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes) const
+int StationaryDiffusionEquation::unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes) 
 {//assumes Dirichlet node numbering is strictly increasing
     int j=0;//indice de parcours des noeuds frontière avec CL Dirichlet
     int boundarySize=dirichletNodes.size();
@@ -26,7 +26,7 @@ int StationaryDiffusionEquation::unknownNodeIndex(int globalIndex, std::vector< 
         throw CdmathException("StationaryDiffusionEquation::unknownNodeIndex : Error : node is a Dirichlet boundary node");
 }
 
-int StationaryDiffusionEquation::globalNodeIndex(int unknownNodeIndex, std::vector< int > dirichletNodes) const
+int StationaryDiffusionEquation::globalNodeIndex(int unknownNodeIndex, std::vector< int > dirichletNodes)
 {//assumes Dirichlet boundary node numbering is strictly increasing
     int boundarySize=dirichletNodes.size();
     /* trivial case where all boundary nodes are Neumann BC */

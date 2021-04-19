@@ -178,9 +178,9 @@ protected :
     /*********** Functions for finite element method ***********/
     Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
 	double computeStiffnessMatrixFE(bool & stop);
-    int fact(int n);
-    int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
-    int globalNodeIndex(int unknownIndex, std::vector< int > dirichletNodes);
+    static int fact(int n);
+    static int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
+    static int globalNodeIndex(int unknownIndex, std::vector< int > dirichletNodes);
 
     /********* Possibility to set a boundary field as Dirichlet boundary condition *********/
     bool _dirichletValuesSet;

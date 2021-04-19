@@ -158,12 +158,12 @@ class Polynoms
 {
 public:
 
-	void abs_par_interp_directe(int n,  vector< complex< double > > vp,   double * A, int sizeA, double epsilon, double *result,vector< complex< double > > y);
+	static void abs_par_interp_directe(int n,  vector< complex< double > > vp,   double * A, int sizeA, double epsilon, double *result,vector< complex< double > > y);
 
 	/** \fn polynome_caracteristique
 	 * \brief Calcule le polynome caracteristique
 	 * @return */
-	vector< double > polynome_caracteristique(double alpha_v, double alpha_l, double Uv, double Ul, double rhov, double rhol, double   cv_2, double cl_2, double dPiv, double dPil);//c= inverse vitesse du son!
+	static vector< double > polynome_caracteristique(double alpha_v, double alpha_l, double Uv, double Ul, double rhov, double rhol, double   cv_2, double cl_2, double dPiv, double dPil);//c= inverse vitesse du son!
 	/** \fn polynome_caracteristique
 	 * \brief
 	 * @param alpha1
@@ -181,24 +181,24 @@ public:
 	 * @param g2
 	 * @param epsilon
 	 * @return */
-	vector< double > polynome_caracteristique(double alpha1, double alpha2, double u1, double u2, double rho1, double rho2, double invc1sq, double invc2sq, double dpi1, double dpi2, double g2press, double g2alpha, double g2, double epsilon);
+	static vector< double > polynome_caracteristique(double alpha1, double alpha2, double u1, double u2, double rho1, double rho2, double invc1sq, double invc2sq, double dpi1, double dpi2, double g2press, double g2alpha, double g2, double epsilon);
 
 	/** \fn module
 	 * \brief calcule le module d'un nombre complexe
 	 * @param z est un nombre complexe
 	 * @return  calcule le module de z*/
-	double module(complex< double > z);
+	static double module(complex< double > z);
 	/** \fn modulec calcule le module² de z */
-	double modulec(complex< double > z);
+	static double modulec(complex< double > z);
 	/** \fn abs_generalise
 	 * \brief calcule la valeur absolue d'un nombre complexe
 	 * \Details calcule la valeur absolue d'un nombre complexe en prenant en compte
 	 * que la partie réelle c-a-d si z= a+ib abs_generalize() renvoie |a|+ib
 	 * @param z
 	 * @return si z = a+ib elle renvoie |a|+ib */
-	complex< double > abs_generalise(complex< double > z);
+	static complex< double > abs_generalise(complex< double > z);
 
-	int new_tri_selectif(vector< complex< double > > &L, int n, double epsilon);
+	static int new_tri_selectif(vector< complex< double > > &L, int n, double epsilon);
 
 	/** \fn tri_selectif
 	 * \brief
@@ -207,7 +207,7 @@ public:
 	 * @param epsilon
 	 * @return */
 	template< typename T >
-	int tri_selectif(T& L, int n, double epsilon);
+	static int tri_selectif(T& L, int n, double epsilon);
 
 	/** \fn matrixProduct
 	 * \brief calcule le produit de 2 matrices .
@@ -217,7 +217,7 @@ public:
 	 * @param R2,C2 la taille de la matrice2 Nbr de ligne et le nbr de colonne
 	 * @param out le resultat de Matrix1*Matrix2
 	 * @return */
-	void matrixProduct
+	static void matrixProduct
 	(
 			const double *Matrix1,
 			const int &R1,
@@ -235,7 +235,7 @@ public:
 	 * @param Vector correspond au vecteur du produit
 	 * @param out le resultat de Matrix*Vector
 	 * @return   */
-	void matrixProdVec
+	static void matrixProdVec
 	(	const double *Matrix,
 			const int &R1,
 			const int &C1,
@@ -243,7 +243,7 @@ public:
 			double *out
 	);
 
-	bool belongTo(complex< double > a , vector< complex <double > > v, double epsilon);
+	static bool belongTo(complex< double > a , vector< complex <double > > v, double epsilon);
 
 private:
 
@@ -252,7 +252,7 @@ private:
  * @param *U,*V les 2 vecteurs
  * @param N taille des 2 vecteurs
  * @return la somme de U et V dans U*/
-void add
+static void add
 (
 		double *U,		//vecteur auquel on ajoute
 		int N,			//taille du vecteur
@@ -267,7 +267,7 @@ void add
  * @param *ab le resultat
  * @return */
 
-void tensor
+static void tensor
 (	const double *a,	//vecteur gauche
 		int N,			//taille du vecteur gauche
 		const double *b,	//vecteur droit
@@ -281,31 +281,31 @@ void tensor
  * @param N taille de la matrice
  * @param shift résultat
  * @return renvoie la trace de la matrice Matrix dans shift */
-void shift_diagonal( double *Matrix, const int N, double shift);
+static void shift_diagonal( double *Matrix, const int N, double shift);
 //qques outils d'algebre des polynomes
 
 /** \fn remplir_trinome
  * \brief remplie un trinome
  */
-void remplir_trinome(double coeff, double u, double alpha, vector< double >& trinome);
+static void remplir_trinome(double coeff, double u, double alpha, vector< double >& trinome);
 
 /** \fn additionne
  * \brief Additionne 2 vecteurs de tailles differentes
  * @param P,Q les 2 vecteurs à additionner
  * @param n,m les 2 tailles respectives des vecteurs P et Q
  * @return un vecteur qui correspond a P+Q*/
-vector< double > additionne(const vector< double >& P, const vector< double >& Q, int n, int m);
+static vector< double > additionne(const vector< double >& P, const vector< double >& Q, int n, int m);
 
 /** \fn multiplie
  * \brief Calcule le produit scalaire de 2 vecteurs de tailles differentes
  * @param P,Q les 2 vecteurs
  * @param n,m les 2 tailles respectives des 2 vecteurs
  * @return un vecteur correspond à (P,Q) */
-vector< double > multiplie(const vector< double >& P, const vector< double >& Q, int n, int m);
+static vector< double > multiplie(const vector< double >& P, const vector< double >& Q, int n, int m);
 
 //Pour le tri des valeurs propres
 
-void ordre_croissant_abs(vector< complex< double > > &L, int n);
+static void ordre_croissant_abs(vector< complex< double > > &L, int n);
 
 //Calcul des coefficients du polynome d'interpolation x->y dans la base de Newton
 template<class T>
@@ -317,12 +317,12 @@ template<class T>
  * @param y
  * @param epsilon
  * @return */
-vector< complex< double > > dif_div(int n, const vector< complex< double > >& x, const vector< T >& y, double epsilon);//n=nb valeurs à interpoler
+static vector< complex< double > > dif_div(int n, const vector< complex< double > >& x, const vector< T >& y, double epsilon);//n=nb valeurs à interpoler
 
 //attention, Les vp complexes conjugu�es doivent se suivre dans la liste x
-void appliquer_dif_div(int n, const vector< complex< double > >& dif_div, const vector< complex< double > >& x, const double* A, const int sizeA, double epsilon, double *p);//p=result
+static void appliquer_dif_div(int n, const vector< complex< double > >& dif_div, const vector< complex< double > >& x, const double* A, const int sizeA, double epsilon, double *p);//p=result
 
-double avr(double a, double b);
+static double avr(double a, double b);
 
 };
 #endif 

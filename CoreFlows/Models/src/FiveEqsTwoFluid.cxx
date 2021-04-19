@@ -902,7 +902,6 @@ void FiveEqsTwoFluid::convectionMatrices()
 		}
 	}
 	/******** Compute the eigenvalues and eigenvectors of Roe Matrix (using lapack)*********/
-	Polynoms Poly;
 	dgeev_(jobvl, jobvr,  &_nVar,
 			Aroe,&LDA,egvaReal,egvaImag, egVectorL,
 			&LDVL,egVectorR,
@@ -953,7 +952,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 			valeurs_propres[j] = complex<double>(egvaReal[j],egvaImag[j]);
 		}
 
-		taille_vp =Poly.new_tri_selectif(valeurs_propres,valeurs_propres.size(),_precision);
+		taille_vp =Polynoms::new_tri_selectif(valeurs_propres,valeurs_propres.size(),_precision);
 
 		valeurs_propres_dist=vector< complex< double > >(taille_vp);
 		for( int i=0 ; i<taille_vp ; i++)
@@ -1133,7 +1132,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		}
 		vector< complex< double > > y (taille_vp,0);
 		for( int i=0 ; i<taille_vp ; i++)
-			y[i] = Poly.abs_generalise(valeurs_propres_dist[i]);
+			y[i] = Polynoms::abs_generalise(valeurs_propres_dist[i]);
 
 		if(_entropicCorrection)
 		{
@@ -1157,7 +1156,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 			for( int i=0 ; i<taille_vp ; i++)
 				cout<<y[i] <<", "<<endl;
 		}
-		Poly.abs_par_interp_directe(taille_vp,valeurs_propres_dist, _Aroe, _nVar,_precision, _absAroe,y);
+		Polynoms::abs_par_interp_directe(taille_vp,valeurs_propres_dist, _Aroe, _nVar,_precision, _absAroe,y);
 
 		if( _spaceScheme ==pressureCorrection){
 			for( int i=0 ; i<_Ndim ; i++)
@@ -1180,7 +1179,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 
 	if(_entropicCorrection || _spaceScheme ==pressureCorrection || _spaceScheme ==lowMach){
 		InvMatriceRoe( valeurs_propres_dist);
-		Poly.matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
+		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
 	}
 	else if (_spaceScheme==upwind)//upwind sans entropic
 		SigneMatriceRoe( valeurs_propres_dist);
@@ -1922,9 +1921,8 @@ void FiveEqsTwoFluid::entropicShift(double* n, double& vpcorr0, double& vpcorr1)
 			eigValuesLeft[j] = complex<double>(egvaReal[j],egvaImag[j]);
 			eigValuesRight[j] = complex<double>(egvaReal[j],egvaImag[j]);
 		}
-		Polynoms Poly;
-		int sizeLeft =  Poly.new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
-		int sizeRight =  Poly.new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
+		int sizeLeft =  Polynoms::new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
+		int sizeRight =  Polynoms::new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
 		if (_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<" Eigenvalue of JacoMat Left: " << endl;
@@ -1997,9 +1995,8 @@ void FiveEqsTwoFluid::entropicShift(double* n)
 	for(int j=0; j<_nVar; j++){
 		eigValuesRight[j] = complex<double>(egvaReal[j],egvaImag[j]);
 	}
-	Polynoms Poly;
-	int sizeLeft =  Poly.new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
-	int sizeRight =  Poly.new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
+	int sizeLeft =  Polynoms::new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
+	int sizeRight =  Polynoms::new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
 	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<" Eigenvalue of JacoMat Left: " << endl;

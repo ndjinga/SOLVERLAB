@@ -651,10 +651,9 @@ void SinglePhaseStaggered::convectionMatrices()
 				_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
 
 			vector< complex< double > > y (3,0);
-			Polynoms Poly;
 			for( int i=0 ; i<3 ; i++)
-				y[i] = Poly.abs_generalise(vp_dist[i])+_entropicShift[i];
-			Poly.abs_par_interp_directe(3,vp_dist, _Aroe, _nVar,_precision, _absAroe,y);
+				y[i] = Polynoms::abs_generalise(vp_dist[i])+_entropicShift[i];
+			Polynoms::abs_par_interp_directe(3,vp_dist, _Aroe, _nVar,_precision, _absAroe,y);
 
 			if( _spaceScheme ==pressureCorrection)
 				for( int i=0 ; i<_Ndim ; i++)
@@ -698,9 +697,8 @@ void SinglePhaseStaggered::convectionMatrices()
 				for(int idim=0;idim<_Ndim; idim++)
 					_Vij[1+idim]=_Uroe[1+idim];
 				primToConsJacobianMatrix(_Vij);
-				Polynoms Poly;
-				Poly.matrixProduct(_AroeMinus, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroeMinusImplicit);
-				Poly.matrixProduct(_AroePlus,  _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroePlusImplicit);
+				Polynoms::matrixProduct(_AroeMinus, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroeMinusImplicit);
+				Polynoms::matrixProduct(_AroePlus,  _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroePlusImplicit);
 			}
 			else
 				for(int i=0; i<_nVar*_nVar;i++)
@@ -728,8 +726,7 @@ void SinglePhaseStaggered::convectionMatrices()
 	if(_entropicCorrection)
 	{
 		InvMatriceRoe( vp_dist);
-		Polynoms Poly;
-		Poly.matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
+		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
 	}
 	else if (_spaceScheme==upwind || (_spaceScheme ==pressureCorrection ) || (_spaceScheme ==lowMach ))//upwind sans entropic
 		SigneMatriceRoe( vp_dist);

@@ -471,9 +471,8 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 						cout << endl;
 					}
 					idm = idCells[k];
-					Polynoms Poly;
 					//calcul et insertion de A^-*Jcb
-					Poly.matrixProduct(_AroeMinusImplicit, _nVar, _nVar, _Jcb, _nVar, _nVar, _a);
+					Polynoms::matrixProduct(_AroeMinusImplicit, _nVar, _nVar, _Jcb, _nVar, _nVar, _a);
 					MatSetValuesBlocked(_A, size, &idm, size, &idm, _a, ADD_VALUES);
 
 					if(_verbose)
@@ -488,7 +487,7 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 						displayMatrix(_AroeMinusImplicit, _nVar,"-_AroeMinusImplicit: ");
 
 					//calcul et insertion de D*JcbDiff
-					Poly.matrixProduct(_Diffusion, _nVar, _nVar, _JcbDiff, _nVar, _nVar, _a);
+					Polynoms::matrixProduct(_Diffusion, _nVar, _nVar, _JcbDiff, _nVar, _nVar, _a);
 					MatSetValuesBlocked(_A, size, &idm, size, &idm, _a, ADD_VALUES);
 					for(int k=0; k<_nVar*_nVar;k++)
 						_Diffusion[k] *= -1;
@@ -1165,9 +1164,8 @@ int ProblemFluid::computeNewtonJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, vo
 						cout << endl;
 					}
 					idm = idCells[k];
-					Polynoms Poly;
 					//calcul et insertion de A^-*Jcb
-					Poly.matrixProduct(_AroeMinusImplicit, _nVar, _nVar, _Jcb, _nVar, _nVar, _a);
+					Polynoms::matrixProduct(_AroeMinusImplicit, _nVar, _nVar, _Jcb, _nVar, _nVar, _a);
 					MatSetValuesBlocked(A, size, &idm, size, &idm, _a, ADD_VALUES);
 
 					if(_verbose)
@@ -1182,7 +1180,7 @@ int ProblemFluid::computeNewtonJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, vo
 						displayMatrix(_AroeMinusImplicit, _nVar,"-_AroeMinusImplicit: ");
 
 					//calcul et insertion de D*JcbDiff
-					Poly.matrixProduct(_Diffusion, _nVar, _nVar, _JcbDiff, _nVar, _nVar, _a);
+					Polynoms::matrixProduct(_Diffusion, _nVar, _nVar, _JcbDiff, _nVar, _nVar, _a);
 					MatSetValuesBlocked(A, size, &idm, size, &idm, _a, ADD_VALUES);
 					for(int k=0; k<_nVar*_nVar;k++)
 						_Diffusion[k] *= -1;
@@ -1625,8 +1623,7 @@ void ProblemFluid::addConvectionToSecondMember
 	{
 		for(int k=0; k<_nVar; k++)
 			_temp[k]=(_Ui[k] - _Uj[k])*_inv_dxi;//(Ui-Uj)*_inv_dxi
-		Polynoms Poly;
-		Poly.matrixProdVec(_AroeMinus, _nVar, _nVar, _temp, _phi);//phi=A^-(U_i-U_j)/dx
+		Polynoms::matrixProdVec(_AroeMinus, _nVar, _nVar, _temp, _phi);//phi=A^-(U_i-U_j)/dx
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
 		if(_verbose && _nbTimeStep%_freqSave ==0)
@@ -1646,7 +1643,7 @@ void ProblemFluid::addConvectionToSecondMember
 		{
 			for(int k=0; k<_nVar; k++)
 				_temp[k]*=_inv_dxj/_inv_dxi;//(Ui-Uj)*_inv_dxj
-			Poly.matrixProdVec(_AroePlus, _nVar, _nVar, _temp, _phi);//phi=A^+(U_i-U_j)/dx
+			Polynoms::matrixProdVec(_AroePlus, _nVar, _nVar, _temp, _phi);//phi=A^+(U_i-U_j)/dx
 			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
 
 			if(_verbose && _nbTimeStep%_freqSave ==0)
@@ -1752,12 +1749,12 @@ void ProblemFluid::addSourceTermToSecondMember
 			cout<< _porosityGradientSourceVector[k]<<", ";
 		cout<<endl;
 	}
-	Polynoms Poly;
+
 	if(!isBord){
 		if(_wellBalancedCorrection){
 			for(int k=0; k<_nVar;k++)
 				_phi[k]=(_Si[k]+_Sj[k])/2+_pressureLossVector[k]+_porosityGradientSourceVector[k];
-			Poly.matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
+			Polynoms::matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
 			for(int k=0; k<_nVar;k++){
 				_Si[k]=(_phi[k]-_l[k])*mesureFace/_perimeters(i);///nbVoisinsi;
 				_Sj[k]=(_phi[k]+_l[k])*mesureFace/_perimeters(j);///nbVoisinsj;
@@ -1798,7 +1795,7 @@ void ProblemFluid::addSourceTermToSecondMember
 		if(_wellBalancedCorrection){
 			for(int k=0; k<_nVar;k++)
 				_phi[k]=(_Si[k]+_Sj[k])/2+_pressureLossVector[k]+_porosityGradientSourceVector[k];
-			Poly.matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
+			Polynoms::matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
 			for(int k=0; k<_nVar;k++)
 				_Si[k]=(_phi[k]-_l[k])*mesureFace/_perimeters(i);///nbVoisinsi;
 			if (_verbose && _nbTimeStep%_freqSave ==0)
@@ -1958,12 +1955,11 @@ vector< complex<double> > ProblemFluid::getRacines(vector< double > pol_car){
 
 void ProblemFluid::AbsMatriceRoe(vector< complex<double> > valeurs_propres_dist)
 {
-	Polynoms Poly;
 	int nbVp_dist=valeurs_propres_dist.size();
 	vector< complex< double > > y (nbVp_dist,0);
 	for( int i=0 ; i<nbVp_dist ; i++)
-		y[i] = Poly.abs_generalise(valeurs_propres_dist[i]);
-	Poly.abs_par_interp_directe(nbVp_dist,valeurs_propres_dist, _Aroe, _nVar,_precision, _absAroe,y);
+		y[i] = Polynoms::abs_generalise(valeurs_propres_dist[i]);
+	Polynoms::abs_par_interp_directe(nbVp_dist,valeurs_propres_dist, _Aroe, _nVar,_precision, _absAroe,y);
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<< endl<<"ProblemFluid::AbsMatriceRoe: Valeurs propres :" << nbVp_dist<<endl;
@@ -1991,8 +1987,8 @@ void ProblemFluid::SigneMatriceRoe(vector< complex<double> > valeurs_propres_dis
 		else
 			y[i] = 0;
 	}
-	Polynoms Poly;
-	Poly.abs_par_interp_directe(nbVp_dist,valeurs_propres_dist, _Aroe, _nVar,_precision, _signAroe,y);
+
+	Polynoms::abs_par_interp_directe(nbVp_dist,valeurs_propres_dist, _Aroe, _nVar,_precision, _signAroe,y);
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<< endl<<"ProblemFluid::SigneMatriceRoe: Valeurs propres :" << nbVp_dist<<endl;
@@ -2010,15 +2006,15 @@ void ProblemFluid::InvMatriceRoe(vector< complex<double> > valeurs_propres_dist)
 {
 	int nbVp_dist=valeurs_propres_dist.size();
 	vector< complex< double > > y (nbVp_dist,0);
-	Polynoms Poly;
+
 	for( int i=0 ; i<nbVp_dist ; i++)
 	{
-		if(Poly.module(valeurs_propres_dist[i])>_precision)
+		if(Polynoms::module(valeurs_propres_dist[i])>_precision)
 			y[i] = 1./valeurs_propres_dist[i];
 		else
 			y[i] = 1./_precision;
 	}
-	Poly.abs_par_interp_directe(nbVp_dist,valeurs_propres_dist, _Aroe, _nVar,_precision, _invAroe,y);
+	Polynoms::abs_par_interp_directe(nbVp_dist,valeurs_propres_dist, _Aroe, _nVar,_precision, _invAroe,y);
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<< endl<<"ProblemFluid::InvMatriceRoe : Valeurs propres :" << nbVp_dist<<endl;
