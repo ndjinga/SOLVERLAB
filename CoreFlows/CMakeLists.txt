@@ -11,12 +11,12 @@ option (COREFLOWS_WITH_DOCUMENTATION "Generate documentation for CoreFlows use."
 option (COREFLOWS_WITH_PYTHON "Compile Python interface for COREFLOWS." ON)
 option (COREFLOWS_WITH_GUI "Compile Graphic user Interface for COREFLOWS." OFF)
 option (COREFLOWS_WITH_PACKAGE "Generate RPM, Debian and tarball packages." OFF)
+option (COREFLOWS_WITH_TESTS "Compile with testing and examples." ON)
 
 #Path to installed libraries
 set (PETSC_DIR            OFF CACHE STRING "PETSc library path" )
 set (SLEPC_DIR            OFF CACHE STRING "SLEPc library path" )
 
-enable_testing()											   #
 # Debug mode activates testing and profiling --------------------------------------------------------------#
 if   (CMAKE_BUILD_TYPE STREQUAL Debug)									   #
 													   #
@@ -39,18 +39,24 @@ endif(COREFLOWS_WITH_PYTHON)                                                    
 #-----------------------------------------------------------------------------------------------------------#
 
 # Base directories
-set (CoreFlows_SRC ${CoreFlows_SOURCE_DIR}/Models ) 
+set (CoreFlows_MODELS ${CoreFlows_SOURCE_DIR}/Models ) 
 set (CoreFlows_EXAMPLES ${CoreFlows_SOURCE_DIR}/examples)
 
 set( CoreFlows_INCLUDES 
   ${CDMATH_INCLUDES}											    #
   ${PETSC_INCLUDES}											    #
-  ${CoreFlows_SRC}/inc											    #    
-  ${CoreFlows_SRC}/inc/EOS   										    #    
+  ${CoreFlows_MODELS}/inc											    #    
+  ${CoreFlows_MODELS}/inc/EOS   										    #    
   )													    #
 
-add_subdirectory (${CoreFlows_SRC})
-add_subdirectory (${CoreFlows_EXAMPLES})
+add_subdirectory (${CoreFlows_MODELS})
+
+# Tests
+if   (COREFLOWS_WITH_TESTS)
+  enable_testing ()
+  add_subdirectory (${CoreFlows_EXAMPLES})#contains c++ and python tests
+endif(COREFLOWS_WITH_TESTS)
+
 if   (COREFLOWS_WITH_PYTHON)                                                                                  #
    add_subdirectory (${CoreFlows_SWIG_DIR})                                                                 #
 endif(COREFLOWS_WITH_PYTHON)                                                                                                    #
@@ -72,7 +78,7 @@ endif(COREFLOWS_WITH_DOCUMENTATION)                                             
                                                                                                             #
 # ------------- --------------------------------------------------------------------------------------------#
 
-# Graphic interface-----------------------------------------------------------------------------------------#
+# Standalone graphic interface-----------------------------------------------------------------------------------------#
      													    #
 if   (COREFLOWS_WITH_GUI) 														    #
   set (CoreFlows_GUI_DIR ${CoreFlows_SOURCE_DIR}/gui)                                                        #
@@ -80,6 +86,54 @@ if   (COREFLOWS_WITH_GUI) 														    #
 endif(COREFLOWS_WITH_GUI)                                                                                                    #
 													    #
 # ------------- --------------------------------------------------------------------------------------------#
+
+# Salome Graphic interface---------------------------------------------------------------------------------------------#
+														#
+if  ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
+
+	# Common CMake macros
+	# ===================
+	SET(CONFIGURATION_ROOT_DIR $ENV{CONFIGURATION_ROOT_DIR} CACHE PATH "Path to the Salome CMake configuration files")
+	IF(EXISTS ${CONFIGURATION_ROOT_DIR})
+	  LIST(APPEND CMAKE_MODULE_PATH "${CONFIGURATION_ROOT_DIR}/cmake")
+	  INCLUDE(SalomeMacros NO_POLICY_SCOPE)
+	ELSE()
+	  MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
+	ENDIF()
+						    								#
+	# Find KERNEL 
+	# ==============
+	SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
+	IF( EXISTS ${KERNEL_ROOT_DIR} )
+	  FIND_PACKAGE(SalomeKERNEL REQUIRED)
+	ELSE( EXISTS ${KERNEL_ROOT_DIR} )
+	  MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR!")
+	ENDIF( EXISTS ${KERNEL_ROOT_DIR} )
+	
+	# Find SALOME GUI 
+	# ==============
+	SET(GUI_ROOT_DIR $ENV{GUI_ROOT_DIR} CACHE PATH "Path to the Salome GUI")
+	IF(EXISTS ${GUI_ROOT_DIR})
+	  FIND_PACKAGE(SalomeGUI)
+	ELSE(EXISTS ${GUI_ROOT_DIR})
+	  MESSAGE(FATAL_ERROR "We absolutely need a Salome GUI, please define GUI_ROOT_DIR!")
+	ENDIF(EXISTS ${GUI_ROOT_DIR})
+	
+	# Platform setup
+	# ==============
+	INCLUDE(SalomeSetupPlatform)   # From KERNEL
+	    
+	# Prerequisites
+	# =============
+	
+	# Mandatory products
+	FIND_PACKAGE(SalomePythonInterp REQUIRED)
+	FIND_PACKAGE(SalomePythonLibs REQUIRED)
+	
+	MESSAGE(STATUS "SalomeKERNEL_VERSION is ${SalomeKERNEL_VERSION}")
+
+endif( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )                                                                                                        #
+#---------------------------------------------------------------------------------------------------------------#
 
 #--------------------- COMPILATION MAIN --------------------------------------------------------------------#
 													    #

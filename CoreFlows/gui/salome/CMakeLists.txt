@@ -17,47 +17,6 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-# Common CMake macros
-# ===================
-SET(CONFIGURATION_ROOT_DIR $ENV{CONFIGURATION_ROOT_DIR} CACHE PATH "Path to the Salome CMake configuration files")
-IF(EXISTS ${CONFIGURATION_ROOT_DIR})
-  LIST(APPEND CMAKE_MODULE_PATH "${CONFIGURATION_ROOT_DIR}/cmake")
-  INCLUDE(SalomeMacros NO_POLICY_SCOPE)
-ELSE()
-  MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
-ENDIF()
-
-# Find KERNEL 
-# ==============
-SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
-IF( EXISTS ${KERNEL_ROOT_DIR} )
-  FIND_PACKAGE(SalomeKERNEL REQUIRED)
-ELSE( EXISTS ${KERNEL_ROOT_DIR} )
-  MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR!")
-ENDIF( EXISTS ${KERNEL_ROOT_DIR} )
-
-# Find SALOME GUI 
-# ==============
-SET(GUI_ROOT_DIR $ENV{GUI_ROOT_DIR} CACHE PATH "Path to the Salome GUI")
-IF(EXISTS ${GUI_ROOT_DIR})
-  FIND_PACKAGE(SalomeGUI)
-ELSE(EXISTS ${GUI_ROOT_DIR})
-  MESSAGE(FATAL_ERROR "We absolutely need a Salome GUI, please define GUI_ROOT_DIR!")
-ENDIF(EXISTS ${GUI_ROOT_DIR})
-
-# Platform setup
-# ==============
-INCLUDE(SalomeSetupPlatform)   # From KERNEL
-    
-# Prerequisites
-# =============
-
-# Mandatory products
- FIND_PACKAGE(SalomePythonInterp REQUIRED)
- FIND_PACKAGE(SalomePythonLibs REQUIRED)
-
-MESSAGE(STATUS "SalomeKERNEL_VERSION is ${SalomeKERNEL_VERSION}")
-
 # Qt5
 FIND_PACKAGE(SalomeQt5 REQUIRED COMPONENTS QtCore QtGui)
 
