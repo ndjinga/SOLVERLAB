@@ -101,15 +101,6 @@ if  ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) A
 	  MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
 	ENDIF()
 						    								#
-	# Find KERNEL 
-	# ==============
-	SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
-	IF( EXISTS ${KERNEL_ROOT_DIR} )
-	  FIND_PACKAGE(SalomeKERNEL REQUIRED)
-	ELSE( EXISTS ${KERNEL_ROOT_DIR} )
-	  MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR!")
-	ENDIF( EXISTS ${KERNEL_ROOT_DIR} )
-	
 	# Find SALOME GUI 
 	# ==============
 	SET(GUI_ROOT_DIR $ENV{GUI_ROOT_DIR} CACHE PATH "Path to the Salome GUI")
@@ -119,19 +110,6 @@ if  ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) A
 	  MESSAGE(FATAL_ERROR "We absolutely need a Salome GUI, please define GUI_ROOT_DIR!")
 	ENDIF(EXISTS ${GUI_ROOT_DIR})
 	
-	# Platform setup
-	# ==============
-	INCLUDE(SalomeSetupPlatform)   # From KERNEL
-	    
-	# Prerequisites
-	# =============
-	
-	# Mandatory products
-	FIND_PACKAGE(SalomePythonInterp REQUIRED)
-	FIND_PACKAGE(SalomePythonLibs REQUIRED)
-	
-	MESSAGE(STATUS "SalomeKERNEL_VERSION is ${SalomeKERNEL_VERSION}")
-
 endif( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )                                                                                                        #
 #---------------------------------------------------------------------------------------------------------------#
 

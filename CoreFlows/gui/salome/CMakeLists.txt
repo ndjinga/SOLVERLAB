@@ -17,6 +17,27 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
+# Common CMake macros
+# ===================
+SET(CONFIGURATION_ROOT_DIR $ENV{CONFIGURATION_ROOT_DIR} CACHE PATH "Path to the Salome CMake configuration files")
+IF(EXISTS ${CONFIGURATION_ROOT_DIR})
+  LIST(APPEND CMAKE_MODULE_PATH "${CONFIGURATION_ROOT_DIR}/cmake")
+  INCLUDE(SalomeMacros NO_POLICY_SCOPE)
+ELSE()
+  MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
+ENDIF()
+					    								#
+# Find Salome KERNEL 
+# ==================
+SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
+IF( EXISTS ${KERNEL_ROOT_DIR} )
+  FIND_PACKAGE(SalomeKERNEL REQUIRED)
+ELSE( EXISTS ${KERNEL_ROOT_DIR} )
+  MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR!")
+ENDIF( EXISTS ${KERNEL_ROOT_DIR} )
+	    
+MESSAGE(STATUS "SalomeKERNEL_VERSION is ${SalomeKERNEL_VERSION}")
+
 # Qt5
 FIND_PACKAGE(SalomeQt5 REQUIRED COMPONENTS QtCore QtGui)
 
