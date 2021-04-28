@@ -25,9 +25,9 @@ set (PYTHON_ROOT_DIR      OFF CACHE STRING "Python library path" )
 set (PARAVIEW_ROOT_DIR    OFF CACHE STRING "PARAVIEW library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.2.tar.gz 
+set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.15.0.tar.gz 
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.14.1.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.15.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )

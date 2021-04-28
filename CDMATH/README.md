@@ -73,8 +73,8 @@ Compile and install CDMATH
 Simpler build for a minimum version:
 * `cmake ../cdmath-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PETSC=ON -DCDMATH_WITH_PYTHON=ON `  
 > This will download and build the following dependencies
-> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.14.2.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.14.1.tar.gz
+> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.15.0.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.15.0.tar.gz
 > - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
 > - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
 > - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.6.0.tar.gz
