@@ -124,6 +124,7 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
     A.setValue(1,1,1.);
 	CPPUNIT_ASSERT_EQUAL( true, A.isSymmetric(1.e-10) );
 
+	/* Eigenvalues and eigenvectors */
 	std::vector< double > vp = A.getEigenvalues(2);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, vp[0],1.e-5);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 2, vp[1],1.e-5);
@@ -145,6 +146,10 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	std::vector< double > sigma = A.getSingularValues(2);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, sigma[0],1.e-5);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 2, sigma[1],1.e-5);
+
+	std::vector< Vector > Vs = A.getSingularVectors(2);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, abs(Vs[0][0]) - abs(Vs[0][1]),1.e-5);
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, abs(Vs[1][0]) - abs(Vs[1][1]),1.e-5);
 
 	/* Condition number of a symmetric non singular matrix */
     A.setValue(0,0, 0.);

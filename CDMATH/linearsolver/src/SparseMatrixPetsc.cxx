@@ -503,8 +503,8 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
   MatAssemblyBegin(_mat,MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(_mat,MAT_FINAL_ASSEMBLY);
 
-  MatCreateVecs(_mat,NULL,&xr);
-  MatCreateVecs(_mat,NULL,&xi);
+  MatCreateVecs(_mat,&xr,NULL);
+  MatCreateVecs(_mat,&xi,NULL);
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 Create the eigensolver and set various options
@@ -616,19 +616,23 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
 }
 
 int 
-SparseMatrixPetsc::computeSVD(int nsv, double ** valS, SVDWhich which, double tol) const
+SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich which, double tol) const
 {
   SVD            svd;         /* Singular value decomposition solver context */
   SVDType        type;
   PetscReal      error;
   PetscScalar    sigma;
+  Vec            u,v;
   PetscInt       i,maxit,its, nconv;
 
   SlepcInitialize(0, (char ***)"", PETSC_NULL, PETSC_NULL);
 
   MatAssemblyBegin(_mat,MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(_mat,MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(  _mat,MAT_FINAL_ASSEMBLY);
 
+  MatCreateVecs(_mat,&u,NULL);
+  MatCreateVecs(_mat,NULL,&v);
+  
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 Create the singular value solver and set various options
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -677,7 +681,9 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, SVDWhich which, double to
   PetscPrintf(PETSC_COMM_WORLD," Number of converged singular values: %D\n\n",nconv);
 
   *valS=new double[nconv];
-    
+  *vecS=new double * [2*nconv];
+  double * myVecS;
+  
   if (nconv>0) {
     /*
        Display eigenvalues and relative errors
@@ -690,19 +696,28 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, SVDWhich which, double to
       /*
         Get converged singular values: i-th eigenvalue is stored in valS
       */
-      SVDGetSingularTriplet(svd,i,*valS+i,NULL,NULL);
+      SVDGetSingularTriplet(svd,i,*valS+i, u, v);
       /*
          Compute the relative error associated to each singular value
       */
       SVDComputeError( svd, i, SVD_ERROR_RELATIVE, &error );
 
       PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)*(*valS+i),(double)error);
+
+      VecGetArray(u,&myVecS);
+      *(*vecS + i)=new double [_numberOfRows];
+      memcpy(*(*vecS + i),myVecS,_numberOfRows*sizeof(double)) ;
+      VecGetArray(v,&myVecS);
+      *(*vecS + i + nconv)=new double [_numberOfColumns];
+      memcpy(*(*vecS + i + nconv),myVecS,_numberOfColumns*sizeof(double)) ;
     }
     PetscPrintf(PETSC_COMM_WORLD,"\n");
     /*
      Free work space
     */
     SVDDestroy(&svd);
+    VecDestroy(&u);
+    VecDestroy(&v);
     SlepcFinalize();
 
     return nconv;
@@ -713,6 +728,8 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, SVDWhich which, double to
      Free work space
     */
     SVDDestroy(&svd);
+    VecDestroy(&u);
+    VecDestroy(&v);
     SlepcFinalize();
 
     throw CdmathException("SparseMatrixPetsc::computeSVD : singular value decomposition failed");	
@@ -834,6 +851,7 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 	{
 		int nsv, nconv;
 		double * valS;
+		double ** vecS;
 		double sigma_max, sigma_min;
 		
 		/*** Lowest singular value, first check if matrix is singular ***/
@@ -842,19 +860,19 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 	    else
 			nsv=1 ;
 	
-		nconv=computeSVD(nsv, &valS, SVD_SMALLEST, tol);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_SMALLEST, tol);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the smallest singular value");
 	    sigma_min=valS[nsv-1];
-	    delete[] valS;
+	    delete[] valS, vecS;
 	    
 	    /*** Largest singular value ***/
 	    nsv=1;
-		nconv=computeSVD(nsv, &valS, SVD_LARGEST, tol);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_LARGEST, tol);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the largest singular value");
 	    sigma_max=valS[nsv-1];
-	    delete[] valS;
+	    delete[] valS, vecS;
 	    
 	    return sigma_max/sigma_min;
 	}
@@ -865,16 +883,48 @@ SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol) const
 {
 	int nconv;
 	double * valS;
+	double **vecS;
 	
-	nconv=computeSVD(nsv, &valS, which, tol);
+	nconv=computeSVD(nsv, &valS, &vecS, which, tol);
 	
     std::vector< double > result(nconv);
 	
     for (int i=0;i<nconv;i++) 
         result[i]=valS[i];
 
-	delete[] valS;
+	delete[] valS, vecS;
 	
+    return result;
+}
+
+std::vector< Vector > 
+SparseMatrixPetsc::getSingularVectors(int nsv, SVDWhich which, double tol) const
+{
+	int nconv;
+	double * valS;
+	double **vecS;
+	
+	nconv=computeSVD(nsv, &valS, &vecS, which, tol);
+	
+    std::vector< Vector > result(2*nconv);
+	
+    for (int i=0;i<nconv;i++) 
+    {
+		DoubleTab values_left (_numberOfRows,vecS[i]);
+        Vector myVecS_left(_numberOfRows);
+        myVecS_left.setValues(values_left);
+        result[i]=myVecS_left;
+		DoubleTab values_right (_numberOfColumns,vecS[i+nconv]);
+        Vector myVecS_right(_numberOfColumns);
+        myVecS_right.setValues(values_right);
+        result[i+nconv]=myVecS_right;
+	}
+
+	delete[] valS;
+    for (int i=0;i<nconv;i++) 
+		delete[] vecS[i];
+	delete[] vecS;	
+
     return result;
 }
 
