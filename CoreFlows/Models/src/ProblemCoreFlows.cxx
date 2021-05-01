@@ -634,6 +634,19 @@ ProblemCoreFlows::getEigenvectorsField(int nev, EPSWhich which, double tol) cons
   return my_eigenfield;
 }
 
+std::vector< double > 
+ProblemCoreFlows::getSingularValues( int nsv, SVDWhich which, double tol) const
+{
+  SparseMatrixPetsc A = SparseMatrixPetsc(_A);
+  return A.getSingularValues( nsv, which, tol);
+}
+std::vector< Vector > 
+ProblemCoreFlows::getSingularVectors(int nsv, SVDWhich which, double tol) const
+{
+  SparseMatrixPetsc A = SparseMatrixPetsc(_A);
+  return A.getSingularVectors( nsv, which, tol);
+}
+
 Field 
 ProblemCoreFlows::getUnknownField() const
 {
