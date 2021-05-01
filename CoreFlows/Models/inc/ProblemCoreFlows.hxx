@@ -501,6 +501,21 @@ public :
 		_path=resultsPath;
 	}
 
+	/** \fn getTimeScheme
+	 * \brief returns the  time scheme name
+	 * \param [in] void
+	 * \param [out] enum TimeScheme (explicit or implicit)
+	 *  */
+	TimeScheme getTimeScheme();
+
+	/** \fn setNumericalScheme
+	 * \brief sets the numerical method ( explicit vs implicit )
+	 * \details
+	 * \param [in] TimeScheme
+	 * \param [out] void
+	 *  */
+	void setTimeScheme( TimeScheme method);
+
 	//Couplages Thermohydraulique-thermique-neutronique *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 	/** \fn setHeatPowerField
@@ -600,7 +615,7 @@ public :
 		_system = system;
 	};
 
-    //Spectrum analysis
+    //Spectral analysis
     double getConditionNumber(bool isSingular=false, double tol=1e-6) const;
     std::vector< double > getEigenvalues (int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6) const;
     std::vector< Vector > getEigenvectors(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6) const;
@@ -615,7 +630,7 @@ public :
 	 * @param name, string, name or description of the matrix
 	 * @return displays the matrix on the terminal
 	 *  */
-	void displayMatrix(double *matrix, int size, string name);
+	static void displayMatrix(double *matrix, int size, string name="Vector coefficients :");
 
 	/** \fn displayMatrix
 	 * \brief displays a vector of size "size" for profiling
@@ -624,23 +639,7 @@ public :
 	 * @param name, string, name or description of the vector
 	 * @return displays the vector on the terminal
 	 *  */
-	void displayVector(double *vector, int size, string name);
-
-	/** \fn getTimeScheme
-	 * \brief returns the  time scheme name
-	 * \param [in] void
-	 * \param [out] enum TimeScheme (explicit or implicit)
-	 *  */
-	TimeScheme getTimeScheme();
-
-	/** \fn setNumericalScheme
-	 * \brief sets the numerical method ( explicit vs implicit )
-	 * \details
-	 * \param [in] TimeScheme
-	 * \param [out] void
-	 *  */
-	void setTimeScheme( TimeScheme method);
-
+	static void displayVector(double *vector, int size, string name="Matrix coefficients :");
 
 protected :
 
