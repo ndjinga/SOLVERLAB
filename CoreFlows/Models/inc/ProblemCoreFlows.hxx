@@ -89,7 +89,7 @@ public :
 	ProblemCoreFlows();
 	virtual ~ProblemCoreFlows();
 	
-	// -*-*-*- Gestion du calcul (interface ICoCo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+	// -*-*-*- Gestion du calcul (interface ICoCo) -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 	/** \fn initialize
 	 * \brief Alloue la mémoire et vérifie que  le maillage et les conditions limites/initiales sont bien définis
