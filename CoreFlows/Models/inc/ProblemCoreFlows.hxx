@@ -463,7 +463,7 @@ public :
 	 * @param kspType linear solver type (GMRES or BICGSTAB)
 	 * @param pcType preconditioner (ILU,LU or NOPC)
 	 */
-	void setLinearSolver(linearSolver solverName, preconditioner pcType);
+	void setLinearSolver(linearSolver solverName, preconditioner pcType, double maxIts=50);
 
 	/** \fn setNewtonSolver
 	 * \brief set the Newton algorithm parameters
