@@ -311,9 +311,9 @@ public :
 	 * @param pcType preconditioner (ILU,LU or NONE)
 	 * @param scaling performs a bancing of the system matrix before calling th preconditioner
 	 */
-	void setLinearSolver(linearSolver kspType, preconditioner pcType, bool scaling=false)
+	void setLinearSolver(linearSolver kspType, preconditioner pcType, double maxIts=50, bool scaling=false)
 	{
-		ProblemCoreFlows::setLinearSolver(kspType, pcType);
+		ProblemCoreFlows::setLinearSolver(kspType, pcType, maxIts);
 		_isScaling= scaling;
 	};
 
