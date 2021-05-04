@@ -159,6 +159,11 @@ void ProblemFluid::initialize()
 
 		SNESCreate(PETSC_COMM_WORLD, &_snes);
 		SNESSetType( _snes, snestype);
+		SNESLineSearch linesearch;
+		SNESGetLineSearch( _snes, &linesearch);
+		SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBASIC );;
+		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
+		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
 	}
 
 	//creation de la matrice
@@ -241,10 +246,6 @@ bool ProblemFluid::solveTimeStep(){
 
 bool ProblemFluid::solveNewtonPETSc()
 {	
-	SNESCreate(PETSC_COMM_WORLD,&_snes);
-	SNESSetFunction(_snes,_conservativeVars,computeSnesRHS,this);
-	SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);
-	
     SNESSolve(_snes,NULL,_conservativeVars);
 
 	int its;
