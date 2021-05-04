@@ -466,10 +466,10 @@ public :
 	void setLinearSolver(linearSolver solverName, preconditioner pcType, double maxIts=50);
 
 	/** \fn setNewtonSolver
-	 * \brief set the Newton algorithm parameters
-	 * \param [in] double precision required for the convergence of the newton scheme
-	 * \param [in] int maximum number of newton iterations
-	 * \param [in] nonlinear solver
+	 * \brief sets the Newton type algorithm for solving the nonlinear algebraic system arising from the discretisation of the PDE
+	 * \param [in] double : precision required for the convergence of the newton scheme
+	 * \param [in] int : maximum number of newton iterations
+	 * \param [in] nonLinearSolver : the algorithm to be used to solve the nonlinear system
 	 * \param [out] void
 	 *  */
 	void setNewtonSolver(double precision, int iterations=20, nonLinearSolver solverName=Newton_SOLVERLAB);
