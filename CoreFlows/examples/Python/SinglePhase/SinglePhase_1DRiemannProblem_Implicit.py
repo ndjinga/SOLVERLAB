@@ -69,9 +69,10 @@ def SinglePhase_1DRiemannProblem_Implicit():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
+	myProblem.setSaveFileFormat(cf.CSV)
 	myProblem.saveConservativeField(True);
 	
-	myProblem.setLinearSolver(cf.GMRES, cf.NOPC)
+	myProblem.setLinearSolver(cf.GMRES, cf.LU)
 	myProblem.setNewtonSolver(precision,20, cf.Newton_SOLVERLAB)
 	myProblem.usePrimitiveVarsInNewton(False)
  
