@@ -59,7 +59,7 @@ def SinglePhase_1DRiemannProblem_Implicit():
     # simulation parameters 
 	MaxNbOfTimeStep = 3 ;
 	freqSave = 1;
-	cfl = 10;
+	cfl = 1;
 	maxTime = 500;
 	precision = 1e-6;
 
