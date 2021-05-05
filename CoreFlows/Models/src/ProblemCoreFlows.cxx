@@ -461,7 +461,7 @@ bool ProblemCoreFlows::run()
 
 			if (!ok)   // The resolution failed, try with a new time interval.
 			{
-				if(_dt>_precision){
+				/* if(_dt>_precision){
 					cout<<"ComputeTimeStep returned _dt="<<_dt<<endl;
 					cout << "Failed solving time step "<<_nbTimeStep<<", time = " << _time <<" _dt= "<<_dt<<", cfl= "<<_cfl<<", trying again with dt/2"<< endl;
 					*_runLogFile << "Failed solving time step "<<_nbTimeStep<<", time = " << _time <<" _dt= "<<_dt<<", cfl= "<<_cfl<<", trying again with dt/2"<< endl;
@@ -471,12 +471,12 @@ bool ProblemCoreFlows::run()
 					//_cfl*=0.5;//If we change the cfl, we must compute the new time step with computeTimeStep
 					//_dt=computeTimeStep(stop);
 				}
-				else{
+				else{*/
 					cout << "Failed solving time step "<<_nbTimeStep<<", _time = " << _time<<" _dt= "<<_dt<<", cfl= "<<_cfl <<", stopping calculation"<< endl;
 					*_runLogFile << "Failed solving time step "<<_nbTimeStep<<", _time = " << _time<<" _dt= "<<_dt<<", cfl= "<<_cfl <<", stopping calculation"<< endl;
 					stop=true; // Impossible to solve the next time step, the Problem has given up
 					break;
-				}
+				//}
 			}
 			else // The resolution was successful, validate and go to the next time step.
 			{
