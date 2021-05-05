@@ -376,7 +376,6 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 	VecAssemblyBegin(_b);
 	VecZeroEntries(_b);
 
-	VecAssemblyBegin(_conservativeVars);
 	std::vector< int > idCells(2);
 	PetscInt idm, idn, size = 1;
 
@@ -706,7 +705,6 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 		}
 
 	}
-	VecAssemblyEnd(_conservativeVars);
 	VecAssemblyEnd(_b);
 
 	if(_timeScheme == Implicit){
@@ -862,8 +860,6 @@ void ProblemFluid::computeNewtonRHS( Vec X, Vec F_X){//dt is known and will cont
 
 	VecCopy(X,_conservativeVars);
 	updatePrimitives();
-
-	VecAssemblyBegin(_conservativeVars);//Utile ???
 
 	VecAssemblyBegin(_b);
 	VecZeroEntries(_b);
@@ -1064,7 +1060,6 @@ void ProblemFluid::computeNewtonRHS( Vec X, Vec F_X){//dt is known and will cont
 	VecAXPY(_b, 1/_dt, _old);
 	VecAXPY(_b, -1/_dt, _conservativeVars);
 
-	VecAssemblyEnd(_conservativeVars);
 	VecAssemblyEnd(_b);
 	VecCopy(_b,F_X);
 	VecScale(F_X,-1.);
@@ -1100,7 +1095,6 @@ void ProblemFluid::computeNewtonJacobian( Vec X, Mat A){//dt is known and will c
 
 	MatZeroEntries(A);
 	VecCopy(X,_conservativeVars);
-	VecAssemblyBegin(_conservativeVars);
 	
 	std::vector< int > idCells(2);
 	PetscInt idm, idn, size = 1;
@@ -1411,7 +1405,6 @@ void ProblemFluid::computeNewtonJacobian( Vec X, Mat A){//dt is known and will c
 		}
 
 	}
-	VecAssemblyEnd(_conservativeVars);
 
 	for(int imaille = 0; imaille<_Nmailles; imaille++)
 		MatSetValuesBlocked(A, size, &imaille, size, &imaille, _GravityImplicitationMatrix, ADD_VALUES);
