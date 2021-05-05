@@ -51,12 +51,12 @@ int main(int argc, char** argv)
 	myProblem.setNumericalScheme(upwind, Implicit);
 
 	// name file save
-	string fileName = "1DRiemannProblem_Implicit";
+	string fileName = "1DRiemannProblem_Implicit_LineSearch";
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 3;
 	int freqSave = 1;
-	double cfl = 0.95;
+	double cfl = 1;
 	double maxTime = 5;
 	double precision = 1e-6;
 
@@ -67,10 +67,10 @@ int main(int argc, char** argv)
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
 	myProblem.saveConservativeField(true);
-	myProblem.setVerbose(true,false);
+	//myProblem.setVerbose(true,false);
 	myProblem.setSaveFileFormat(CSV);
 	
-	myProblem.setLinearSolver(GMRES, ILU);
+	myProblem.setLinearSolver(GMRES, LU);
 	myProblem.setNewtonSolver(precision,1, Newton_PETSC_LINESEARCH);
 	myProblem.usePrimitiveVarsInNewton(false);
 	

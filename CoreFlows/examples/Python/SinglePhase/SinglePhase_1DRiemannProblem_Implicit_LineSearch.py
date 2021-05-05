@@ -4,7 +4,7 @@
 import CoreFlows as cf
 import cdmath as cm
 
-def SinglePhase_1DRiemannProblem_Implicit():
+def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 
 	spaceDim = 1;
     # Prepare for the mesh
@@ -54,7 +54,7 @@ def SinglePhase_1DRiemannProblem_Implicit():
 	myProblem.setNumericalScheme(cf.upwind, cf.Implicit);
     
     # name of result file
-	fileName = "1DRiemannProblem_Implicit";
+	fileName = "1DRiemannProblem_Implicit_LineSearch";
 
     # simulation parameters 
 	MaxNbOfTimeStep = 3 ;
@@ -72,7 +72,7 @@ def SinglePhase_1DRiemannProblem_Implicit():
 	myProblem.setSaveFileFormat(cf.CSV)
 	myProblem.saveConservativeField(True);
 	
-	myProblem.setLinearSolver(cf.GMRES, cf.LU)
+	myProblem.setLinearSolver(cf.GMRES, cf.ILU)
 	myProblem.setNewtonSolver(precision,20, cf.Newton_PETSC_LINESEARCH)
 	myProblem.usePrimitiveVarsInNewton(False)
  
@@ -93,4 +93,4 @@ def SinglePhase_1DRiemannProblem_Implicit():
 	return ok
 
 if __name__ == """__main__""":
-    SinglePhase_1DRiemannProblem_Implicit()
+    SinglePhase_1DRiemannProblem_Implicit_LineSearch()
