@@ -135,37 +135,6 @@ void ProblemFluid::initialize()
 
 	/**********Petsc structures:  ****************/
 
-	// Creation du solveur de Newton de PETSc
-	if(_nonLinearSolver != Newton_SOLVERLAB)
-	{
-		SNESType snestype;
-	
-		// set nonlinear solver
-		if (_nonLinearSolver == Newton_PETSC_LINESEARCH)
-			snestype = (char*)&SNESNEWTONLS;
-		else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
-			snestype = (char*)&SNESNEWTONTR;
-		else if (_nonLinearSolver == Newton_PETSC_NGMRES)
-			snestype = (char*)&SNESNGMRES;
-		else if (_nonLinearSolver ==Newton_PETSC_ASPIN)
-			snestype = (char*)&SNESASPIN;
-		else if(_nonLinearSolver != Newton_SOLVERLAB)
-		{
-			cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
-			*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
-			_runLogFile->close();
-			throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
-		}
-
-		SNESCreate(PETSC_COMM_WORLD, &_snes);
-		SNESSetType( _snes, snestype);
-		SNESLineSearch linesearch;
-		SNESGetLineSearch( _snes, &linesearch);
-		SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBASIC );;
-		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
-		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
-	}
-
 	//creation de la matrice
 	if(_timeScheme == Implicit)
 		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNb), PETSC_NULL, &_A);
@@ -227,6 +196,37 @@ void ProblemFluid::initialize()
 	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
 	KSPGetPC(_ksp, &_pc);
 	PCSetType(_pc, _pctype);
+
+	// Creation du solveur de Newton de PETSc
+	if(_nonLinearSolver != Newton_SOLVERLAB)
+	{
+		SNESType snestype;
+	
+		// set nonlinear solver
+		if (_nonLinearSolver == Newton_PETSC_LINESEARCH)
+			snestype = (char*)&SNESNEWTONLS;
+		else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
+			snestype = (char*)&SNESNEWTONTR;
+		else if (_nonLinearSolver == Newton_PETSC_NGMRES)
+			snestype = (char*)&SNESNGMRES;
+		else if (_nonLinearSolver ==Newton_PETSC_ASPIN)
+			snestype = (char*)&SNESASPIN;
+		else if(_nonLinearSolver != Newton_SOLVERLAB)
+		{
+			cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+			*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+			_runLogFile->close();
+			throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
+		}
+
+		SNESCreate(PETSC_COMM_WORLD, &_snes);
+		SNESSetType( _snes, snestype);
+		SNESLineSearch linesearch;
+		SNESGetLineSearch( _snes, &linesearch);
+		SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBASIC );;
+		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
+		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
+	}
 
 	_initializedMemory=true;
 	save();//save initial data
