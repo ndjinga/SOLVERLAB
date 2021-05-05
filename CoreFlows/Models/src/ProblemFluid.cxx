@@ -203,7 +203,7 @@ void ProblemFluid::initialize()
 		SNESType snestype;
 	
 		// set nonlinear solver
-		if (_nonLinearSolver == Newton_PETSC_LINESEARCH)
+		if (_nonLinearSolver == Newton_PETSC_LINESEARCH || _nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC || _nonLinearSolver == Newton_PETSC_LINESEARCH_BT || _nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT || _nonLinearSolver == Newton_PETSC_LINESEARCH_LEQERR)
 			snestype = (char*)&SNESNEWTONLS;
 		else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
 			snestype = (char*)&SNESNEWTONTR;
@@ -223,7 +223,15 @@ void ProblemFluid::initialize()
 		SNESSetType( _snes, snestype);
 		SNESLineSearch linesearch;
 		SNESGetLineSearch( _snes, &linesearch);
-		SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBASIC );;
+		if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC)
+			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBASIC );
+		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BT)
+			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBT );
+		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT)
+			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHL2 );
+		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_LEQERR)
+			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHLEQERR );
+
 		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
 		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
 	}
@@ -250,7 +258,7 @@ bool ProblemFluid::solveNewtonPETSc()
 
 	int its;
     SNESGetIterationNumber(_snes,&its);
-    PetscPrintf(PETSC_COMM_WORLD,"number of SNES iterations = %D\n\n",its);
+    PetscPrintf(PETSC_COMM_WORLD,"Number of SNES iterations = %D\n\n",its);
 
 	return true;
 }
