@@ -198,7 +198,7 @@ void ProblemFluid::initialize()
 	PCSetType(_pc, _pctype);
 
 	// Creation du solveur de Newton de PETSc
-	if(_nonLinearSolver != Newton_SOLVERLAB)
+	if( _timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
 	{
 		SNESType snestype;
 	
@@ -238,10 +238,10 @@ bool ProblemFluid::initTimeStep(double dt){
 }
 
 bool ProblemFluid::solveTimeStep(){
-	if(_nonLinearSolver == Newton_SOLVERLAB)
-		return ProblemCoreFlows::solveTimeStep();
-	else
+	if(_timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
 		return solveNewtonPETSc();
+	else
+		return ProblemCoreFlows::solveTimeStep();
 }
 
 bool ProblemFluid::solveNewtonPETSc()
@@ -261,7 +261,7 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 
 	if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
 		_maxvp=0.;
-		computeTimeStep(stop);//This compute timestep is just to update the linear system. The time step was imposed befor starting the Newton iterations
+		computeTimeStep(stop);//This compute timestep is just to update the linear system. The time step was imposed before starting the Newton iterations
 	}
 	if(stop){//Le compute time step ne s'est pas bien passé
 		cout<<"ComputeTimeStep failed"<<endl;
@@ -351,11 +351,6 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 			*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
 		}
 	}
-	_minm1=1e30;
-	_minm2=1e30;
-	_nbMaillesNeg=0;
-	_nbVpCplx =0;
-	_part_imag_max=0;
 
 	return true;
 }
@@ -2153,6 +2148,6 @@ void ProblemFluid::terminate(){
 		delete _fluides[i];
 
 	// Destruction du solveur de Newton de PETSc
-	if(_nonLinearSolver != Newton_SOLVERLAB)
+	if(_timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
 		SNESDestroy(&_snes);
 }
