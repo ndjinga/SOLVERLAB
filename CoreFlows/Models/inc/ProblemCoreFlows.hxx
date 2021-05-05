@@ -60,6 +60,10 @@ enum nonLinearSolver
 {
 	Newton_SOLVERLAB,/**< nonLinearSolver is Newton_SOLVERLAB */
 	Newton_PETSC_LINESEARCH,/**< nonLinearSolver is Newton_PETSC_LINESEARCH */
+	Newton_PETSC_LINESEARCH_BASIC,/**< nonLinearSolver is Newton_PETSC_LINESEARCH_BASIC */
+	Newton_PETSC_LINESEARCH_BT,/**< nonLinearSolver is Newton_PETSC_LINESEARCH_BT */
+	Newton_PETSC_LINESEARCH_SECANT,/**< nonLinearSolver is Newton_PETSC_LINESEARCH_SECANT */
+	Newton_PETSC_LINESEARCH_LEQERR,/**< nonLinearSolver is Newton_PETSC_LINESEARCH_LEQERR */
 	Newton_PETSC_TRUSTREGION,/**< nonLinearSolver is Newton_PETSC_TRUSTREGION */
 	Newton_PETSC_NGMRES,/**< nonLinearSolver is Newton_PETSC_NGMRES */
 	Newton_PETSC_ASPIN/**< nonLinearSolver is Newton_PETSC_ASPIN */
