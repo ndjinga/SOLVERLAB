@@ -203,7 +203,7 @@ void ProblemFluid::initialize()
 		SNESType snestype;
 	
 		// set nonlinear solver
-		if (_nonLinearSolver == Newton_PETSC_LINESEARCH || _nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC || _nonLinearSolver == Newton_PETSC_LINESEARCH_BT || _nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT || _nonLinearSolver == Newton_PETSC_LINESEARCH_LEQERR)
+		if (_nonLinearSolver == Newton_PETSC_LINESEARCH || _nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC || _nonLinearSolver == Newton_PETSC_LINESEARCH_BT || _nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT || _nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
 			snestype = (char*)&SNESNEWTONLS;
 		else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
 			snestype = (char*)&SNESNEWTONTR;
@@ -229,8 +229,8 @@ void ProblemFluid::initialize()
 			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBT );
 		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT)
 			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHL2 );
-		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_LEQERR)
-			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHLEQERR );
+		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
+			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHNLEQERR );
 
 		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
 		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
