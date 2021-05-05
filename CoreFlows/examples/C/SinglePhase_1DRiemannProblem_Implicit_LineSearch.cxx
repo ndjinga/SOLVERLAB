@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 	myProblem.setSaveFileFormat(CSV);
 	
 	myProblem.setLinearSolver(GMRES, ILU);
-	myProblem.setNewtonSolver(precision,1, Newton_SOLVERLAB);
+	myProblem.setNewtonSolver(precision,1, Newton_PETSC_LINESEARCH);
 	myProblem.usePrimitiveVarsInNewton(false);
 	
 	// evolution
