@@ -362,6 +362,10 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 
 double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 
+	if(_verbose && _nbTimeStep%_freqSave ==0){
+		cout << "ProblemFluid::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+		cout << endl;
+	}
 	if(_restartWithNewTimeScheme)//This is a change of time scheme during a simulation
 	{
 		if(_timeScheme == Implicit)
@@ -719,8 +723,11 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 		MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 		if(_verbose && _nbTimeStep%_freqSave ==0){
-			cout << "Fin ProblemFluid.cxx : matrice implicite"<<endl;
+			cout << "ProblemFluid::computeTimeStep : Fin calcul matrice implicite et second membre"<<endl;
+			cout << "ProblemFluid::computeTimeStep : Matrice implicite :"<<endl;
 			MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+			cout << "ProblemFluid::computeTimeStep : Second membre :"<<endl;
+			VecView(_b,  PETSC_VIEWER_STDOUT_WORLD);
 			cout << endl;
 		}
 	}
@@ -737,7 +744,7 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 
 void ProblemFluid::computeNewtonVariation()
 {
-	if(_verbose)
+	if(_system)
 	{
 		cout<<"Vecteur courant Uk "<<endl;
 		VecView(_conservativeVars,PETSC_VIEWER_STDOUT_SELF);
@@ -747,7 +754,7 @@ void ProblemFluid::computeNewtonVariation()
 	{
 		VecCopy(_b,_newtonVariation);
 		VecScale(_newtonVariation, _dt);
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_system && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
 			VecView(_newtonVariation,PETSC_VIEWER_STDOUT_SELF);
@@ -756,7 +763,7 @@ void ProblemFluid::computeNewtonVariation()
 	}
 	else
 	{
-		if(_verbose)
+		if(_system)
 		{
 			cout << "Matrice du système linéaire avant contribution delta t" << endl;
 			MatView(_A,PETSC_VIEWER_STDOUT_SELF);
@@ -778,7 +785,7 @@ void ProblemFluid::computeNewtonVariation()
 		KSPSetOperators(_ksp, _A, _A,SAME_NONZERO_PATTERN);
 #endif
 
-		if(_verbose)
+		if(_system)
 		{
 			cout << "Matrice du système linéaire après contribution delta t" << endl;
 			MatView(_A,PETSC_VIEWER_STDOUT_SELF);
@@ -837,7 +844,7 @@ void ProblemFluid::computeNewtonVariation()
 			KSPSolve(_ksp,_b, _bScaling);
 			VecPointwiseMult(_newtonVariation,_invVecScaling,_bScaling);
 		}
-		if(_verbose)
+		if(_system)
 		{
 			cout << "solution du systeme lineaire local:" << endl;
 			VecView(_newtonVariation, PETSC_VIEWER_STDOUT_SELF);
@@ -847,6 +854,11 @@ void ProblemFluid::computeNewtonVariation()
 }
 
 void ProblemFluid::computeNewtonRHS( Vec X, Vec F_X){//dt is known and will contribute to the right hand side of the Newton scheme
+
+	if(_verbose && _nbTimeStep%_freqSave ==0){
+		cout << "ProblemFluid::computeNewtonRHS : Début calcul second membre"<<endl;
+		cout << endl;
+	}
 
 	VecCopy(X,_conservativeVars);
 	VecAssemblyBegin(_conservativeVars);
@@ -1060,9 +1072,15 @@ void ProblemFluid::computeNewtonRHS( Vec X, Vec F_X){//dt is known and will cont
 	VecAssemblyEnd(_conservativeVars);
 	VecAssemblyEnd(_b);
 	VecCopy(_b,F_X);
+
+	if(_verbose && _nbTimeStep%_freqSave ==0){
+		cout << "ProblemFluid::computeNewtonRHS : Fin calcul second membre"<<endl;
+		VecView(F_X,  PETSC_VIEWER_STDOUT_WORLD);
+		cout << endl;
+	}
 }
 
-int ProblemFluid::computeSnesRHS(SNES snes, Vec X, Vec F_X, void *ctx)
+int ProblemFluid::computeSnesRHS(SNES snes, Vec X, Vec F_X, void *ctx)//Prototype imposé par PETSc
 {
 	ProblemFluid * myProblem = (ProblemFluid *) ctx;
 	myProblem->computeNewtonRHS( X, F_X);
@@ -1071,6 +1089,11 @@ int ProblemFluid::computeSnesRHS(SNES snes, Vec X, Vec F_X, void *ctx)
 }
 
 void ProblemFluid::computeNewtonJacobian( Vec X, Mat A){//dt is known and will contribute to the jacobian matrix of the Newton scheme
+
+	if(_verbose && _nbTimeStep%_freqSave ==0){
+		cout << "ProblemFluid::computeNewtonJacobian : Début calcul Jacobienne schéma Newton pour PETSc"<<endl;
+		cout << endl;
+	}
 
 	if(_timeScheme == Explicit){
 		MatCreateConstantDiagonal(PETSC_COMM_SELF, _nVar, _nVar, _nVar*_Nmailles, _nVar*_Nmailles,1., &A);
@@ -1399,9 +1422,15 @@ void ProblemFluid::computeNewtonJacobian( Vec X, Mat A){//dt is known and will c
 	MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
 	MatShift(A, 1/_dt);
+
+	if(_verbose && _nbTimeStep%_freqSave ==0){
+		cout << "ProblemFluid::computeNewtonJacobian : Fin calcul Jacobienne schéma Newton pour PETSc"<<endl;
+		MatView(A,PETSC_VIEWER_STDOUT_SELF);
+		cout << endl;
+	}
 }
 
-int ProblemFluid::computeSnesJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx)
+int ProblemFluid::computeSnesJacobian(SNES snes, Vec X, Mat A, Mat Aapprox, void *ctx)//Propotype imposé par PETSc
 {
 	ProblemFluid * myProblem = (ProblemFluid *) ctx;
 	myProblem->computeNewtonJacobian( X, A);
