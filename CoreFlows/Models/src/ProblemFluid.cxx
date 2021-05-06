@@ -232,6 +232,11 @@ void ProblemFluid::initialize()
 		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
 			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHNLEQERR );
 
+		PetscViewer monitorLineSearch;
+		PetscViewerCreate(PETSC_COMM_WORLD,&monitorLineSearch);
+		PetscViewerSetType(monitorLineSearch, PETSCVIEWERASCII);		
+		SNESLineSearchSetDefaultMonitor(linesearch,monitorLineSearch);
+		
 		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
 		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
 	}
