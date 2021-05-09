@@ -55,9 +55,10 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	plt.ylim( initialPressure_Right - 0.1*(initialPressure_Left-initialPressure_Right), initialPressure_Left +  0.5*(initialPressure_Left-initialPressure_Right) )
 	plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
 	dx=(xsup-xinf)/nx
-	x=[xinf+0.5*dx + i*dx for i in range(nx)]   # array of cell center (1D mesh)
-	#densityField=VTK_routines.Extract_field_data_over_line_to_numpyArray(myProblem.getDensityField(), xinf,xsup,nx)
-	#line1, = plt.plot(x, densityField,  label='Time step 0')
+	x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
+	myDensityField = myProblem.getDensityField()
+	#densityArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myDensityField(), [xinf,0,0], [xsup,0,0],nx)
+	#line1, = plt.plot(x, densityArray,  label='Time step 0')
 
     # set the boundary conditions
 	myProblem.setNeumannBoundaryCondition("LeftBoundary");
