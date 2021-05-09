@@ -89,6 +89,13 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 
 	print( "------------ End of calculation !!! -----------" );
 
+	momentumField=myProblem.getMomentumField()
+	print("Momentum X in first cell ", momentumField[0,0])
+	print("Momentum Y in first cell ", momentumField[0,1])
+
+	densityField=myProblem.getDensityField()
+	print("density X in first cell ", densityField[0])
+
 	myProblem.terminate();
 	return ok
 
