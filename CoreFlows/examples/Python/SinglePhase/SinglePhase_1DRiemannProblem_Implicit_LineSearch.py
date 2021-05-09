@@ -3,6 +3,8 @@
 
 import CoreFlows as cf
 import cdmath as cm
+import matplotlib.pyplot as plt
+import VTK_routines
 
 def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 
@@ -11,7 +13,7 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=4.2;
-	nx=2;
+	nx=50;
 	discontinuity=(xinf+xsup)/2
 	M=cm.Mesh(xinf,xsup,nx)
 	eps=1e-6
@@ -45,6 +47,17 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
     #Initial field creation
 	print("Building initial data " ); 
 	myProblem.setInitialFieldStepFunction(M,VV_Left,VV_Right,discontinuity);
+
+    #Postprocessing
+	plt.xlabel('x')
+	plt.ylabel('Pressure')
+	plt.xlim(xinf,xsup)
+	plt.ylim( initialPressure_Right - 0.1*(initialPressure_Left-initialPressure_Right), initialPressure_Left +  0.5*(initialPressure_Left-initialPressure_Right) )
+	plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
+	dx=(xsup-xinf)/nx
+	x=[xinf+0.5*dx + i*dx for i in range(nx)]   # array of cell center (1D mesh)
+	#densityField=VTK_routines.Extract_field_data_over_line_to_numpyArray(myProblem.getDensityField(), xinf,xsup,nx)
+	#line1, = plt.plot(x, densityField,  label='Time step 0')
 
     # set the boundary conditions
 	myProblem.setNeumannBoundaryCondition("LeftBoundary");
