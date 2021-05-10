@@ -48,18 +48,6 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	print("Building initial data " ); 
 	myProblem.setInitialFieldStepFunction(M,VV_Left,VV_Right,discontinuity);
 
-    #Postprocessing
-	plt.xlabel('x')
-	plt.ylabel('Pressure')
-	plt.xlim(xinf,xsup)
-	plt.ylim( initialPressure_Right - 0.1*(initialPressure_Left-initialPressure_Right), initialPressure_Left +  0.5*(initialPressure_Left-initialPressure_Right) )
-	plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
-	dx=(xsup-xinf)/nx
-	x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
-	myDensityField = myProblem.getDensityField()
-	#densityArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myDensityField(), [xinf,0,0], [xsup,0,0],nx)
-	#line1, = plt.plot(x, densityArray,  label='Time step 0')
-
     # set the boundary conditions
 	myProblem.setNeumannBoundaryCondition("LeftBoundary");
 	myProblem.setNeumannBoundaryCondition("RightBoundary");
@@ -93,7 +81,34 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
     # evolution
 	myProblem.initialize();
 
+    #Postprocessing
+	plt.xlabel('x')
+	plt.ylabel('Pressure')
+	plt.xlim(xinf,xsup)
+	plt.ylim( initialPressure_Right - 0.1*(initialPressure_Left-initialPressure_Right), initialPressure_Left +  0.5*(initialPressure_Left-initialPressure_Right) )
+	plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
+	dx=(xsup-xinf)/nx
+	x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
+	myPressureField = myProblem.getPressureField()
+	pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField, [xinf,0,0], [xsup,0,0],nx)
+	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step 0')
+	plt.legend()
+	plt.savefig(fileName+".png")
+	#myDensityField = myProblem.getDensityField()
+	#densityArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myDensityField, [xinf,0,0], [xsup,0,0],nx)
+	#linedensity, = plt.plot(x, densityArray,  label='Density time step 0')
+	#plt.legend()
+	#plt.savefig(fileName+".png")
+
 	ok = myProblem.run();
+
+	#myPressureField = myProblem.getPressureField()
+	#myPressureField.setName("FinalPressure")
+	#pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField, [xinf,0,0], [xsup,0,0],nx)
+	#line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(MaxNbOfTimeStep))
+	#plt.legend()
+	#plt.savefig(fileName+".png")
+
 	if (ok):
 		print( "Simulation python " + fileName + " is successful !" );
 		pass
@@ -103,12 +118,6 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 
 	print( "------------ End of calculation !!! -----------" );
 
-	momentumField=myProblem.getMomentumField()
-	print("Momentum X in first cell ", momentumField[0,0])
-	print("Momentum Y in first cell ", momentumField[0,1])
-
-	densityField=myProblem.getDensityField()
-	print("density X in first cell ", densityField[0])
 
 	myProblem.terminate();
 	return ok
