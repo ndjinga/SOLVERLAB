@@ -237,6 +237,8 @@ void ProblemFluid::initialize()
 		PetscViewerSetType(monitorLineSearch, PETSCVIEWERASCII);		
 		SNESLineSearchSetDefaultMonitor(linesearch,monitorLineSearch);
 		
+		SNESSetTolerances(_snes,_precision,_precision,_precision,_maxNewtonIts,-1);
+
 		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
 		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
 	}
