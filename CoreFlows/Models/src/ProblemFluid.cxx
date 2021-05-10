@@ -267,7 +267,25 @@ bool ProblemFluid::solveNewtonPETSc()
     SNESGetIterationNumber(_snes,&its);
     PetscPrintf(PETSC_COMM_WORLD,"Number of SNES iterations = %D\n\n",its);
 
-	return true;
+    SNESConvergedReason reason;
+	SNESGetConvergedReason(_snes,&reason);
+
+	if(reason == SNES_CONVERGED_FNORM_ABS  )
+		cout<<"Converged with absolute norm (absolute tolerance) less than "<<_precision<<", (||F|| < atol)"<<endl;
+	else if(reason == SNES_CONVERGED_FNORM_RELATIVE  )
+		cout<<"Converged because residual has decreased by a factor less than "<<_precision<<", (||F|| < rtol*||F_initial||)"<<endl;
+	else if(reason == SNES_CONVERGED_SNORM_RELATIVE  )
+		cout<<"Converged with  relative norm (relative tolerance) less than "<<_precision<<", (|| delta x || < stol || x ||)"<<endl;
+	else if(reason == SNES_CONVERGED_ITS  )
+		cout<<"SNESConvergedSkip() was chosen as the convergence test; thus the usual convergence criteria have not been checked and may or may not be satisfied"<<endl;
+	else if(reason == SNES_DIVERGED_LINEAR_SOLVE  )
+		cout<<"Solving linear system failed"<<endl;
+	else if(reason ==  SNES_DIVERGED_LINE_SEARCH   )
+		cout<<"Line search failed"<<endl;
+	else if(reason ==   SNES_DIVERGED_MAX_IT    )
+		cout<<"Reached the maximum number of iterations"<<endl;
+
+	return reason>0;
 }
 
 bool ProblemFluid::iterateTimeStep(bool &converged)
