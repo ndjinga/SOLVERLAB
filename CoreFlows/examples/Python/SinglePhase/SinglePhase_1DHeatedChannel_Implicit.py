@@ -22,7 +22,7 @@ def SinglePhase_1DHeatedChannel_Implicit():
 	outletPressure=155e5;
 
     # physical parameters
-	heatPower=1e7;
+	heatPower=1e8;
 
 	myProblem = cf.SinglePhase(cf.Liquid,cf.around155bars600K,spaceDim);
 	nVar =  myProblem.getNumberOfVariables();
@@ -54,8 +54,8 @@ def SinglePhase_1DHeatedChannel_Implicit():
 	fileName = "1DHeatedChannelUpwind_Implicit";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 3 ;
-	freqSave = 1;
+	MaxNbOfTimeStep = 1000 ;
+	freqSave = 100;
 	cfl = 100;
 	maxTime = 500;
 	precision = 1e-7;
@@ -82,7 +82,7 @@ def SinglePhase_1DHeatedChannel_Implicit():
 	plt.xlabel('x')
 	plt.ylabel('Pressure')
 	plt.xlim(xinf,xsup)
-	plt.ylim( 0.99*outletPressure, 1.01*outletPressure )
+	plt.ylim( 0.999*outletPressure, 1.001*outletPressure )
 	plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
 	dx=(xsup-xinf)/nx
 	x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
@@ -96,10 +96,10 @@ def SinglePhase_1DHeatedChannel_Implicit():
 
 	ok = myProblem.run();
 
-	myPressureField = myProblem.getPressureField()
 	myPressureField.writeVTK("PressureField")
-	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(MaxNbOfTimeStep)+".vtu", [xinf,0,0], [xsup,0,0],nx)
-	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(MaxNbOfTimeStep))
+	timeStep=myProblem.getNbTimeStep()#Final time step
+	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(timeStep)+".vtu", [xinf,0,0], [xsup,0,0],nx)
+	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(timeStep))
 	plt.legend()
 	plt.savefig(fileName+".png")
 
