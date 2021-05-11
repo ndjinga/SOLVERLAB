@@ -90,24 +90,21 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	dx=(xsup-xinf)/nx
 	x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
 	myPressureField = myProblem.getPressureField()
-	pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField, [xinf,0,0], [xsup,0,0],nx)
+
+	myPressureField.writeVTK("PressureField")
+	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField"+"_0.vtu", [xinf,0,0], [xsup,0,0],nx)
 	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step 0')
 	plt.legend()
 	plt.savefig(fileName+".png")
-	#myDensityField = myProblem.getDensityField()
-	#densityArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myDensityField, [xinf,0,0], [xsup,0,0],nx)
-	#linedensity, = plt.plot(x, densityArray,  label='Density time step 0')
-	#plt.legend()
-	#plt.savefig(fileName+".png")
 
 	ok = myProblem.run();
 
-	#myPressureField = myProblem.getPressureField()
-	#myPressureField.setName("FinalPressure")
-	#pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField, [xinf,0,0], [xsup,0,0],nx)
-	#line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(MaxNbOfTimeStep))
-	#plt.legend()
-	#plt.savefig(fileName+".png")
+	myPressureField = myProblem.getPressureField()
+	myPressureField.writeVTK("PressureField")
+	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(MaxNbOfTimeStep)+".vtu", [xinf,0,0], [xsup,0,0],nx)
+	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(MaxNbOfTimeStep))
+	plt.legend()
+	plt.savefig(fileName+".png")
 
 	if (ok):
 		print( "Simulation python " + fileName + " is successful !" );
