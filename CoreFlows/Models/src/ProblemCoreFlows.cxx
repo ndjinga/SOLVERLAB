@@ -552,15 +552,15 @@ bool ProblemCoreFlows::solveTimeStep(){
 
 		if(_timeScheme == Implicit && _nbTimeStep%_freqSave ==0)//To monitor the convergence of the newton scheme
 		{
-			cout << "\n Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << " : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
-			*_runLogFile<< "\n Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << " : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
+			cout << " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
+			*_runLogFile<< "\n Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
 
 			if(_conditionNumber)
 			{
 				PetscReal sv_max, sv_min;
 				KSPComputeExtremeSingularValues(_ksp, &sv_max, &sv_min);
-				cout<<" singular value max = " << sv_max <<" singular value min = " << sv_min <<" condition number = " << sv_max/sv_min <<endl;
-				*_runLogFile<<" singular value max = " << sv_max <<" singular value min = " << sv_min <<" condition number = " << sv_max/sv_min <<endl;
+				cout<<" Singular value max = " << sv_max <<", singular value min = " << sv_min <<", condition number = " << sv_max/sv_min <<endl;
+				*_runLogFile<<" Singular value max = " << sv_max <<", singular value min = " << sv_min <<", condition number = " << sv_max/sv_min <<endl;
 			}
 		}
 		_NEWTON_its++;
@@ -580,8 +580,7 @@ bool ProblemCoreFlows::solveTimeStep(){
 		cout<<endl;
 		cout << "Nombre d'iterations de Newton "<< _NEWTON_its << ", Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl;
 		*_runLogFile <<endl;
-		*_runLogFile << "Nombre d'iterations de Newton "<< _NEWTON_its << " Variation ||Un+1-Un||= "<< _erreur_rel<<endl;
-		*_runLogFile << "Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl;
+		*_runLogFile << "Nombre d'iterations de Newton "<< _NEWTON_its << "Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl;
 		_MaxIterLinearSolver = 0;
 	}
 
