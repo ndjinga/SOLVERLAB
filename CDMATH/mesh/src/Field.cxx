@@ -1108,6 +1108,15 @@ Field::getValuesOnComponent(int compo) const
 	return v;
 }
 
+std::vector< double > 
+Field::getFieldValues(int compo) const 
+{
+	std::vector< double > v(getNumberOfElements());
+	for(int i=0;i<getNumberOfElements();i++)
+		v[i]=(*this)(i,compo);
+	return v;
+}
+
 std::ostream& operator<<(std::ostream& out, const Field& field )
 {
 	cout << "Field " << field.getName() << " : " << endl ;

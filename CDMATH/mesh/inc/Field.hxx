@@ -257,6 +257,8 @@ class Field
 
     void setTime ( double time, int iter );
 
+    std::vector< double > getFieldValues(int compo=0) const ;
+
     Vector getValuesOnComponent(int compo) const ;
 
     Vector getValuesOnAllComponents(int elem) const ;
