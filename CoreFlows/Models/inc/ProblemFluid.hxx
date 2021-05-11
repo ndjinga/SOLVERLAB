@@ -496,7 +496,11 @@ protected :
 	SpaceScheme _spaceScheme;
 	/** the formulation used to compute the non viscous fluxes **/
 	NonLinearFormulation _nonLinearFormulation;
+
+	/** PETSc nonlinear solver and line search **/
 	SNES _snes;
+	SNESLineSearch _linesearch;
+	PetscViewer _monitorLineSearch;
 
 	map<string, LimitField> _limitField;
 

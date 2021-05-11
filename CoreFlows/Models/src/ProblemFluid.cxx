@@ -221,23 +221,20 @@ void ProblemFluid::initialize()
 
 		SNESCreate(PETSC_COMM_WORLD, &_snes);
 		SNESSetType( _snes, snestype);
-		SNESLineSearch linesearch;
-		SNESGetLineSearch( _snes, &linesearch);
+		SNESGetLineSearch( _snes, &_linesearch);
 		if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC)
-			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBASIC );
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHBASIC );
 		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BT)
-			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHBT );
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHBT );
 		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT)
-			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHL2 );
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHL2 );
 		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
-			SNESLineSearchSetType( linesearch, 	SNESLINESEARCHNLEQERR );
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHNLEQERR );
 
-		PetscViewer monitorLineSearch;
-		PetscViewerCreate(PETSC_COMM_WORLD,&monitorLineSearch);
-		PetscViewerSetType(monitorLineSearch, PETSCVIEWERASCII);		
-		SNESLineSearchSetDefaultMonitor(linesearch,monitorLineSearch);
-		
-		SNESSetTolerances(_snes,_precision,_precision,_precision,_maxNewtonIts,-1);
+		PetscViewerCreate(PETSC_COMM_WORLD,&_monitorLineSearch);
+		PetscViewerSetType(_monitorLineSearch, PETSCVIEWERASCII);		
+
+		SNESSetTolerances(_snes,_precision_Newton,_precision_Newton,_precision_Newton,_maxNewtonIts,-1);
 
 		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
 		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
@@ -261,6 +258,11 @@ bool ProblemFluid::solveTimeStep(){
 
 bool ProblemFluid::solveNewtonPETSc()
 {	
+	if( _nbTimeStep%_freqSave ==0)
+		SNESLineSearchSetDefaultMonitor(_linesearch, _monitorLineSearch);
+	else
+		SNESLineSearchSetDefaultMonitor(_linesearch, NULL);
+
     SNESSolve(_snes,NULL,_conservativeVars);
 
 	int its;
@@ -271,11 +273,11 @@ bool ProblemFluid::solveNewtonPETSc()
 	SNESGetConvergedReason(_snes,&reason);
 
 	if(reason == SNES_CONVERGED_FNORM_ABS  )
-		cout<<"Converged with absolute norm (absolute tolerance) less than "<<_precision<<", (||F|| < atol)"<<endl;
+		cout<<"Converged with absolute norm (absolute tolerance) less than "<<_precision_Newton<<", (||F|| < atol)"<<endl;
 	else if(reason == SNES_CONVERGED_FNORM_RELATIVE  )
-		cout<<"Converged because residual has decreased by a factor less than "<<_precision<<", (||F|| < rtol*||F_initial||)"<<endl;
+		cout<<"Converged because residual has decreased by a factor less than "<<_precision_Newton<<", (||F|| < rtol*||F_initial||)"<<endl;
 	else if(reason == SNES_CONVERGED_SNORM_RELATIVE  )
-		cout<<"Converged with  relative norm (relative tolerance) less than "<<_precision<<", (|| delta x || < stol || x ||)"<<endl;
+		cout<<"Converged with  relative norm (relative tolerance) less than "<<_precision_Newton<<", (|| delta x || < stol || x ||)"<<endl;
 	else if(reason == SNES_CONVERGED_ITS  )
 		cout<<"SNESConvergedSkip() was chosen as the convergence test; thus the usual convergence criteria have not been checked and may or may not be satisfied"<<endl;
 	else if(reason == SNES_DIVERGED_LINEAR_SOLVE  )
