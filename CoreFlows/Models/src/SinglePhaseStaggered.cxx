@@ -158,7 +158,7 @@ bool SinglePhaseStaggered::iterateTimeStep(bool &converged)
 			VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
 		}
 
-		if(_nbPhases==2 && _nbTimeStep%_freqSave ==0){
+		if(_nbPhases==2 && (_nbTimeStep-1)%_freqSave ==0){
 			if(_minm1<-_precision || _minm2<-_precision)
 			{
 				cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
@@ -201,7 +201,7 @@ void SinglePhaseStaggered::computeNewtonVariation()
 		{
 			VecCopy(_b,_newtonVariation);
 			VecScale(_newtonVariation, _dt);
-			if(_verbose && _nbTimeStep%_freqSave ==0)
+			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 			{
 				cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
 				VecView(_newtonVariation,PETSC_VIEWER_STDOUT_SELF);
@@ -315,7 +315,7 @@ void SinglePhaseStaggered::convectionState( const long &i, const long &j, const 
 		VecGetValues(_Uext, _nVar, _idm, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
 		for(int k =0; k<_nVar; k++)
@@ -336,14 +336,14 @@ void SinglePhaseStaggered::convectionState( const long &i, const long &j, const 
 	ri = sqrt(_Ui[0]);//racine carre de phi_i rho_i
 	rj = sqrt(_Uj[0]);
 	_Uroe[0] = ri*rj;	//moyenne geometrique des densites
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		cout << "Densité moyenne Roe  gauche " << i << ": " << ri*ri << ", droite " << j << ": " << rj*rj << "->" << _Uroe[0] << endl;
 	for(int k=0;k<_Ndim;k++){
 		xi = _Ui[k+1];
 		xj = _Uj[k+1];
 		_Uroe[1+k] = (xi/ri + xj/rj)/(ri + rj);
 		//"moyenne" des vitesses
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+1] << endl;
 	}
 	// H = (rho E + p)/rho
@@ -368,10 +368,10 @@ void SinglePhaseStaggered::convectionState( const long &i, const long &j, const 
 	xj = (xj + pj)/(rj*rj);
 	_Uroe[_nVar-1] = (ri*xi + rj*xj)/(ri + rj);
 	//on se donne l enthalpie ici
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		cout << "Enthalpie totale de Roe H  gauche " << i << ": " << xi << ", droite " << j << ": " << xj << "->" << _Uroe[_nVar-1] << endl;
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Convection interfacial state"<<endl;
 		for(int k=0;k<_nVar;k++)
@@ -392,7 +392,7 @@ void SinglePhaseStaggered::setBoundaryState(string nameOfGroup, const int &j,dou
 
 	double porosityj=_porosityField(j);
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< " face unit normal vector "<<endl;
 		for(k=0; k<_Ndim; k++){
@@ -480,7 +480,7 @@ void SinglePhaseStaggered::setBoundaryState(string nameOfGroup, const int &j,dou
 			}
 			_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
 		}
-		else if(_nbTimeStep%_freqSave ==0)
+		else if((_nbTimeStep-1)%_freqSave ==0)
 			cout<< "Warning : fluid going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
 
 		_idm[0] = 0;
@@ -511,7 +511,7 @@ void SinglePhaseStaggered::setBoundaryState(string nameOfGroup, const int &j,dou
 			_externalStates[0]=porosityj*_fluides[0]->getDensity(_limitField[nameOfGroup].p+hydroPress,_limitField[nameOfGroup].T);
 		}
 		else{
-			if(_nbTimeStep%_freqSave ==0)
+			if((_nbTimeStep-1)%_freqSave ==0)
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Neumann boundary condition for velocity and temperature"<<endl;
 			_externalStates[0]=porosityj*_fluides[0]->getDensity(_limitField[nameOfGroup].p+hydroPress, _externalStates[_nVar-1]);
 		}
@@ -535,7 +535,7 @@ void SinglePhaseStaggered::setBoundaryState(string nameOfGroup, const int &j,dou
 		VecAssemblyEnd(_Uextdiff);
 	}
 	else if (_limitField[nameOfGroup].bcType==Outlet){
-		if(q_n<=0 &&  _nbTimeStep%_freqSave ==0)
+		if(q_n<=0 &&  (_nbTimeStep-1)%_freqSave ==0)
 			cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition for velocity and temperature"<<endl;
 
 		//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
@@ -548,7 +548,7 @@ void SinglePhaseStaggered::setBoundaryState(string nameOfGroup, const int &j,dou
 		}
 		hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
 
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		{
 			cout<<"Cond lim outlet densite= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
 			cout<<"Cond lim outlet pression ref= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
@@ -589,7 +589,7 @@ void SinglePhaseStaggered::convectionMatrices()
 	//entree: URoe = rho, u, H
 	//sortie: matrices Roe+  et Roe-
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		cout<<"SinglePhaseStaggered::convectionMatrices()"<<endl;
 
 	double u_n=0, u_2=0;//vitesse normale et carré du module
@@ -627,7 +627,7 @@ void SinglePhaseStaggered::convectionMatrices()
 		if(_maxvploc>_maxvp)
 			_maxvp=_maxvploc;
 
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 			cout<<"SinglePhaseStaggered::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
 
 		RoeMatrixConservativeVariables( u_n, H,vitesse,k,K);
@@ -707,7 +707,7 @@ void SinglePhaseStaggered::convectionMatrices()
 					_AroePlusImplicit[i]  = _AroePlus[i];
 				}
 		}
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		{
 			displayMatrix(_Aroe, _nVar,"Matrice de Roe");
 			displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
@@ -716,7 +716,7 @@ void SinglePhaseStaggered::convectionMatrices()
 		}
 	}
 
-	if(_verbose && _nbTimeStep%_freqSave ==0 && _timeScheme==Implicit)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0 && _timeScheme==Implicit)
 	{
 		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinusImplicit");
 		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlusImplicit");
@@ -807,7 +807,7 @@ void SinglePhaseStaggered::sourceVector(PetscScalar * Si, PetscScalar * Ui, Pets
 			}
 		}
 	}
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"SinglePhaseStaggered::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
@@ -852,7 +852,7 @@ void SinglePhaseStaggered::pressureLossVector(PetscScalar * pressureLoss, double
 	}
 	pressureLoss[_nVar-1]=-1/2*K*rho*norm_u*norm_u*norm_u;
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"SinglePhaseStaggered::pressureLossVector K= "<<K<<endl;
 		cout<<"Ui="<<endl;
@@ -896,7 +896,7 @@ void SinglePhaseStaggered::porosityGradientSourceVector()
 
 void SinglePhaseStaggered::jacobian(const int &j, string nameOfGroup,double * normale)
 {
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		cout<<"Jacobienne condition limite convection bord "<< nameOfGroup<<endl;
 
 	int k;
@@ -1114,7 +1114,7 @@ void SinglePhaseStaggered::jacobian(const int &j, string nameOfGroup,double * no
 
 
 Vector SinglePhaseStaggered::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"SinglePhaseStaggered::convectionFlux start"<<endl;
 		cout<<"Ucons"<<endl;
@@ -1144,7 +1144,7 @@ Vector SinglePhaseStaggered::convectionFlux(Vector U,Vector V, Vector normale, d
 		F(1+i)=phirho*vitessen*vitesse(i)+pression*normale(i)*porosity;
 	F(1+_Ndim)=phirho*(e_int+0.5*vitesse*vitesse+pression/rho)*vitessen;
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"SinglePhaseStaggered::convectionFlux end"<<endl;
 		cout<<"Flux F(U,V)"<<endl;
@@ -1215,7 +1215,7 @@ void SinglePhaseStaggered::getDensityDerivatives( double pressure, double temper
 		throw CdmathException("SinglePhaseStaggered::staggeredVFFCMatricesPrimitiveVariables: eos should be StiffenedGas or StiffenedGasDellacherie");
 	}
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"_drho_sur_dp= "<<_drho_sur_dp<<", _drho_sur_dT= "<<_drho_sur_dT<<endl;
 		cout<<"_drhoE_sur_dp= "<<_drhoE_sur_dp<<", _drhoE_sur_dT= "<<_drhoE_sur_dT<<endl;

@@ -429,7 +429,7 @@ bool ProblemCoreFlows::run()
 	bool ok; // Is the time interval successfully solved ?
 	_isStationary=false;//in case of a second run with a different physics or cfl
 
-	cout<< "Running test case "<< _fileName<<endl;
+	cout<< "Running test case "<< _fileName<<endl<<endl;
 
 	_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
 	*_runLogFile<< "Running test case "<< _fileName<<endl;
@@ -481,9 +481,9 @@ bool ProblemCoreFlows::run()
 			else // The resolution was successful, validate and go to the next time step.
 			{
 				validateTimeStep();
-				if (_nbTimeStep%_freqSave ==0){
-					cout << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl;
-					*_runLogFile << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl;
+				if ((_nbTimeStep-1)%_freqSave ==0){
+					cout << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
+					*_runLogFile << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
 				}
 			}
 		}
@@ -550,10 +550,10 @@ bool ProblemCoreFlows::solveTimeStep(){
 	while(!converged && ok && _NEWTON_its < _maxNewtonIts){
 		ok=iterateTimeStep(converged);//resolution du systeme lineaire si schema implicite
 
-		if(_timeScheme == Implicit && _nbTimeStep%_freqSave ==0)//To monitor the convergence of the newton scheme
+		if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)//To monitor the convergence of the newton scheme
 		{
 			cout << " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
-			*_runLogFile<< "\n Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
+			*_runLogFile<< " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
 
 			if(_conditionNumber)
 			{
@@ -575,12 +575,11 @@ bool ProblemCoreFlows::solveTimeStep(){
 			*_runLogFile<<"iterateTimeStep: solving Newton iteration "<<_NEWTON_its<<" Failed"<<endl;
 		}
 	}
-	else if(_timeScheme == Implicit && _nbTimeStep%_freqSave ==0)
+	else if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)
 	{
-		cout<<endl;
-		cout << "Nombre d'iterations de Newton "<< _NEWTON_its << ", Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl;
+		cout << "Nombre d'iterations de Newton "<< _NEWTON_its << ", Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl << endl;
 		*_runLogFile <<endl;
-		*_runLogFile << "Nombre d'iterations de Newton "<< _NEWTON_its << "Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl;
+		*_runLogFile << "Nombre d'iterations de Newton "<< _NEWTON_its << "Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl << endl;
 		_MaxIterLinearSolver = 0;
 	}
 

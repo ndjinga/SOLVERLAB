@@ -569,7 +569,7 @@ bool DiffusionEquation::initTimeStep(double dt){
 
 	_dt = dt;
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
 
 	return _dt>0;
@@ -692,12 +692,12 @@ void DiffusionEquation::validateTimeStep()
 	VecCopy(_Tk, _Tn);
 	VecCopy(_Tk, _Tkm1);
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		cout <<"Valeur propre locale max: " << _maxvp << endl;
 
 	_time+=_dt;
 	_nbTimeStep++;
-	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
+	if ((_nbTimeStep-1)%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
         save();
 }
 

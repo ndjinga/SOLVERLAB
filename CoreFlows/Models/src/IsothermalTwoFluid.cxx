@@ -85,7 +85,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		VecGetValues(_Uext, _nVar, _idm, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
 		for(int k =0; k<_nVar; k++)
@@ -114,7 +114,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		_idm[k] = _idm[k-1] + 1;
 	VecGetValues(_primitiveVars, _nVar, _idm, _l);
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Etat de Roe, etat primitif gauche: "<<endl;
 		for(int i =0; i<_nVar; i++)
@@ -136,7 +136,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		VecGetValues(_primitiveVars, _nVar, _idm, _r);
 	}
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Etat de Roe, etat primitif droite: "<<endl;
 		for(int i =0; i<_nVar; i++)
@@ -183,7 +183,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		else
 			_Uroe[2+k+_Ndim] = (xi/ri1 + xj/rj1)/(ri1 + rj1);
 	}
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Etat de Roe calcule: "<<endl;
 		for(int k=0;k<_nVar; k++)//At this point _Uroe[_nVar] is not yet set
@@ -274,7 +274,7 @@ void IsothermalTwoFluid::convectionMatrices()
 		if (abs(pol_car[ct])<_precision*_precision)
 			pol_car[ct]=0;
 	}
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"pol caract= "<<endl;
 		for(int i =0; i<5; i++)
@@ -343,7 +343,7 @@ void IsothermalTwoFluid::convectionMatrices()
 		valeurs_propres[1]=tmp;
 	}
 	 */
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<" Vp apres tri " << valeurs_propres.size()<<endl;
 		for(int ct =0; ct<taille_vp; ct++)
@@ -532,7 +532,7 @@ void IsothermalTwoFluid::convectionMatrices()
 		for(int i=0; i<_nVar*_nVar;i++)
 			_AroeMinusImplicit[i] = _AroeMinus[i];
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<endl<<"Matrice de Roe"<<endl;
 		for(int i=0; i<_nVar;i++)
@@ -578,7 +578,7 @@ void IsothermalTwoFluid::setBoundaryState(string nameOfGroup, const int &j,doubl
 		q2_n+=_externalStates[(k+1+1+_Ndim)]*normale[k];
 	}
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout << "Boundary conditions for group "<< nameOfGroup<< ", inner cell j= "<<j << " face unit normal vector "<<endl;
 		for(k=0; k<_Ndim; k++){
@@ -706,7 +706,7 @@ void IsothermalTwoFluid::setBoundaryState(string nameOfGroup, const int &j,doubl
 		VecAssemblyEnd(_Uext);
 		VecAssemblyEnd(_Uextdiff);
 
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		{
 			cout<<"Etat fantôme InletPressure"<<endl;
 			for(int k=0;k<_nVar;k++)
@@ -778,7 +778,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	if (_verbose && _nbTimeStep%_freqSave ==0)
+	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " << i<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -802,7 +802,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 		consToPrim(_phi,_Vj);
 	}
 
-	if (_verbose && _nbTimeStep%_freqSave ==0)
+	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " <<j <<endl;
 		for(int q=0; q<_nVar; q++)
@@ -827,7 +827,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille " << i << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -847,7 +847,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 	}
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille  " << j << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -911,7 +911,7 @@ void IsothermalTwoFluid::sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscSca
 			_GravityImplicitationMatrix[i*_nVar+_nVar/2]=-_gravite[i];
 	}
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"IsothermalTwoFluid::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
@@ -971,7 +971,7 @@ void IsothermalTwoFluid::pressureLossVector(PetscScalar * pressureLoss, double K
 		for(int i=0;i<_Ndim;i++)
 			pressureLoss[2+i+_Ndim]=-K*m2*norm_u2*Vj[2+i+_Ndim];
 	}
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"IsothermalTwoFluid::pressureLossVector K= "<<K<<endl;
 		cout<<"Ui="<<endl;
@@ -1093,7 +1093,7 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	vector< complex<double> > vp_left = getRacines(pol_car);
 	int taille_vp_left = Polynoms::new_tri_selectif(vp_left,vp_left.size(),_precision);
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Entropic shift left eigenvalues: "<<endl;
 		for(unsigned int ct =0; ct<vp_left.size(); ct++)
@@ -1132,7 +1132,7 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	vector< complex<double> > vp_right = getRacines(pol_car);
 	int taille_vp_right = Polynoms::new_tri_selectif(vp_right,vp_right.size(),_precision);
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"Entropic shift right eigenvalues: "<<endl;
 		for(unsigned int ct =0; ct<vp_right.size(); ct++)
@@ -1144,7 +1144,7 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	_entropicShift[1]=0;
 	for(int i=1;i<min(taille_vp_right-1,taille_vp_left-1);i++)
 		_entropicShift[1] = max(_entropicShift[1],abs(vp_left[i]-vp_right[i]));
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout<<"eigenvalue jumps "<<endl;
 		cout<< _entropicShift[0] << ", " << _entropicShift[1] << ", "<< _entropicShift[2] <<endl;
@@ -1370,14 +1370,14 @@ void IsothermalTwoFluid::consToPrim(const double *Wcons, double* Wprim,double po
 				_guessalpha=alphanewton;
 
 
-			if(_verbose && _nbTimeStep%_freqSave ==0)
+			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 				cout<<"consToPrim diphasique iter= " <<iter<<" dp= " << dp<<" dpprim= " << dpprim<< " _guessalpha= " << _guessalpha<<endl;
 			dp=ecartPression( m1, m2, _guessalpha, e1, e2);
 			dpprim=ecartPressionDerivee( m1, m2, _guessalpha, e1, e2);
 
 			iter++;
 		}
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 			cout<<endl;
 
 		if(iter>=iterMax)

@@ -170,7 +170,7 @@ double TransportEquation::computeTransportMatrix(){
 
 		// If Fj is on the boundary
 		if (Fj.getNumberOfCells()==1) {
-			if(_verbose && _nbTimeStep%_freqSave ==0)
+			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 			{
 				cout << "face numero " << j << " cellule frontiere " << idCells[0] << " ; vecteur normal=(";
 				for(int p=0; p<_Ndim; p++)
@@ -199,7 +199,7 @@ double TransportEquation::computeTransportMatrix(){
 			}
 			// if Fj is inside the domain
 		} else 	if (Fj.getNumberOfCells()==2 ){
-			if(_verbose && _nbTimeStep%_freqSave ==0)
+			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 			{
 				cout << "face numero " << j << " cellule gauche " << idCells[0] << " cellule droite " << idCells[1];
 				cout << " ; vecteur normal=(";
@@ -271,7 +271,7 @@ void TransportEquation::updatePrimitives()
 
 bool TransportEquation::initTimeStep(double dt){
 	_dt = dt;
-	if(_verbose && _nbTimeStep%_freqSave ==0)
+	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
 	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
@@ -413,7 +413,7 @@ void TransportEquation::validateTimeStep()
 	VecCopy(_Hk, _Hn);
 	VecCopy(_Hk, _Hkm1);
 
-	if(_nbTimeStep%_freqSave ==0)
+	if((_nbTimeStep-1)%_freqSave ==0)
 	{
 		cout <<"Valeur propre locale max: " << _maxvp << endl;
 		//Find minimum and maximum void fractions
