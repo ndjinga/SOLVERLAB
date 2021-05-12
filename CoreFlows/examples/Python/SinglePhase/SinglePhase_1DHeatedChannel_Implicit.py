@@ -73,7 +73,7 @@ def SinglePhase_1DHeatedChannel_Implicit():
 		pass
  
 	myProblem.setLinearSolver(cf.GMRES, cf.ILU)
-	myProblem.setNewtonSolver(precision,20, cf.Newton_PETSC_LINESEARCH)
+	myProblem.setNewtonSolver(1e-3, 50, cf.Newton_PETSC_LINESEARCH)
 
     # evolution
 	myProblem.initialize();
@@ -85,20 +85,19 @@ def SinglePhase_1DHeatedChannel_Implicit():
 	plt.ylim( 0.999*outletPressure, 1.001*outletPressure )
 	plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
 	dx=(xsup-xinf)/nx
-	x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
+	x=[ i*dx for i in range(nx)]   # array of cell center (1D mesh)
 
 	myPressureField = myProblem.getPressureField()
-	myPressureField.writeVTK("PressureField")
-	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField"+"_0.vtu", [xinf,0,0], [xsup,0,0],nx)
+	pressureArray=myPressureField.getFieldValues()
 	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step 0')
 	plt.legend()
 	plt.savefig(fileName+".png")
 
 	ok = myProblem.run();
 
-	myPressureField.writeVTK("PressureField")
+	myPressureField = myProblem.getPressureField()
 	timeStep=myProblem.getNbTimeStep()#Final time step
-	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(timeStep)+".vtu", [xinf,0,0], [xsup,0,0],nx)
+	pressureArray=myPressureField.getFieldValues()
 	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(timeStep))
 	plt.legend()
 	plt.savefig(fileName+".png")
