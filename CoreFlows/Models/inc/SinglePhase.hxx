@@ -16,6 +16,7 @@
 #define SINGLEPHASE_HXX_
 
 #include "ProblemFluid.hxx"
+#include "StiffenedGas.hxx"
 
 class SinglePhase : public ProblemFluid{
 public :
@@ -140,6 +141,8 @@ public :
 	 * */
 	bool iterateTimeStep(bool &ok);
 
+	//EOS functions
+	StiffenedGas getFluidEOS(){ return *dynamic_cast<StiffenedGas*>(_fluides[0]); }
 	double getReferencePressure()    { return _Pref; };
 	double getReferenceTemperature() { return _Tref; };
 	
