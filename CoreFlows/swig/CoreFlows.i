@@ -24,6 +24,7 @@ namespace std {
 #include "StationaryDiffusionEquation.hxx"
 #include "SinglePhase.hxx"
 #include "Fluide.h"
+#include "StiffenedGas.hxx"
 
 %}
 
@@ -37,4 +38,5 @@ namespace std {
 %include "StationaryDiffusionEquation.hxx"
 %include "SinglePhase.hxx"
 %include "Fluide.h"
+%include "StiffenedGas.hxx"
 
