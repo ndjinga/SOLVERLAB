@@ -4,6 +4,7 @@
 import CoreFlows as cf
 import cdmath as cm
 import matplotlib.pyplot as plt
+from numpy.linalg import norm
 import VTK_routines
 import exact_rs_stiffenedgas
 
@@ -17,6 +18,7 @@ def exact_sol_Riemann_problem(xmin,xmax, t, gamma, p0, WL, WR, offset, numsample
 	delx = (xmax - xmin)/numsamples;
 	
 	density  = [0.]*numsamples
+	velocity  = [0.]*numsamples
 	pressure = [0.]*numsamples
 
 	for i in range(numsamples):
@@ -25,7 +27,7 @@ def exact_sol_Riemann_problem(xmin,xmax, t, gamma, p0, WL, WR, offset, numsample
 		density[i] = soln[0]
 		pressure[i]= soln[2]
 
-	return density, pressure
+	return density, velocity, pressure
 	
 def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 
@@ -116,8 +118,6 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	myPressureField.writeVTK("PressureField")
 	pressureArray=VTK_routines.Extract_VTK_data_over_line_to_numpyArray("PressureField"+"_0.vtu", [xinf,0,0], [xsup,0,0],nx)
 	plt.plot(x, pressureArray,  label='Pressure time step 0')
-	plt.legend()
-	plt.savefig(fileName+".png")
 
 	ok = myProblem.run();
 
@@ -126,15 +126,21 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(myProblem.getNbTimeStep())+".vtu", [xinf,0,0], [xsup,0,0],nx)
 	plt.plot(x, pressureArray,  label='Pressure time step '+str(myProblem.getNbTimeStep()))
 
+	#Determine exact solution
 	myEOS = myProblem.getFluidEOS()
 	initialDensity_Left = myEOS.getDensity( initialPressure_Left, initialTemperature_Left)
 	initialDensity_Right = myEOS.getDensity( initialPressure_Right, initialTemperature_Right)
-	exactDensity, exactPressure = exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx+1)
-	plt.plot(x, exactPressure,  label='Exact Pressure ')
+	exactDensity, velocity, exactPressure = exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx+1)
 
+	#Plot curves
+	plt.plot(x, exactPressure,  label='Exact Pressure ')
 	plt.legend()
 	plt.savefig(fileName+".png")
 
+	#Compute numerical error
+	error_pressure = norm( exactPressure - pressureArray )/norm( exactPressure )
+	print('relative error on pressure = ', error_pressure )
+	
 	if (ok):
 		print( "Simulation python " + fileName + " is successful !" );
 		pass
