@@ -5,7 +5,28 @@ import CoreFlows as cf
 import cdmath as cm
 import matplotlib.pyplot as plt
 import VTK_routines
+import exact_rs_stiffenedgas
 
+def exact_sol_Riemann_problem(xmin,xmax, t, gamma, p0, WL, WR, offset, numsamples = 100):#offset= position of the initial discontinuity
+	print("")
+	print("Determination of the exact solution of the Riemann problem for the Euler equations, gamma=", gamma, ", p0= ", p0)
+
+	RS = exact_rs_stiffenedgas.exact_rs_stiffenedgas(gamma, gamma, p0, p0);
+	RS.solve_RP(WL,WR);
+
+	delx = (xmax - xmin)/numsamples;
+	
+	density  = [0.]*numsamples
+	pressure = [0.]*numsamples
+
+	for i in range(numsamples):
+		S = i*delx/t;
+		soln = RS.sample_solution(WL, WR, S - offset/t);
+		density[i] = soln[0]
+		pressure[i]= soln[2]
+
+	return density, pressure
+	
 def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 
 	spaceDim = 1;
@@ -87,13 +108,14 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	plt.xlim(xinf,xsup)
 	plt.ylim( initialPressure_Right - 0.1*(initialPressure_Left-initialPressure_Right), initialPressure_Left +  0.5*(initialPressure_Left-initialPressure_Right) )
 	plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
+
 	dx=(xsup-xinf)/nx
 	x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
-	myPressureField = myProblem.getPressureField()
 
+	myPressureField = myProblem.getPressureField()
 	myPressureField.writeVTK("PressureField")
-	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField"+"_0.vtu", [xinf,0,0], [xsup,0,0],nx)
-	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step 0')
+	pressureArray=VTK_routines.Extract_VTK_data_over_line_to_numpyArray("PressureField"+"_0.vtu", [xinf,0,0], [xsup,0,0],nx)
+	plt.plot(x, pressureArray,  label='Pressure time step 0')
 	plt.legend()
 	plt.savefig(fileName+".png")
 
@@ -101,8 +123,15 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 
 	myPressureField = myProblem.getPressureField()
 	myPressureField.writeVTK("PressureField")
-	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(MaxNbOfTimeStep)+".vtu", [xinf,0,0], [xsup,0,0],nx)
-	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(MaxNbOfTimeStep))
+	pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(myProblem.getNbTimeStep())+".vtu", [xinf,0,0], [xsup,0,0],nx)
+	plt.plot(x, pressureArray,  label='Pressure time step '+str(myProblem.getNbTimeStep()))
+
+	myEOS = myProblem.getFluidEOS()
+	initialDensity_Left = myEOS.getDensity( initialPressure_Left, initialTemperature_Left)
+	initialDensity_Right = myEOS.getDensity( initialPressure_Right, initialTemperature_Right)
+	exactDensity, exactPressure = exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx+1)
+	plt.plot(x, exactPressure,  label='Exact Pressure ')
+
 	plt.legend()
 	plt.savefig(fileName+".png")
 
