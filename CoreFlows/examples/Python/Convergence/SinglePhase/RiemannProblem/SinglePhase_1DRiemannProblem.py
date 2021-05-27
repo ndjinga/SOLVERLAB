@@ -4,7 +4,7 @@
 import CoreFlows as cf
 import cdmath as cm
 
-def SinglePhase_1DRiemannProblem_Implicit():
+def SinglePhase_1DRiemannProblem_Implicit(cfl,isExplicit,scheme)):
 
 	spaceDim = 1;
     # Prepare for the mesh
@@ -51,15 +51,24 @@ def SinglePhase_1DRiemannProblem_Implicit():
 	myProblem.setNeumannBoundaryCondition("RightBoundary");
 
     # set the numerical method
-	myProblem.setNumericalScheme(cf.upwind, cf.Implicit);
+	if(isExplicit):
+		cf_ExplicitOrImplicit=cf.Implicit
+	else:
+		cf_ExplicitOrImplicit=cf.Explicit
+			
+	if(scheme="Upwind"):
+		cf_Scheme=cf.upwind
+	else if(scheme="Centered"):
+		cf_Scheme=cf.centered
+
+	myProblem.setNumericalScheme(cf_Scheme, cf_ExplicitOrImplicit);
     
     # name of result file
-	fileName = "1DRiemannProblem_Implicit";
+	fileName = "1DRiemannProblem_"+ExplicitOrImplicit+scheme;
 
     # simulation parameters 
 	MaxNbOfTimeStep = 3 ;
 	freqSave = 1;
-	cfl = 10;
 	maxTime = 500;
 	precision = 1e-6;
 
@@ -92,4 +101,4 @@ def SinglePhase_1DRiemannProblem_Implicit():
 	return ok
 
 if __name__ == """__main__""":
-    SinglePhase_1DRiemannProblem_Implicit()
+    SinglePhase_1DRiemannProblem_Implicit(0.99,True,Upwind)
