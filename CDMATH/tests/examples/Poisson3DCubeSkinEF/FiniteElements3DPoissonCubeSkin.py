@@ -2,18 +2,15 @@
 #===============================================================================================================================
 # Name        : Résolution EF de l'équation de Laplace-Beltrami -\triangle u = f sur la frontière d'un cube
 # Author      : Michael Ndjinga
-# Copyright   : CEA Saclay 2020
+# Copyright   : CEA Saclay 2021
 # Description : Utilisation de la méthode des éléménts finis P1 avec champs u et f discrétisés aux noeuds d'un maillage triangulaire
 #               Création et sauvegarde du champ résultant ainsi que du champ second membre en utilisant la librairie CDMATH
 #               Résolution d'un système linéaire à matrice singulière : les vecteurs constants sont dans le noyau
-#               Comparaison de la solution numérique avec la solution exacte définie face par face :
-#                              u= sin(2*pi*x)*sin(2*pi*y) (haut et bas)
-#                              u=-sin(2*pi*x)*sin(2*pi*z) (gauche et droite)
-#                              u= sin(2*pi*y)*sin(2*pi*z) (avant et arrière)
+#               Comparaison de la solution numérique avec la solution exacte définie face par face : u(x,y,z)= cos(2*pi*x)*cos(2*pi*y)*cos(2*pi*z)
 #================================================================================================================================
 
 import cdmath
-from math import sin, pi
+from math import cos, pi
 import numpy as np
 import PV_routines
 import VTK_routines
@@ -49,14 +46,7 @@ for i in range(nbNodes):
 	y = Ni.y()
 	z = Ni.z()
 
-	if   abs(x)<eps or abs(x-1)<eps: #AVANT et ARRIERE
-		my_RHSfield[i]= 8*pi*pi*sin(2*pi*y)*sin(2*pi*z)
-	elif abs(y)<eps or abs(y-1)<eps: #GAUCHE et DROITE
-		my_RHSfield[i]=-8*pi*pi*sin(2*pi*x)*sin(2*pi*z) #Minus sign to have a smooth function of the curvilinear variable
-	elif abs(z)<eps or abs(z-1)<eps: #HAUT et BAS
-		my_RHSfield[i]= 8*pi*pi*sin(2*pi*x)*sin(2*pi*y)
-	else:
-		raise ValueError("Domain should be the unit cube skin with 6 faces")
+	my_RHSfield[i]= 8*pi*pi*cos(2*pi*x)*cos(2*pi*y)*cos(2*pi*z)
 
 	if my_mesh.isBorderNode(i): # Détection des noeuds frontière
 		raise ValueError("Mesh should not contain borders")
