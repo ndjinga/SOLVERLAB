@@ -17,7 +17,7 @@
  */
 
 #include <iostream>
-
+#include <vector>
 #include "DoubleTab.hxx"
 
 class GenericMatrix
@@ -49,12 +49,17 @@ class GenericMatrix
 
 	DoubleTab getValues( void ) ;
 
+	//returns the array of matrix coefficients
+	std::vector< double > getArray();
+
 	void setValues(const DoubleTab& values) ;
 
     virtual double operator ()( int i, int j ) const = 0;
 
+	//returns the maximum coefficient
     double max() const;
 
+	//returns the minimum coefficient
     double min() const;
 
     virtual bool isSymmetric(double tol=1e-6) const ;

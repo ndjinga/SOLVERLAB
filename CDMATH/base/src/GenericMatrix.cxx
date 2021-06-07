@@ -6,6 +6,7 @@
  */
 
 #include <math.h> 
+#include <cstring>
 
 #include "GenericMatrix.hxx"
 #include "CdmathException.hxx"
@@ -126,4 +127,19 @@ GenericMatrix::view() const
 		}
 		cout<<endl;
 	}
+}
+
+std::vector< double > 
+GenericMatrix::getArray() 
+{
+	int numberOfRows  =getNumberOfRows();
+	int numberOfColums=getNumberOfColumns();
+	int size=_numberOfRows*numberOfColums;
+	
+	vector< double >  result(size);	
+	double* values = result.data();
+	
+    memcpy(values,_values.getPointer(),size*sizeof(double)) ;
+
+	return result;
 }
