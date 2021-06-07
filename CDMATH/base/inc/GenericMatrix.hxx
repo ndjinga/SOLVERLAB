@@ -55,8 +55,6 @@ class GenericMatrix
 
     virtual  bool containsPetscMatrix() const { return false; };
 
-    int coefficient(int index) const ;
-
     void view() const ;
 
     protected: //----------------------------------------------------------------
@@ -72,6 +70,7 @@ class GenericMatrix
     int _numberOfColumns ;
 
     bool _isSparseMatrix ;
+
 };
 
 #endif /* GENERICMATRIX_HXX_ */

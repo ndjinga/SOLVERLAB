@@ -188,6 +188,14 @@ Matrix::partMatrix(int row, int column) const
 	return res;
 }
 
+int
+Matrix::coefficient(int index) const
+{
+	if(! (index % 2) )
+		return (1);
+	return (-1);
+}
+
 double
 Matrix::determinant() const
 {

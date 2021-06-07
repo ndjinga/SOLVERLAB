@@ -119,6 +119,9 @@ class Matrix: public GenericMatrix
     protected: //----------------------------------------------------------------
 
     DoubleTab _values ;
+
+	//This function is used in the computation of the determinant
+    int coefficient(int index) const ;
 };
 
 #endif /* MATRIX_HXX_ */

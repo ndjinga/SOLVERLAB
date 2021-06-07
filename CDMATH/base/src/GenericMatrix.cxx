@@ -71,14 +71,6 @@ GenericMatrix::isSquare() const
 	return false;
 }
 
-int
-GenericMatrix::coefficient(int index) const
-{
-	if(! (index % 2) )
-		return (1);
-	return (-1);
-}
-
 void
 GenericMatrix::view() const
 {
