@@ -45,16 +45,7 @@ class GenericMatrix
      */
     int getNumberOfColumns ( void ) const ;
 
-	//returns the array of matrix coefficients
-	virtual std::vector< double > getArray();
-
     virtual double operator ()( int i, int j ) const = 0;
-
-	//returns the maximum coefficient
-    virtual double max() const;
-
-	//returns the minimum coefficient
-    virtual double min() const;
 
     virtual bool isSymmetric(double tol=1e-6) const ;
 

@@ -66,6 +66,15 @@ class Matrix: public GenericMatrix
 
 	void setValues(const DoubleTab& values) ;
 
+	//returns the array of matrix coefficients
+	std::vector< double > getArray();
+
+	//returns the maximum coefficient
+    double max() const;
+
+	//returns the minimum coefficient
+    double min() const;
+
     bool isSparseMatrix( void ) const ;
 
     double& operator () ( int i, int j ) ;

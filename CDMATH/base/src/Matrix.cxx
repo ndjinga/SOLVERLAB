@@ -5,6 +5,7 @@
  *      Authors: CDMATH
  */
 #include <iostream>
+#include <cstring>
 
 #include "Matrix.hxx"
 #include "Vector.hxx"
@@ -64,6 +65,33 @@ void
 Matrix::setValues(const DoubleTab& values)
 {
 	_values=values;
+}
+
+double
+Matrix::max() const
+{
+    return _values.max();
+}
+
+double 
+Matrix::min() const
+{
+    return _values.max();	
+}
+
+std::vector< double > 
+Matrix::getArray() 
+{
+	int numberOfRows  =getNumberOfRows();
+	int numberOfColums=getNumberOfColumns();
+	int size=_numberOfRows*numberOfColums;
+	
+	vector< double >  result(size);	
+	double* values = result.data();
+	
+    memcpy(values,_values.getPointer(),size*sizeof(double)) ;
+
+	return result;
 }
 
 bool
