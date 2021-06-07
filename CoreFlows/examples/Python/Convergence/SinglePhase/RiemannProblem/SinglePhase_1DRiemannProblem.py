@@ -58,7 +58,7 @@ def SinglePhase_1DRiemannProblem_Implicit(cfl,isExplicit,scheme)):
 			
 	if(scheme="Upwind"):
 		cf_Scheme=cf.upwind
-	else if(scheme="Centered"):
+	elif(scheme="Centered"):
 		cf_Scheme=cf.centered
 
 	myProblem.setNumericalScheme(cf_Scheme, cf_ExplicitOrImplicit);
