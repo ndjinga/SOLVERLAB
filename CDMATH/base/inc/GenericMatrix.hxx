@@ -72,8 +72,6 @@ class GenericMatrix
     int _numberOfColumns ;
 
     bool _isSparseMatrix ;
-
-    DoubleTab _values ;
 };
 
 #endif /* GENERICMATRIX_HXX_ */

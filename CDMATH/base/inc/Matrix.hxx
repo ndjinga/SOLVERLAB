@@ -115,6 +115,10 @@ class Matrix: public GenericMatrix
 
     friend std::ostream& operator<<(std::ostream& out, const Matrix& matrix ) ;
 
+
+    protected: //----------------------------------------------------------------
+
+    DoubleTab _values ;
 };
 
 #endif /* MATRIX_HXX_ */
