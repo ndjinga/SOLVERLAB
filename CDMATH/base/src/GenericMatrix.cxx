@@ -43,26 +43,6 @@ GenericMatrix::getNumberOfColumns() const
 	return _numberOfColumns ;
 }
 
-const DoubleTab&
-GenericMatrix::getValues( void ) const
-{
-	return _values;
-}
-
-//----------------------------------------------------------------------
-DoubleTab
-GenericMatrix::getValues()
-//----------------------------------------------------------------------
-{
-	return _values;
-}
-
-void
-GenericMatrix::setValues(const DoubleTab& values)
-{
-	_values=values;
-}
-
 bool
 GenericMatrix::isSymmetric(double tol) const
 {

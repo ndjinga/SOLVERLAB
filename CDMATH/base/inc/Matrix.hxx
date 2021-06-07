@@ -60,6 +60,12 @@ class Matrix: public GenericMatrix
      */
     virtual ~Matrix ( void ) ;
 
+    const DoubleTab& getValues( void ) const ;
+
+	DoubleTab getValues( void ) ;
+
+	void setValues(const DoubleTab& values) ;
+
     bool isSparseMatrix( void ) const ;
 
     double& operator () ( int i, int j ) ;

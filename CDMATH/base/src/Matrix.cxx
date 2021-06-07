@@ -46,6 +46,26 @@ Matrix::Matrix(const Matrix& matrix)
 	_values=DoubleTab (_numberOfRows*_numberOfColumns,matrix.getValues().getValues());
 }
 
+const DoubleTab&
+Matrix::getValues( void ) const
+{
+	return _values;
+}
+
+//----------------------------------------------------------------------
+DoubleTab
+Matrix::getValues()
+//----------------------------------------------------------------------
+{
+	return _values;
+}
+
+void
+Matrix::setValues(const DoubleTab& values)
+{
+	_values=values;
+}
+
 bool
 Matrix::isSparseMatrix( void ) const
 {

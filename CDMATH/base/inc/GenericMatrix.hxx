@@ -45,17 +45,8 @@ class GenericMatrix
      */
     int getNumberOfColumns ( void ) const ;
 
-	//This function should be moved to the class Matrix
-    const DoubleTab& getValues( void ) const ;
-
-	//This function should be moved to the class Matrix
-	DoubleTab getValues( void ) ;
-
 	//returns the array of matrix coefficients
 	virtual std::vector< double > getArray();
-
-	//This function should be moved to the class Matrix
-	void setValues(const DoubleTab& values) ;
 
     virtual double operator ()( int i, int j ) const = 0;
 
