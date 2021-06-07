@@ -45,22 +45,25 @@ class GenericMatrix
      */
     int getNumberOfColumns ( void ) const ;
 
+	//This function should be moved to the class Matrix
     const DoubleTab& getValues( void ) const ;
 
+	//This function should be moved to the class Matrix
 	DoubleTab getValues( void ) ;
 
 	//returns the array of matrix coefficients
-	std::vector< double > getArray();
+	virtual std::vector< double > getArray();
 
+	//This function should be moved to the class Matrix
 	void setValues(const DoubleTab& values) ;
 
     virtual double operator ()( int i, int j ) const = 0;
 
 	//returns the maximum coefficient
-    double max() const;
+    virtual double max() const;
 
 	//returns the minimum coefficient
-    double min() const;
+    virtual double min() const;
 
     virtual bool isSymmetric(double tol=1e-6) const ;
 
