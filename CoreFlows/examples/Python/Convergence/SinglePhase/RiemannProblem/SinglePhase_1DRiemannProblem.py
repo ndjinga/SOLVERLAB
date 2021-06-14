@@ -115,32 +115,61 @@ def SinglePhase_1DRiemannProblem_Implicit(xinf,xsup,nx,cfl,isExplicit,scheme)):
 	else:
 		print( "Python simulation of " + fileName + " is successful !" );
 		####################### Postprocessing #########################
-		my_ResultField = myProblem.getOutputPressureField()
-		#The following formulas use the fact that the exact solution is equal the right hand side divided by 2*pi*pi
-		max_abs_sol_exacte=max(my_RHSfield.max(),-my_RHSfield.min())/(spaceDim*pi*pi)
-		max_sol_num=my_ResultField.max()
-		min_sol_num=my_ResultField.min()
-		erreur_abs=0
-		if method =='FE':
-			for i in range(my_mesh.getNumberOfNodes()) :
-				if  erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
-					erreur_abs = abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i])
-		else:
-			for i in range(my_mesh.getNumberOfCells()) :
-				if  erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
-					erreur_abs = abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) 				
-		print("Absolute error = max(| exact solution - numerical solution |) = ",erreur_abs )
-		print("Relative error = max(| exact solution - numerical solution |)/max(| exact solution |) = ",erreur_abs/max_abs_sol_exacte)
-		print("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
+
+		#Determine exact solution
+		exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx+1)
+	
+		### Plot curves
+		axPressure.plot(x, exactPressure,  label='Exact Pressure ')
+		myPressureField = myProblem.getPressureField()
+		myPressureField.writeVTK("PressureField")
+		pressureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("PressureField_"+str(myProblem.getNbTimeStep())+".vtu", [xinf,0,0], [xsup,0,0],nx)
+		axPressure.plot(x, pressureArray,  label='Pressure time step '+str(myProblem.getNbTimeStep()))
+		axPressure.legend()
+	
+		axDensity.plot(x, exactDensity,  label='Exact Density ')
+		myDensityField = myProblem.getDensityField()
+		myDensityField.writeVTK("DensityField")
+		densityArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("DensityField_"+str(myProblem.getNbTimeStep())+".vtu", [xinf,0,0], [xsup,0,0],nx)
+		axDensity.plot(x, densityArray,  label='Density time step '+str(myProblem.getNbTimeStep()))
+		axDensity.legend()
+	
+		axVelocity.plot(x, exactVelocity,  label='Exact Velocity ')
+		myVelocityField = myProblem.getVelocityXField()
+		myVelocityField.writeVTK("VelocityField")
+		velocityArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("VelocityField_"+str(myProblem.getNbTimeStep())+".vtu", [xinf,0,0], [xsup,0,0],nx)
+		axVelocity.plot(x, velocityArray,  label='Velocity time step '+str(myProblem.getNbTimeStep()))
+		axVelocity.legend()
+	
+		exactTemperature = [0.]*(nx+1)
+		for i in range(nx+1):
+			exactTemperature[i] = myEOS.getTemperatureFromPressure(exactPressure[i], exactDensity[i])
+	
+		axTemperature.plot(x, exactTemperature,  label='Exact Temperature ')
+		myTemperatureField = myProblem.getTemperatureField()
+		myTemperatureField.writeVTK("TemperatureField")
+		temperatureArray=VTK_routines. Extract_VTK_data_over_line_to_numpyArray("TemperatureField_"+str(myProblem.getNbTimeStep())+".vtu", [xinf,0,0], [xsup,0,0],nx)
+		axTemperature.plot(x, temperatureArray,  label='Temperature time step '+str(myProblem.getNbTimeStep()))
+		axTemperature.legend()
+	
+		#plt.title('Solving Riemann problem for Euler equations\n with Finite volume schemes method')
+		plt.savefig(fileName+".png")
+		
+		#Compute numerical error
+		error_pressure = norm( exactPressure - pressureArray )/norm( exactPressure )
+		error_velocity = norm( exactVelocity - velocityArray )/norm( exactVelocity )
+		error_temperature = norm( exactTemperature - temperatureArray )/norm( exactTemperature )
+
+		print("Absolute error = ", error_pressure, " (pressure), ", error_velocity, " (velocity), ", error_temperature, " (temperature), " )
 			
-		assert erreur_abs/max_abs_sol_exacte <1.
+		assert error_pressure <1.
+		assert error_velocity <1.
+		assert error_temperature <1.
 
 	myProblem.terminate();
 
 	end = time.time()
 
-	test_desc["Absolute_error"]=erreur_abs
-	test_desc["Relative_error"]=erreur_abs/max_abs_sol_exacte
 	test_desc["Computational_time_taken_by_run"]=end-start
 
 	return nx, end - start 
