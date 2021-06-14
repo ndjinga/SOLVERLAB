@@ -24,6 +24,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
     error_u_tab=[0]*nbMeshes
     sol_p=[0]*nbMeshes
     sol_u=[0]*nbMeshes
+    sol_T=[0]*nbMeshes
     time_tab=[0]*nbMeshes
     diag_data_press=[0]*nbMeshes
     diag_data_vel=[0]*nbMeshes
@@ -33,7 +34,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
 
     # Storing of numerical errors, mesh sizes and solution
     for nx in meshList:
-        sol_u[i], sol_p[i], error_u_tab[i], error_p_tab[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(a,b,nx,cfl,isExplicit, scheme)
+        sol_u[i], sol_p[i], sol_T[i], error_u_tab[i], error_T_tab[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(a,b,nx,cfl,isExplicit, scheme)
         error_p_tab[i]=log10(error_p_tab[i])
         error_u_tab[i]=log10(error_u_tab[i])
         time_tab[i]=log10(time_tab[i])
@@ -53,7 +54,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
     plt.xlabel('Position (m)')
     plt.ylabel('Pressure (bar)')
     plt.title('Plot of pressure in 1D Euler system \n with '+ExplicitOrImplicit+scheme+' scheme')
-    plt.savefig(mesh_name+'_Pressure_1DEulerSystem'+scheme+'_Pressure.png')
+    plt.savefig(mesh_name+'_1DEulerSystem'+scheme+'_Pressure.png')
     plt.close()
 
     plt.clf()
@@ -63,7 +64,17 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
     plt.xlabel('Position (m)')
     plt.ylabel('Velocity (m/s)')
     plt.title('Plot of velocity in 1D Euler system \n with '+ExplicitOrImplicit+scheme+' scheme')
-    plt.savefig(mesh_name+'_Pressure_1DEulerSystem'+scheme+'_Velocity.png')
+    plt.savefig(mesh_name+'_1DEulerSystem'+scheme+'_Velocity.png')
+    plt.close()
+
+    plt.clf()
+    for i in range(nbMeshes):
+            plt.plot(meshes[i], sol_T[i], label= str(mesh_size_tab[i]) + ' cells')
+    plt.legend()
+    plt.xlabel('Position (m)')
+    plt.ylabel('Temperature (K)')
+    plt.title('Plot of temperature in 1D Euler system \n with '+ExplicitOrImplicit+scheme+' scheme')
+    plt.savefig(mesh_name+'_1DEulerSystem'+scheme+'_Temperature.png')
     plt.close()
 
     for i in range(nbMeshes):

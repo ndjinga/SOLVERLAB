@@ -172,7 +172,7 @@ def SinglePhase_1DRiemannProblem_Implicit(xinf,xsup,nx,cfl,isExplicit,scheme)):
 
 	test_desc["Computational_time_taken_by_run"]=end-start
 
-	return nx, end - start 
+	return pressureArray, velocityArray, temperatureArray, error_pressure, error_velocity, error_temperature, end - start 
 
 if __name__ == """__main__""":
     SinglePhase_1DRiemannProblem_Implicit(0.99,True,Upwind)
