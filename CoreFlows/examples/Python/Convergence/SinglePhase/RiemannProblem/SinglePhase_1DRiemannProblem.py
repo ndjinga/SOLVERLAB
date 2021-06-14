@@ -4,20 +4,40 @@
 import CoreFlows as cf
 import cdmath as cm
 
-def SinglePhase_1DRiemannProblem_Implicit(cfl,isExplicit,scheme)):
+test_desc={}
+test_desc["Initial_data"]="Riemann problem"
+test_desc["PDE_model"]="Euler"
+test_desc["PDE_is_stationary"]=False
+test_desc["PDE_search_for_stationary_solution"]=False
+test_desc["Mesh_is_unstructured"]=False
+test_desc["Part_of_mesh_convergence_analysis"]=True
+test_desc["Numerical_method_name"]="Upwind"
+test_desc["Numerical_method_space_discretization"]="Finite volumes"
+test_desc["Boundary_conditions"]="Neumann"
+test_desc["Geometry"]="Segment"
+
+
+def SinglePhase_1DRiemannProblem_Implicit(xinf,xsup,nx,cfl,isExplicit,scheme)):
+	start = time.time()
+    if(isExplicit):
+        test_desc["Numerical_method_time_discretization"]="Explicit"
+    else:
+        test_desc["Numerical_method_time_discretization"]="Implicit"
 
 	spaceDim = 1;
     # Prepare for the mesh
 	print("Building mesh " );
-	xinf = 0 ;
-	xsup=4.2;
-	nx=100;
 	discontinuity=(xinf+xsup)/2
 	M=cm.Mesh(xinf,xsup,nx)
 	eps=1e-6
 	M.setGroupAtPlan(xsup,0,eps,"RightBoundary")
 	M.setGroupAtPlan(xinf,0,eps,"LeftBoundary")
 
+	test_desc["Space_dimension"]=M.getSpaceDimension()
+	test_desc["Mesh_dimension"]=M.getMeshDimension()
+	test_desc["Mesh_number_of_elements"]=M.getNumberOfCells()
+	test_desc["Mesh_cell_type"]=M.getElementTypesNames()
+		
     # Prepare initial data
 	initialVelocity_Left=1;
 	initialTemperature_Left=565;
@@ -88,17 +108,42 @@ def SinglePhase_1DRiemannProblem_Implicit(cfl,isExplicit,scheme)):
 	myProblem.initialize();
 
 	ok = myProblem.run();
-	if (ok):
-		print( "Simulation python " + fileName + " is successful !" );
+
+	if (not ok):
+		print( "Python simulation of " + fileName + "  failed ! " );
 		pass
 	else:
-		print( "Simulation python " + fileName + "  failed ! " );
-		pass
-
-	print( "------------ End of calculation !!! -----------" );
+		print( "Python simulation of " + fileName + " is successful !" );
+		####################### Postprocessing #########################
+		my_ResultField = myProblem.getOutputPressureField()
+		#The following formulas use the fact that the exact solution is equal the right hand side divided by 2*pi*pi
+		max_abs_sol_exacte=max(my_RHSfield.max(),-my_RHSfield.min())/(spaceDim*pi*pi)
+		max_sol_num=my_ResultField.max()
+		min_sol_num=my_ResultField.min()
+		erreur_abs=0
+		if method =='FE':
+			for i in range(my_mesh.getNumberOfNodes()) :
+				if  erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
+					erreur_abs = abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i])
+		else:
+			for i in range(my_mesh.getNumberOfCells()) :
+				if  erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
+					erreur_abs = abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) 				
+		print("Absolute error = max(| exact solution - numerical solution |) = ",erreur_abs )
+		print("Relative error = max(| exact solution - numerical solution |)/max(| exact solution |) = ",erreur_abs/max_abs_sol_exacte)
+		print("Maximum numerical solution = ", max_sol_num, " Minimum numerical solution = ", min_sol_num)
+			
+		assert erreur_abs/max_abs_sol_exacte <1.
 
 	myProblem.terminate();
-	return ok
+
+	end = time.time()
+
+	test_desc["Absolute_error"]=erreur_abs
+	test_desc["Relative_error"]=erreur_abs/max_abs_sol_exacte
+	test_desc["Computational_time_taken_by_run"]=end-start
+
+	return nx, end - start 
 
 if __name__ == """__main__""":
     SinglePhase_1DRiemannProblem_Implicit(0.99,True,Upwind)

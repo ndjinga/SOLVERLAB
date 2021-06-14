@@ -33,7 +33,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
 
     # Storing of numerical errors, mesh sizes and solution
     for nx in meshList:
-        mesh_size_tab[i], meshes[i], sol_u[i], sol_p[i], error_u_tab[i], error_p_tab[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(nx,cfl,a,b,isExplicit, scheme)
+        sol_u[i], sol_p[i], error_u_tab[i], error_p_tab[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(a,b,nx,cfl,isExplicit, scheme)
         error_p_tab[i]=log10(error_p_tab[i])
         error_u_tab[i]=log10(error_u_tab[i])
         time_tab[i]=log10(time_tab[i])
