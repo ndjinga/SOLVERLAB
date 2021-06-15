@@ -95,9 +95,9 @@ def solve(xinf,xsup,nx,cfl,isExplicit,scheme):
 	fileName = "1DRiemannProblem_"+ExplicitOrImplicit+scheme;
 
     # simulation parameters 
-	MaxNbOfTimeStep = 3 ;
-	freqSave = 1;
-	maxTime = 500;
+	MaxNbOfTimeStep = nx ;
+	freqSave = 10;
+	maxTime = (xsup-xinf)/4./max(myProblem.getFluidEOS().vitesseSonPressure(initialPressure_Left,initialTemperature_Left), myProblem.getFluidEOS().vitesseSonPressure(initialPressure_Right,initialTemperature_Right) )
 	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
@@ -189,7 +189,7 @@ def solve(xinf,xsup,nx,cfl,isExplicit,scheme):
 
 	test_desc["Computational_time_taken_by_run"]=end-start
 
-	return pressureArray, velocityArray, temperatureArray, error_pressure, error_velocity, error_temperature, end - start 
+	return pressureArray, velocityArray, temperatureArray, error_pressure, error_velocity, error_temperature, x, end - start 
 
 if __name__ == """__main__""":
     solve(0.99,True,Upwind)

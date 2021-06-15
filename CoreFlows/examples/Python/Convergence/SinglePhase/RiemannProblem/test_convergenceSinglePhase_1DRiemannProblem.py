@@ -19,7 +19,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
     mesh_name='RegularGrid'
 
     a=0.  ;  b=1.
-    meshes=[]*nbMeshes
+    x=[0]*nbMeshes
     error_p_tab=[0]*nbMeshes
     error_u_tab=[0]*nbMeshes
     error_T_tab=[0]*nbMeshes
@@ -35,7 +35,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
 
     # Storing of numerical errors, mesh sizes and solution
     for nx in meshList:
-        sol_u[i], sol_p[i], sol_T[i], error_u_tab[i], error_p_tab[i], error_T_tab[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(a,b,nx,cfl,isExplicit, scheme)
+        sol_u[i], sol_p[i], sol_T[i], error_u_tab[i], error_p_tab[i], error_T_tab[i], x[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(a,b,nx,cfl,isExplicit, scheme)
         error_p_tab[i]=log10(error_p_tab[i])
         error_u_tab[i]=log10(error_u_tab[i])
         time_tab[i]=log10(time_tab[i])
@@ -50,7 +50,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
 
     # Plot of results
     for i in range(nbMeshes):
-            plt.plot(meshes[i], sol_p[i], label= str(mesh_size_tab[i]) + ' cells')
+            plt.plot(x[i], sol_p[i], label= str(mesh_size_tab[i]) + ' cells')
     plt.legend()
     plt.xlabel('Position (m)')
     plt.ylabel('Pressure (bar)')
@@ -60,7 +60,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
 
     plt.clf()
     for i in range(nbMeshes):
-            plt.plot(meshes[i], sol_u[i], label= str(mesh_size_tab[i]) + ' cells')
+            plt.plot(x[i], sol_u[i], label= str(mesh_size_tab[i]) + ' cells')
     plt.legend()
     plt.xlabel('Position (m)')
     plt.ylabel('Velocity (m/s)')
@@ -70,7 +70,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
 
     plt.clf()
     for i in range(nbMeshes):
-            plt.plot(meshes[i], sol_T[i], label= str(mesh_size_tab[i]) + ' cells')
+            plt.plot(x[i], sol_T[i], label= str(mesh_size_tab[i]) + ' cells')
     plt.legend()
     plt.xlabel('Position (m)')
     plt.ylabel('Temperature (K)')
@@ -98,7 +98,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
     
     print( ExplicitOrImplicit + scheme+" scheme for Euler equation on 1D regular grid : scheme order is ", -a)
     
-    assert -a>0.48 and -a<1.02
+    assert abs(a+0.26 )<0.01
     
     # Plot of convergence curve
     plt.close()
@@ -151,7 +151,6 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
     convergence_synthesis["Mesh_description"]=mesh_name
     convergence_synthesis["Mesh_sizes"]=mesh_size_tab
     convergence_synthesis["Mesh_cell_type"]="1D regular grid"
-    convergence_synthesis["Numerical_resolution"]=max_u
     convergence_synthesis["Scheme_order"]=-a
     convergence_synthesis["Test_color"]=testColor
     convergence_synthesis["Computational_time"]=end-start
