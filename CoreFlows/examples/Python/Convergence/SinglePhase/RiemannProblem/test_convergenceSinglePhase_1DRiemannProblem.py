@@ -22,6 +22,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
     meshes=[]*nbMeshes
     error_p_tab=[0]*nbMeshes
     error_u_tab=[0]*nbMeshes
+    error_T_tab=[0]*nbMeshes
     sol_p=[0]*nbMeshes
     sol_u=[0]*nbMeshes
     sol_T=[0]*nbMeshes
@@ -34,7 +35,7 @@ def test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit,scheme):
 
     # Storing of numerical errors, mesh sizes and solution
     for nx in meshList:
-        sol_u[i], sol_p[i], sol_T[i], error_u_tab[i], error_T_tab[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(a,b,nx,cfl,isExplicit, scheme)
+        sol_u[i], sol_p[i], sol_T[i], error_u_tab[i], error_p_tab[i], error_T_tab[i], time_tab[i] = SinglePhase_1DRiemannProblem.solve(a,b,nx,cfl,isExplicit, scheme)
         error_p_tab[i]=log10(error_p_tab[i])
         error_u_tab[i]=log10(error_u_tab[i])
         time_tab[i]=log10(time_tab[i])
@@ -162,7 +163,7 @@ if __name__ == """__main__""":
     if len(sys.argv) >3 :
         cfl = float(sys.argv[1])
         isExplicit = bool(int(sys.argv[2]))
-        scheme = string(int(sys.argv[3]))
+        scheme = sys.argv[3]
         test_validationSinglePhase_1DRiemannProblem(cfl,isExplicit, scheme)
     else :
         test_validationSinglePhase_1DRiemannProblem(0.99,True, "Upwind")
