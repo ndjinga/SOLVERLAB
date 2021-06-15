@@ -38,6 +38,11 @@ class Fluide{
   	double h= getEnthalpy(T,rho);
   	return vitesseSonEnthalpie(h);
   }
+  double vitesseSonPressure(const double P, const double T)
+  {
+  	double rho=getDensity(P, T);
+  	return vitesseSonTemperature(T,rho);
+  }
 
   double getViscosity(double T) {return _mu;};
   double getConductivity(double T) {return _lambda;};
