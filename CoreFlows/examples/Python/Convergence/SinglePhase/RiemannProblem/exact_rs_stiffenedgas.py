@@ -12,6 +12,28 @@
 
 from math import pow, fabs, sqrt
 
+def exact_sol_Riemann_problem(xmin, xmax, t, gamma, p0, WL, WR, offset, numsamples = 100):#offset= position of the initial discontinuity
+	print("")
+	print("Determination of the exact solution of the Riemann problem for the Euler equations, gamma=", gamma, ", p0= ", p0)
+
+	RS = exact_rs_stiffenedgas(gamma, gamma, p0, p0);
+	RS.solve_RP(WL,WR);
+
+	delx = (xmax - xmin)/numsamples;
+	
+	density  = [0.]*numsamples
+	velocity  = [0.]*numsamples
+	pressure = [0.]*numsamples
+
+	for i in range(numsamples):
+		S = i*delx/t;
+		soln = RS.sample_solution(WL, WR, S - offset/t);
+		density[i] = soln[0]
+		velocity[i]= soln[1]
+		pressure[i]= soln[2]
+
+	return density, velocity, pressure
+	
 class exact_rs_stiffenedgas :
 
 	def __init__(self, gamma_L, gamma_R, pinf_L, pinf_R, tol=1.e-6, max_iter=100):
