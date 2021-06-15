@@ -146,4 +146,5 @@ function(CreatePythonConvergenceTest model convergenceTest pythonSolver MESHES_A
 endfunction(CreatePythonConvergenceTest)
 
 add_subdirectory (Convergence/StationaryDiffusion)
+add_subdirectory (Convergence/SinglePhase)
 

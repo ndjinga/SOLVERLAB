@@ -3,6 +3,11 @@
 
 import CoreFlows as cf
 import cdmath as cm
+import VTK_routines
+import exact_rs_stiffenedgas
+import matplotlib.pyplot as plt
+from numpy.linalg import norm
+import time
 
 test_desc={}
 test_desc["Initial_data"]="Riemann problem"
@@ -17,12 +22,15 @@ test_desc["Boundary_conditions"]="Neumann"
 test_desc["Geometry"]="Segment"
 
 
-def SinglePhase_1DRiemannProblem_Implicit(xinf,xsup,nx,cfl,isExplicit,scheme)):
+def solve(xinf,xsup,nx,cfl,isExplicit,scheme):
 	start = time.time()
-    if(isExplicit):
-        test_desc["Numerical_method_time_discretization"]="Explicit"
-    else:
-        test_desc["Numerical_method_time_discretization"]="Implicit"
+
+	if(isExplicit):
+		ExplicitOrImplicit="Explicit"
+	else:
+		ExplicitOrImplicit="Implicit"
+
+	test_desc["Numerical_method_time_discretization"]=ExplicitOrImplicit
 
 	spaceDim = 1;
     # Prepare for the mesh
@@ -76,9 +84,9 @@ def SinglePhase_1DRiemannProblem_Implicit(xinf,xsup,nx,cfl,isExplicit,scheme)):
 	else:
 		cf_ExplicitOrImplicit=cf.Explicit
 			
-	if(scheme="Upwind"):
+	if(scheme=="Upwind"):
 		cf_Scheme=cf.upwind
-	elif(scheme="Centered"):
+	elif(scheme=="Centered"):
 		cf_Scheme=cf.centered
 
 	myProblem.setNumericalScheme(cf_Scheme, cf_ExplicitOrImplicit);
@@ -115,6 +123,15 @@ def SinglePhase_1DRiemannProblem_Implicit(xinf,xsup,nx,cfl,isExplicit,scheme)):
 	else:
 		print( "Python simulation of " + fileName + " is successful !" );
 		####################### Postprocessing #########################
+
+		dx=(xsup-xinf)/nx
+		x=[ i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
+		fig, ([axDensity, axPressure], [axVelocity, axTemperature]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
+		plt.gcf().subplots_adjust(wspace = 0.5)
+	
+		myEOS = myProblem.getFluidEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+		initialDensity_Left = myEOS.getDensity( initialPressure_Left, initialTemperature_Left)
+		initialDensity_Right = myEOS.getDensity( initialPressure_Right, initialTemperature_Right)
 
 		#Determine exact solution
 		exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx+1)
@@ -175,4 +192,4 @@ def SinglePhase_1DRiemannProblem_Implicit(xinf,xsup,nx,cfl,isExplicit,scheme)):
 	return pressureArray, velocityArray, temperatureArray, error_pressure, error_velocity, error_temperature, end - start 
 
 if __name__ == """__main__""":
-    SinglePhase_1DRiemannProblem_Implicit(0.99,True,Upwind)
+    solve(0.99,True,Upwind)
