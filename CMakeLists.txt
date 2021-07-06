@@ -35,7 +35,7 @@ set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-
      CACHE STRING           "HDF5 tarball path/url" )
 set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
      CACHE STRING           "MED tarball path/url")
-set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.6.0.tar.gz
+set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.7.0.tar.gz
      CACHE STRING           "MEDCoupling tarball path/url" )
 set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
      CACHE STRING           "OPENMPI tarball path/url" )

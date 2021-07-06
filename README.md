@@ -1,6 +1,13 @@
-CDMATH
-======
+</center>
 
+| ![logo](logoSOLVERLAB.png) |
+|:--:|
+| *SOLVERLAB* |
+
+</center>
+
+Introduction
+------------
 SOLVERLAB is a geometrical and numerical C++/Python library designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The goal is to provide simple MATLAB style functions for the generation and manipulation of meshes, fields and matrices. The library is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of matrices and linear solvers. 
 
 SOLVERLAB includes PDE systems
@@ -77,7 +84,7 @@ Simpler build for a minimum version:
 > - F2CBLASLAPACK from http://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
 > - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
 > - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
-> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.6.0.tar.gz
+> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.7.0.tar.gz
 
 If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the advanced build version:
 * `cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}`  
