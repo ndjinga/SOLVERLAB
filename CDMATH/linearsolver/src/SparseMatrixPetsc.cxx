@@ -8,8 +8,6 @@
 #include "SparseMatrixPetsc.hxx"
 #include "CdmathException.hxx"
 
-#include <cstring>
-
 using namespace std;
 
 //----------------------------------------------------------------------
@@ -415,6 +413,32 @@ SparseMatrixPetsc::viewMatrix() const
 
 	MatView(_mat,PETSC_VIEWER_STDOUT_SELF);
 }
+
+void 
+SparseMatrixPetsc::saveMatrix(string filename, bool binaryMode) const
+{
+    MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
+
+	PetscViewer fileViewer;
+	PetscViewerCreate(PETSC_COMM_WORLD,&fileViewer);
+    PetscViewerFileSetMode(fileViewer,FILE_MODE_WRITE);
+    PetscViewerFileSetName(fileViewer,filename.c_str());
+
+	if( binaryMode)
+	{
+		PetscViewerSetType(fileViewer, PETSCVIEWERBINARY);		
+		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
+	}
+	else
+	{
+		PetscViewerSetType(fileViewer, PETSCVIEWERASCII);		
+		PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename.c_str(), FILE_MODE_WRITE, &fileViewer);
+	}
+     
+	MatView(_mat,fileViewer);
+}
+
 double
 SparseMatrixPetsc::getMatrixCoeff(int i, int j) const 
 {
