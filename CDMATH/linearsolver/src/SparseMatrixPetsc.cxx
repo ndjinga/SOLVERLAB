@@ -427,6 +427,29 @@ SparseMatrixPetsc::getMatrixCoeff(int i, int j) const
 	return res;
 }
 
+std::vector< double > 
+SparseMatrixPetsc::getArray()
+{
+	int size=_numberOfRows*_numberOfColumns;
+	
+	vector< double >  result(size);	
+	double* values = result.data();
+	
+	int * idxm = new int[_numberOfRows];
+	int * idxn = new int[_numberOfColumns];
+    for (int i=0;i<_numberOfRows;i++) 
+		idxm[i]=i;
+    for (int i=0;i<_numberOfColumns;i++) 
+		idxn[i]=i;
+	
+	MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
+
+	MatGetValues(_mat,_numberOfRows, idxm,_numberOfColumns, idxn,values);
+
+	return result;
+}
+
 void 
 SparseMatrixPetsc::diagonalShift(double lambda)
 {

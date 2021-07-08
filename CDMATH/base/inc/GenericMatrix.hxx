@@ -47,6 +47,9 @@ class GenericMatrix
 
     virtual double operator ()( int i, int j ) const = 0;
 
+	//returns the array of matrix coefficients
+    virtual std::vector< double > getArray() = 0;
+
     virtual bool isSymmetric(double tol=1e-6) const ;
 
     bool isSquare() const ;

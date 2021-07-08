@@ -80,11 +80,9 @@ Matrix::min() const
 }
 
 std::vector< double > 
-Matrix::getArray() 
+Matrix::getArray()
 {
-	int numberOfRows  =getNumberOfRows();
-	int numberOfColums=getNumberOfColumns();
-	int size=_numberOfRows*numberOfColums;
+	int size=_numberOfRows*_numberOfColumns;
 	
 	vector< double >  result(size);	
 	double* values = result.data();

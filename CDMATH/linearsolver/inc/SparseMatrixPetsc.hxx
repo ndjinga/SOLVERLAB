@@ -105,6 +105,8 @@ public:
 
 	bool containsPetscMatrix() const;
 	Mat getPetscMatrix() const;
+	//returns the array of matrix coefficients
+	std::vector< double > getArray();
     
     void diagonalShift(double lambda);
     void zeroEntries();//sets the matrix coefficients to zero
