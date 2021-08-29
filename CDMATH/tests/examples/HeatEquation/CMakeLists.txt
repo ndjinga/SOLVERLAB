@@ -1,0 +1,14 @@
+file(GLOB HeatEquation_EXAMPLES_TO_INSTALL 
+  HeatEquation1DExplicit HeatEquation1DImplicit# 1D Heat equation
+)
+
+install(DIRECTORY ${HeatEquation_EXAMPLES_TO_INSTALL} DESTINATION share/examples/HeatEquation)
+
+IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
+
+    ADD_SUBDIRECTORY(HeatEquation1DExplicit)
+    ADD_SUBDIRECTORY(HeatEquation1DImplicit)
+
+ENDIF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
+
+

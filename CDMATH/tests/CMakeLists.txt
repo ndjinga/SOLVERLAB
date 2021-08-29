@@ -52,14 +52,14 @@ IF (CDMATH_WITH_TESTS)
 ENDIF (CDMATH_WITH_TESTS)
 
 ADD_SUBDIRECTORY(ressources)
+SET(MED_MESHES  ${CMAKE_CURRENT_SOURCE_DIR}/ressources  )
 
 FILE(COPY doc/ DESTINATION share/doc/)
 
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
-  # Examples tests
-  set (examples_dir ${CDMATH_SOURCE_DIR}/tests/examples)
-  add_subdirectory (${examples_dir})
-  add_subdirectory (validation)
+
+  add_subdirectory (examples) #basic test that run a single calculation
+  add_subdirectory (validation) # convergence studies (several runs)
 
   add_custom_target (tests_CDMATH COMMAND ctest -O testsCDMATH.log)
   add_custom_target (check COMMAND ctest -E 'validation|Example')# may be replace ctest -E with ctest -LE

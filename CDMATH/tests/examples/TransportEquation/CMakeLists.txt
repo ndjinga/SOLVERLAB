@@ -1,8 +1,18 @@
+file(GLOB TransportEquation_EXAMPLES_TO_INSTALL 
+  TransportEquation1DUpwindExplicit TransportEquation1DUpwindImplicit TransportEquation1DCenteredImplicit TransportEquation1DCenteredExplicit # 1D Transport equation 
+  TransportEquation
+)
 
-if (CDMATH_WITH_PYTHON )
+install(DIRECTORY ${TransportEquation_EXAMPLES_TO_INSTALL} DESTINATION share/examples/TransportEquation)
 
-    ADD_TEST(ExampleTransportEquation_2DUpwind_Explicit ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/TransportEquationUpwind.py)
+IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
-endif (CDMATH_WITH_PYTHON )
+    ADD_SUBDIRECTORY(TransportEquation1DUpwindExplicit)
+    ADD_SUBDIRECTORY(TransportEquation1DUpwindImplicit)
+    ADD_SUBDIRECTORY(TransportEquation1DCenteredImplicit)
+    ADD_SUBDIRECTORY(TransportEquation1DCenteredExplicit)
+    ADD_SUBDIRECTORY(TransportEquation)
+
+ENDIF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
 
