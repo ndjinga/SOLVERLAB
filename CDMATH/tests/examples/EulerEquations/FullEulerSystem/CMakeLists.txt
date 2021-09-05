@@ -1,0 +1,12 @@
+file(GLOB FullEulerEquations_EXAMPLES_TO_INSTALL 
+EulerSystem1D/EulerSystem1DUpwind EulerSystem1D/EulerSystem1DUpwindEntrCorr EulerSystem1D/EulerSystem1DConservativeStaggered EulerSystem_Shock/EulerSystemStaggered EulerSystem_Shock/EulerSystemUpwind
+)
+
+install(DIRECTORY ${FullEulerEquations_EXAMPLES_TO_INSTALL} DESTINATION share/examples/EulerEquations/FullEulerEquations)
+
+IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
+    ADD_SUBDIRECTORY(EulerSystem1D_RiemannProblem)
+    ADD_SUBDIRECTORY(EulerSystem1D_HeatedChannel)
+ENDIF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
+
+
