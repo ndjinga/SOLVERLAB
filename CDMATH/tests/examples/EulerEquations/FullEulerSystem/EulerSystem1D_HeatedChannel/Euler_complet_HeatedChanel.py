@@ -3,7 +3,7 @@
 
 """
 Created on Mon Aug 30 2021
-@author: Michael NDJINGA
+@author: Michael NDJINGA, Katia Ait Ameur, Coraline Mounier
 
 Euler system with heating source term (phi) in one dimension on regular domain [a,b]
 Riemann problemn with ghost cell boundary condition
@@ -15,9 +15,9 @@ Regular square mesh
 State law Stiffened gaz : p = (gamma - 1) * rho * (e - q) - gamma * p0
 4 choices of parameters gamma and p0 are available : 
   - Lagrange interpolation (with q=0)
+  - Hermite interpolation with reference point at 575K (with q=0)
   - Hermite interpolation with reference point at 590K (with q=0)
   - Hermite interpolation with reference point at 617.94K (saturation at 155 bar)  with q=0
-  - Hermite interpolation with reference point at 575K (with q=0)
   
 Linearized enthalpy : h = h_sat + cp * (T - T_sat)
 Values for cp and T_sat parameters are taken at the reference point chosen for the state law
@@ -690,7 +690,9 @@ def FillMatrixFromEdges(j, Uk, nbComp, divMat, dt, dx):
 		divMat.addValue(j * nbComp, (j + 1) * nbComp, Am)
 		divMat.addValue(j * nbComp,       j * nbComp, Am * (-1.))
 	
-		rho_l   = Uk[j * nbComp + 0]                            # We take rho from inside the domain
+		p_inlet = rho_to_p_StiffenedGaz(Uk[j * nbComp + 0], Uk[j * nbComp + 1], Uk[j * nbComp + 2])# We take p from inside the domain
+		rho_l=p_to_rho_StiffenedGaz(p_inlet, T_inlet) # rho is computed from the temperature BC and the inner pressure
+		#rho_l   = Uk[j * nbComp + 0]                            # We take rho from inside the domain
 		q_l     = rho_l * v_inlet                               # q is imposed by the boundary condition v_inlet
 		rho_E_l = T_to_rhoE_StiffenedGaz(T_inlet, rho_l, q_l)   #rhoE is obtained  using the two boundary conditions v_inlet and e_inlet
 		rho_r   = Uk[j * nbComp + 0]
@@ -762,7 +764,9 @@ def FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit):
 
 		Am = jacobianMatricesm(dt / dx, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)
 
-		rho_l   = Uk[j * nbComp + 0]                            # We take rho from inside the domain
+		p_inlet = rho_to_p_StiffenedGaz(Uk[j * nbComp + 0], Uk[j * nbComp + 1], Uk[j * nbComp + 2])# We take p from inside the domain
+		rho_l=p_to_rho_StiffenedGaz(p_inlet, T_inlet) # rho is computed from the temperature BC and the inner pressure
+		#rho_l   = Uk[j * nbComp + 0]                            # We take rho from inside the domain
 		q_l     = rho_l * v_inlet                               # q is imposed by the boundary condition v_inlet
 		rho_E_l = T_to_rhoE_StiffenedGaz(T_inlet, rho_l, q_l)   #rhoE is obtained  using the two boundary conditions v_inlet and e_inlet
 		rho_r   = Uk[j * nbComp + 0]

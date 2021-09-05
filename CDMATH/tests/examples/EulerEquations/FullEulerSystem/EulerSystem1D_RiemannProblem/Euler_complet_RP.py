@@ -3,7 +3,7 @@
 
 """
 Created on Mon Aug 30 2021
-@author: Michael NDJINGA
+@author: Michael NDJINGA, Katia Ait Ameur, Coraline Mounier
 
 Euler system without source term in one dimension on regular domain [a,b]
 Riemann problemn with ghost cell boundary condition
