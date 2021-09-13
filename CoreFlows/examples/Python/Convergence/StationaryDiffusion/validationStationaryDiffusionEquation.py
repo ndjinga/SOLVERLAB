@@ -200,7 +200,7 @@ def SolveStationaryDiffusionEquation(my_mesh,resolution,MeshType,method,BC):
 		min_sol_num=my_ResultField.min()
 		erreur_abs=0
 
-		for i in range(my_mesh.getNumberOfCells()) :
+		for i in range(my_ResultField.getNumberOfElements()) :
 			if  erreur_abs < abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) :
 				erreur_abs = abs(my_RHSfield[i]/(spaceDim*pi*pi) - my_ResultField[i]) 				
 		print("Absolute error = max(| exact solution - numerical solution |) = ",erreur_abs )
