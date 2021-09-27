@@ -5,8 +5,8 @@ EulerSystem1D/EulerSystem1DUpwind EulerSystem1D/EulerSystem1DUpwindEntrCorr Eule
 install(DIRECTORY ${FullEulerEquations_EXAMPLES_TO_INSTALL} DESTINATION share/examples/EulerEquations/FullEulerEquations)
 
 IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
-    ADD_SUBDIRECTORY(EulerSystem1D_RiemannProblem)
-    ADD_SUBDIRECTORY(EulerSystem1D_HeatedChannel)
+    ADD_SUBDIRECTORY(EulerSystem1D_RiemannProblem_Roe)
+    ADD_SUBDIRECTORY(EulerSystem1D_HeatedChannel_Roe)
 ENDIF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
 
