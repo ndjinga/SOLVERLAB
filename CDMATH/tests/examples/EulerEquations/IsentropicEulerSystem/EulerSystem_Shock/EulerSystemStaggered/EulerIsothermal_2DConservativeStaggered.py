@@ -8,7 +8,7 @@
 # Author      : Michaël Ndjinga, Coraline Mounier
 # Copyright   : CEA Saclay 2020
 # Description : Propagation d'une onde de choc droite
-#               Utilisation du schéma upwind explicite ou implicite sur un maillage général
+#               Utilisation du schéma décalé implicite sur un maillage général
 #               Initialisation par une discontinuité verticale
 #               Conditions aux limites de Neumann
 #                Création et sauvegarde du champ résultant et des figures
