@@ -23,7 +23,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import sys
+import os
 from math import sqrt, atan, pi
 from numpy import sign
 
@@ -376,8 +376,8 @@ def addCurves(rho_field_Stag, q_field_Stag, h_field_Stag, p_field_Stag, v_field_
 	return
 
 def addSolutionToro(fig) :
-	
-	x_exact, rho_exact, v_exact, p_exact, e_exact, h_exact, Mach_exact, left_or_right = np.loadtxt('TTC'+str(4) + '.dat', unpack = True )
+
+	x_exact, rho_exact, v_exact, p_exact, e_exact, h_exact, Mach_exact, left_or_right = np.loadtxt(os.path.dirname(__file__)+'/TTC'+str(4) + '.dat', unpack = True )
 
 	[axDensity, axMomentum, axEnthalpie,axPressure, axVitesse, axEinterne] = fig.get_axes()
 	lineRhoToro, = axDensity.plot(x_exact, rho_exact , label='Solution exacte')
