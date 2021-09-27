@@ -1,5 +1,5 @@
 file(GLOB FullEulerEquations_EXAMPLES_TO_INSTALL 
-EulerSystem1D/EulerSystem1DUpwind EulerSystem1D/EulerSystem1DUpwindEntrCorr EulerSystem1D/EulerSystem1DConservativeStaggered EulerSystem_Shock/EulerSystemStaggered EulerSystem_Shock/EulerSystemUpwind
+EulerSystem1D_HeatedChannel_Roe EulerSystem1D_RiemannProblem_Roe
 )
 
 install(DIRECTORY ${FullEulerEquations_EXAMPLES_TO_INSTALL} DESTINATION share/examples/EulerEquations/FullEulerEquations)
