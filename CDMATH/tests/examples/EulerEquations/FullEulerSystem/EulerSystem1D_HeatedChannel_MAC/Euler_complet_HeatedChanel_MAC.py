@@ -2,14 +2,14 @@
 # -*-coding:utf-8 -*
 
 """
-Created on Mon Aug 30 2021
+Created on Mon Sep 27 2021
 @author: Michael NDJINGA, Katia Ait Ameur, Coraline Mounier
 
 Euler system with heating source term (phi) in one dimension on regular domain [a,b]
 Riemann problemn with ghost cell boundary condition
 Left : Inlet boundary condition (velocity and temperature imposed)
 Right : Outlet boundary condition (pressure imposed)
-Roe scheme
+Staggered scheme
 Regular square mesh
 
 State law Stiffened gaz : p = (gamma - 1) * rho * (e - q) - gamma * p0
@@ -221,64 +221,52 @@ def MatRoe_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
 	return(RoeMat)
 
 	
-def Droe_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
-    Droe   = cdmath.Matrix(3, 3)
+def Dmac_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
+	Dmac   = cdmath.Matrix(3, 3)
 
-    u_l = q_l / rho_l
-    u_r = q_r / rho_r
-    p_l = rho_to_p_StiffenedGaz(rho_l, q_l, rho_E_l)
-    p_r = rho_to_p_StiffenedGaz(rho_r, q_r, rho_E_r)
-    H_l = rho_E_l / rho_l + p_l / rho_l
-    H_r = rho_E_r / rho_r + p_r / rho_r
+	u_l = q_l / rho_l
+	u_r = q_r / rho_r
+	p_l = rho_to_p_StiffenedGaz(rho_l, q_l, rho_E_l)
+	p_r = rho_to_p_StiffenedGaz(rho_r, q_r, rho_E_r)
+	H_l = rho_E_l / rho_l + p_l / rho_l
+	H_r = rho_E_r / rho_r + p_r / rho_r
 
-    # Roe averages
-    rho = np.sqrt(rho_l * rho_r)
-    u = (u_l * sqrt(rho_l) + u_r * sqrt(rho_r)) / (sqrt(rho_l) + sqrt(rho_r))
-    H = (H_l * sqrt(rho_l) + H_r * sqrt(rho_r)) / (sqrt(rho_l) + sqrt(rho_r))
+	# Roe averages
+	rho = np.sqrt(rho_l * rho_r)
+	u = (u_l * sqrt(rho_l) + u_r * sqrt(rho_r)) / (sqrt(rho_l) + sqrt(rho_r))
+	H = (H_l * sqrt(rho_l) + H_r * sqrt(rho_r)) / (sqrt(rho_l) + sqrt(rho_r))
 
-    c = sound_speed_StiffenedGaz( H - u**2/2. )
-    
-    lamb  = cdmath.Vector(3)
-    lamb[0] = u-c
-    lamb[1] = u
-    lamb[2] = u+c    
-
-    r   = cdmath.Matrix(3, 3)
-    r[0,0] = 1.
-    r[1,0] = u-c
-    r[2,0] = H-u*c    
-    r[0,1] = 1.
-    r[1,1] = u   
-    r[2,1] = H-c**2/(gamma-1)    
-    r[0,2] = 1.
-    r[1,2] = u+c
-    r[2,2] = H+u*c         
-
-    l   = cdmath.Matrix(3, 3)
-    l[0,0] = (1./(2*c**2))*(0.5*(gamma-1)*u**2+u*c)
-    l[1,0] = (1./(2*c**2))*(-u*(gamma-1)-c)
-    l[2,0] = (1./(2*c**2))*(gamma-1)
-    l[0,1] = ((gamma-1)/c**2)*(H-u**2)
-    l[1,1] = ((gamma-1)/c**2)*u   
-    l[2,1] = -((gamma-1)/c**2)    
-    l[0,2] = (1./(2*c**2))*(0.5*(gamma-1)*u**2-u*c)
-    l[1,2] = (1./(2*c**2))*(c-u*(gamma-1))
-    l[2,2] = (1./(2*c**2))*(gamma-1)
-
-    M1 = cdmath.Matrix(3, 3) #abs(lamb[0])*r[:,0].tensProduct(l[:,0])
-    M2 = cdmath.Matrix(3, 3) #abs(lamb[1])*r[:,1].tensProduct(l[:,1])   
-    M3 = cdmath.Matrix(3, 3) #abs(lamb[2])*r[:,2].tensProduct(l[:,2])
-    for i in range(3):
-        for j in range(3):
-            M1[i,j] = abs(lamb[0])*r[i,0]*l[j,0]
-            M2[i,j] = abs(lamb[1])*r[i,1]*l[j,1]            
-            M3[i,j] = abs(lamb[2])*r[i,2]*l[j,2]
-            
-    Droe = M1+M2+M3 
-    
-    return(Droe)    
-
-
+	p = rho_h_to_p_StiffenedGaz( rho, H - u**2/2. )
+	e = H - p / rho - 1./2 * u**2
+	dp_drho = dp_drho_e_const_StiffenedGaz( e )
+	dp_de   = dp_de_rho_const_StiffenedGaz( rho )
+ 
+	#Third choice for Dstag
+	Dmac[0, 0] = 0
+	Dmac[0, 1] = 1
+	Dmac[0, 2] = 0
+	Dmac[1, 0] = -dp_drho - u ** 2 - dp_de / rho * (u**2/2 - e)
+	Dmac[1, 1] = 2 * u + u * dp_de / rho
+	Dmac[1, 2] = -dp_de / rho
+	Dmac[2, 0] = -u * ( dp_drho + H + dp_de / rho * (u**2/2 - e) )
+	Dmac[2, 1] = H + dp_de / rho * u ** 2
+	Dmac[2, 2] = (-dp_de / rho +1) * u
+	
+	#return Dmac * sign(u)
+	
+	#Fifth choice for Dstag
+	Dmac[0, 0] = abs(u)-u
+	Dmac[0, 1] = 1
+	Dmac[0, 2] = 0
+	Dmac[1, 0] = -dp_drho - u ** 2 - dp_de / rho * (u**2/2 - e)
+	Dmac[1, 1] = abs(u) + u + u * dp_de / rho
+	Dmac[1, 2] = -dp_de / rho
+	Dmac[2, 0] = -u * ( dp_drho + H + u*(u-abs(u)) + dp_de / rho * (u**2/2 - e) )
+	Dmac[2, 1] = H + dp_de / rho * u ** 2
+	Dmac[2, 2] = -u*dp_de / rho + abs(u)
+	
+	return Dmac 
+	
 def jacobianMatricesm(coeff, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
 
 	if rho_l < 0 or rho_r < 0:
@@ -290,8 +278,8 @@ def jacobianMatricesm(coeff, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
 
 	RoeMat = MatRoe_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)
 	
-	Droe = Droe_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)    
-	return (RoeMat - Droe) * coeff * 0.5
+	Dmac = Dmac_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)    
+	return (RoeMat - Dmac) * coeff * 0.5
 
 
 def jacobianMatricesp(coeff, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
@@ -303,12 +291,12 @@ def jacobianMatricesp(coeff, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
 		raise ValueError("Negative total energy")
 
 	RoeMat = MatRoe_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)
-	Droe = Droe_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)    
+	Dmac = Dmac_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)    
 
-	return (RoeMat + Droe) * coeff * 0.5
+	return (RoeMat + Dmac) * coeff * 0.5
 
 
-def FillEdges(j, Uk, nbComp, divMat, Rhs, Un, dt, dx, isImplicit):
+def FillEdges(j, Uk, nbComp, divMat, Rhs, Un, dt, dx):
 	dUi1 = cdmath.Vector(3)
 	dUi2 = cdmath.Vector(3)
 	temp1 = cdmath.Vector(3)
@@ -328,7 +316,6 @@ def FillEdges(j, Uk, nbComp, divMat, Rhs, Un, dt, dx, isImplicit):
 
 		p_inlet = rho_to_p_StiffenedGaz(Uk[j * nbComp + 0], Uk[j * nbComp + 1], Uk[j * nbComp + 2])# We take p from inside the domain
 		rho_l=p_to_rho_StiffenedGaz(p_inlet, T_inlet) # rho is computed from the temperature BC and the inner pressure
-		#rho_l   = Uk[j * nbComp + 0]                            # We take rho from inside the domain
 		q_l     = rho_l * v_inlet                               # q is imposed by the boundary condition v_inlet
 		rho_E_l = T_to_rhoE_StiffenedGaz(T_inlet, rho_l, q_l)   #rhoE is obtained  using the two boundary conditions v_inlet and e_inlet
 		rho_r   = Uk[j * nbComp + 0]
@@ -338,21 +325,15 @@ def FillEdges(j, Uk, nbComp, divMat, Rhs, Un, dt, dx, isImplicit):
 		Ap = jacobianMatricesp(dt / dx, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)
 		divMat.addValue(j * nbComp, j * nbComp, Ap)
 	
-		if(isImplicit):
-			dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
-			dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
-			dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
-			temp1 = Am * dUi1
-		
-			dUi2[0] = rho_l   -  Uk[(j ) * nbComp + 0]
-			dUi2[1] = q_l     -  Uk[(j ) * nbComp + 1]
-			dUi2[2] = rho_E_l -  Uk[(j ) * nbComp + 2]
-			temp2 = Ap * dUi2
-		else:
-			dUi2[0] = rho_l   
-			dUi2[1] = q_l     
-			dUi2[2] = rho_E_l 
-			temp2 = Ap * dUi2
+		dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
+		dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
+		dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
+		temp1 = Am * dUi1
+	
+		dUi2[0] = rho_l   -  Uk[(j ) * nbComp + 0]
+		dUi2[1] = q_l     -  Uk[(j ) * nbComp + 1]
+		dUi2[2] = rho_E_l -  Uk[(j ) * nbComp + 2]
+		temp2 = Ap * dUi2
 
 	elif (j == nx - 1):
 		rho_l   = Uk[(j - 1) * nbComp + 0]
@@ -376,32 +357,21 @@ def FillEdges(j, Uk, nbComp, divMat, Rhs, Un, dt, dx, isImplicit):
 		Am = jacobianMatricesm(dt / dx, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)	
 		divMat.addValue(j * nbComp, j * nbComp, Am * (-1.))
 
-		if(isImplicit):
-			dUi1[0] = rho_r   - Uk[j * nbComp + 0]
-			dUi1[1] = q_r     - Uk[j * nbComp + 1]
-			dUi1[2] = rho_E_r - Uk[j * nbComp + 2]
-			temp1 = Am * dUi1
+		dUi1[0] = rho_r   - Uk[j * nbComp + 0]
+		dUi1[1] = q_r     - Uk[j * nbComp + 1]
+		dUi1[2] = rho_E_r - Uk[j * nbComp + 2]
+		temp1 = Am * dUi1
 
-			dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
-			dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
-			dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
-			temp2 = Ap * dUi2
-		else:
-			dUi1[0] = rho_r   
-			dUi1[1] = q_r     
-			dUi1[2] = rho_E_r 
-			temp1 = Am * dUi1
+		dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
+		dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
+		dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
+		temp2 = Ap * dUi2
 	
-	if(isImplicit):#implicit scheme, contribution from the Newton scheme residual
-		Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
-		Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
-		Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
-	else:#explicit scheme, contribution from the boundary data the right hand side
-		Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] 
-		Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] 
-		Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] 
+	Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
+	Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
+	Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
 
-def FillInnerCell(j, Uk, nbComp, divMat, Rhs, Un, dt, dx, isImplicit):
+def FillInnerCell(j, Uk, nbComp, divMat, Rhs, Un, dt, dx):
 
 	rho_l   = Uk[(j - 1) * nbComp + 0]
 	q_l     = Uk[(j - 1) * nbComp + 1]
@@ -424,89 +394,84 @@ def FillInnerCell(j, Uk, nbComp, divMat, Rhs, Un, dt, dx, isImplicit):
 	divMat.addValue(j * nbComp, j * nbComp, Ap)
 	divMat.addValue(j * nbComp, (j - 1) * nbComp, Ap * (-1.))
 
-	if(isImplicit):
-		dUi1 = cdmath.Vector(3)
-		dUi2 = cdmath.Vector(3)
-		
-		dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
-		dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
-		dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
+	dUi1 = cdmath.Vector(3)
+	dUi2 = cdmath.Vector(3)
 	
-		dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
-		dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
-		dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
-		
-		temp1 = Am * dUi1
-		temp2 = Ap * dUi2
+	dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
+	dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
+	dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
 
-		Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
-		Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
-		Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
-	else:
-		Rhs[j * nbComp + 0] = 0
-		Rhs[j * nbComp + 1] = 0
-		Rhs[j * nbComp + 2] = 0
+	dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
+	dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
+	dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
+	
+	temp1 = Am * dUi1
+	temp2 = Ap * dUi2
 
-def SetPicture(rho_field_Roe, q_field_Roe, h_field_Roe, p_field_Roe, v_field_Roe, T_field_Roe, dx):
-	max_initial_rho = max(rho_field_Roe)
-	min_initial_rho = min(rho_field_Roe)
-	max_initial_q = max(q_field_Roe)
-	min_initial_q = min(q_field_Roe)
-	min_initial_h = min(h_field_Roe)
-	max_initial_h = max(h_field_Roe)
-	max_initial_p = max(p_field_Roe)
-	min_initial_p = min(p_field_Roe)
-	max_initial_v = max(v_field_Roe)
-	min_initial_v = min(v_field_Roe)
-	max_initial_T = max(T_field_Roe)
-	min_initial_T = min(T_field_Roe)
+	Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
+	Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
+	Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
+
+def SetPicture(rho_field, q_field, h_field, p_field, v_field, T_field, dx):
+	max_initial_rho = max(rho_field)
+	min_initial_rho = min(rho_field)
+	max_initial_q = max(q_field)
+	min_initial_q = min(q_field)
+	min_initial_h = min(h_field)
+	max_initial_h = max(h_field)
+	max_initial_p = max(p_field)
+	min_initial_p = min(p_field)
+	max_initial_v = max(v_field)
+	min_initial_v = min(v_field)
+	max_initial_T = max(T_field)
+	min_initial_T = min(T_field)
 
 	fig, ([axDensity, axMomentum, axh],[axPressure, axVitesse, axTemperature]) = plt.subplots(2, 3,sharex=True, figsize=(14,10))
 	plt.gcf().subplots_adjust(wspace = 0.5)
 
-	lineDensity_Roe, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_Roe, label='Roe')
+	lineDensity, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field, label='MAC scheme')
 	axDensity.set(xlabel='x (m)', ylabel='Densité (kg/m3)')
 	axDensity.set_xlim(a,b)
 	axDensity.set_ylim(680, 800)
 	axDensity.legend()
 
-	lineMomentum_Roe, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_Roe, label='Roe')
+	lineMomentum, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field, label='MAC scheme')
 	axMomentum.set(xlabel='x (m)', ylabel='Momentum (kg/(m2.s))')
 	axMomentum.set_xlim(a,b)
-	axMomentum.set_ylim(3500, 	4000)
+	axMomentum.set_ylim(3760, 	3780)
 	axMomentum.legend()
 
-	lineh_Roe, = axh.plot([a+0.5*dx + i*dx for i in range(nx)], h_field_Roe, label='Roe')
+	lineh, = axh.plot([a+0.5*dx + i*dx for i in range(nx)], h_field, label='MAC scheme')
 	axh.set(xlabel='x (m)', ylabel='h (J/m3)')
 	axh.set_xlim(a,b)
-	axh.set_ylim(1.2 * 10**6, 1.5*10**6)
+	axh.set_ylim(1.25 * 10**6, 1.45*10**6)
 	axh.legend()
 	
-	linePressure_Roe, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_Roe, label='Roe')
+	linePressure, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field, label='MAC scheme')
 	axPressure.set(xlabel='x (m)', ylabel='Pression (bar)')
 	axPressure.set_xlim(a,b)
-	axPressure.set_ylim(155, 155.5)
+	axPressure.set_ylim(154.99, 155.02)
 	axPressure.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 	axPressure.legend()
 
-	lineVitesse_Roe, = axVitesse.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_Roe, label='Roe')
+	lineVitesse, = axVitesse.plot([a+0.5*dx + i*dx for i in range(nx)], v_field, label='MAC scheme')
 	axVitesse.set(xlabel='x (m)', ylabel='Vitesse (m/s)')
 	axVitesse.set_xlim(a,b)
 	axVitesse.set_ylim(v_0-1, v_0+1)
 	axVitesse.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 	axVitesse.legend()
 
-	lineTemperature_Roe, = axTemperature.plot([a+0.5*dx + i*dx for i in range(nx)], T_field_Roe, label='Roe')
+	lineTemperature, = axTemperature.plot([a+0.5*dx + i*dx for i in range(nx)], T_field, label='MAC scheme')
 	axTemperature.set(xlabel='x (m)', ylabel='Température (K)')
 	axTemperature.set_xlim(a,b)
 	axTemperature.set_ylim(T_0-10, T_0+30)
 	axTemperature.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 	axTemperature.legend()
 	
-	return(fig, lineDensity_Roe, lineMomentum_Roe, lineh_Roe, linePressure_Roe, lineVitesse_Roe, lineTemperature_Roe)
+	return(fig, lineDensity, lineMomentum, lineh, linePressure, lineVitesse, lineTemperature)
 
 
-def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state_law, isImplicit):
+def EulerSystemMAC(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state_law):
 	state_law_parameters(state_law)
 	dim = 1
 	nbComp = 3
@@ -520,89 +485,85 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 	nbVoisinsMax = 2
 
 	# iteration vectors
-	Un_Roe  = cdmath.Vector(nbCells * (nbComp))
-	dUn_Roe = cdmath.Vector(nbCells * (nbComp))
-	dUk_Roe = cdmath.Vector(nbCells * (nbComp))
-	Rhs_Roe = cdmath.Vector(nbCells * (nbComp))
+	Un  = cdmath.Vector(nbCells * (nbComp))
+	dUn = cdmath.Vector(nbCells * (nbComp))
+	dUk = cdmath.Vector(nbCells * (nbComp))
+	Rhs = cdmath.Vector(nbCells * (nbComp))
 
 	# Initial conditions
 	print("Construction of the initial condition …")
 
-	rho_field_Roe, q_field_Roe, rho_E_field_Roe, p_field_Roe, v_field_Roe, T_field_Roe = initial_conditions_Riemann_problem(a, b, nx)
-	h_field_Roe = (rho_E_field_Roe + p_field_Roe) / rho_field_Roe - 0.5 * (q_field_Roe / rho_field_Roe) **2
-	p_field_Roe = p_field_Roe * 10 ** (-5)
+	rho_field, q_field, rho_E_field, p_field, v_field, T_field = initial_conditions_Riemann_problem(a, b, nx)
+	h_field = (rho_E_field + p_field) / rho_field - 0.5 * (q_field / rho_field) **2
+	p_field = p_field * 10 ** (-5)
 	
 
 	for k in range(nbCells):
-		Un_Roe[k * nbComp + 0] = rho_field_Roe[k]
-		Un_Roe[k * nbComp + 1] = q_field_Roe[k]
-		Un_Roe[k * nbComp + 2] = rho_E_field_Roe[k]
+		Un[k * nbComp + 0] = rho_field[k]
+		Un[k * nbComp + 1] = q_field[k]
+		Un[k * nbComp + 2] = rho_E_field[k]
 
-	divMat_Roe = cdmath.SparseMatrixPetsc(nbCells * nbComp, nbCells * nbComp, (nbVoisinsMax + 1) * nbComp)
+	divMat = cdmath.SparseMatrixPetsc(nbCells * nbComp, nbCells * nbComp, (nbVoisinsMax + 1) * nbComp)
 	
 	# Picture settings
-	fig, lineDensity_Roe, lineMomentum_Roe, lineRhoE_Roe, linePressure_Roe, lineVitesse_Roe, lineTemperature_Roe = SetPicture( rho_field_Roe, q_field_Roe, h_field_Roe, p_field_Roe, v_field_Roe, T_field_Roe, dx)
+	fig, lineDensity, lineMomentum, lineRhoE, linePressure, lineVitesse, lineTemperature = SetPicture( rho_field, q_field, h_field, p_field, v_field, T_field, dx)
 
-	plt.savefig("EulerComplet_HeatedChannel_" + str(dim) + "D_Roe" + meshName + "0" + ".png")
+	plt.savefig("EulerComplet_HeatedChannel_" + str(dim) + "D_MAC" + meshName + "0" + ".png")
 	iterGMRESMax = 50
 	newton_max = 100
 
-	print("Starting computation of the non linear Euler non isentropic system with Roe scheme …")
+	print("Starting computation of the non linear Euler non isentropic system with MAC scheme …")
 	# STARTING TIME LOOP
 	while (it < ntmax and time <= tmax and not isStationary):
-		dUn_Roe = Un_Roe.deepCopy()
-		Uk_Roe  = Un_Roe.deepCopy()
-		residu_Roe = 1.
+		dUn = Un.deepCopy()
+		Uk  = Un.deepCopy()
+		residu = 1.
 		
-		k_Roe = 0
-		while (k_Roe < newton_max and residu_Roe > precision):
+		k = 0
+		while (k < newton_max and residu > precision):
 			# STARTING NEWTON LOOP
-			divMat_Roe.zeroEntries()  #sets the matrix coefficients to zero
+			divMat.zeroEntries()  #sets the matrix coefficients to zero
 			for j in range(nbCells):
 				
 				# traitements des bords
 				if (j == 0):
-					FillEdges(j, Uk_Roe, nbComp, divMat_Roe, Rhs_Roe, Un_Roe, dt, dx, isImplicit)
+					FillEdges(j, Uk, nbComp, divMat, Rhs, Un, dt, dx)
 				elif (j == nbCells - 1):
-					FillEdges(j, Uk_Roe, nbComp, divMat_Roe, Rhs_Roe, Un_Roe, dt, dx, isImplicit)
+					FillEdges(j, Uk, nbComp, divMat, Rhs, Un, dt, dx)
 
 				# traitement des cellules internes
 				else:
-					FillInnerCell(j, Uk_Roe, nbComp, divMat_Roe, Rhs_Roe, Un_Roe, dt, dx, isImplicit)
+					FillInnerCell(j, Uk, nbComp, divMat, Rhs, Un, dt, dx)
 					
-				Rhs_Roe[j * nbComp + 2] += phi*dt
+				Rhs[j * nbComp + 2] += phi*dt
 			
-			if(isImplicit):
-				#solving the linear system divMat * dUk = Rhs
-				divMat_Roe.diagonalShift(1.)
-				LS_Roe = cdmath.LinearSolver(divMat_Roe, Rhs_Roe, iterGMRESMax, precision, "GMRES", "LU")
-				dUk_Roe = LS_Roe.solve()
-				vector_residu_Roe = dUk_Roe.maxVector(nbComp)
-				residu_Roe = max(abs(vector_residu_Roe[0])/rho0, abs(vector_residu_Roe[1])/(rho0*v_0), abs(vector_residu_Roe[2])/rhoE0 )
-			else:
-				dUk_Roe=Rhs_Roe - divMat_Roe*Un_Roe
-				residu_Roe = 0.#Convergence schéma Newton
+			#solving the linear system divMat * dUk = Rhs
+			divMat.diagonalShift(1.)
+			LS = cdmath.LinearSolver(divMat, Rhs, iterGMRESMax, precision, "GMRES", "LU")
+			dUk = LS.solve()
+			vector_residu = dUk.maxVector(nbComp)
+			residu = max(abs(vector_residu[0])/rho0, abs(vector_residu[1])/(rho0*v_0), abs(vector_residu[2])/rhoE0 )
 			
-			if (isImplicit and (it == 1 or it % output_freq == 0 or it >= ntmax or isStationary or time >= tmax)):
-				print("Residu Newton at iteration ",k_Roe, " :   ", residu_Roe)
-				print("Linear system converged in ", LS_Roe.getNumberOfIter(), " GMRES iterations")
+			if (it == 1 or it % output_freq == 0 or it >= ntmax or isStationary or time >= tmax):
+				print("Residu Newton at iteration ",k, " :   ", residu)
+				print("Linear system converged in ", LS.getNumberOfIter(), " GMRES iterations")
 
 			#updates for Newton loop
-			Uk_Roe += dUk_Roe
-			k_Roe = k_Roe + 1
-			if (isImplicit and not LS_Roe.getStatus()):
-				print("Linear system did not converge ", LS_Roe.getNumberOfIter(), " GMRES iterations")
+			Uk += dUk
+			k = k + 1
+			if (not LS.getStatus()):
+				print("Linear system did not converge ", LS.getNumberOfIter(), " GMRES iterations")
 				raise ValueError("No convergence of the linear system")
 			
-			if k_Roe == newton_max:
-				raise ValueError("No convergence of Newton Roe Scheme")
+			if k == newton_max:
+				raise ValueError("No convergence of Newton MAC Scheme")
 
 		#updating fields
-		Un_Roe = Uk_Roe.deepCopy()
-		dUn_Roe -= Un_Roe
+		Un = Uk.deepCopy()
+		dUn -= Un
 
 		#Testing stationarity
-		residu_stat = dUn_Roe.maxVector(nbComp)#On prend le max de chaque composante
+		residu_stat = dUn.maxVector(nbComp)#On prend le max de chaque composante
 		if (it % output_freq == 0 ):
 			print("Test de stationarité : Un+1-Un= ", max(abs(residu_stat[0])/rho0, abs(residu_stat[1])/(rho0*v_0), abs(residu_stat[2])/rhoE0 ))
 
@@ -610,26 +571,26 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 				isStationary = True
 		
 		for k in range(nbCells):
-			rho_field_Roe[k]   = Un_Roe[k * nbComp + 0]
-			q_field_Roe[k]     = Un_Roe[k * nbComp + 1]
-			rho_E_field_Roe[k] = Un_Roe[k * nbComp + 2]
+			rho_field[k]   = Un[k * nbComp + 0]
+			q_field[k]     = Un[k * nbComp + 1]
+			rho_E_field[k] = Un[k * nbComp + 2]
 
-		v_field_Roe = q_field_Roe / rho_field_Roe
-		p_field_Roe = rho_to_p_StiffenedGaz(rho_field_Roe, q_field_Roe, rho_E_field_Roe)
-		T_field_Roe = rhoE_to_T_StiffenedGaz(rho_field_Roe, q_field_Roe, rho_E_field_Roe)
-		h_field_Roe = (rho_E_field_Roe + p_field_Roe) / rho_field_Roe - 0.5 * (q_field_Roe / rho_field_Roe) **2
-		p_field_Roe = p_field_Roe * 10 ** (-5)
+		v_field = q_field / rho_field
+		p_field = rho_to_p_StiffenedGaz(rho_field, q_field, rho_E_field)
+		T_field = rhoE_to_T_StiffenedGaz(rho_field, q_field, rho_E_field)
+		h_field = (rho_E_field + p_field) / rho_field - 0.5 * (q_field / rho_field) **2
+		p_field = p_field * 10 ** (-5)
 		
-		if( min(p_field_Roe)<0) :
+		if( min(p_field)<0) :
 			raise ValueError("Negative pressure, stopping calculation")
 
 		#picture and video updates
-		lineDensity_Roe.set_ydata(rho_field_Roe)
-		lineMomentum_Roe.set_ydata(q_field_Roe)
-		lineRhoE_Roe.set_ydata(h_field_Roe)
-		linePressure_Roe.set_ydata(p_field_Roe)
-		lineVitesse_Roe.set_ydata(v_field_Roe)
-		lineTemperature_Roe.set_ydata(T_field_Roe)
+		lineDensity.set_ydata(rho_field)
+		lineMomentum.set_ydata(q_field)
+		lineRhoE.set_ydata(h_field)
+		linePressure.set_ydata(p_field)
+		lineVitesse.set_ydata(v_field)
+		lineTemperature.set_ydata(T_field)
 		
 		time = time + dt
 		it = it + 1
@@ -639,9 +600,9 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 	
 			print("-- Time step : " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
 
-			print("Temperature gain between inlet and outlet is ", T_field_Roe[nbCells-1]-T_field_Roe[0],"\n")
+			print("Temperature gain between inlet and outlet is ", T_field[nbCells-1]-T_field[0],"\n")
 
-			plt.savefig("EulerComplet_HeatedChannel_" + str(dim) + "D_Roe" + meshName + "Implicit"+str(isImplicit)+ str(it) + '_time' + str(time) + ".png")
+			plt.savefig("EulerComplet_HeatedChannel_" + str(dim) + "D_MAC" + meshName + str(it) + '_time' + str(time) + ".png")
 
 	print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt)+"\n")
 	
@@ -652,18 +613,18 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 	elif (isStationary):
 		print("Stationary regime reached at time step ", it, ", t= ", time)
 		print("------------------------------------------------------------------------------------")
-		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_Roe" + meshName + "_rho_Stat.txt", rho_field_Roe, delimiter="\n")
-		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_Roe" + meshName + "_q_Stat.txt", q_field_Roe, delimiter="\n")
-		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_Roe" + meshName + "_rhoE_Stat.txt", rho_E_field_Roe, delimiter="\n")
-		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_Roe" + meshName + "_p_Stat.txt", p_field_Roe, delimiter="\n")
-		plt.savefig("EulerComplet_HeatedChannel_" + str(dim) + "D_Roe" + meshName + "Implicit"+str(isImplicit)+"_Stat.png")
+		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_MAC" + meshName + "_rho_Stat.txt", rho_field, delimiter="\n")
+		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_MAC" + meshName + "_q_Stat.txt", q_field, delimiter="\n")
+		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_MAC" + meshName + "_rhoE_Stat.txt", rho_E_field, delimiter="\n")
+		np.savetxt("EulerComplet_HeatedChannel_" + str(dim) + "D_MAC" + meshName + "_p_Stat.txt", p_field, delimiter="\n")
+		plt.savefig("EulerComplet_HeatedChannel_" + str(dim) + "D_MAC" + meshName +"_Stat.png")
 		return
 	else:
 		print("Maximum time Tmax= ", tmax, " reached")
 		return
 
 
-def solve(a, b, nx, meshName, meshType, cfl, state_law, isImplicit):
+def solve(a, b, nx, meshName, meshType, cfl, state_law):
 	print("Simulation of a heated channel in dimension 1 on " + str(nx) + " cells")
 	print("State Law Stiffened Gaz, " + state_law)
 	print("Initial data : ", "constant fields")
@@ -673,7 +634,7 @@ def solve(a, b, nx, meshName, meshType, cfl, state_law, isImplicit):
 	tmax = 10.
 	ntmax = 100000
 	output_freq = 1000
-	EulerSystemRoe(ntmax, tmax, cfl, a, b, nx, output_freq, meshName, state_law, isImplicit)
+	EulerSystemMAC(ntmax, tmax, cfl, a, b, nx, output_freq, meshName, state_law)
 	return
 
 def FillMatrixFromEdges(j, Uk, nbComp, divMat, dt, dx):
@@ -748,7 +709,7 @@ def FillMatrixFromInnerCell(j, Uk, nbComp, divMat, dt, dx):
 	divMat.addValue(j * nbComp, j * nbComp, Ap)
 	divMat.addValue(j * nbComp, (j - 1) * nbComp, Ap * (-1.))
 			
-def FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit):
+def FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx):
 	dUi1 = cdmath.Vector(3)
 	dUi2 = cdmath.Vector(3)
 	temp1 = cdmath.Vector(3)
@@ -775,21 +736,15 @@ def FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit):
 
 		Ap = jacobianMatricesp(dt / dx, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)
 	
-		if(isImplicit):
-			dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
-			dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
-			dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
-			temp1 = Am * dUi1
-		
-			dUi2[0] = rho_l   -  Uk[(j ) * nbComp + 0]
-			dUi2[1] = q_l     -  Uk[(j ) * nbComp + 1]
-			dUi2[2] = rho_E_l -  Uk[(j ) * nbComp + 2]
-			temp2 = Ap * dUi2
-		else:
-			dUi2[0] = rho_l   
-			dUi2[1] = q_l     
-			dUi2[2] = rho_E_l 
-			temp2 = Ap * dUi2
+		dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
+		dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
+		dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
+		temp1 = Am * dUi1
+	
+		dUi2[0] = rho_l   -  Uk[(j ) * nbComp + 0]
+		dUi2[1] = q_l     -  Uk[(j ) * nbComp + 1]
+		dUi2[2] = rho_E_l -  Uk[(j ) * nbComp + 2]
+		temp2 = Ap * dUi2
 
 	elif (j == nx - 1):
 		rho_l   = Uk[(j - 1) * nbComp + 0]
@@ -810,32 +765,21 @@ def FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit):
 
 		Am = jacobianMatricesm(dt / dx, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)	
 
-		if(isImplicit):
-			dUi1[0] = rho_r   - Uk[j * nbComp + 0]
-			dUi1[1] = q_r     - Uk[j * nbComp + 1]
-			dUi1[2] = rho_E_r - Uk[j * nbComp + 2]
-			temp1 = Am * dUi1
-	
-			dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
-			dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
-			dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
-			temp2 = Ap * dUi2
-		else:
-			dUi1[0] = rho_r   
-			dUi1[1] = q_r     
-			dUi1[2] = rho_E_r 
-			temp1 = Am * dUi1
-	
-	if(isImplicit):
-		Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
-		Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
-		Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
-	else:#explicit scheme, contribution from the boundary data the right hand side
-		Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] 
-		Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] 
-		Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] 
+		dUi1[0] = rho_r   - Uk[j * nbComp + 0]
+		dUi1[1] = q_r     - Uk[j * nbComp + 1]
+		dUi1[2] = rho_E_r - Uk[j * nbComp + 2]
+		temp1 = Am * dUi1
 
-def FillRHSFromInnerCell(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit):
+		dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
+		dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
+		dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
+		temp2 = Ap * dUi2
+	
+	Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
+	Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
+	Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
+
+def FillRHSFromInnerCell(j, Uk, nbComp, Rhs, Un, dt, dx):
 
 	rho_l   = Uk[(j - 1) * nbComp + 0]
 	q_l     = Uk[(j - 1) * nbComp + 1]
@@ -853,31 +797,26 @@ def FillRHSFromInnerCell(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit):
 	rho_E_r = Uk[(j + 1) * nbComp + 2]
 	Am = jacobianMatricesm(dt / dx, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r)
 
-	if(isImplicit):#Contribution to the right hand side if te scheme is implicit
-		dUi1 = cdmath.Vector(3)
-		dUi2 = cdmath.Vector(3)
-		
-		dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
-		dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
-		dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
+	dUi1 = cdmath.Vector(3)
+	dUi2 = cdmath.Vector(3)
 	
-		dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
-		dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
-		dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
+	dUi1[0] = Uk[(j + 1) * nbComp + 0] - Uk[j * nbComp + 0]
+	dUi1[1] = Uk[(j + 1) * nbComp + 1] - Uk[j * nbComp + 1]
+	dUi1[2] = Uk[(j + 1) * nbComp + 2] - Uk[j * nbComp + 2]
 
-		temp1 = Am * dUi1
-		temp2 = Ap * dUi2
+	dUi2[0] = Uk[(j - 1) * nbComp + 0] - Uk[j * nbComp + 0]
+	dUi2[1] = Uk[(j - 1) * nbComp + 1] - Uk[j * nbComp + 1]
+	dUi2[2] = Uk[(j - 1) * nbComp + 2] - Uk[j * nbComp + 2]
 
-		Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
-		Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
-		Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
-	else:
-		Rhs[j * nbComp + 0] = 0
-		Rhs[j * nbComp + 1] = 0
-		Rhs[j * nbComp + 2] = 0
+	temp1 = Am * dUi1
+	temp2 = Ap * dUi2
+
+	Rhs[j * nbComp + 0] = -temp1[0] + temp2[0] - (Uk[j * nbComp + 0] - Un[j * nbComp + 0])
+	Rhs[j * nbComp + 1] = -temp1[1] + temp2[1] - (Uk[j * nbComp + 1] - Un[j * nbComp + 1])
+	Rhs[j * nbComp + 2] = -temp1[2] + temp2[2] - (Uk[j * nbComp + 2] - Un[j * nbComp + 2])
 
 
-def computeSystemMatrix(a,b,nx, cfl, Uk, isImplicit):
+def computeSystemMatrix(a,b,nx, cfl, Uk):
 	dim = 1
 	nbComp = 3
 	dx = (b - a) / nx
@@ -899,15 +838,11 @@ def computeSystemMatrix(a,b,nx, cfl, Uk, isImplicit):
 		else:
 			FillMatrixFromInnerCell(j, Uk, nbComp, divMat, dt, dx)
 	
-	if(isImplicit):		
-		divMat.diagonalShift(1.)  # add one on the diagonal
-	else:
-		divMat*=-1.
-		divMat.diagonalShift(1.)  # add one on the diagonal
+	divMat.diagonalShift(1.)  # add one on the diagonal
 
 	return divMat
 
-def computeRHSVector(a,b,nx, cfl, Uk, Un, isImplicit):
+def computeRHSVector(a,b,nx, cfl, Uk, Un):
 	dim = 1
 	nbComp = 3
 	dx = (b - a) / nx
@@ -921,12 +856,12 @@ def computeRHSVector(a,b,nx, cfl, Uk, Un, isImplicit):
 		
 		# traitements des bords
 		if (j == 0):
-			FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit)
+			FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx)
 		elif (j == nbCells - 1):
-			FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit)
+			FillRHSFromEdges(j, Uk, nbComp, Rhs, Un, dt, dx)
 		# traitement des cellules internes
 		else:
-			FillRHSFromInnerCell(j, Uk, nbComp, Rhs, Un, dt, dx, isImplicit)
+			FillRHSFromInnerCell(j, Uk, nbComp, Rhs, Un, dt, dx)
 			
 	return Rhs
 
@@ -935,7 +870,7 @@ if __name__ == """__main__""":
 	nbComp=3 # number of equations 
 	a = 0.# domain is interval [a,b]
 	b = 4.2# domain is interval [a,b]
-	nx = 10# number of cells
+	nx = 50# number of cells
 	dx = (b - a) / nx  # space step
 	x = [a + 0.5 * dx + i * dx for i in range(nx)]  # array of cell center (1D mesh)
 	state_law = "Hermite575K"
@@ -961,21 +896,13 @@ if __name__ == """__main__""":
 		U[k * nbComp + 2] = rho_E_field[k]
 	print("\n Testing function computeSystemMatrix \n")
 	cfl = 0.5
-	computeSystemMatrix(a, b, nx, cfl, U,True)  #Implicit matrix
-	computeSystemMatrix(a, b, nx, cfl, U,False) #Explicit matrix
+	computeSystemMatrix(a, b, nx, cfl, U)
 
 	print("\n Testing function computeRHSVector \n")
 	cfl = 0.5
-	computeRHSVector(a, b, nx, cfl, U, U,True)  #Implicit RHS
-	computeRHSVector(a, b, nx, cfl, U, U,False) #Explicit RHS
+	computeRHSVector(a, b, nx, cfl, U, U) 
 
-	print("\n Testing function solve (Implicit scheme) \n")
-	isImplicit=True
+	print("\n Testing function solve \n")
 	cfl = 1000.
-	solve(a, b, nx, "RegularSquares", "", cfl, state_law, isImplicit)
+	solve(a, b, nx, "RegularSquares", "", cfl, state_law)
 	
-	print("\n Testing function solve (Explicit scheme) \n")
-	isImplicit=False
-	cfl = 0.5
-	solve(a, b, nx, "RegularSquares", "", cfl, state_law, isImplicit)
-
