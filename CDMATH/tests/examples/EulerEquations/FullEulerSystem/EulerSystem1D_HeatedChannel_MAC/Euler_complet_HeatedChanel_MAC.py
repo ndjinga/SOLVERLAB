@@ -252,20 +252,7 @@ def Dmac_StiffenedGaz( rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
 	Dmac[2, 1] = H + dp_de / rho * u ** 2
 	Dmac[2, 2] = (-dp_de / rho +1) * u
 	
-	#return Dmac * sign(u)
-	
-	#Fifth choice for Dstag
-	Dmac[0, 0] = abs(u)-u
-	Dmac[0, 1] = 1
-	Dmac[0, 2] = 0
-	Dmac[1, 0] = -dp_drho - u ** 2 - dp_de / rho * (u**2/2 - e)
-	Dmac[1, 1] = abs(u) + u + u * dp_de / rho
-	Dmac[1, 2] = -dp_de / rho
-	Dmac[2, 0] = -u * ( dp_drho + H + u*(u-abs(u)) + dp_de / rho * (u**2/2 - e) )
-	Dmac[2, 1] = H + dp_de / rho * u ** 2
-	Dmac[2, 2] = -u*dp_de / rho + abs(u)
-	
-	return Dmac 
+	return Dmac * sign(u)
 	
 def jacobianMatricesm(coeff, rho_l, q_l, rho_E_l, rho_r, q_r, rho_E_r):
 
