@@ -99,6 +99,7 @@ WaveSystem_stationary_source/2DWaveSystemUpwindCheckerboard
 WaveSystem_stationary_source/2DWaveSystemUpwindBrickWall
 WaveSystem_stationary_source/2DWaveSystemUpwindHexagons
 WaveSystem_stationary_source/2DWaveSystemUpwindDeformedQuadrangles
+ReferenceSolutions/
 test_synthesis 
 )
 
