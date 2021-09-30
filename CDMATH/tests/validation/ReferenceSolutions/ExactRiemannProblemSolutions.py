@@ -392,39 +392,39 @@ def run_Riemann_problems(numsamples = 100):
 		fig, ([axDensity, axMomentum, axEnthalpie],[axPressure, axVitesse, axEinterne]) = plt.subplots(2, 3,sharex=True, figsize=(14,10))
 		plt.gcf().subplots_adjust(wspace = 0.5)
 		
-		axDensity.plot(  [xmin + i*dx for i in range(numsamples+1)], rho_field, label='Density, '+str(numsamples+1)+' cells') #new picture for video # Returns a tuple of line objects, thus the comma
+		axDensity.plot(  [xmin + i*dx for i in range(numsamples+1)], rho_field, label='Density, '+str(numsamples)+' cells') #new picture for video # Returns a tuple of line objects, thus the comma
 		axDensity.set(xlabel='x (m)', ylabel='Densité (Kg/m3)')
 		axDensity.set_xlim(xmin,xmax)
 		axDensity.set_ylim(0.9*min_initial_rho , 6*max_initial_rho )
 		axDensity.legend()
 		
-		axMomentum.plot( [xmin + i*dx for i in range(numsamples+1)],  q_field, label='Momentum, '+str(numsamples+1)+' cells')    
+		axMomentum.plot( [xmin + i*dx for i in range(numsamples+1)],  q_field, label='Momentum, '+str(numsamples)+' cells')    
 		axMomentum.set(xlabel='x (m)', ylabel='Momentum (Kg/m2/s)')
 		axMomentum.set_xlim(xmin,xmax)
 		axMomentum.set_ylim(0.9*min_initial_q , 2.5*max_initial_q )
 		axMomentum.legend()
 		
-		axEnthalpie.plot([xmin + i*dx for i in range(numsamples+1)],   h_field, label='Enthalpy, '+str(numsamples+1)+' cells')    
+		axEnthalpie.plot([xmin + i*dx for i in range(numsamples+1)],   h_field, label='Enthalpy, '+str(numsamples)+' cells')    
 		axEnthalpie.set(xlabel='x (m)', ylabel='Enthalpy (J/Kg)')
 		axEnthalpie.set_xlim(xmin,xmax)
 		axEnthalpie.set_ylim(0.9*min_initial_h , 1.75*max_initial_h )
 		axEnthalpie.legend()
 		
-		axPressure.plot( [xmin + i*dx for i in range(numsamples+1)],   p_field, label='Pressure, '+str(numsamples+1)+' cells')
+		axPressure.plot( [xmin + i*dx for i in range(numsamples+1)],   p_field, label='Pressure, '+str(numsamples)+' cells')
 		axPressure.set(xlabel='x (m)', ylabel='Pressure (Pa)')
 		axPressure.set_xlim(xmin,xmax)
 		axPressure.set_ylim(0.9*min_initial_p , 4*max_initial_p)
 		axPressure.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 		axPressure.legend()
 		
-		axVitesse.plot(  [xmin + i*dx for i in range(numsamples+1)],   u_field, label=' Velocity, '+str(numsamples+1)+' cells')
+		axVitesse.plot(  [xmin + i*dx for i in range(numsamples+1)],   u_field, label=' Velocity, '+str(numsamples)+' cells')
 		axVitesse.set(xlabel='x (m)', ylabel='Velocity (m/s)')
 		axVitesse.set_xlim(xmin,xmax)
 		axVitesse.set_ylim(0.9*min_initial_v , 1.1*max_initial_v)
 		axVitesse.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 		axVitesse.legend()
 		
-		axEinterne.plot( [xmin + i*dx for i in range(numsamples+1)],   e_field, label='Internal energy, '+str(numsamples+1)+' cells')
+		axEinterne.plot( [xmin + i*dx for i in range(numsamples+1)],   e_field, label='Internal energy, '+str(numsamples)+' cells')
 		axEinterne.set(xlabel='x (m)', ylabel='Internal energy (J/Kg)')
 		axEinterne.set_xlim(xmin,xmax)
 		axEinterne.set_ylim(0.9*min_initial_e , 1.75*max_initial_e)
