@@ -12,13 +12,9 @@
 
 import exact_rs_stiffenedgas
 from math import fabs
-
-def stiffenedgas_e (rho, p, gamma, pinf):
-	return (p+gamma*pinf)/(rho*(gamma-1));
-
-def stiffenedgas_h (rho, p, gamma, pinf):
-	return gamma*(p+pinf)/(rho*(gamma-1));
-
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 def run_Riemann_problems(numsamples = 100):
 	# Output test solution for many different Riemann problems
@@ -50,7 +46,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[2] = 0.1;
 			t = 0.2;
 			offset = 0.3;
-			filename = "TTC1.dat";
+			filename = "TTC1";
 		elif (TC ==2):
 			WL[0] = 1.0;
 			WL[1] = -2.0;
@@ -59,7 +55,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 2.0;
 			WR[2] = 0.4;
 			t = 0.15;
-			filename = "TTC2.dat";
+			filename = "TTC2";
 		elif (TC ==3):
 			WL[0] = 1.0;
 			WL[1] = 0.0;
@@ -68,7 +64,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 0.01;
 			t = 0.012;
-			filename = "TTC3.dat";
+			filename = "TTC3";
 		elif (TC ==4):
 			WL[0] = 5.99924;
 			WL[1] = 19.5975;
@@ -78,7 +74,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[2] = 46.0950;
 			t = 0.035;
 			offset = 0.4;
-			filename = "TTC4.dat";
+			filename = "TTC4";
 		elif (TC ==5):
 			WL[0] = 1.0;
 			WL[1] = -19.59745;
@@ -88,7 +84,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[2] = 0.01;
 			t = 0.012;
 			offset = 0.8;
-			filename = "TTC5.dat";
+			filename = "TTC5";
 		elif (TC == 21):
 			WL[0] = 1.4;
 			WL[1] = 0.0;
@@ -97,7 +93,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 1.;
 			t = 2.;
-			filename = "TTC6.dat";
+			filename = "TTC6";
 		elif (TC == 22):
 			WL[0] = 1.4;
 			WL[1] = 0.1;
@@ -106,7 +102,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.1;
 			WR[2] = 1.;
 			t = 2.;
-			filename = "TTC7.dat";
+			filename = "TTC7";
 		elif (TC == 6):
 			# Air - Helium shock tube from Sambasivan 2009
 			
@@ -117,7 +113,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 0.1;
 			t = 0.25;
-			filename = "Samb1.dat";
+			filename = "Samb1";
 			gammaR = 1.667;
 		elif (TC == 7):
 			# Gaseous shock tube from rGFM
@@ -129,7 +125,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 10000.0;
 			t = 0.0007;
-			filename = "NE1.dat";
+			filename = "NE1";
 			gammaR = 1.2;
 		elif (TC == 8):
 			# Air - water shock from rGFM
@@ -143,7 +139,7 @@ def run_Riemann_problems(numsamples = 100):
 			gammaR = 7.15;
 			pinf_R = 3309.0;
 			t = 0.0007;
-			filename = "rGFM2.dat";
+			filename = "rGFM2";
 		elif (TC == 9):
 			# Air - water jet from rGFM
 			
@@ -156,7 +152,7 @@ def run_Riemann_problems(numsamples = 100):
 			gammaR = 7.15;
 			pinf_R = 3309.0;
 			t = 0.015;
-			filename = "rGFM4.dat";
+			filename = "rGFM4";
 			offset = 0.6;
 		elif (TC == 10):
 			# Reversed version of TC 9
@@ -170,7 +166,7 @@ def run_Riemann_problems(numsamples = 100):
 			gammaL = 7.15;
 			pinf_L = 3309.0;
 			t = 0.015;
-			filename = "rGFM_reversed.dat";
+			filename = "rGFM_reversed";
 			offset = 0.4;
 		elif (TC == 11):
 			# Water - air shock from Saurel 1999
@@ -184,7 +180,7 @@ def run_Riemann_problems(numsamples = 100):
 			gammaL = 4.4;
 			pinf_L = 2.4;
 			t = 0.12;
-			filename = "Saurel1.dat";
+			filename = "Saurel1";
 			offset = 0.7;
 		elif (TC == 12):
 			# Reversed version of TC 11
@@ -198,7 +194,7 @@ def run_Riemann_problems(numsamples = 100):
 			gammaR = 4.4;
 			pinf_R = 2.4;
 			t = 0.12;
-			filename = "Saurel1_reversed.dat";
+			filename = "Saurel1_reversed";
 			offset = 0.3;
 		elif (TC == 13):
 			# Numerical experiment 2
@@ -212,7 +208,7 @@ def run_Riemann_problems(numsamples = 100):
 			gammaL = 1.667;
 			gammaR = 1.2;
 			t = 0.045;
-			filename = "NE2.dat";
+			filename = "NE2";
 			offset = 0.2;
 		elif (TC == 14):
 			# Numerical experiment 3
@@ -228,7 +224,7 @@ def run_Riemann_problems(numsamples = 100):
 			pinf_L = 0.0;
 			pinf_R = 3309.0;
 			t = 0.0007;
-			filename = "NE3.dat";
+			filename = "NE3";
 			offset = 0.5;
 		elif (TC == 15):
 			# Gaseous shock tube from So/Hu/Adams 2012
@@ -240,7 +236,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 0.1;
 			t = 0.15;
-			filename = "ST3.dat";
+			filename = "ST3";
 			gammaR = 1.667;
 		elif (TC == 16):
 			# Gaseous shock tube from Garrick/Owkes/Regele 2016
@@ -252,7 +248,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 0.1;
 			t = 0.14;
-			filename = "ST1.dat";
+			filename = "ST1";
 			gammaR = 2.4;
 		elif (TC == 17):
 			# Water - air shock tube from Murrone/Guillard 2004
@@ -264,7 +260,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 100000.0;
 			t = 0.0009;
-			filename = "ST2.dat";
+			filename = "ST2";
 			offset = 0.7;
 			gammaL = 4.4;
 			gammaR = 1.4;
@@ -282,7 +278,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 100000.0;
 			t = 3.e-4;
-			filename = "PWR-ShockTube1.dat";
+			filename = "PWR-ShockTube1";
 			gammaL = 1.58;
 			gammaR = 1.58;
 			pinf_L = 353637173.0;
@@ -297,7 +293,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 20.0;
 			WR[2] = 15500000.0;
 			t = 3.e-4;
-			filename = "PWR-ShockTube2.dat";
+			filename = "PWR-ShockTube2";
 			gammaL = 1.58;
 			gammaR = 1.58;
 			pinf_L = 353637173.0;
@@ -312,7 +308,7 @@ def run_Riemann_problems(numsamples = 100):
 			WR[1] = 0.0;
 			WR[2] = 15500000.0;
 			t = 3.e-4;
-			filename = "PWR-ShockTube3.dat";
+			filename = "PWR-ShockTube3";
 			gammaL = 1.58;
 			gammaR = 1.58;
 			pinf_L = 353637173.0;
@@ -339,21 +335,104 @@ def run_Riemann_problems(numsamples = 100):
 		print( "Right rarefaction tail speed calculated as " , RS.S_TR  )
 	
 		
-		delx = (xmax - xmin)/numsamples;
+		dx = (xmax - xmin)/numsamples;
 
-		outfile=open(filename, 'w')
+		outfile=open(filename+'.dat', 'w')
 	
+		rho_field = [0]*(numsamples+1)
+		u_field   = [0]*(numsamples+1)
+		p_field   = [0]*(numsamples+1)
+		q_field = [0]*(numsamples+1)
+		h_field   = [0]*(numsamples+1)
+		e_field   = [0]*(numsamples+1)
+
 		x = xmin;
-		while (x <= xmax):
+		for i in range(numsamples+1):
 		
 			S = x/t;
 			soln = RS.sample_solution(WL, WR, S - offset/t);
+
 			thisgamma = gammaL if S - offset/t < RS.S_STAR else gammaR;
 			thispinf = pinf_L  if S - offset/t < RS.S_STAR else pinf_R;
 			thisz = 1.0  if S - offset/t < RS.S_STAR else 0.0;
-			outfile.write( str( x ) + " " + str( soln[0]) + " " + str( soln[1]) + " " + str( soln[2]) + " " + str(stiffenedgas_e(soln[0], soln[2], thisgamma, thispinf)) + " " + str(stiffenedgas_h(soln[0], soln[2], thisgamma, thispinf)) + " " + str(fabs(soln[1])/RS.a(soln[0], soln[2], thisgamma, thispinf)) + " " + str(thisz) + "\n")
-			x += delx;
+
+			rho_field[i]=soln[0]
+			u_field[i]  =soln[1]
+			p_field[i]  =soln[2]
+			q_field[i]  =rho_field[i]*u_field[i]
+			h_field[i]  =exact_rs_stiffenedgas.stiffenedgas_h(rho_field[i], p_field[i], thisgamma, thispinf)
+			e_field[i]  =exact_rs_stiffenedgas.stiffenedgas_e(rho_field[i], p_field[i], thisgamma, thispinf)
+
+			outfile.write( str( x ) + " " + str( soln[0]) + " " + str( soln[1]) + " " + str( soln[2]) + " " + str(exact_rs_stiffenedgas.stiffenedgas_e(soln[0], soln[2], thisgamma, thispinf)) + " " + str(exact_rs_stiffenedgas.stiffenedgas_h(soln[0], soln[2], thisgamma, thispinf)) + " " + str(fabs(soln[1])/RS.a(soln[0], soln[2], thisgamma, thispinf)) + " " + str(thisz) + "\n")
+
+			x += dx;
+
 		outfile.close()
+
+		#Set picture parameters    
+		max_initial_rho = max(WL[0],WR[0])
+		min_initial_rho = min(WL[0],WR[0])
+		max_initial_p = max(WL[2],WR[2])
+		min_initial_p = min(WL[2],WR[2])
+		max_initial_v = max(WL[2],WR[2])
+		min_initial_v = min(WL[2],WR[2])
+		max_initial_q = max_initial_rho*max_initial_v
+		min_initial_q = min_initial_rho*min_initial_v
+		
+		e_L=exact_rs_stiffenedgas.p_to_e_StiffenedGaz(WL[2], WL[0], gammaL, pinf_L)
+		e_R=exact_rs_stiffenedgas.p_to_e_StiffenedGaz(WR[2], WR[0], gammaR, pinf_R)
+		h_L=e_L+WL[2]/WL[0]
+		h_R=e_R+WR[2]/WR[0]
+		max_initial_e = max(e_L,e_R)
+		min_initial_e = min(e_L,e_R)
+		min_initial_h = min(h_L,h_R)
+		max_initial_h = max(h_L,h_R)
+		
+		# Create plots
+		fig, ([axDensity, axMomentum, axEnthalpie],[axPressure, axVitesse, axEinterne]) = plt.subplots(2, 3,sharex=True, figsize=(14,10))
+		plt.gcf().subplots_adjust(wspace = 0.5)
+		
+		axDensity.plot(  [xmin + i*dx for i in range(numsamples+1)], rho_field, label='Density, '+str(numsamples+1)+' cells') #new picture for video # Returns a tuple of line objects, thus the comma
+		axDensity.set(xlabel='x (m)', ylabel='Densité (Kg/m3)')
+		axDensity.set_xlim(xmin,xmax)
+		axDensity.set_ylim(0.9*min_initial_rho , 6*max_initial_rho )
+		axDensity.legend()
+		
+		axMomentum.plot( [xmin + i*dx for i in range(numsamples+1)],  q_field, label='Momentum, '+str(numsamples+1)+' cells')    
+		axMomentum.set(xlabel='x (m)', ylabel='Momentum (Kg/m2/s)')
+		axMomentum.set_xlim(xmin,xmax)
+		axMomentum.set_ylim(0.9*min_initial_q , 2.5*max_initial_q )
+		axMomentum.legend()
+		
+		axEnthalpie.plot([xmin + i*dx for i in range(numsamples+1)],   h_field, label='Enthalpy, '+str(numsamples+1)+' cells')    
+		axEnthalpie.set(xlabel='x (m)', ylabel='Enthalpy (J/Kg)')
+		axEnthalpie.set_xlim(xmin,xmax)
+		axEnthalpie.set_ylim(0.9*min_initial_h , 1.75*max_initial_h )
+		axEnthalpie.legend()
+		
+		axPressure.plot( [xmin + i*dx for i in range(numsamples+1)],   p_field, label='Pressure, '+str(numsamples+1)+' cells')
+		axPressure.set(xlabel='x (m)', ylabel='Pressure (Pa)')
+		axPressure.set_xlim(xmin,xmax)
+		axPressure.set_ylim(0.9*min_initial_p , 4*max_initial_p)
+		axPressure.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+		axPressure.legend()
+		
+		axVitesse.plot(  [xmin + i*dx for i in range(numsamples+1)],   u_field, label=' Velocity, '+str(numsamples+1)+' cells')
+		axVitesse.set(xlabel='x (m)', ylabel='Velocity (m/s)')
+		axVitesse.set_xlim(xmin,xmax)
+		axVitesse.set_ylim(0.9*min_initial_v , 1.1*max_initial_v)
+		axVitesse.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+		axVitesse.legend()
+		
+		axEinterne.plot( [xmin + i*dx for i in range(numsamples+1)],   e_field, label='Internal energy, '+str(numsamples+1)+' cells')
+		axEinterne.set(xlabel='x (m)', ylabel='Internal energy (J/Kg)')
+		axEinterne.set_xlim(xmin,xmax)
+		axEinterne.set_ylim(0.9*min_initial_e , 1.75*max_initial_e)
+		axEinterne.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+		axEinterne.legend()
+
+		plt.savefig("EulerRiemannProblemExactSolution_" + filename + ".png")
+
 
 	return 0.0;
 

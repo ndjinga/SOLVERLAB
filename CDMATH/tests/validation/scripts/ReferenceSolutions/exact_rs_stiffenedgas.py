@@ -12,6 +12,16 @@
 
 from math import pow, fabs, sqrt
 
+def stiffenedgas_e (rho, p, gamma, pinf):
+	return (p+gamma*pinf)/(rho*(gamma-1));
+
+def stiffenedgas_h (rho, p, gamma, pinf):
+	return gamma*(p+pinf)/(rho*(gamma-1));
+
+def p_to_e_StiffenedGaz(p, rho, gamma, pinf):
+	e_field = (p + gamma*pinf) / (gamma - 1.) / rho
+	return e_field
+
 class exact_rs_stiffenedgas :
 
 	def __init__(self, gamma_L, gamma_R, pinf_L, pinf_R, tol=1.e-6, max_iter=100):
@@ -243,5 +253,11 @@ class exact_rs_stiffenedgas :
 
 	def a (self, rho, p, gamma, pinf):#sound speed
 		return sqrt(gamma*((p+pinf)/rho))
+
+	#Determine the solution value at position x and time t
+	def rho_u_p_solution (initialLeftState, initialRightState, x, t, gamma, pinf, offset=0):
+		RS = exact_rs_stiffenedgas(gamma, gamma, pinf, pinf);
+		RS.solve_RP(initialLeftState, initialRightState);
+		return 	RS.sample_solution(initialLeftState, initialRightState, (x - offset)/t);
 
 
