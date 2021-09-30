@@ -24,7 +24,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import os
-from math import sqrt, atan, pi
+from math import sqrt
 from numpy import sign
 
 #initial parameters for Riemann problem (p in Pa, v in m/s, rho in Kg/m**3)

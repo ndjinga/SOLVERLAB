@@ -30,9 +30,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.animation as manimation
-import sys
-from math import sqrt, atan, pi
+from math import sqrt
 from numpy import sign
 
 
