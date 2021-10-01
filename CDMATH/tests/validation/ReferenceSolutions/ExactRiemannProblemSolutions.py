@@ -431,6 +431,7 @@ def run_Riemann_problems(numsamples = 100):
 		axEinterne.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 		axEinterne.legend()
 
+		plt.suptitle('Euler equations : exact solution of Riemann problem ' + filename)
 		plt.savefig("EulerRiemannProblemExactSolution_" + filename + ".png")
 
 
