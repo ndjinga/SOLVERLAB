@@ -27,12 +27,12 @@ To do correct the computation of the time step : lambda_max (maximum eigenvalue)
 import cdmath
 import numpy as np
 import matplotlib
-
+import matplotlib.animation as manimation
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from math import sqrt
 from numpy import sign
-
+import sys
 
 ## Numerical parameter
 precision = 1e-5
@@ -459,7 +459,7 @@ def SetPicture(rho_field_Roe, q_field_Roe, h_field_Roe, p_field_Roe, v_field_Roe
 	return(fig, lineDensity_Roe, lineMomentum_Roe, lineRhoE_Roe, linePressure_Roe, lineVitesse_Roe, lineTemperature_Roe, lineDensity_Roe, lineMomentum_Roe, lineRhoE_Roe, linePressure_Roe, lineVitesse_Roe, lineTemperature_Roe)
 
 
-def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state_law):
+def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state_law, isImplicit):
 	#state_law_parameters(state_law)
 	dim = 1
 	nbComp = 3
@@ -467,7 +467,6 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 	time = 0.
 	it = 0
 	isStationary = False
-	isImplicit = False
 	dx = (b - a) / nx
 	dt = cfl * dx / c0
 	#dt = 5*10**(-6)
@@ -496,16 +495,20 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 	
 	# Picture settings
 	fig, lineDensity, lineMomentum, lineRhoE, linePressure, lineVitesse, lineTemperature, lineDensity_Roe, lineMomentum_Roe, lineRhoE_Roe, linePressure_Roe, lineVitesse_Roe, lineTemperature_Roe  = SetPicture( rho_field_Roe, q_field_Roe, h_field_Roe, p_field_Roe, v_field_Roe, T_field_Roe, dx)
+	if(isImplicit):
+		ImplicitOrExplicit="Implicit"    
+	else:
+		ImplicitOrExplicit="Explicit"    
 
 	# Video settings
 	FFMpegWriter = manimation.writers['ffmpeg']
-	metadata = dict(title="Roe scheme for the 1D Euler system", artist="CEA Saclay", comment="Shock tube")
+	metadata = dict(title=ImplicitOrExplicit+" Roe scheme for the 1D Euler system", artist="CEA Saclay", comment="Shock tube")
 	writer = FFMpegWriter(fps=10, metadata=metadata, codec='h264')
-	with writer.saving(fig, "1DEuler_complet_RP_Roe" + ".mp4", ntmax):
+	with writer.saving(fig, "1DEulerEquations_RiemannProblem_"+ImplicitOrExplicit+"Roe" + ".mp4", ntmax):
 		writer.grab_frame()
-		plt.savefig("EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "0" + ".png")
-		np.savetxt( "EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "_rho" + "0" + ".txt", rho_field_Roe, delimiter="\n")
-		np.savetxt( "EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "_q" + "0" + ".txt", q_field_Roe,  delimiter="\n")
+		plt.savefig("EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "0" + ".png")
+		np.savetxt( "EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "_rho" + "0" + ".txt", rho_field_Roe, delimiter="\n")
+		np.savetxt( "EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "_q" + "0" + ".txt", q_field_Roe,  delimiter="\n")
 		iterGMRESMax = 50
 		newton_max = 100
 	
@@ -595,7 +598,7 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 		
 				print("-- Time step : " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
 	
-				plt.savefig("EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + str(it) + '_time' + str(time) + ".png")
+				plt.savefig("EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + str(it) + '_time' + str(time) + ".png")
 
 	print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
 	if (it >= ntmax):
@@ -605,18 +608,18 @@ def EulerSystemRoe(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, state
 	elif (isStationary):
 		print("Stationary regime reached at time step ", it, ", t= ", time)
 		print("------------------------------------------------------------------------------------")
-		np.savetxt("EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "_rho_Stat.txt", rho_field_Roe, delimiter="\n")
-		np.savetxt("EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "_q_Stat.txt", q_field_Roe, delimiter="\n")
-		np.savetxt("EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "_rhoE_Stat.txt", rho_E_field_Roe, delimiter="\n")
-		np.savetxt("EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "_p_Stat.txt", p_field_Roe, delimiter="\n")
-		plt.savefig("EulerComplet_RP_" + str(dim) + "D_Roe" + meshName + "_Stat.png")
+		np.savetxt("EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "_rho_Stat.txt", rho_field_Roe, delimiter="\n")
+		np.savetxt("EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "_q_Stat.txt", q_field_Roe, delimiter="\n")
+		np.savetxt("EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "_rhoE_Stat.txt", rho_E_field_Roe, delimiter="\n")
+		np.savetxt("EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "_p_Stat.txt", p_field_Roe, delimiter="\n")
+		plt.savefig("EulerEquations_RiemannProblem_" + str(dim) + "D_"+ImplicitOrExplicit+"Roe" + meshName + "_Stat.png")
 		return
 	else:
 		print("Maximum time Tmax= ", tmax, " reached")
 		return
 
 
-def solve(a, b, nx, meshName, meshType, cfl, state_law):
+def solve(a, b, nx, meshName, meshType, cfl, state_law, isImplicit):
 	print("Resolution of the Euler System in dimension 1 on " + str(nx) + " cells")
 	print("State Law Stiffened Gaz, " + state_law)
 	print("Initial data : ", "Riemann problem")
@@ -626,7 +629,7 @@ def solve(a, b, nx, meshName, meshType, cfl, state_law):
 	tmax = 10.
 	ntmax = 25
 	output_freq = 1
-	EulerSystemRoe(ntmax, tmax, cfl, a, b, nx, output_freq, meshName, state_law)
+	EulerSystemRoe(ntmax, tmax, cfl, a, b, nx, output_freq, meshName, state_law, isImplicit)
 	return
 
 
@@ -634,7 +637,8 @@ if __name__ == """__main__""":
 	a = 0.
 	b = 1.
 	nx = 50
-	cfl = 0.5
+	cfl = 0.95
+	isImplicit = bool(int(sys.argv[1]))
 	#state_law = "Hermite590K"
 	#state_law_parameters(state_law)
-	solve(a, b, nx, "RegularSquares", "", cfl, state_law)
+	solve(a, b, nx, "RegularSquares", "", cfl, state_law, isImplicit)
