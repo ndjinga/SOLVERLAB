@@ -15,7 +15,7 @@ def test_validation1DEulerEquationsToro(scheme,isImplicit):
     #### 1D regular grid
     meshList=[50,100,200,400]
     meshType="1D regular grid"
-    testColor="Green"
+    testColor="Orange : à debugger"
     nbMeshes=len(meshList)
     mesh_name='RegularGrid'
     simulation_name='Riemann problem'
