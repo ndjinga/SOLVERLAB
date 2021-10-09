@@ -61,7 +61,7 @@ Dependencies. The following package list is sufficient on Ubuntu 14.04, 16.04, 1
  - `cmake3` (mandatory)
  - `g++` or another C++ compiler (mandatory)
  - `python-dev`, `python-numpy` and `swig3`for python scripts (mandatory)
- - `pyqt5-dev-tools` to generate the Graphics User Interface (optional)
+ - `pyqt5-dev-tools` to generate the Graphical User Interface (optional)
  - `python-matplotlib` and `paraview-devel` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (optional)
  - `ffmpeg` and `ffmpeg-devel` to generate an animation from a set of curves (optional)
  - `doxygen`, `graphviz` and `mscgen`, if you want to generate a nice source code documentation in `~/workspace/SOLVERLAB/SOLVERLAB_install/share/doc/`. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
@@ -116,10 +116,15 @@ Generate documentation of CoreFlows module
 Use of SOLVERLAB
 -------------
 
-To use SOLVERLAB with your Python code, you can load the SOLVERLAB environment in your terminal using the command
+To use SOLVERLAB in your Python code `main.py `, you can load the SOLVERLAB environment in your terminal using the command
  * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
 Then in your terminal simply type
-- `python main.py `
+- `python3 main.py `
+
+To use the Graphical User Interface of SOLVERLAB, you can load the SOLVERLAB environment in your terminal using the command
+ * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
+Then in your terminal simply type
+- `python3 $SOLVERLABGUI `
 
 If performance or parallelism is an issue for your simulations, you can use SOLVERLAB librairies with your C++ code :
  * C++ libraries: `export LD_LIBRARY_PATH=~/workspace/SOLVERLAB/SOLVERLAB_install/lib`
