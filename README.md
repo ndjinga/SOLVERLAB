@@ -56,12 +56,13 @@ Download from GitHub
 
 Set the environment for the compilation of SOLVERLAB
 ---------------------------------------------
-Dependencies. The following package list is sufficient on Ubuntu 14.04, Ubuntu 16.04, Ubuntu 18.04 :
+Dependencies. The following package list is sufficient on Ubuntu 14.04, 16.04, 18.04 and 20.04 :
 
  - `cmake3` (mandatory)
  - `g++` or another C++ compiler (mandatory)
  - `python-dev`, `python-numpy` and `swig3`for python scripts (mandatory)
- - `python-matplotlib` and `paraview` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (mandatory)
+ - `pyqt5-dev-tools` to generate the Graphics User Interface (optional)
+ - `python-matplotlib` and `paraview-devel` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (optional)
  - `ffmpeg` and `ffmpeg-devel` to generate an animation from a set of curves (optional)
  - `doxygen`, `graphviz` and `mscgen`, if you want to generate a nice source code documentation in `~/workspace/SOLVERLAB/SOLVERLAB_install/share/doc/`. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
  - `libcppunit-dev`, if you want to generate unit tests. Use the compilation option `-DSOLVERLAB_WITH_TESTS=ON` (optional).
@@ -79,15 +80,15 @@ Compile and install SOLVERLAB
 Simpler build for a minimum version:
 * `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release `  
 > This will download and build the following dependencies
-> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.15.0.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.15.0.tar.gz
+> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
 > - F2CBLASLAPACK from http://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
 > - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
 > - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
 > - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.7.0.tar.gz
 
-If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the advanced build version:
-* `cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}`  
+If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:
+* `cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON`  
 > This assumes that you have an existing 
 > - install of PETSc (with submodules SLEPC and HDF5) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
 > See the instructions given in [the official documentation](http://www.mcs.anl.gov/petsc/documentation/installation.html)
@@ -101,7 +102,7 @@ Compile and install:
 * `make install`
 
 Run unit and example tests:
-* make example
+* make examples
 
 Run validation tests:
 * make validation
