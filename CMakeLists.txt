@@ -25,9 +25,9 @@ set (PYTHON_ROOT_DIR      OFF CACHE STRING "Python library path" )
 set (PARAVIEW_ROOT_DIR    OFF CACHE STRING "PARAVIEW library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.15.0.tar.gz 
+set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz 
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.15.0.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
@@ -575,6 +575,11 @@ endif(SOLVERLAB_WITH_TESTS)
 # Enter subdirectories
 add_subdirectory (CDMATH)
 if(SOLVERLAB_WITH_COREFLOWS)
+  set(COREFLOWS_WITH_DOCUMENTATION ${SOLVERLAB_WITH_DOCUMENTATION} )
+  set(COREFLOWS_WITH_PYTHON ${SOLVERLAB_WITH_PYTHON} )
+  set(COREFLOWS_WITH_GUI ${SOLVERLAB_WITH_GUI} )
+  set(COREFLOWS_WITH_PACKAGE ${SOLVERLAB_WITH_PACKAGE} )
+  set(COREFLOWS_WITH_TESTS ${SOLVERLAB_WITH_TESTS} )
   add_subdirectory (CoreFlows)
 endif(SOLVERLAB_WITH_COREFLOWS)
 
