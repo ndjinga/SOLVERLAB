@@ -178,38 +178,39 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	if(_verbose)
 		cout<<_perimeters<<endl;
 }
-void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber)
+void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField)
 {
-	Field VV(fileName,CELLS,fieldName,timeStepNumber,0);
+	Field VV(fileName, typeField, fieldName, timeStepNumber, 0);
+	
 	setInitialField(VV);
 }
-void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<double> Vconstant)
+void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<double> Vconstant, EntityType typeField)
 {
 	Mesh M(fileName);
-	Field VV("SOLVERLAB results", CELLS, M, Vconstant.size());
+	Field VV("SOLVERLAB results", typeField, M, Vconstant.size());
 
-	for (int j = 0; j < M.getNumberOfCells(); j++) {
+	for (int j = 0; j < VV.getNumberOfElements(); j++) {
 		for (int i=0; i< VV.getNumberOfComponents(); i++)
 			VV(j,i) = Vconstant[i];
 	}
 
 	setInitialField(VV);
 }
-void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant)
+void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant, EntityType typeField)
 {
-	Field VV("SOLVERLAB results", CELLS, M, Vconstant.getNumberOfRows());
+	Field VV("SOLVERLAB results", typeField, M, Vconstant.getNumberOfRows());
 
-	for (int j = 0; j < M.getNumberOfCells(); j++) {
+	for (int j = 0; j < VV.getNumberOfElements(); j++) {
 		for (int i=0; i< VV.getNumberOfComponents(); i++)
 			VV(j,i) = Vconstant(i);
 	}
 	setInitialField(VV);
 }
-void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant)
+void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant, EntityType typeField)
 {
-	Field VV("SOLVERLAB results", CELLS, M, Vconstant.size());
+	Field VV("SOLVERLAB results", typeField, M, Vconstant.size());
 
-	for (int j = 0; j < M.getNumberOfCells(); j++) {
+	for (int j = 0; j < VV.getNumberOfElements(); j++) {
 		for (int i=0; i< VV.getNumberOfComponents(); i++)
 			VV(j,i) = Vconstant[i];
 	}
@@ -217,7 +218,7 @@ void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<doub
 }
 void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> Vconstant, double xmin, double xmax, int nx, string leftSide, string rightSide,
 		double ymin, double ymax, int ny, string backSide, string frontSide,
-		double zmin, double zmax, int nz, string bottomSide, string topSide)
+		double zmin, double zmax, int nz, string bottomSide, string topSide, EntityType typeField)
 {
 	Mesh M;
 	if(nDim==1){
@@ -249,7 +250,7 @@ void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> V
 
 	setInitialFieldConstant(M, Vconstant);
 }
-void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos, int direction)
+void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos, int direction, EntityType typeField)
 {
 	if  (VV_Right.getNumberOfRows()!=VV_Left.getNumberOfRows())
 	{
@@ -257,18 +258,17 @@ void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV
 		_runLogFile->close();
 		throw CdmathException( "ProblemCoreFlows::setStepFunctionInitialField: Vectors VV_Left and VV_Right have different sizes");
 	}
-	Field VV("SOLVERLAB results", CELLS, M, VV_Left.getNumberOfRows());
+	Field VV("SOLVERLAB results", typeField, M, VV_Left.getNumberOfRows());
 
 	double component_value;
 
-	for (int j = 0; j < M.getNumberOfCells(); j++) {
-		if(direction==0)
-			component_value=M.getCell(j).x();
-		else if(direction==1)
-			component_value=M.getCell(j).y();
-		else if(direction==2)
-			component_value=M.getCell(j).z();
-		else{
+	for (int j = 0; j < VV.getNumberOfElements(); j++) 
+	{
+		if(direction<=2)
+			component_value=VV.getElementComponent(j, direction);
+		else
+		{
+			cout<< "Error : space dimension is "<< M.getSpaceDimension()<<", direction asked is "<<direction<<endl;
 			_runLogFile->close();
 			throw CdmathException( "ProblemCoreFlows::setStepFunctionInitialField: direction should be an integer between 0 and 2");
 		}
@@ -284,7 +284,7 @@ void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV
 void ProblemCoreFlows::setInitialFieldStepFunction( int nDim, const vector<double> VV_Left, vector<double> VV_Right, double xstep,
 		double xmin, double xmax, int nx, string leftSide, string rightSide,
 		double ymin, double ymax, int ny, string backSide, string frontSide,
-		double zmin, double zmax, int nz, string bottomSide, string topSide)
+		double zmin, double zmax, int nz, string bottomSide, string topSide, EntityType typeField)
 {
 	Mesh M;
 	if(nDim==1)
@@ -317,7 +317,7 @@ void ProblemCoreFlows::setInitialFieldStepFunction( int nDim, const vector<doubl
 	setInitialFieldStepFunction(M, V_Left, V_Right, xstep);
 }
 
-void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double radius, const Vector Center)
+void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double radius, const Vector Center, EntityType typeField)
 {
 	if((Center.size()!=M.getSpaceDimension()) || (Vout.size() != Vin.size()) )
 	{
@@ -326,17 +326,17 @@ void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const 
 	}
 	int nVar=Vout.size();
 	int spaceDim=M.getSpaceDimension();
-	Field VV("Primitive variables for spherical step function", CELLS, M, nVar);
+	Field VV("Primitive variables for spherical step function", typeField, M, nVar);
 
 	Vector currentPoint(spaceDim);
-	for(int i=0;i<M.getNumberOfCells();i++)
+	for(int i=0;i<VV.getNumberOfElements();i++)
 	{
-		currentPoint(0)=M.getCell(i).x();
+		currentPoint(0)=VV.getElementComponent(i,0);
 		if(spaceDim>1)
 		{
-			currentPoint(1)=M.getCell(i).y();
+			currentPoint(1)=VV.getElementComponent(i,1);
 			if(spaceDim>2)
-				currentPoint(2)=M.getCell(i).z();
+				currentPoint(2)=VV.getElementComponent(i,2);
 		}
 		if((currentPoint-Center).norm()<radius)
 			for(int j=0;j<nVar;j++)
