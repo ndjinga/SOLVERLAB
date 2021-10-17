@@ -11,19 +11,19 @@ ADD_TEST(TestsCDMATHSwig ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mainTe
 if (CDMATH_WITH_PETSC)
     ADD_TEST(TestsLinearSolverSwig ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/linearSolverTests.py)
     INSTALL(FILES linearSolverTests.py DESTINATION bin/unit_tests)
-
-
-else (CDMATH_WITH_PETSC)
 endif (CDMATH_WITH_PETSC)
 
 
-if (CDMATH_WITH_PYTHON AND CDMATH_WITH_POSTPRO)
+if (CDMATH_WITH_POSTPRO)
   ADD_TEST(Tests_VTK_routines ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_VTK_routines.py)
 
   ADD_TEST(Tests_PV_routines ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_PV_routines.py)
 
   add_subdirectory (BoySurface)
-endif ()
 
-INSTALL(FILES ${MESH_MED}  mainTests.py test_VTK_routines.py test_PV_routines.py DESTINATION bin/unit_tests)
+endif (CDMATH_WITH_POSTPRO)
+
+ADD_TEST(Tests_Field_Creation_And_Saving_routines ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/testFieldCreationAndSave.py )
+
+INSTALL(FILES ${MESH_MED}  mainTests.py test_VTK_routines.py test_PV_routines.py testFieldCreationAndSave.py DESTINATION bin/unit_tests)
 
