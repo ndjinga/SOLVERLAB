@@ -7,6 +7,7 @@
 
 #include "Node.hxx"
 #include "Cell.hxx"
+#include "Face.hxx"
 #include "Field.hxx"
 #include "MEDFileMesh.hxx"
 #include "MEDLoader.hxx"
@@ -741,6 +742,55 @@ Field::getTypeOfField ( void ) const
 	return _typeField;
 }
 
+double 
+Field::getElementComponent(int i, int comp) const
+{
+	switch( _typeField )
+	{
+		case CELLS:
+			switch( comp )
+			{
+				case 0:
+					return _mesh.getCell(i).x();
+				case 1:
+					return _mesh.getCell(i).y();
+				case 2:
+					return _mesh.getCell(i).z();
+				default:
+					cout<<"Wrong component number "<< comp <<" , dimension is "<< _mesh.getSpaceDimension() << ", field values are on CELLS" <<endl;
+					throw CdmathException("Field::getElementComponent : Wrong component number");
+			}
+		case NODES:
+			switch( comp )
+			{
+				case 0:
+					return _mesh.getNode(i).x();
+				case 1:
+					return _mesh.getNode(i).y();
+				case 2:
+					return _mesh.getNode(i).z();
+				default:
+					cout<<"Wrong component number "<< comp <<" , dimension is "<< _mesh.getSpaceDimension() << ", field values are on NODES" <<endl;
+					throw CdmathException("Field::getElementComponent : Wrong component number");
+			}
+		case FACES:
+			switch( comp )
+			{
+				case 0:
+					return _mesh.getFace(i).x();
+				case 1:
+					return _mesh.getFace(i).y();
+				case 2:
+					return _mesh.getFace(i).z();
+				default:
+					cout<<"Wrong component number "<< comp <<" , dimension is "<< _mesh.getSpaceDimension() << ", field values are on FACES"<<endl;
+					throw CdmathException("Field::getElementComponent : Wrong component number");
+			}
+		default:
+			throw CdmathException("Accepted field supports are CELLS, NODES and FACES");
+	}
+	
+}
 //----------------------------------------------------------------------
 void
 Field::setName ( const string fieldName )

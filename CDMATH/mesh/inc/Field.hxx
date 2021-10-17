@@ -239,6 +239,8 @@ class Field
 
     EntityType getTypeOfField ( void ) const ;
 
+	// returns the x, y or z component of the element (node cell or face) with number i
+    double getElementComponent(int i, int comp) const;
     /**
      * return the MEDCouplingField pointer
      * return _field
