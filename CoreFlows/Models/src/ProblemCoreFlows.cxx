@@ -124,6 +124,12 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 		_runLogFile->close();
 		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect number of components");
 	}
+	if(_FECalculation && VV.getTypeOfField()!=NODES)
+	{
+		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Element method"<<endl;
+		_runLogFile->close();
+		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Element method");
+	}
 
 	_VV=VV;
 	_VV.setName("SOLVERLAB results");
@@ -248,7 +254,7 @@ void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> V
 		M.setGroupAtPlan(zmin,2,_precision,bottomSide);
 	}
 
-	setInitialFieldConstant(M, Vconstant);
+	setInitialFieldConstant(M, Vconstant, typeField);
 }
 void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos, int direction, EntityType typeField)
 {
@@ -314,7 +320,7 @@ void ProblemCoreFlows::setInitialFieldStepFunction( int nDim, const vector<doubl
 		V_Left(i)=VV_Left[i];
 		V_Right(i)=VV_Right[i];
 	}
-	setInitialFieldStepFunction(M, V_Left, V_Right, xstep);
+	setInitialFieldStepFunction(M, V_Left, V_Right, xstep, typeField);
 }
 
 void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double radius, const Vector Center, EntityType typeField)
@@ -622,10 +628,7 @@ ProblemCoreFlows::getEigenvectorsField(int nev, EPSWhich which, double tol) cons
   MEDCoupling::DataArrayDouble * d = A.getEigenvectorsDataArrayDouble( nev, which, tol);
   Field my_eigenfield;
   
-  if(_FECalculation)
-    my_eigenfield = Field("Eigenvectors field", NODES, _mesh, nev);
-  else
-    my_eigenfield = Field("Eigenvectors field", CELLS, _mesh, nev);
+  my_eigenfield = Field("Eigenvectors field", _VV.getTypeOfField(), _mesh, nev);
 
   my_eigenfield.setFieldByDataArrayDouble(d);
   
