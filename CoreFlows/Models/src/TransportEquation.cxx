@@ -58,6 +58,8 @@ void TransportEquation::initialize()
 {
 	if(!_initialDataSet)
 		throw CdmathException("TransportEquation::initialize() set initial data first");
+	else if (_VV.getTypeOfField() != CELLS)
+		throw CdmathException("TransportEquation::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
 	else
 		cout<<"Initialising the transport of a fluid enthalpy"<<endl;
 	/**************** Field creation *********************/
