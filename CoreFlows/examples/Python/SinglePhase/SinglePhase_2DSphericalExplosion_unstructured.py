@@ -7,7 +7,7 @@ import CoreFlows as cf
 
 def SinglePhase_2DSphericalExplosion_unstructured():
 
-	inputfile="./resources/BoxWithMeshWithTriangularCells";
+	inputfile="../resources/BoxWithMeshWithTriangularCells";
 	fieldName="Initial variables for spherical explosion";
 	spaceDim=2
 	
