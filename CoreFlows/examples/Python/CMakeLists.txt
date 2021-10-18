@@ -58,6 +58,8 @@ file(COPY ${pythonTestFiles} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 
 CreatePythonTest(DiffusionEquation/DiffusionEquation_1DHeatedRod.py)
 CreatePythonTest(DiffusionEquation/DiffusionEquation_1DHeatedRod_FE.py)
+add_test(DiffusionEquation/DiffusionEquation_2DSpherical_FE ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DiffusionEquation/DiffusionEquation_2DSpherical.py 1)
+add_test(DiffusionEquation/DiffusionEquation_2DSpherical_FV ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DiffusionEquation/DiffusionEquation_2DSpherical.py 0)
 
 CreatePythonTest(DriftModel/DriftModel_1DBoilingAssembly.py)
 CreatePythonTest(DriftModel/DriftModel_1DBoilingChannel.py)
