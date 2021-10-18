@@ -155,29 +155,15 @@ void DiffusionEquation::initialize()
 	/**************** Field creation *********************/
 
 	if(!_heatPowerFieldSet){
-        if(_FECalculation){
-            _heatPowerField=Field("Heat power",NODES,_mesh,1);
-            for(int i =0; i<_Nnodes; i++)
-                _heatPowerField(i) = _heatSource;
-        }
-        else{
-            _heatPowerField=Field("Heat power",CELLS,_mesh,1);
-            for(int i =0; i<_Nmailles; i++)
-                _heatPowerField(i) = _heatSource;
-        }
+        _heatPowerField=Field("Heat power",_VV.getTypeOfField(),_mesh,1);
+        for(int i =0; i<_VV.getNumberOfElements(); i++)
+            _heatPowerField(i) = _heatSource;
         _heatPowerFieldSet=true;
     }
 	if(!_fluidTemperatureFieldSet){
-        if(_FECalculation){
-            _fluidTemperatureField=Field("Fluid temperature",NODES,_mesh,1);
-            for(int i =0; i<_Nnodes; i++)
-                _fluidTemperatureField(i) = _fluidTemperature;
-        }
-        else{
-            _fluidTemperatureField=Field("Fluid temperature",CELLS,_mesh,1);
-            for(int i =0; i<_Nmailles; i++)
-                _fluidTemperatureField(i) = _fluidTemperature;
-        }
+		_fluidTemperatureField=Field("Fluid temperature",_VV.getTypeOfField(),_mesh,1);
+		for(int i =0; i<_VV.getNumberOfElements(); i++)
+			_fluidTemperatureField(i) = _fluidTemperature;
         _fluidTemperatureFieldSet=true;
 	}
 
@@ -252,12 +238,8 @@ void DiffusionEquation::initialize()
 	VecDuplicate(_Tk, &_b);//RHS of the linear system: _b=Tn/dt + _b0 + puisance volumique + couplage thermique avec le fluide
 	VecDuplicate(_Tk, &_b0);//part of the RHS that comes from the boundary conditions. Computed only once at the first time step
 
-    if(!_FECalculation)
-        for(int i =0; i<_Nmailles;i++)
-            VecSetValue(_Tn,i,_VV(i), INSERT_VALUES);
-    else
-        for(int i =0; i<_Nnodes;i++)
-            VecSetValue(_Tn,i,_VV(i), INSERT_VALUES);
+	for(int i =0; i<_VV.getNumberOfElements();i++)
+		VecSetValue(_Tn,i,_VV(i), INSERT_VALUES);
 
 	//Linear solver
 	KSPCreate(PETSC_COMM_SELF, &_ksp);
@@ -632,28 +614,20 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 			converged=false;
 			return false;
 		}
-		else{
+		else
+		{
 			VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
 			VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
 			_erreur_rel= 0;
 			double Ti, dTi;
 
-            if(!_FECalculation)
-                for(int i=0; i<_Nmailles; i++)
-                {
-                    VecGetValues(_deltaT, 1, &i, &dTi);
-                    VecGetValues(_Tk, 1, &i, &Ti);
-                    if(_erreur_rel < fabs(dTi/Ti))
-                        _erreur_rel = fabs(dTi/Ti);
-                }
-            else
-                for(int i=0; i<_Nnodes; i++)
-                {
-                    VecGetValues(_deltaT, 1, &i, &dTi);
-                    VecGetValues(_Tk, 1, &i, &Ti);
-                    if(_erreur_rel < fabs(dTi/Ti))
-                        _erreur_rel = fabs(dTi/Ti);
-                }
+			for(int i=0; i<_VV.getNumberOfElements(); i++)
+			{
+				VecGetValues(_deltaT, 1, &i, &dTi);
+				VecGetValues(_Tk, 1, &i, &Ti);
+				if(_erreur_rel < fabs(dTi/Ti))
+					_erreur_rel = fabs(dTi/Ti);
+			}
 			converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
 		}
 	}
@@ -670,22 +644,13 @@ void DiffusionEquation::validateTimeStep()
 	_erreur_rel= 0;
 	double Ti, dTi;
 
-    if(!_FECalculation)
-        for(int i=0; i<_Nmailles; i++)
-        {
-            VecGetValues(_deltaT, 1, &i, &dTi);
-            VecGetValues(_Tk, 1, &i, &Ti);
-            if(_erreur_rel < fabs(dTi/Ti))
-                _erreur_rel = fabs(dTi/Ti);
-        }
-    else
-        for(int i=0; i<_Nnodes; i++)
-        {
-            VecGetValues(_deltaT, 1, &i, &dTi);
-            VecGetValues(_Tk, 1, &i, &Ti);
-            if(_erreur_rel < fabs(dTi/Ti))
-                _erreur_rel = fabs(dTi/Ti);
-        }
+	for(int i=0; i<_VV.getNumberOfElements(); i++)
+	{
+		VecGetValues(_deltaT, 1, &i, &dTi);
+		VecGetValues(_Tk, 1, &i, &Ti);
+		if(_erreur_rel < fabs(dTi/Ti))
+			_erreur_rel = fabs(dTi/Ti);
+	}
 
 	_isStationary =(_erreur_rel <_precision);
 
