@@ -9,7 +9,7 @@ set (SOLVERLAB_VERSION_MINOR 7)
 set (SOLVERLAB_VERSION_SUBMINOR alpha)
 
 option (SOLVERLAB_WITH_DOCUMENTATION "Generate SOLVERLAB documentation" ON)
-option (SOLVERLAB_WITH_PYTHON        "Compile Python interface of SOLVERLAB" ON)
+option (SOLVERLAB_WITH_PYTHON        "Generate Python interface of SOLVERLAB using SWIG" ON)
 option (SOLVERLAB_WITH_GUI           "Compile a Graphic user Interface for SOLVERLAB" OFF)
 option (SOLVERLAB_WITH_PACKAGE       "Generate RPM, Debian and tarball packages" OFF)
 option (SOLVERLAB_WITH_COREFLOWS     "Generate COREFLOWS module" ON)
