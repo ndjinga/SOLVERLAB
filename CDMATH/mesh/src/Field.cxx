@@ -25,7 +25,7 @@ using namespace std;
 
 
 //----------------------------------------------------------------------
-Field::Field( EntityType typeField )
+Field::Field( FieldSupportType typeField )
 //----------------------------------------------------------------------
 {
 	_field=NULL;
@@ -42,7 +42,7 @@ Field::~Field( void )
 }
 
 
-Field::Field(const std::string fieldName, EntityType type, const Mesh& mesh, int numberOfComponents, double time)
+Field::Field(const std::string fieldName, FieldSupportType type, const Mesh& mesh, int numberOfComponents, double time)
 {
 	_field = NULL;
 	_mesh=Mesh(mesh);
@@ -57,17 +57,17 @@ void Field::buildFieldMemoryStructure()
 {
 	MEDCouplingUMesh* mu=_mesh.getMEDCouplingMesh()->buildUnstructured();
 	DataArrayDouble *array=DataArrayDouble::New();
-	if (_typeField==CELLS)
+	if (_typeField==FieldSupportType::CELLS)
 	{
 		_field=MEDCouplingFieldDouble::New(ON_CELLS);
 		array->alloc(_mesh.getNumberOfCells(),_numberOfComponents);
 		_field->setMesh(mu);
-	}else if(_typeField==NODES)
+	}else if(_typeField==FieldSupportType::NODES)
 	{
 		_field=MEDCouplingFieldDouble::New(ON_NODES);
 		array->alloc(_mesh.getNumberOfNodes(),_numberOfComponents);
 		_field->setMesh(mu);
-	}else if(_typeField==FACES)
+	}else if(_typeField==FieldSupportType::FACES)
 	{
 		_field=MEDCouplingFieldDouble::New(ON_CELLS);
 		array->alloc(_mesh.getNumberOfFaces(),_numberOfComponents);
@@ -92,7 +92,7 @@ void Field::buildFieldMemoryStructure()
 	mu->decrRef();
 }
 
-Field::Field( const std::string filename, EntityType type,
+Field::Field( const std::string filename, FieldSupportType type,
 		const std::string & fieldName,
 		int iteration, int order, int meshLevel,
 		int numberOfComponents, double time)
@@ -107,7 +107,7 @@ Field::Field( const std::string filename, EntityType type,
 	readFieldMed(filename, type, fieldName, iteration, order);
 }
 
-Field::Field(const std::string meshFileName, EntityType type, const std::vector<double> Vconstant, 
+Field::Field(const std::string meshFileName, FieldSupportType type, const std::vector<double> Vconstant, 
 		const std::string & fieldName, int meshLevel, double time )
 {
 	_field = NULL;
@@ -126,7 +126,7 @@ Field::Field(const std::string meshFileName, EntityType type, const std::vector<
 		for (int jcomp=0 ; jcomp<nbcomp ; jcomp++)
 			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
 }
-Field::Field(const Mesh& M, EntityType type, const Vector Vconstant, const std::string & fieldName, double time)
+Field::Field(const Mesh& M, FieldSupportType type, const Vector Vconstant, const std::string & fieldName, double time)
 {
 	_field = NULL;
 	_mesh=Mesh(M);
@@ -144,7 +144,7 @@ Field::Field(const Mesh& M, EntityType type, const Vector Vconstant, const std::
 		for (int jcomp=0 ; jcomp<nbcomp ; jcomp++)
 			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
 }
-Field::Field(const Mesh& M, EntityType type, const vector<double> Vconstant, const std::string & fieldName, double time) 
+Field::Field(const Mesh& M, FieldSupportType type, const vector<double> Vconstant, const std::string & fieldName, double time) 
 {
 	_field = NULL;
 	_mesh=Mesh(M);
@@ -162,7 +162,7 @@ Field::Field(const Mesh& M, EntityType type, const vector<double> Vconstant, con
 		for (int jcomp=0 ; jcomp<nbcomp ; jcomp++)
 			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
 }
-Field::Field( int nDim, const vector<double> Vconstant, EntityType type, 
+Field::Field( int nDim, const vector<double> Vconstant, FieldSupportType type, 
 		double xmin, double xmax, int nx, string leftSide, string rightSide,
 		double ymin, double ymax, int ny, string backSide, string frontSide,
 		double zmin, double zmax, int nz, string bottomSide, string topSide, 
@@ -209,7 +209,7 @@ Field::Field( int nDim, const vector<double> Vconstant, EntityType type,
 			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
 }
 Field::Field(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos,
-		EntityType type, int direction, const std::string & fieldName, double time)
+		FieldSupportType type, int direction, const std::string & fieldName, double time)
 {
 	if  (VV_Right.getNumberOfRows()!=VV_Left.getNumberOfRows())
 		throw CdmathException( "Field::Field: Vectors VV_Left and VV_Right have different sizes");
@@ -246,7 +246,7 @@ Field::Field(const Mesh M, const Vector VV_Left, const Vector VV_Right, double d
 	}
 }
 Field::Field( int nDim, const vector<double> VV_Left, vector<double> VV_Right, 
-		double xstep, EntityType type,
+		double xstep, FieldSupportType type,
 		double xmin, double xmax, int nx, string leftSide, string rightSide,
 		double ymin, double ymax, int ny, string backSide, string frontSide,
 		double zmin, double zmax, int nz, string bottomSide, string topSide,
@@ -283,7 +283,7 @@ Field::Field( int nDim, const vector<double> VV_Left, vector<double> VV_Right,
 }
 
 Field::Field(const Mesh M, const Vector Vin, const Vector Vout, double radius, 
-		const Vector Center, EntityType type, const std::string & fieldName, double time)
+		const Vector Center, FieldSupportType type, const std::string & fieldName, double time)
 {
 	if((Center.size()!=M.getSpaceDimension()) || (Vout.size() != Vin.size()) )
 	{
@@ -331,7 +331,7 @@ MEDCoupling::DataArrayDouble * Field::getArray(){
 
 void
 Field::readFieldMed( const std::string & fileNameRadical,
-		EntityType type,
+		FieldSupportType type,
 		const std::string & fieldName,
 		int iteration,
 		int order)
@@ -381,19 +381,19 @@ Field::readFieldMed( const std::string & fileNameRadical,
 
 	// Create Field.
 	switch (type) {
-	case CELLS:
+	case FieldSupportType::CELLS:
 		_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > ( 
 					MEDCoupling::ReadFieldCell( completeFileName,
 					attributedMeshName, 0,
 					attributedFieldName, iteration, order) );
 		break;
-	case NODES:
+	case FieldSupportType::NODES:
 		_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > (
 					MEDCoupling::ReadFieldNode( completeFileName,
 					attributedMeshName, 0,
 					attributedFieldName, iteration, order) );
 		break;
-	case FACES:
+	case FieldSupportType::FACES:
 		_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > ( 
 					MEDCoupling::ReadFieldCell( completeFileName,
 					attributedMeshName, -1,
@@ -734,7 +734,7 @@ Field::getMesh ( void ) const
 }
 
 //----------------------------------------------------------------------
-EntityType
+FieldSupportType
 Field::getTypeOfField ( void ) const
 //----------------------------------------------------------------------
 {
@@ -746,7 +746,7 @@ Field::getElementComponent(int i, int comp) const
 {
 	switch( _typeField )
 	{
-		case CELLS:
+		case FieldSupportType::CELLS:
 			switch( comp )
 			{
 				case 0:
@@ -759,7 +759,7 @@ Field::getElementComponent(int i, int comp) const
 					cout<<"Wrong component number "<< comp <<" , dimension is "<< _mesh.getSpaceDimension() << ", field values are on CELLS" <<endl;
 					throw CdmathException("Field::getElementComponent : Wrong component number");
 			}
-		case NODES:
+		case FieldSupportType::NODES:
 			switch( comp )
 			{
 				case 0:
@@ -772,7 +772,7 @@ Field::getElementComponent(int i, int comp) const
 					cout<<"Wrong component number "<< comp <<" , dimension is "<< _mesh.getSpaceDimension() << ", field values are on NODES" <<endl;
 					throw CdmathException("Field::getElementComponent : Wrong component number");
 			}
-		case FACES:
+		case FieldSupportType::FACES:
 			switch( comp )
 			{
 				case 0:
@@ -1017,7 +1017,7 @@ Field::writeCSV ( const std::string fileName ) const
 	ofstream file(filetmp.c_str()) ;
 	int dim=_mesh.getSpaceDimension();
 	int nbElements;
-	if (getTypeOfField()==CELLS)
+	if (getTypeOfField()==FieldSupportType::CELLS)
 		nbElements=_mesh.getNumberOfCells();
 	else
 		nbElements=_mesh.getNumberOfNodes();
@@ -1036,7 +1036,7 @@ Field::writeCSV ( const std::string fileName ) const
 		}
 		for (int i=0;i<nbElements;i++)
 		{
-			if (getTypeOfField()==CELLS)
+			if (getTypeOfField()==FieldSupportType::CELLS)
 				file << _mesh.getCell(i).x() ;
 			else
 				file << _mesh.getNode(i).x() ;
@@ -1058,7 +1058,7 @@ Field::writeCSV ( const std::string fileName ) const
 		}
 		for (int i=0;i<nbElements;i++)
 		{
-			if (getTypeOfField()==CELLS)
+			if (getTypeOfField()==FieldSupportType::CELLS)
 				file << _mesh.getCell(i).x() << " " << _mesh.getCell(i).y() ;
 			else
 				file << _mesh.getNode(i).x() << " " << _mesh.getNode(i).y() ;
@@ -1080,7 +1080,7 @@ Field::writeCSV ( const std::string fileName ) const
 		}
 		for (int i=0;i<nbElements;i++)
 		{
-			if (getTypeOfField()==CELLS)
+			if (getTypeOfField()==FieldSupportType::CELLS)
 				file << _mesh.getCell(i).x() << " " << _mesh.getCell(i).y() << " " << _mesh.getCell(i).z();
 			else
 				file << _mesh.getNode(i).x() << " " << _mesh.getNode(i).y() << " " << _mesh.getNode(i).z();

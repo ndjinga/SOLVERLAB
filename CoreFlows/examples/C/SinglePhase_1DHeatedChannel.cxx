@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	SinglePhase  myProblem(Liquid,around155bars600K,spaceDim);
 	int nbPhase = myProblem.getNumberOfPhases();
 	int nVar = myProblem.getNumberOfVariables();
-	Field VV("Primitive", CELLS, M, nVar);//Field of primitive unknowns
+	Field VV("Primitive", FieldSupportType::CELLS, M, nVar);//Field of primitive unknowns
 
 	// Prepare for the initial condition
 	Vector VV_Constant(nVar);

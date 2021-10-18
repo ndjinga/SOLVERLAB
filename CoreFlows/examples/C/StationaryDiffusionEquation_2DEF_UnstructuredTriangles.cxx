@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	myProblem.setDirichletBoundaryCondition("Bord4",T4);
 
 	/* Set the right hand side function*/
-	Field my_RHSfield("RHS_field", NODES, M, 1);
+	Field my_RHSfield("RHS_field", FieldSupportType::NODES, M, 1);
     Node Ni; 
     double x, y;
 	for(int i=0; i< M.getNumberOfNodes(); i++)

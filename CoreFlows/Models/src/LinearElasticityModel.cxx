@@ -147,12 +147,12 @@ void LinearElasticityModel::initialize()
 
 	if(!_densityFieldSet){
         if(_FECalculation){
-            _densityField=Field("Density",NODES,_mesh,1);
+            _densityField=Field("Density",FieldSupportType::NODES,_mesh,1);
             for(int i =0; i<_Nnodes; i++)
                 _densityField(i) = _rho;
         }
         else{
-            _densityField=Field("Density",CELLS,_mesh,1);
+            _densityField=Field("Density",FieldSupportType::CELLS,_mesh,1);
             for(int i =0; i<_Nmailles; i++)
                 _densityField(i) = _rho;
         }
@@ -621,8 +621,8 @@ void LinearElasticityModel::setMesh(const Mesh &M)
 	// find  maximum nb of neibourghs
     if(!_FECalculation)
     {
-    	_VV=Field ("Displacements", CELLS, _mesh, _Ndim);
-        _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
+    	_VV=Field ("Displacements", FieldSupportType::CELLS, _mesh, _Ndim);
+        _neibMaxNbCells=_mesh.getMaxNbNeighbours(FieldSupportType::CELLS);
     }
     else
     {
@@ -659,9 +659,9 @@ void LinearElasticityModel::setMesh(const Mesh &M)
 			}
         }
 
-		_VV=Field ("Temperature", NODES, _mesh, _Ndim);
+		_VV=Field ("Temperature", FieldSupportType::NODES, _mesh, _Ndim);
 
-        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
+        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(FieldSupportType::NODES);
         _boundaryNodeIds = _mesh.getBoundaryNodeIds();
         _NboundaryNodes=_boundaryNodeIds.size();
     }

@@ -383,7 +383,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setPorosityField(string fileName, string fieldName){
-		_porosityField=Field(fileName, CELLS,fieldName);
+		_porosityField=Field(fileName, FieldSupportType::CELLS,fieldName);
 		_porosityFieldSet=true;
 	}
 
@@ -403,7 +403,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setPressureLossField(string fileName, string fieldName){
-		_pressureLossField=Field(fileName, FACES,fieldName);
+		_pressureLossField=Field(fileName, FieldSupportType::FACES,fieldName);
 		_pressureLossFieldSet=true;
 	}
 
@@ -423,7 +423,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setSectionField(string fileName, string fieldName){
-		_sectionField=Field(fileName, CELLS,fieldName);
+		_sectionField=Field(fileName, FieldSupportType::CELLS,fieldName);
 		_sectionFieldSet=true;
 	}
 

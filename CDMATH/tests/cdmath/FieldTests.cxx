@@ -21,7 +21,7 @@ FieldTests::testClassField( void )
 {
 	Mesh M(0.0,1.0,10,0.,1.,5);
 
-	Field conc1("CONCENTRATION",CELLS,M,2,1.2) ;
+	Field conc1("CONCENTRATION",FieldSupportType::CELLS,M,2,1.2) ;
 	CPPUNIT_ASSERT_EQUAL( 1.2, conc1.getTime() );
     for (int j=0;j<conc1.getNumberOfComponents();j++)
     	for (int i=0;i<conc1.getNumberOfElements();i++)
@@ -40,7 +40,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 50, conc1.getNumberOfElements() );
 	CPPUNIT_ASSERT_EQUAL( 2.3, conc1.getTime() );
 
-	Field conc1n("CONCENTRATION",NODES,M,2,1.2) ;
+	Field conc1n("CONCENTRATION",FieldSupportType::NODES,M,2,1.2) ;
 	CPPUNIT_ASSERT_EQUAL( 1.2, conc1n.getTime() );
     for (int j=0;j<conc1n.getNumberOfComponents();j++)
     	for (int i=0;i<conc1n.getNumberOfElements();i++)
@@ -60,7 +60,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 66, conc1n.getNumberOfElements() );
 	CPPUNIT_ASSERT_EQUAL( 2.3, conc1n.getTime() );
 
-	Field conc6("CONCENTRATION",CELLS,M,2);
+	Field conc6("CONCENTRATION",FieldSupportType::CELLS,M,2);
     for (int i=0;i<conc6.getNumberOfComponents();i++)
     	for (int j=0;j<conc6.getNumberOfElements();j++)
     		conc6(j,i)=i*1.0+2.*j;
@@ -72,7 +72,7 @@ FieldTests::testClassField( void )
     CPPUNIT_ASSERT_EQUAL( 2, conc6.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 50, conc6.getNumberOfElements() );
 
-	Field conc6n("CONCENTRATION",NODES,M,2);
+	Field conc6n("CONCENTRATION",FieldSupportType::NODES,M,2);
     for (int i=0;i<conc6n.getNumberOfComponents();i++)
     	for (int j=0;j<conc6n.getNumberOfElements();j++)
     		conc6n(j,i)=i*1.0+2.*j;
@@ -134,7 +134,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 2, conc6.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 50, conc6.getNumberOfElements() );
 
-	Field conc7("CONCENTRATION",CELLS,M,2) ;
+	Field conc7("CONCENTRATION",FieldSupportType::CELLS,M,2) ;
 	MCAuto<MEDCouplingFieldDouble> f1=conc1.getField();
 	conc7.setFieldByMEDCouplingFieldDouble(f1);
     conc7.setName("CONC");
@@ -147,7 +147,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 50, conc7.getNumberOfElements() );
 	CPPUNIT_ASSERT( conc7.getName().compare("CONC")==0 );
 
-	Field conc77("CONCENTRATION",CELLS,M,2) ;
+	Field conc77("CONCENTRATION",FieldSupportType::CELLS,M,2) ;
 	conc77.setInfoOnComponent(0,"compo1");
 	conc77.setInfoOnComponent(1,"compo2");
 	CPPUNIT_ASSERT(conc77.getInfoOnComponent(0).compare("compo1")==0 );
@@ -165,7 +165,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 50, conc77.getNumberOfElements() );
 	CPPUNIT_ASSERT( conc77.getName().compare("CONC")==0 );
 
-	Field conc8("CONCENTRATION",CELLS,M) ;
+	Field conc8("CONCENTRATION",FieldSupportType::CELLS,M) ;
     for (int i=0;i<conc8.getNumberOfElements();i++)
     	conc8[i]=i*1.0;
     for (int i=0;i<conc8.getNumberOfElements();i++)
@@ -176,7 +176,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 1, conc8.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 50, conc8.getNumberOfElements() );
 
-	Field conc8n("CONCENTRATION",NODES,M) ;
+	Field conc8n("CONCENTRATION",FieldSupportType::NODES,M) ;
     for (int i=0;i<conc8n.getNumberOfElements();i++)
     	conc8n[i]=i*1.0;
     for (int i=0;i<conc8n.getNumberOfElements();i++)
@@ -225,7 +225,7 @@ FieldTests::testClassField( void )
     }
 
 	Mesh MF(0.0,1.0,3,0.,1.,3);
-	Field concF1("CONCENTRATION",FACES,MF) ;
+	Field concF1("CONCENTRATION",FieldSupportType::FACES,MF) ;
     for (int j=0;j<concF1.getNumberOfComponents();j++)
     	for (int i=0;i<concF1.getNumberOfElements();i++)
     		concF1(i,j)=i+j;

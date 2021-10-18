@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	FiveEqsTwoFluid  myProblem(around155bars600K,spaceDim);
 	int nbPhase = myProblem.getNumberOfPhases();
 	int nVar = myProblem.getNumberOfVariables();
-	Field VV("Primitive", CELLS, M, nVar);
+	Field VV("Primitive", FieldSupportType::CELLS, M, nVar);
 
 	// Prepare for the initial condition
 	Vector VV_Left(nVar),VV_Right(nVar);

@@ -70,8 +70,8 @@ void FiveEqsTwoFluid::initialize()
 	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
 
 	if(_saveVelocity){
-		_Vitesse1=Field("Gas velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
-		_Vitesse2=Field("Liquid velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
+		_Vitesse1=Field("Gas velocity",FieldSupportType::CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
+		_Vitesse2=Field("Liquid velocity",FieldSupportType::CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
 	}
 
 	if(_entropicCorrection)

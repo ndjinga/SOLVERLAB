@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	myProblem.setNeumannBoundaryCondition("Bord4");
 
 	/* Set the right hand side function*/
-	Field my_RHSfield("RHS_field", CELLS, M, 1);
+	Field my_RHSfield("RHS_field", FieldSupportType::CELLS, M, 1);
     Cell Ci; 
     double x, y;
 	for(int i=0; i< M.getNumberOfCells(); i++)

@@ -124,7 +124,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 		_runLogFile->close();
 		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect number of components");
 	}
-	if(_FECalculation && VV.getTypeOfField()!=NODES)
+	if(_FECalculation && VV.getTypeOfField()!=FieldSupportType::NODES)
 	{
 		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Element method"<<endl;
 		_runLogFile->close();
@@ -138,7 +138,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	_Nmailles = _mesh.getNumberOfCells();
 	_Nnodes =   _mesh.getNumberOfNodes();
 	_Nfaces =   _mesh.getNumberOfFaces();
-	_perimeters=Field("Perimeters", CELLS, _mesh,1);
+	_perimeters=Field("Perimeters", FieldSupportType::CELLS, _mesh,1);
 
 	// find _minl and maximum nb of neibourghs
 	_minl  = INFINITY;
@@ -149,10 +149,10 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	if(_verbose)
 		cout<<"Computing cell perimeters and mesh minimal diameter"<<endl;
 
-    if(VV.getTypeOfField()==NODES)
+    if(VV.getTypeOfField()==FieldSupportType::NODES)
     {
-        _minl = _mesh.getMaxNbNeighbours(NODES);
-        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
+        _minl = _mesh.getMaxNbNeighbours(FieldSupportType::NODES);
+        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(FieldSupportType::NODES);
     }
     else
         for (int i=0; i<_mesh.getNumberOfCells(); i++){
@@ -184,13 +184,13 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	if(_verbose)
 		cout<<_perimeters<<endl;
 }
-void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField)
+void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, FieldSupportType typeField)
 {
 	Field VV(fileName, typeField, fieldName, timeStepNumber, 0);
 	
 	setInitialField(VV);
 }
-void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<double> Vconstant, EntityType typeField)
+void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<double> Vconstant, FieldSupportType typeField)
 {
 	Mesh M(fileName);
 	Field VV("SOLVERLAB results", typeField, M, Vconstant.size());
@@ -202,7 +202,7 @@ void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<dou
 
 	setInitialField(VV);
 }
-void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant, EntityType typeField)
+void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant, FieldSupportType typeField)
 {
 	Field VV("SOLVERLAB results", typeField, M, Vconstant.getNumberOfRows());
 
@@ -212,7 +212,7 @@ void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vcon
 	}
 	setInitialField(VV);
 }
-void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant, EntityType typeField)
+void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant, FieldSupportType typeField)
 {
 	Field VV("SOLVERLAB results", typeField, M, Vconstant.size());
 
@@ -224,7 +224,7 @@ void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<doub
 }
 void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> Vconstant, double xmin, double xmax, int nx, string leftSide, string rightSide,
 		double ymin, double ymax, int ny, string backSide, string frontSide,
-		double zmin, double zmax, int nz, string bottomSide, string topSide, EntityType typeField)
+		double zmin, double zmax, int nz, string bottomSide, string topSide, FieldSupportType typeField)
 {
 	Mesh M;
 	if(nDim==1){
@@ -256,7 +256,7 @@ void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> V
 
 	setInitialFieldConstant(M, Vconstant, typeField);
 }
-void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos, int direction, EntityType typeField)
+void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos, int direction, FieldSupportType typeField)
 {
 	if  (VV_Right.getNumberOfRows()!=VV_Left.getNumberOfRows())
 	{
@@ -290,7 +290,7 @@ void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV
 void ProblemCoreFlows::setInitialFieldStepFunction( int nDim, const vector<double> VV_Left, vector<double> VV_Right, double xstep,
 		double xmin, double xmax, int nx, string leftSide, string rightSide,
 		double ymin, double ymax, int ny, string backSide, string frontSide,
-		double zmin, double zmax, int nz, string bottomSide, string topSide, EntityType typeField)
+		double zmin, double zmax, int nz, string bottomSide, string topSide, FieldSupportType typeField)
 {
 	Mesh M;
 	if(nDim==1)
@@ -320,10 +320,10 @@ void ProblemCoreFlows::setInitialFieldStepFunction( int nDim, const vector<doubl
 		V_Left(i)=VV_Left[i];
 		V_Right(i)=VV_Right[i];
 	}
-	setInitialFieldStepFunction(M, V_Left, V_Right, xstep, typeField);
+	setInitialFieldStepFunction(M, V_Left, V_Right, xstep,0, typeField);
 }
 
-void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double radius, const Vector Center, EntityType typeField)
+void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double radius, const Vector Center, FieldSupportType typeField)
 {
 	if((Center.size()!=M.getSpaceDimension()) || (Vout.size() != Vin.size()) )
 	{

@@ -63,19 +63,19 @@ int main(int argc, char** argv)
 	double lambda_ur=5;
 
 	TransportEquation  myTransportEquation(LiquidPhase, around155bars600KTransport,transportVelocity);
-	Field fluidEnthalpy("Enthalpie", CELLS, transportMesh, 1);
+	Field fluidEnthalpy("Enthalpie", FieldSupportType::CELLS, transportMesh, 1);
 	bool FECalculation=false;
     DiffusionEquation  myDiffusionEquation(spaceDim,FECalculation,rho_ur, cp_ur, lambda_ur);
 
-	Field solidTemp("Solid temperature", CELLS, diffusionMesh, 1);
-	Field fluidTemp("Fluid temperature", CELLS, transportMesh, 1);
+	Field solidTemp("Solid temperature", FieldSupportType::CELLS, diffusionMesh, 1);
+	Field fluidTemp("Fluid temperature", FieldSupportType::CELLS, transportMesh, 1);
 
 	double heatTransfertCoeff=10000;//fluid/solid heat exchange coefficient
 	myTransportEquation.setHeatTransfertCoeff(heatTransfertCoeff);
 	myDiffusionEquation.setHeatTransfertCoeff(heatTransfertCoeff);
 
 	//Set heat source in the solid
-	Field Phi("Heat power field", CELLS, diffusionMesh, 1);
+	Field Phi("Heat power field", FieldSupportType::CELLS, diffusionMesh, 1);
 	power_field_CoupledTransportDiffusionTest(Phi);
 	myDiffusionEquation.setHeatPowerField(Phi);
 	Phi.writeVTK("1DheatPowerField");

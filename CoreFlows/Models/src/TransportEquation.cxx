@@ -58,16 +58,16 @@ void TransportEquation::initialize()
 {
 	if(!_initialDataSet)
 		throw CdmathException("TransportEquation::initialize() set initial data first");
-	else if (_VV.getTypeOfField() != CELLS)
+	else if (_VV.getTypeOfField() != FieldSupportType::CELLS)
 		throw CdmathException("TransportEquation::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
 	else
 		cout<<"Initialising the transport of a fluid enthalpy"<<endl;
 	/**************** Field creation *********************/
 
 	//post processing fields used only for saving results
-	_TT=Field ("Temperature", CELLS, _mesh, 1);
-	_Alpha=Field ("Void fraction", CELLS, _mesh, 1);
-	_Rho=Field ("Mixture density", CELLS, _mesh, 1);
+	_TT=Field ("Temperature", FieldSupportType::CELLS, _mesh, 1);
+	_Alpha=Field ("Void fraction", FieldSupportType::CELLS, _mesh, 1);
+	_Rho=Field ("Mixture density", FieldSupportType::CELLS, _mesh, 1);
 	//Construction des champs de post-traitement
 	VecCreate(PETSC_COMM_SELF, &_Hn);
 	VecSetSizes(_Hn,PETSC_DECIDE,_Nmailles);
@@ -79,12 +79,12 @@ void TransportEquation::initialize()
 		VecSetValue(_Hn,i,_VV(i), INSERT_VALUES);
 	}
 	if(!_heatPowerFieldSet){
-		_heatPowerField=Field("Heat Power",CELLS,_mesh,1);
+		_heatPowerField=Field("Heat Power",FieldSupportType::CELLS,_mesh,1);
 		for(int i =0; i<_Nmailles; i++)
 			_heatPowerField(i) = _heatSource;
 	}
 	if(!_rodTemperatureFieldSet){
-		_rodTemperatureField=Field("Rod temperature",CELLS,_mesh,1);
+		_rodTemperatureField=Field("Rod temperature",FieldSupportType::CELLS,_mesh,1);
 		for(int i =0; i<_Nmailles; i++)
 			_rodTemperatureField(i) = _rodTemperature;
 	}

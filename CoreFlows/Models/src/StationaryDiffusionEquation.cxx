@@ -683,8 +683,8 @@ void StationaryDiffusionEquation::setMesh(const Mesh &M)
 	// find  maximum nb of neibourghs
     if(!_FECalculation)
     {
-    	_VV=Field ("Temperature", CELLS, _mesh, 1);
-        _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
+    	_VV=Field ("Temperature", FieldSupportType::CELLS, _mesh, 1);
+        _neibMaxNbCells=_mesh.getMaxNbNeighbours(FieldSupportType::CELLS);
     }
     else
     {
@@ -721,9 +721,9 @@ void StationaryDiffusionEquation::setMesh(const Mesh &M)
 			}
         }
 
-		_VV=Field ("Temperature", NODES, _mesh, 1);
+		_VV=Field ("Temperature", FieldSupportType::NODES, _mesh, 1);
 
-        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
+        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(FieldSupportType::NODES);
         _boundaryNodeIds = _mesh.getBoundaryNodeIds();
         _NboundaryNodes=_boundaryNodeIds.size();
     }

@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 	double outletPressure=155e5;
 
 	// physical parameters
-	Field pressureLossField("pressureLoss", FACES, M, 1);
+	Field pressureLossField("pressureLoss", FieldSupportType::FACES, M, 1);
 	pressureLossField(nx/4)=50;
 	pressureLossField(nx/2)=100;
 	pressureLossField(3*nx/4)=150;

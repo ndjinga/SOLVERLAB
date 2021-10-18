@@ -8,8 +8,8 @@ int main(int argc, char** argv)
 	cout << "Reading mesh with two branches and two forks" << endl;
 	Mesh M("resources/BifurcatingFlow2BranchesEqualSections.med");
 	cout << "Reading power and coss sectional area fields " << endl;
-	Field Sections("resources/BifurcatingFlow2BranchesEqualSections", CELLS,"Section area");
-	Field heatPowerField("resources/BifurcatingFlow2BranchesEqualSections", CELLS,"Heat power");
+	Field Sections("resources/BifurcatingFlow2BranchesEqualSections", FieldSupportType::CELLS,"Section area");
+	Field heatPowerField("resources/BifurcatingFlow2BranchesEqualSections", FieldSupportType::CELLS,"Heat power");
 
 	heatPowerField.writeVTK("heatPowerField");
 	Sections.writeVTK("crossSectionPowerField");

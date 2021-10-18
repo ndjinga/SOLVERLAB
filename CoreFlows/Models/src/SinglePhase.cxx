@@ -61,21 +61,21 @@ void SinglePhase::initialize(){
 
 	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
 	if(_saveVelocity || _saveAllFields)
-		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
+		_Vitesse=Field("Velocity",FieldSupportType::CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
 
 	if(_saveAllFields)
 	{
-		_Enthalpy=Field("Enthalpy",CELLS,_mesh,1);
-		_Pressure=Field("Pressure",CELLS,_mesh,1);
-		_Density=Field("Density",CELLS,_mesh,1);
-		_Temperature=Field("Temperature",CELLS,_mesh,1);
-		_MachNumber=Field("MachNumber",CELLS,_mesh,1);
-		_VitesseX=Field("Velocity x",CELLS,_mesh,1);
+		_Enthalpy=Field("Enthalpy",FieldSupportType::CELLS,_mesh,1);
+		_Pressure=Field("Pressure",FieldSupportType::CELLS,_mesh,1);
+		_Density=Field("Density",FieldSupportType::CELLS,_mesh,1);
+		_Temperature=Field("Temperature",FieldSupportType::CELLS,_mesh,1);
+		_MachNumber=Field("MachNumber",FieldSupportType::CELLS,_mesh,1);
+		_VitesseX=Field("Velocity x",FieldSupportType::CELLS,_mesh,1);
 		if(_Ndim>1)
 		{
-			_VitesseY=Field("Velocity y",CELLS,_mesh,1);
+			_VitesseY=Field("Velocity y",FieldSupportType::CELLS,_mesh,1);
 			if(_Ndim>2)
-				_VitesseZ=Field("Velocity z",CELLS,_mesh,1);
+				_VitesseZ=Field("Velocity z",FieldSupportType::CELLS,_mesh,1);
 		}
 	}
 
@@ -3095,7 +3095,7 @@ Field& SinglePhase::getPressureField()
 
 	if(!_saveAllFields)
 	{
-		_Pressure=Field("Pressure",CELLS,_mesh,1);
+		_Pressure=Field("Pressure",FieldSupportType::CELLS,_mesh,1);
 		int Ii;
 		for (long i = 0; i < _Nmailles; i++){
 			Ii = i*_nVar;
@@ -3113,7 +3113,7 @@ Field& SinglePhase::getTemperatureField()
 
 	if(!_saveAllFields)
 	{
-		_Temperature=Field("Temperature",CELLS,_mesh,1);
+		_Temperature=Field("Temperature",FieldSupportType::CELLS,_mesh,1);
 		int Ii;
 		for (long i = 0; i < _Nmailles; i++){
 			Ii = i*_nVar +_nVar-1;
@@ -3131,7 +3131,7 @@ Field& SinglePhase::getVelocityField()
 
 	if(!_saveAllFields )
 	{
-		_Vitesse=Field("Vitesse",CELLS,_mesh,3);
+		_Vitesse=Field("Vitesse",FieldSupportType::CELLS,_mesh,3);
 		int Ii;
 		for (long i = 0; i < _Nmailles; i++)
 		{
@@ -3159,7 +3159,7 @@ Field& SinglePhase::getMachNumberField()
 
 	if(!_saveAllFields )
 	{
-		_MachNumber=Field("Mach number",CELLS,_mesh,1);
+		_MachNumber=Field("Mach number",FieldSupportType::CELLS,_mesh,1);
 		int Ii;
 		double p,T,rho,h, temp, u2=0;
 		for (long i = 0; i < _Nmailles; i++){
@@ -3194,7 +3194,7 @@ Field& SinglePhase::getVelocityXField()
 
 	if(!_saveAllFields )
 	{
-		_VitesseX=Field("Velocity X",CELLS,_mesh,1);
+		_VitesseX=Field("Velocity X",FieldSupportType::CELLS,_mesh,1);
 		int Ii;
 		for (long i = 0; i < _Nmailles; i++)
 		{
@@ -3218,7 +3218,7 @@ Field& SinglePhase::getVelocityYField()
 	else
 		if(!_saveAllFields )
 		{
-			_VitesseY=Field("Velocity Y",CELLS,_mesh,1);
+			_VitesseY=Field("Velocity Y",FieldSupportType::CELLS,_mesh,1);
 			int Ii;
 			for (long i = 0; i < _Nmailles; i++)
 			{
@@ -3242,7 +3242,7 @@ Field& SinglePhase::getVelocityZField()
 	else
 		if(!_saveAllFields )
 		{
-			_VitesseZ=Field("Velocity Z",CELLS,_mesh,1);
+			_VitesseZ=Field("Velocity Z",FieldSupportType::CELLS,_mesh,1);
 			int Ii;
 			for (long i = 0; i < _Nmailles; i++)
 			{
@@ -3263,7 +3263,7 @@ Field& SinglePhase::getDensityField()
 		
 	if(!_saveAllFields )
 	{
-		_Density=Field("Density",CELLS,_mesh,1);
+		_Density=Field("Density",FieldSupportType::CELLS,_mesh,1);
 		int Ii;
 		for (long i = 0; i < _Nmailles; i++){
 			Ii = i*_nVar;
@@ -3279,7 +3279,7 @@ Field& SinglePhase::getMomentumField()//not yet managed by parameter _saveAllFie
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getMomentumField, Call initialize first");
 
-	_Momentum=Field("Momentum",CELLS,_mesh,_Ndim);
+	_Momentum=Field("Momentum",FieldSupportType::CELLS,_mesh,_Ndim);
 	int Ii;
 	for (long i = 0; i < _Nmailles; i++)
 		for (int j = 0; j < _Ndim; j++)//On récupère les composantes de qdm
@@ -3297,7 +3297,7 @@ Field& SinglePhase::getTotalEnergyField()//not yet managed by parameter _saveAll
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getTotalEnergyField, Call initialize first");
 
-	_TotalEnergy=Field("TotalEnergy",CELLS,_mesh,1);
+	_TotalEnergy=Field("TotalEnergy",FieldSupportType::CELLS,_mesh,1);
 	int Ii;
 	for (long i = 0; i < _Nmailles; i++){
 		Ii = i*_nVar +_nVar-1;
@@ -3315,7 +3315,7 @@ Field& SinglePhase::getEnthalpyField()
 
 	if(!_saveAllFields )
 	{
-		_Enthalpy=Field("Enthalpy",CELLS,_mesh,1);
+		_Enthalpy=Field("Enthalpy",FieldSupportType::CELLS,_mesh,1);
 		int Ii;
 		double p,T,rho;
 		for (long i = 0; i < _Nmailles; i++){

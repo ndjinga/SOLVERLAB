@@ -142,7 +142,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setHeatPowerField(string fileName, string fieldName){
-		_heatPowerField=Field(fileName, CELLS,fieldName);
+		_heatPowerField=Field(fileName, FieldSupportType::CELLS,fieldName);
 		_heatPowerFieldSet=true;
 	}
 

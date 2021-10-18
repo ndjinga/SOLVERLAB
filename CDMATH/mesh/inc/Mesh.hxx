@@ -42,11 +42,11 @@ class Node;
 class Cell;
 class Face;
 
-enum EntityType
+enum class FieldSupportType
   {
-    CELLS = 0,
-    NODES = 1,
-    FACES = 2,
+    CELLS,
+    NODES,
+    FACES,
   };
 
 #include <vector>
@@ -353,7 +353,7 @@ public: //----------------------------------------------------------------
 	/**
 	 * \brief Compute the maximum number of neighbours around an element (cells around a cell or nodes around a node)
 	 */
-    int getMaxNbNeighbours(EntityType type) const;
+    int getMaxNbNeighbours(FieldSupportType type) const;
     
 private: //----------------------------------------------------------------
 

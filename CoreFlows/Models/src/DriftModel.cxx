@@ -85,26 +85,26 @@ void DriftModel::initialize(){
 	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
 
 	if(_saveVelocity)
-		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 (3 composantes) pour le posttraitement des lignes de courant
+		_Vitesse=Field("Velocity",FieldSupportType::CELLS,_mesh,3);//Forcement en dimension 3 (3 composantes) pour le posttraitement des lignes de courant
 
 	if(_saveAllFields)
 	{
-		_VoidFraction=Field("Void fraction",CELLS,_mesh,1);
-		_Enthalpy=Field("Enthalpy",CELLS,_mesh,1);
-		_Concentration=Field("Concentration",CELLS,_mesh,1);
-		_Pressure=Field("Pressure",CELLS,_mesh,1);
-		_mixtureDensity=Field("Mixt density",CELLS,_mesh,1);
-		_Temperature=Field("Temperature",CELLS,_mesh,1);
-		_DensiteLiquide=Field("Liquid density",CELLS,_mesh,1);
-		_DensiteVapeur=Field("Steam density",CELLS,_mesh,1);
-		_EnthalpieLiquide=Field("Liquid enthalpy",CELLS,_mesh,1);
-		_EnthalpieVapeur=Field("Steam enthalpy",CELLS,_mesh,1);
-		_VitesseX=Field("Velocity x",CELLS,_mesh,1);
+		_VoidFraction=Field("Void fraction",FieldSupportType::CELLS,_mesh,1);
+		_Enthalpy=Field("Enthalpy",FieldSupportType::CELLS,_mesh,1);
+		_Concentration=Field("Concentration",FieldSupportType::CELLS,_mesh,1);
+		_Pressure=Field("Pressure",FieldSupportType::CELLS,_mesh,1);
+		_mixtureDensity=Field("Mixt density",FieldSupportType::CELLS,_mesh,1);
+		_Temperature=Field("Temperature",FieldSupportType::CELLS,_mesh,1);
+		_DensiteLiquide=Field("Liquid density",FieldSupportType::CELLS,_mesh,1);
+		_DensiteVapeur=Field("Steam density",FieldSupportType::CELLS,_mesh,1);
+		_EnthalpieLiquide=Field("Liquid enthalpy",FieldSupportType::CELLS,_mesh,1);
+		_EnthalpieVapeur=Field("Steam enthalpy",FieldSupportType::CELLS,_mesh,1);
+		_VitesseX=Field("Velocity x",FieldSupportType::CELLS,_mesh,1);
 		if(_Ndim>1)
 		{
-			_VitesseY=Field("Velocity y",CELLS,_mesh,1);
+			_VitesseY=Field("Velocity y",FieldSupportType::CELLS,_mesh,1);
 			if(_Ndim>2)
-				_VitesseZ=Field("Velocity z",CELLS,_mesh,1);
+				_VitesseZ=Field("Velocity z",FieldSupportType::CELLS,_mesh,1);
 		}
 	}
 

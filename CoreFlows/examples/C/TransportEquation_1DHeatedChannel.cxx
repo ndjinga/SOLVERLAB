@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 	vector<double> transportVelocity(1,5);//fluid velocity vector
 
 	TransportEquation  myProblem(LiquidPhase,around155bars600KTransport,transportVelocity);
-	Field VV("Enthalpy", CELLS, M, 1);
+	Field VV("Enthalpy", FieldSupportType::CELLS, M, 1);
 
 	//Set rod temperature and heat exchamge coefficient
 	double rodTemp=623;//Rod clad temperature

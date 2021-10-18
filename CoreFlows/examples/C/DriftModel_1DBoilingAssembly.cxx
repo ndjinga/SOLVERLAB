@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	double outletPressure=155e5;
 
 	// setting physical parameters 
-	Field heatPowerField=Field("heatPowerField",CELLS, M, 1);
+	Field heatPowerField=Field("heatPowerField",FieldSupportType::CELLS, M, 1);
 	int nbCells=M.getNumberOfCells();
 
 	for(int i=0;i<nbCells;i++){
@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 	DriftModel  myProblem(around155bars600K,spaceDim);
 	int nbPhase = myProblem.getNumberOfPhases();
 	int nVar = myProblem.getNumberOfVariables();
-	Field VV("Primitive", CELLS, M, nVar);
+	Field VV("Primitive", FieldSupportType::CELLS, M, nVar);
 
 	// Prepare for the initial condition
 	Vector VV_Constant(nVar);

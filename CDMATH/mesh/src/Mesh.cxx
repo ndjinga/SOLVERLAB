@@ -1947,17 +1947,17 @@ Mesh::getBoundaryMesh ( void )  const
 }
 
 int 
-Mesh::getMaxNbNeighbours(EntityType type) const
+Mesh::getMaxNbNeighbours(FieldSupportType type) const
 {
     double result=0;
     
-    if (type==CELLS)
+    if (type==FieldSupportType::CELLS)
 	{
         for(int i=0; i<_numberOfCells; i++)
             if(result < _cells[i].getNumberOfFaces())
                 result=_cells[i].getNumberOfFaces();
 	}
-    else if(type==NODES)
+    else if(type==FieldSupportType::NODES)
 	{
         for(int i=0; i<_numberOfNodes; i++)
             if(result < _nodes[i].getNumberOfEdges())

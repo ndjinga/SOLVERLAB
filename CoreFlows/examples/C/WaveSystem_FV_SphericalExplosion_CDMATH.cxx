@@ -165,15 +165,15 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
     int dim=my_mesh.getMeshDimension();
     int nbCells = my_mesh.getNumberOfCells();
     std::string meshName=my_mesh.getName();
-    int nbVoisinsMax=my_mesh.getMaxNbNeighbours(CELLS);
+    int nbVoisinsMax=my_mesh.getMaxNbNeighbours(FieldSupportType::FACES);
     double dx_min=my_mesh.minRatioVolSurf();
 
 
     /* Initial conditions */
     cout << "Construction of the initial condition" << endl;
     
-    Field pressure_field("Pressure",CELLS,my_mesh,1) ;
-    Field velocity_field("Velocity",CELLS,my_mesh,dim) ;
+    Field pressure_field("Pressure",FieldSupportType::FACES,my_mesh,1) ;
+    Field velocity_field("Velocity",FieldSupportType::FACES,my_mesh,dim) ;
     initial_conditions_shock(my_mesh,pressure_field, velocity_field);
 
     /* iteration vectors */
