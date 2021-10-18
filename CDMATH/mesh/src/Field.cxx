@@ -380,7 +380,6 @@ Field::readFieldMed( const std::string & fileNameRadical,
 	std::string attributedMeshName = meshNames[0];
 
 	// Create Field.
-	MEDCoupling::TypeOfField medFieldType[3] = { ON_CELLS, ON_NODES, ON_CELLS };
 	switch (type) {
 	case CELLS:
 		_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > ( 
