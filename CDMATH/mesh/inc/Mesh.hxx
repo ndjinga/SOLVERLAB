@@ -42,12 +42,12 @@ class Node;
 class Cell;
 class Face;
 
-typedef enum
+enum EntityType
   {
     CELLS = 0,
     NODES = 1,
     FACES = 2,
-  } EntityType;
+  };
 
 #include <vector>
 #include <string>
