@@ -255,6 +255,17 @@ public :
 	 * \param [in] string : the file name
 	 * \param [in] string : the field name
 	 * \param [in] int : the time step number
+	 * \param [in] int : int corresponding to the enum CELLS, NODES or FACES
+	 * \param [out] void
+	 *  */
+	void setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type);
+
+	/** \fn setInitialField
+	 * \brief sets the initial field from a field in a med file
+	 * \details
+	 * \param [in] string : the file name
+	 * \param [in] string : the field name
+	 * \param [in] int : the time step number
 	 * \param [in] EntityType : CELLS, NODES or FACES
 	 * \param [out] void
 	 *  */

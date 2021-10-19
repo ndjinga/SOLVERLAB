@@ -184,6 +184,29 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	if(_verbose)
 		cout<<_perimeters<<endl;
 }
+void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type)
+{
+	Field VV;
+	
+	switch(field_support_type)
+	{
+	case CELLS:
+		VV = Field(fileName, CELLS, fieldName, timeStepNumber, 0);
+		break;
+	case NODES:
+		VV = Field(fileName, NODES, fieldName, timeStepNumber, 0);
+		break;
+	case FACES:
+		VV = Field(fileName, FACES, fieldName, timeStepNumber, 0);
+		break;
+	default:
+		std::ostringstream message;
+		message << "Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
+		throw CdmathException(message.str().c_str());
+	}	
+
+	setInitialField(VV);
+}
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField)
 {
 	Field VV(fileName, typeField, fieldName, timeStepNumber, 0);
