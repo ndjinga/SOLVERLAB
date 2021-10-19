@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 	VV_constant(2) = initialTemperature	;
 
 	cout << "Building initial data" << endl;
-	Field VV("Primitive", FieldSupportType::CELLS, M, nVar);
+	Field VV("Primitive", CELLS, M, nVar);
 
 	myProblem.setInitialFieldConstant(M,VV_constant);
 

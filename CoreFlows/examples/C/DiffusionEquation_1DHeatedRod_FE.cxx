@@ -38,7 +38,7 @@ int main(int argc, char** argv)
  
     bool FEcalculation=true;
 	DiffusionEquation  myProblem(spaceDim,FEcalculation,rho_ur,cp_ur,lambda_ur);
-	Field VV("Solid temperature", FieldSupportType::NODES, M, 1);
+	Field VV("Solid temperature", NODES, M, 1);
 
 	//Set fluid temperature (temperature du fluide)
 	double fluidTemp=573;//fluid mean temperature
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 	myProblem.setFluidTemperature(fluidTemp);
 	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
 	//Set heat source
-	Field Phi("Heat power field", FieldSupportType::NODES, M, 1);
+	Field Phi("Heat power field", NODES, M, 1);
 	power_field_diffusionTest(Phi);
 	myProblem.setHeatPowerField(Phi);
 	Phi.writeVTK("1DheatPowerField");

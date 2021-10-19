@@ -215,7 +215,7 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
 
 	if(rank == 0)
 	{
-		int nbVoisinsMax = my_mesh.getMaxNbNeighbours(FieldSupportType::FACES);
+		int nbVoisinsMax = my_mesh.getMaxNbNeighbours(CELLS);
 	    d_nnz=(nbVoisinsMax+1)*(my_mesh.getMeshDimension()+1);//(nbVoisinsMax+1)*nbComp
 	    o_nnz= nbVoisinsMax   *(my_mesh.getMeshDimension()+1);//                 nbComp
 	}
@@ -237,8 +237,8 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
 	    /* Initial conditions */
 	    cout<<"Building the initial condition on processor 0" << endl;
 	    
-	    pressure_field=Field("Pressure",FieldSupportType::FACES,my_mesh,1) ;
-	    velocity_field=Field("Velocity",FieldSupportType::FACES,my_mesh,dim) ;
+	    pressure_field=Field("Pressure",CELLS,my_mesh,1) ;
+	    velocity_field=Field("Velocity",CELLS,my_mesh,dim) ;
 	    initial_conditions_shock(my_mesh,pressure_field, velocity_field);
 	
 	    cout << "Saving the solution at T=" << time <<"  on processor 0"<<endl;

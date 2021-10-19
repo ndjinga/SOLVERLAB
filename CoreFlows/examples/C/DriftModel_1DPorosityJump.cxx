@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	double initialPressure=155e5;
 
 	// physical parameters
-	Field porosityField("Porosity", FieldSupportType::CELLS, M, 1);
+	Field porosityField("Porosity", CELLS, M, 1);
 	for(int i=0;i<M.getNumberOfCells();i++){
 		double x=M.getCell(i).x();
 		if (x> (xsup-xinf)/3 && x< 2*(xsup-xinf)/3)

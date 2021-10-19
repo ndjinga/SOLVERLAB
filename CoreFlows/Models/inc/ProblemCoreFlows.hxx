@@ -255,10 +255,10 @@ public :
 	 * \param [in] string : the file name
 	 * \param [in] string : the field name
 	 * \param [in] int : the time step number
-	 * \param [in] FieldSupportType : CELLS, NODES or FACES
+	 * \param [in] EntityType : CELLS, NODES or FACES
 	 * \param [out] void
 	 *  */
-	void setInitialField(string fileName, string fieldName, int timeStepNumber, FieldSupportType typeField = FieldSupportType::CELLS);
+	void setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldConstant
 	 * \brief sets a constant initial field on a mesh stored in a med file
@@ -267,7 +267,7 @@ public :
 	 * \param [in] vector<double> : the value in each cell
 	 * \param [out] void
 	 *  */
-	void setInitialFieldConstant(string fileName, const vector<double> Vconstant, FieldSupportType typeField = FieldSupportType::CELLS);
+	void setInitialFieldConstant(string fileName, const vector<double> Vconstant, EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldConstant
 	 * \brief sets a constant initial field 
@@ -276,7 +276,7 @@ public :
 	 * \param [in] Vector
 	 * \param [out] void
 	 *  */
-	void setInitialFieldConstant(const Mesh& M, const Vector Vconstant, FieldSupportType typeField = FieldSupportType::CELLS);
+	void setInitialFieldConstant(const Mesh& M, const Vector Vconstant, EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldConstant
 	 * \brief sets a constant initial field
@@ -285,7 +285,7 @@ public :
 	 * \param [in] vector<double>
 	 * \param [out] void
 	 *  */
-	void setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant, FieldSupportType typeField = FieldSupportType::CELLS);
+	void setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant, EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldConstant
 	 * \brief sets a constant initial field
@@ -308,7 +308,7 @@ public :
 	 *  */
 	void setInitialFieldConstant( int nDim, const vector<double> Vconstant, double xmin, double xmax,int nx, string leftSide, string rightSide,
 			double ymin=0, double ymax=0, int ny=0, string backSide="", string frontSide="",
-			double zmin=0, double zmax=0, int nz=0, string bottomSide="", string topSide="", FieldSupportType typeField = FieldSupportType::CELLS);
+			double zmin=0, double zmax=0, int nz=0, string bottomSide="", string topSide="", EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldStepFunction
 	 * \brief sets a step function initial field (Riemann problem)
@@ -320,7 +320,7 @@ public :
 	 * \param [in] int direction (axis carrying the discontinuity) : 0 for x, 1 for y, 2 for z
 	 * \param [out] void
 	 *  */
-	void setInitialFieldStepFunction(const Mesh M, const Vector Vleft, const Vector Vright, double disc_pos, int direction=0, FieldSupportType typeField = FieldSupportType::CELLS);
+	void setInitialFieldStepFunction(const Mesh M, const Vector Vleft, const Vector Vright, double disc_pos, int direction=0, EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldStepFunction
 	 * \brief sets a constant initial field
@@ -346,7 +346,7 @@ public :
 	void setInitialFieldStepFunction( int nDim, const vector<double> VV_Left, vector<double> VV_Right, double xstep,
 			double xmin, double xmax,int nx, string leftSide, string rightSide,
 			double ymin=0, double ymax=0, int ny=0, string backSide="", string frontSide="",
-			double zmin=0, double zmax=0, int nz=0, string bottomSide="", string topSide="", FieldSupportType typeField = FieldSupportType::CELLS);
+			double zmin=0, double zmax=0, int nz=0, string bottomSide="", string topSide="", EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldSphericalStepFunction
 	 * \brief sets a step function initial field with value Vin inside the ball with radius Radius and Vout outside
@@ -358,7 +358,7 @@ public :
 	 * \param [in] Vector Center, coordinates of the ball center
 	 * \param [out] void
 	 *  */
-	void setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double Radius, Vector Center, FieldSupportType typeField = FieldSupportType::CELLS);
+	void setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double Radius, Vector Center, EntityType typeField = CELLS);
 
 	/** \fn getTime
 	 * \brief renvoie _time (le temps courant du calcul)
@@ -542,7 +542,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setHeatPowerField(string fileName, string fieldName){
-		_heatPowerField=Field(fileName, FieldSupportType::CELLS,fieldName);
+		_heatPowerField=Field(fileName, CELLS,fieldName);
 		_heatPowerFieldSet=true;
 	}
 

@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	//Set the barriers
 	double xcloison1=xinf+(xsup-xinf)/3;
 	double xcloison2=xinf+2*(xsup-xinf)/3;
-	Field barrierField("Barrier Field", FieldSupportType::FACES, M, 1);
+	Field barrierField("Barrier Field", FACES, M, 1);
 	double eps=1e-6;
 	M.setGroupAtPlan(xsup,0,eps,"wall");
 	M.setGroupAtPlan(xinf,0,eps,"wall");

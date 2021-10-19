@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 
 	DriftModel myProblem = DriftModel(around155bars600K,spaceDim);
 	int nVar =myProblem.getNumberOfVariables();
-	Field heatPowerField=Field("heatPowerField", FieldSupportType::CELLS, M, 1);
+	Field heatPowerField=Field("heatPowerField", CELLS, M, 1);
 
 	int nbCells=M.getNumberOfCells();
 

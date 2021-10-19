@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 	double discontinuity = (xinf+xsup)/2.;
 
 	cout << "Building initial data " << endl;
-	Field VV("Primitive", FieldSupportType::CELLS, M, nVar);
+	Field VV("Primitive", CELLS, M, nVar);
 
 	myProblem.setInitialFieldStepFunction(M,VV_Left,VV_Right,discontinuity);
 

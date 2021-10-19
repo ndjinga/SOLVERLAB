@@ -48,7 +48,7 @@ void ProblemFluid::initialize()
 		_runLogFile->close();
 		throw CdmathException("ProblemFluid::initialize() set initial data first");
 	}
-	else if (_VV.getTypeOfField() != FieldSupportType::CELLS)
+	else if (_VV.getTypeOfField() != CELLS)
 	{
 		*_runLogFile<<"Initial data should be a field on CELLS, not NODES, neither FACES"<<endl;
 		_runLogFile->close();
@@ -107,25 +107,25 @@ void ProblemFluid::initialize()
 
 	/**************** Field creation *********************/
 	if(!_heatPowerFieldSet){
-		_heatPowerField=Field("Heat Power",FieldSupportType::CELLS,_mesh,1);
+		_heatPowerField=Field("Heat Power",CELLS,_mesh,1);
 		for(int i =0; i<_Nmailles; i++)
 			_heatPowerField(i) = _heatSource;
 	}
 	if(_Psat>-1e30)
-		_dp_over_dt=Field("dP/dt",FieldSupportType::CELLS,_mesh,1);
+		_dp_over_dt=Field("dP/dt",CELLS,_mesh,1);
 	if(!_porosityFieldSet){
-		_porosityField=Field("Porosity field",FieldSupportType::CELLS,_mesh,1);
+		_porosityField=Field("Porosity field",CELLS,_mesh,1);
 		for(int i =0; i<_Nmailles; i++)
 			_porosityField(i) = 1;
 		_porosityFieldSet=true;
 	}
 
 	//conservative field used only for saving results
-	_UU=Field ("Conservative vec", FieldSupportType::CELLS, _mesh, _nVar);
+	_UU=Field ("Conservative vec", CELLS, _mesh, _nVar);
 	if(_saveInterfacialField && _nonLinearFormulation==VFRoe)
 	{
-		_UUstar=Field ("Interfacial U", FieldSupportType::CELLS, _mesh, _nVar);
-		_VVstar=Field ("Interfacial V", FieldSupportType::CELLS, _mesh, _nVar);
+		_UUstar=Field ("Interfacial U", CELLS, _mesh, _nVar);
+		_VVstar=Field ("Interfacial V", CELLS, _mesh, _nVar);
 	}
 
 	//Construction des champs primitifs et conservatifs initiaux comme avant dans ParaFlow

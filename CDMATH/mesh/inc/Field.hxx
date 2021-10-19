@@ -31,7 +31,7 @@ class Field
     /**
      * default constructor
      */
-    Field ( FieldSupportType typeField = FieldSupportType::CELLS ) ;
+    Field ( EntityType typeField = CELLS ) ;
 
     /**
     * constructor with data:
@@ -41,7 +41,7 @@ class Field
     * @param numberOfComponents : number of the component
     * @param time : time of the field
     */
-    Field(const std::string fieldName, FieldSupportType type, const Mesh& mesh, int numberOfComponents=1, double time=0.0) ;
+    Field(const std::string fieldName, EntityType type, const Mesh& mesh, int numberOfComponents=1, double time=0.0) ;
 
     /**
     * destructor
@@ -70,7 +70,7 @@ class Field
      * @param numberOfComponents:     number of components of the field (optional)
      * @param time:     time index of the field (optional)
      */
-    Field( const std::string filename, FieldSupportType fieldType,
+    Field( const std::string filename, EntityType fieldType,
            const std::string & fieldName = "",
            int iteration = -1, int order = -1, int meshLevel=0,
            int numberOfComponents=1, double time=0.0);
@@ -85,7 +85,7 @@ class Field
      * \param [in] fieldName: field name
 	 * \param [in] meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
 	 *  */
-	Field(const std::string meshfileName, FieldSupportType fieldType, 
+	Field(const std::string meshfileName, EntityType fieldType, 
 		  const std::vector<double> Vconstant,const std::string & fieldName = "",
 		   int meshLevel=0, double time=0.0);
 
@@ -98,7 +98,7 @@ class Field
 	 * \param [in] Vector
      * \param [in] fieldName: field name
 	 *  */
-	Field(const Mesh& M, FieldSupportType fieldType, const Vector Vconstant,
+	Field(const Mesh& M, EntityType fieldType, const Vector Vconstant,
 		  const std::string & fieldName = "", double time=0.0);
 
     /**
@@ -110,7 +110,7 @@ class Field
 	 * \param [in] vector<double>
      * \param [in] fieldName: field name
 	 *  */
-	Field(const Mesh& M, FieldSupportType fieldType, const std::vector<double> Vconstant, const std::string & fieldName = "", double time=0.0);
+	Field(const Mesh& M, EntityType fieldType, const std::vector<double> Vconstant, const std::string & fieldName = "", double time=0.0);
 
     /**
      * constructor with data
@@ -133,7 +133,7 @@ class Field
 	 * \param [in] string name of the bottom boundary
 	 * \param [in] string name of the top boundary
 	 *  */
-	Field( int nDim, const std::vector<double> Vconstant, FieldSupportType type, 
+	Field( int nDim, const std::vector<double> Vconstant, EntityType type, 
 			double xmin, double xmax,int nx, std::string leftSide, std::string rightSide,
 			double ymin=0, double ymax=0, int ny=0, std::string backSide="", std::string frontSide="",
 			double zmin=0, double zmax=0, int nz=0, std::string bottomSide="", std::string topSide="",
@@ -152,7 +152,7 @@ class Field
      * \param [in] fieldName: field name
 	 *  */
 	Field(const Mesh M, const Vector VV_left, const Vector VV_right, double disc_pos, 
-			FieldSupportType type, int direction=0, const std::string & fieldName="", double time=0.0);
+			EntityType type, int direction=0, const std::string & fieldName="", double time=0.0);
 
     /**
      * constructor with data
@@ -178,7 +178,7 @@ class Field
 	 * \param [out] void
 	 *  */
 	Field( int nDim, const std::vector<double> VV_Left, std::vector<double> VV_Right, 
-			double xstep, FieldSupportType type,
+			double xstep, EntityType type,
 			double xmin, double xmax,int nx, std::string leftSide, std::string rightSide,
 			double ymin=0, double ymax=0, int ny=0, std::string backSide="", std::string frontSide="",
 			double zmin=0, double zmax=0, int nz=0, std::string bottomSide="", std::string topSide="",
@@ -197,10 +197,10 @@ class Field
      * \param [in] fieldName: field name
 	 *  */
 	Field(const Mesh M, const Vector Vin, const Vector Vout, double Radius, 
-			Vector Center, FieldSupportType type, const std::string & fieldName="", double time=0.0);
+			Vector Center, EntityType type, const std::string & fieldName="", double time=0.0);
 
     void readFieldMed( const std::string & fileNameRadical,
-                       FieldSupportType type,
+                       EntityType type,
                        const std::string & fieldName = "",
                        int iteration = -1,
                        int order = -1) ;
@@ -237,7 +237,7 @@ class Field
 
     int getNumberOfElements ( void ) const ;
 
-    FieldSupportType getTypeOfField ( void ) const ;
+    EntityType getTypeOfField ( void ) const ;
 
 	// returns the x, y or z component of the element (node cell or face) with number i
     double getElementComponent(int i, int comp) const;
@@ -353,7 +353,7 @@ class Field
 
     MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> _field;
     Mesh _mesh ;
-    FieldSupportType _typeField;
+    EntityType _typeField;
 	int _numberOfComponents;
 	double _time;
 	std::string _fieldName;
