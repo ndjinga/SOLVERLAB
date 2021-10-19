@@ -4,6 +4,10 @@
 import sys
 import solverlab
 
+# Test solving the heat diffusion in a solid (uranium). heat capacity, density, and conductivity MUST be defined
+# The solid may be extra refrigerated by a fluid (functions setFluidTemperature and setHeatTransfertCoeff)
+# The solid may receive some extra heat power due to nuclear fissions (function setHeatSource)
+
 def DiffusionEquation_2DSpherical(FECalculation):
 
     # Prepare for the mesh
@@ -11,14 +15,14 @@ def DiffusionEquation_2DSpherical(FECalculation):
 	fieldName="Temperature";
 	spaceDim=2
 	
-    # set some physical values
+    # Mandatory physical values
 	cp_ur=300# heat capacity
 	rho_ur=10000# density
 	lambda_ur=5# conductivity
 
 	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,rho_ur,cp_ur,lambda_ur);
 
-     #Set heat exchanges
+    #Optional physical values
 	fluidTemp=573.;#fluid mean temperature
 	heatTransfertCoeff=1000.;#fluid/solid exchange coefficient
 	phi=1e5;#heat power ddensity
@@ -26,9 +30,8 @@ def DiffusionEquation_2DSpherical(FECalculation):
 	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
 	myProblem.setHeatSource(phi);
 
-	time_iteration=0
-
     #Initial field load
+	time_iteration=0
 	print("Loading unstructured mesh and initial data" )
 	if( FECalculation):
 		myProblem.setInitialField(inputfile,fieldName,time_iteration, solverlab.NODES)
