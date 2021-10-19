@@ -72,8 +72,7 @@ class Field
      */
     Field( const std::string filename, EntityType fieldType,
            const std::string & fieldName = "",
-           int iteration = -1, int order = -1, int meshLevel=0,
-           int numberOfComponents=1, double time=0.0);
+           int iteration = -1, int order = -1, int meshLevel=0);
   
     /**
      * constructor with data

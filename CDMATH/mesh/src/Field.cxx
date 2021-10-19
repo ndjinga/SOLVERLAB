@@ -94,14 +94,11 @@ void Field::buildFieldMemoryStructure()
 
 Field::Field( const std::string filename, EntityType type,
 		const std::string & fieldName,
-		int iteration, int order, int meshLevel,
-		int numberOfComponents, double time)
+		int iteration, int order, int meshLevel)
 {
 	_field = NULL;
 	_mesh=Mesh(filename + ".med", meshLevel);
 	_typeField=type;
-	_numberOfComponents=numberOfComponents;
-	_time=time;
 	_fieldName=fieldName;
 
 	readFieldMed(filename, type, fieldName, iteration, order);
@@ -124,7 +121,7 @@ Field::Field(const std::string meshFileName, EntityType type, const std::vector<
 
 	for (int ielem=0 ; ielem<nbelem; ielem++)
 		for (int jcomp=0 ; jcomp<nbcomp ; jcomp++)
-			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
+			_field->getArray()->getPointer()[jcomp+ielem*nbcomp]=Vconstant[jcomp];
 }
 Field::Field(const Mesh& M, EntityType type, const Vector Vconstant, const std::string & fieldName, double time)
 {
@@ -142,7 +139,7 @@ Field::Field(const Mesh& M, EntityType type, const Vector Vconstant, const std::
 
 	for (int ielem=0 ; ielem<nbelem; ielem++)
 		for (int jcomp=0 ; jcomp<nbcomp ; jcomp++)
-			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
+			_field->getArray()->getPointer()[jcomp+ielem*nbcomp]=Vconstant[jcomp];
 }
 Field::Field(const Mesh& M, EntityType type, const vector<double> Vconstant, const std::string & fieldName, double time) 
 {
@@ -160,7 +157,7 @@ Field::Field(const Mesh& M, EntityType type, const vector<double> Vconstant, con
 
 	for (int ielem=0 ; ielem<nbelem; ielem++)
 		for (int jcomp=0 ; jcomp<nbcomp ; jcomp++)
-			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
+			_field->getArray()->getPointer()[jcomp+ielem*nbcomp]=Vconstant[jcomp];
 }
 Field::Field( int nDim, const vector<double> Vconstant, EntityType type, 
 		double xmin, double xmax, int nx, string leftSide, string rightSide,
@@ -206,7 +203,7 @@ Field::Field( int nDim, const vector<double> Vconstant, EntityType type,
 
 	for (int ielem=0 ; ielem<nbelem; ielem++)
 		for (int jcomp=0 ; jcomp<nbcomp ; jcomp++)
-			_field->getArray()->getPointer()[jcomp+ielem*_field->getNumberOfComponents()]=Vconstant[jcomp];
+			_field->getArray()->getPointer()[jcomp+ielem*nbcomp]=Vconstant[jcomp];
 }
 Field::Field(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos,
 		EntityType type, int direction, const std::string & fieldName, double time)
@@ -240,9 +237,9 @@ Field::Field(const Mesh M, const Vector VV_Left, const Vector VV_Right, double d
 
 		for (int i=0; i< nbcomp; i++)
 			if (component_value< disc_pos )
-				_field->getArray()->getPointer()[j+i*_field->getNumberOfComponents()] = VV_Left[i];
+				_field->getArray()->getPointer()[j+i*nbcomp] = VV_Left[i];
 			else
-				_field->getArray()->getPointer()[j+i*_field->getNumberOfComponents()] = VV_Right[i];
+				_field->getArray()->getPointer()[j+i*nbcomp] = VV_Right[i];
 	}
 }
 Field::Field( int nDim, const vector<double> VV_Left, vector<double> VV_Right, 
@@ -318,10 +315,10 @@ Field::Field(const Mesh M, const Vector Vin, const Vector Vout, double radius,
 		}
 		if((currentPoint-Center).norm()<radius)
 			for(int j=0;j<nbcomp;j++)
-				_field->getArray()->getPointer()[j+i*_field->getNumberOfComponents()]=Vin[j];
+				_field->getArray()->getPointer()[j+i*nbcomp]=Vin[j];
 		else
 			for(int j=0;j<nbcomp;j++)
-				_field->getArray()->getPointer()[j+i*_field->getNumberOfComponents()]=Vout[j];
+				_field->getArray()->getPointer()[j+i*nbcomp]=Vout[j];
 	}
 }
 
@@ -348,19 +345,28 @@ Field::readFieldMed( const std::string & fileNameRadical,
 	// Get the name of the right field that we will attribute to the Field.
 	if (fieldName == "") {
 		if (fieldNames.size() > 0)
+		{
+			cout<<"Warning : No field name imposed, taking the first field name found : "<< fieldNames[0]<<" in file "<<completeFileName<<endl;;
 			attributedFieldName = fieldNames[0];
-		else {
+		}
+		else 
+		{
 			std::ostringstream message;
-			message << "No field in file " << completeFileName;
+			message << "Warning : No field found in file " << completeFileName;
 			throw CdmathException(message.str().c_str());
 		}
 	}
-	else {
-		for (; iField < fieldNames.size(); iField++)
-			if (fieldName == fieldNames[iField]) break;
-
-		if (iField < fieldNames.size())
+	else 
+	{
+		int mycount = std::count(fieldNames.begin(), fieldNames.end(), fieldName);
+		
+		if( mycount>0 )
+		{
 			attributedFieldName = fieldName;
+
+			if( mycount> 1 )
+				cout<<"Warning : " << mycount << " fields are associated to the name " << fieldName <<" in file "<<completeFileName<<endl;
+		}
 		else {
 			std::ostringstream message;
 			message << "No field named " << fieldName << " in file " << completeFileName;
@@ -369,37 +375,50 @@ Field::readFieldMed( const std::string & fileNameRadical,
 	}
 
 	// Get the name of the right mesh that we will attribute to the Field.
-	std::vector<std::string> meshNames
-	= MEDCoupling::GetMeshNamesOnField(completeFileName, attributedFieldName);
+	std::vector<std::string> meshNames	= MEDCoupling::GetMeshNamesOnField(completeFileName, attributedFieldName);
 	if (meshNames.size() == 0) {
 		std::ostringstream message;
-		message << "No mesh associated to " << fieldName
-				<< " in file " << completeFileName;
+		message << "No mesh associated to " << fieldName<< " in file " << completeFileName;
 		throw CdmathException(message.str().c_str());
 	}
+	else
+		if( meshNames.size() > 1 )
+		{
+			cout<<"Warning : " << meshNames.size() << " meshes are associated to field named " << fieldName <<" in file "<<completeFileName<<endl;
+			cout<<"Mesh names are : ";
+			for (int iMesh=0; iMesh < meshNames.size(); iMesh++)
+				cout<< meshNames[iMesh]<<", ";
+			cout<<endl<<"Taking the mesh with name "<< meshNames[0]<<endl;			
+		}
+
 	std::string attributedMeshName = meshNames[0];
 
 	// Create Field.
-	switch (type) {
-	case CELLS:
-		_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > ( 
-					MEDCoupling::ReadFieldCell( completeFileName,
-					attributedMeshName, 0,
-					attributedFieldName, iteration, order) );
-		break;
-	case NODES:
-		_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > (
-					MEDCoupling::ReadFieldNode( completeFileName,
-					attributedMeshName, 0,
-					attributedFieldName, iteration, order) );
-		break;
-	case FACES:
-		_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > ( 
-					MEDCoupling::ReadFieldCell( completeFileName,
-					attributedMeshName, -1,
-					attributedFieldName, iteration, order) );
-		break;
+	switch (type) 
+	{
+		case CELLS:
+			_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > ( 
+						MEDCoupling::ReadFieldCell( completeFileName,
+						attributedMeshName, 0,
+						attributedFieldName, iteration, order) );
+			break;
+		case NODES:
+			_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > (
+						MEDCoupling::ReadFieldNode( completeFileName,
+						attributedMeshName, 0,
+						attributedFieldName, iteration, order) );
+			break;
+		case FACES:
+			_field = dynamic_cast< MEDCoupling::MEDCouplingFieldDouble * > ( 
+						MEDCoupling::ReadFieldCell( completeFileName,
+						attributedMeshName, -1,
+						attributedFieldName, iteration, order) );
+			break;
 	}
+
+	//Read and store the number of components
+	_numberOfComponents = _field->getNumberOfComponents() ;
+	_time = _field->getTime(iteration, order);
 }
 
 
@@ -817,7 +836,7 @@ Field::operator+ ( const Field& f ) const
 	int nbElem=f.getNumberOfElements();
 	for (int ielem=0 ; ielem<nbElem; ielem++)
 		for (int jcomp=0 ; jcomp<nbComp ; jcomp++)
-			fres(ielem, jcomp)=_field->getArray()->getConstPointer()[jcomp+ielem*_field->getNumberOfComponents()]+f(ielem, jcomp);
+			fres(ielem, jcomp)=_field->getArray()->getConstPointer()[jcomp+ielem*nbComp]+f(ielem, jcomp);
 	return fres;
 }
 
@@ -839,7 +858,7 @@ Field::operator- ( const Field& f ) const
 	int nbElem=f.getNumberOfElements();
 	for (int ielem=0 ; ielem<nbElem; ielem++)
 		for (int jcomp=0 ; jcomp<nbComp ; jcomp++)
-			fres(ielem, jcomp)=_field->getArray()->getConstPointer()[jcomp+ielem*_field->getNumberOfComponents()]-f(ielem, jcomp);
+			fres(ielem, jcomp)=_field->getArray()->getConstPointer()[jcomp+ielem*nbComp]-f(ielem, jcomp);
 	return fres;
 }
 
@@ -913,7 +932,7 @@ Field::operator*= ( double s )
 	int nbElem=getNumberOfElements();
 	for (int i=0 ; i<nbComp ; i++)
 		for (int j=0 ; j<nbElem; j++)
-			_field->getArray()->getPointer()[i+j*_field->getNumberOfComponents()]*=s;
+			_field->getArray()->getPointer()[i+j*nbComp]*=s;
 	return *this;
 }
 
@@ -926,7 +945,7 @@ Field::operator/= ( double s )
 	int nbElem=getNumberOfElements();
 	for (int i=0 ; i<nbComp ; i++)
 		for (int j=0 ; j<nbElem; j++)
-			_field->getArray()->getPointer()[i+j*_field->getNumberOfComponents()]/=s;
+			_field->getArray()->getPointer()[i+j*nbComp]/=s;
 	return *this;
 }
 
@@ -939,7 +958,7 @@ Field::operator-= ( double s )
 	int nbElem=getNumberOfElements();
 	for (int i=0 ; i<nbComp ; i++)
 		for (int j=0 ; j<nbElem; j++)
-			_field->getArray()->getPointer()[i+j*_field->getNumberOfComponents()]-=s;
+			_field->getArray()->getPointer()[i+j*nbComp]-=s;
 	return *this;
 }
 
@@ -952,7 +971,7 @@ Field::operator+= ( double s )
 	int nbElem=getNumberOfElements();
 	for (int i=0 ; i<nbComp ; i++)
 		for (int j=0 ; j<nbElem; j++)
-			_field->getArray()->getPointer()[i+j*_field->getNumberOfComponents()]+=s;
+			_field->getArray()->getPointer()[i+j*nbComp]+=s;
 	return *this;
 }
 
