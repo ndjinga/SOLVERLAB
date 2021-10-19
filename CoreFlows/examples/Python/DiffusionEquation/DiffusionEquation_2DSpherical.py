@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*-coding:utf-8 -*
 
-import CoreFlows
-import cdmath
 import sys
+import solverlab
 
 def DiffusionEquation_2DSpherical(FECalculation):
 
@@ -12,13 +11,12 @@ def DiffusionEquation_2DSpherical(FECalculation):
 	fieldName="Temperature";
 	spaceDim=2
 	
-    # set the limit field for each boundary
-	Temperature=623;
-	cp_ur=300
-	rho_ur=10000
-	lambda_ur=5
+    # set some physical values
+	cp_ur=300# heat capacity
+	rho_ur=10000# density
+	lambda_ur=5# conductivity
 
-	myProblem = CoreFlows.DiffusionEquation(spaceDim,FECalculation,rho_ur,cp_ur,lambda_ur);
+	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,rho_ur,cp_ur,lambda_ur);
 
      #Set heat exchanges
 	fluidTemp=573.;#fluid mean temperature
@@ -28,12 +26,14 @@ def DiffusionEquation_2DSpherical(FECalculation):
 	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
 	myProblem.setHeatSource(phi);
 
+	time_iteration=0
+
     #Initial field load
 	print("Loading unstructured mesh and initial data" )
 	if( FECalculation):
-		myProblem.setInitialField(inputfile,fieldName,0, cdmath.NODES)
+		myProblem.setInitialField(inputfile,fieldName,time_iteration, solverlab.NODES)
 	else:
-		myProblem.setInitialField(inputfile,fieldName,0, cdmath.CELLS)
+		myProblem.setInitialField(inputfile,fieldName,time_iteration, solverlab.CELLS)
 
     # the boundary conditions :
 	if( FECalculation):
@@ -49,8 +49,8 @@ def DiffusionEquation_2DSpherical(FECalculation):
 	myProblem.setNeumannBoundaryCondition("BAS");
 
     # set the numerical method
-	myProblem.setTimeScheme( CoreFlows.Explicit);
-	# myProblem.setLinearSolver(GMRES,ILU,True);
+	myProblem.setTimeScheme( solverlab.Explicit);
+	myProblem.setLinearSolver(solverlab.GMRES,solverlab.ILU,True);
 
     # name of result file
 	if( FECalculation):
