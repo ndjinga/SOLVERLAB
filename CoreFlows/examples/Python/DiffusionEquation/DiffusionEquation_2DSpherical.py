@@ -4,9 +4,17 @@
 import sys
 import solverlab
 
-# Test solving the heat diffusion in a solid (uranium). heat capacity, density, and conductivity MUST be defined
-# The solid may be extra refrigerated by a fluid (functions setFluidTemperature and setHeatTransfertCoeff)
-# The solid may receive some extra heat power due to nuclear fissions (function setHeatSource)
+#===============================================================================================================================
+# Name        : Finite Elements simulation of the 2D heat equation -\triangle T = f with Neumann boundary condition
+# Author      : Michaël Ndjinga
+# Copyright   : CEA Saclay 2021
+# Description : Test solving the diffusion of the temperature T in a solid (default is Uranium). 
+#		        \rho cp dT/dt-\lambda\Delta T=\Phi(T) + \lambda_{sf} (T_{fluid}-T)
+#		        Heat capacity cp, density \rho, and conductivity \lambda MUST be defined
+#		        The solid may be extra refrigerated by a fluid with transfer coefficient \lambda_{sf} (functions setFluidTemperature and setHeatTransfertCoeff)
+#		        The solid may receive some extra heat power \Phi due to nuclear fissions (function setHeatSource)
+#================================================================================================================================
+
 
 def DiffusionEquation_2DSpherical(FECalculation):
 
