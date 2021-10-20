@@ -358,6 +358,29 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         }            
 	}
     
+    //Calcul de la contribution de la condition limite de Neumann au second membre
+    if( _NdirichletNodes !=_NboundaryNodes)
+    {
+        vector< int > boundaryFaces = _mesh.getBoundaryFaceIds();
+        int NboundaryFaces=boundaryFaces.size();
+        for(int i = 0; i< NboundaryFaces ; i++)//On parcourt les faces du bord
+        {
+            Face Fi = _mesh.getFace(i);
+            for(int j = 0 ; j<_Ndim ; j++)//On parcourt les noeuds de la face
+            {
+                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is an Neumann BC node (not a Dirichlet BC node)
+                {
+                    j_int=unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
+                    if( _neumannValuesSet )
+                        coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
+                    else    
+                        coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
+                    VecSetValue(_b, j_int, coeff, ADD_VALUES);
+                }
+            }
+        }
+    }
+
     MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 	VecAssemblyBegin(_b);
@@ -366,11 +389,11 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	_diffusionMatrixSet=true;
     stop=false ;
 
-	cout<<"_maxvp= "<<_maxvp<< " cfl= "<<_cfl<<" minl= "<<_minl<<endl;
+	cout<<"Maximum diffusivity is "<<_maxvp<< " CFL = "<<_cfl<<" Delta x = "<<_minl<<endl;
 	if(fabs(_maxvp)<_precision)
-		throw CdmathException("DiffusionEquation::computeDiffusionMatrix(): maximum eigenvalue for time step is zero");
+		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFE(): Error computing time step ! Maximum diffusivity is zero => division by zero");
 	else
-		return _cfl/_maxvp;
+		return _cfl*_minl*_minl/_maxvp;
 }
 
 double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
@@ -474,9 +497,9 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 	_diffusionMatrixSet=true;
     stop=false ;
 
-	cout<<"_maxvp= "<<_maxvp<< " cfl= "<<_cfl<<" minl= "<<_minl<<endl;
+	cout<<"Maximum diffusivity is "<<_maxvp<< " CFL = "<<_cfl<<" Delta x = "<<_minl<<endl;
 	if(fabs(_maxvp)<_precision)
-		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFV(): maximum eigenvalue for time step is zero");
+		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFV(): Error computing time step ! Maximum diffusivity is zero => division by zero");
 	else
 		return _cfl*_minl*_minl/_maxvp;
 }
