@@ -1,4 +1,5 @@
 #include "DiffusionEquation.hxx"
+#include "Node.hxx"
 #include "math.h"
 #include <algorithm> 
 #include <fstream>
@@ -42,20 +43,25 @@ int DiffusionEquation::globalNodeIndex(int unknownNodeIndex, std::vector< int > 
 
     if(j+1==boundarySize)
         return unknownNodeIndex+boundarySize;
-    else //unknownNodeMax>=unknownNodeIndex) hence our node global number is between dirichletNodes[j-1] and dirichletNodes[j]
+    else //unknownNodeMax>=unknownNodeIndex, hence our node global number is between dirichletNodes[j-1] and dirichletNodes[j]
         return unknownNodeIndex - unknownNodeMax + dirichletNodes[j]-1;
 }
 
-Vector DiffusionEquation::gradientNodal(Matrix M, vector< double > values){
-    vector< Matrix > matrices(_Ndim);
+Vector DiffusionEquation::gradientNodal(Matrix M, vector< double > values
+{
+	if(! M.isSquare() )
+		throw CdmathException("DiffusionEquation::gradientNodal Matrix M should be square !!!");
+		
+	Ndim = M.getNumberOfRows()
+    vector< Matrix > matrices(Ndim);
     
     for (int idim=0; idim<_Ndim;idim++){
         matrices[idim]=M.deepCopy();
-        for (int jdim=0; jdim<_Ndim+1;jdim++)
+        for (int jdim=0; jdim<Ndim+1;jdim++)
 			matrices[idim](jdim,idim) = values[jdim] ;
     }
 
-	Vector result(_Ndim);
+	Vector result(Ndim);
     for (int idim=0; idim<_Ndim;idim++)
         result[idim] = matrices[idim].determinant();
 

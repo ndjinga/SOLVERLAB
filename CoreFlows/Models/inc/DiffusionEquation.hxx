@@ -5,18 +5,20 @@
  * \version 1.0
  * \date 24 March 2015
  * \brief Heat diffusion equation
+ * dT/dt - \lambda\Delta T = \Phi + \lambda_{sf} (T_{fluid}-T)
+ * Dirichlet (imposed temperature) or Neumann (imposed normal flux) boundary conditions.
  * */
 //============================================================================
 
 /*! \class DiffusionEquation DiffusionEquation.hxx "DiffusionEquation.hxx"
  *  \brief Scalar heat equation for the Uranium rods temperature
  *  \details see \ref DiffusionEqPage for more details
+ * dT/dt - \lambda\Delta T = \Phi + \lambda_{sf} (T_{fluid}-T)
  */
 #ifndef DiffusionEquation_HXX_
 #define DiffusionEquation_HXX_
 
 #include "ProblemCoreFlows.hxx"
-#include "Node.hxx"
 
 using namespace std;
 
@@ -72,7 +74,7 @@ public :
 			 * \param [in] double : the value of the temperature at the boundary
 			 * \param [out] void
 			 *  */
-	void setDirichletBoundaryCondition(string groupName,double Temperature){
+	void setDirichletBoundaryCondition(string groupName,double Temperature=0){
 		_limitField[groupName]=LimitFieldDiffusion(DirichletDiffusion,Temperature,-1);
 	};
 	/** \fn setNeumannBoundaryCondition
@@ -132,6 +134,8 @@ protected :
     
     /************ Data for FE calculation *************/
     bool _FECalculation;
+	int _Nnodes;/* number of nodes for FE calculation */
+	int _neibMaxNbNodes;/* maximum number of nodes around a node */
 	int _NunknownNodes;/* number of unknown nodes for FE calculation */
 	int _NboundaryNodes;/* total number of boundary nodes */
 	int _NdirichletNodes;/* number of boundary nodes with Dirichlet BC for FE calculation */
@@ -139,7 +143,7 @@ protected :
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
 
     /*********** Functions for finite element method ***********/
-    Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
+    static Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
 	double computeDiffusionMatrixFE(bool & stop);
     static int fact(int n);
     static int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
@@ -147,6 +151,12 @@ protected :
 
 	TimeScheme _timeScheme;
 	map<string, LimitFieldDiffusion> _limitField;
-};
+
+    /********* Possibility to set a boundary field as DirichletNeumann boundary condition *********/
+    bool _dirichletValuesSet;
+    bool _neumannValuesSet;
+    std::map< int, double> _dirichletBoundaryValues;
+    std::map< int, double> _neumannBoundaryValues;
+    };
 
 #endif /* DiffusionEquation_HXX_ */
