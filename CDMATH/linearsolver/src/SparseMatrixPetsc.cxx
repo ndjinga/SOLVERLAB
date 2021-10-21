@@ -625,13 +625,23 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
       /*
          Compute the relative error associated to each eigenpair
       */
-      EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);
-
-      if (ki!=0.0) {
-        PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)kr,(double)ki,(double)error);
-      } else {
-        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)kr,(double)error);
-      }
+      if(fabs(kr)>tol || fabs(ki)>tol)
+      {
+	      EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);
+	
+	      if (ki!=0.0)
+	        PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)kr,(double)ki,(double)error);
+	      else
+	        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)kr,(double)error);
+	   }
+	   else
+      {
+	      if (ki!=0.0)
+	        PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12s\n",(double)kr,(double)ki,"Null eigenvalue");
+	      else
+	        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12s\n",(double)kr,"Null eigenvalue");
+	   }
+	   
       *(*valP + i)=kr;
       VecGetArray(xr,&myVecp);
       *(*vecP+  i)=new double [_numberOfRows];
@@ -691,7 +701,7 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
   /*
      Set operators. In this case, it is a standard singular value problem
   */
-  SVDSetOperator(svd,_mat);
+  SVDSetOperators(svd,_mat,NULL);
   SVDSetWhichSingularTriplets(svd,which);
   SVDSetDimensions(svd,nsv,PETSC_DEFAULT,PETSC_DEFAULT);
   SVDSetTolerances(svd,tol,PETSC_DEFAULT);
@@ -744,13 +754,18 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
         Get converged singular values: i-th eigenvalue is stored in valS
       */
       SVDGetSingularTriplet(svd,i,*valS+i, u, v);
-      /*
-         Compute the relative error associated to each singular value
-      */
-      SVDComputeError( svd, i, SVD_ERROR_RELATIVE, &error );
-
-      PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)*(*valS+i),(double)error);
-
+      if(fabs(*(*valS+i))>tol)
+      {
+	      /*
+	         Compute the relative error associated to each singular value
+	      */
+	      SVDComputeError( svd, i, SVD_ERROR_RELATIVE, &error );
+	
+	      PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)*(*valS+i),(double)error);
+		}
+       else
+          PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12s\n",(double)*(*valS+i),"Null singular value");
+	
       VecGetArray(u,&myVecS);
       *(*vecS + i)=new double [_numberOfRows];
       memcpy(*(*vecS + i),myVecS,_numberOfRows*sizeof(double)) ;
