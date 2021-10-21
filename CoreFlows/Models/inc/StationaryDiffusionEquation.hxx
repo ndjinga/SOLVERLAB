@@ -217,7 +217,7 @@ protected :
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
 
     /*********** Functions for finite element method ***********/
-    Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
+    static Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
 	double computeDiffusionMatrixFE(bool & stop);
     static int fact(int n);
     static int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);

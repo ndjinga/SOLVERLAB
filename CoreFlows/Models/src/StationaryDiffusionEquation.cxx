@@ -279,17 +279,22 @@ double StationaryDiffusionEquation::computeTimeStep(bool & stop){
 	return _dt_src;
 }
 
-Vector StationaryDiffusionEquation::gradientNodal(Matrix M, vector< double > values){
-    vector< Matrix > matrices(_Ndim);
+Vector StationaryDiffusionEquation::gradientNodal(Matrix M, vector< double > values)
+{
+	if(! M.isSquare() )
+		throw CdmathException("DiffusionEquation::gradientNodal Matrix M should be square !!!");
+		
+	int Ndim = M.getNumberOfRows();
+    vector< Matrix > matrices(Ndim);
     
-    for (int idim=0; idim<_Ndim;idim++){
+    for (int idim=0; idim<Ndim;idim++){
         matrices[idim]=M.deepCopy();
-        for (int jdim=0; jdim<_Ndim+1;jdim++)
+        for (int jdim=0; jdim<Ndim+1;jdim++)
 			matrices[idim](jdim,idim) = values[jdim] ;
     }
 
-	Vector result(_Ndim);
-    for (int idim=0; idim<_Ndim;idim++)
+	Vector result(Ndim);
+    for (int idim=0; idim<Ndim;idim++)
         result[idim] = matrices[idim].determinant();
 
 	return result;    
@@ -318,7 +323,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrix(bool & stop)
 double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	Cell Cj;
 	string nameOfGroup;
-	double dn, coeff;
+	double coeff;
 	MatZeroEntries(_A);
 	VecZeroEntries(_b);
     
