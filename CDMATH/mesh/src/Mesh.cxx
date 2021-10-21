@@ -29,6 +29,7 @@ Mesh::Mesh( void )
 //----------------------------------------------------------------------
 {
 	_mesh=NULL;
+    _unstructuredMeshLoaded=false;
 	_cells=NULL;
 	_nodes=NULL;
 	_faces=NULL;
@@ -116,6 +117,8 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
+    _unstructuredMeshLoaded=false;
+
 	delete [] originPtr;
 	delete [] dxyzPtr;
 	delete [] nodeStrctPtr;
@@ -147,6 +150,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 	}
 
 	_mesh=mesh->deepCopy();
+    _unstructuredMeshLoaded=true;
 	delete [] Box0 ;
 	setMesh();
 }
@@ -208,6 +212,7 @@ Mesh::Mesh( const Mesh& mesh )
     
 	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->deepCopy();
 	_mesh=m1;
+    _unstructuredMeshLoaded=mesh.isUnstructuredMeshLoaded();
 }
 
 //----------------------------------------------------------------------
@@ -234,6 +239,7 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
     if(structuredMesh)
     {
         _isStructured=true;
+		_unstructuredMeshLoaded=false;
         _dxyz=structuredMesh->getDXYZ();
         _nxyz=structuredMesh->getCellGridStructure();
         double* Box0=new double[2*_spaceDim];
@@ -253,7 +259,10 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
         }
     }
     else
+    {
         _isStructured=false;
+		_unstructuredMeshLoaded=true;
+    }
     
 	MEDCouplingUMesh*  mu = setMesh();
 	setGroups(m, mu);
@@ -1161,6 +1170,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
+    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
+
 	delete [] originPtr;
 	delete [] dxyzPtr;
 	delete [] nodeStrctPtr;
@@ -1344,7 +1355,8 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     coords_arr->decrRef();
 
     _mesh=mesh1d;
-    
+    _unstructuredMeshLoaded=true;
+
 	DataArrayIdType *desc=DataArrayIdType::New();
 	DataArrayIdType *descI=DataArrayIdType::New();
 	DataArrayIdType *revDesc=DataArrayIdType::New();
@@ -1501,11 +1513,13 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
+    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
 
     if(split_to_triangles_policy==0 || split_to_triangles_policy==1)
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(split_to_triangles_policy);
+            _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
         }
     else if (split_to_triangles_policy != -1)
         {
@@ -1536,7 +1550,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	_spaceDim = 3;
 	_meshDim  = 3;
     _name=meshName;
-    _indexFacePeriodicSet=false;
 	_xMin=xmin;
 	_xMax=xmax;
 	_yMin=ymin;
@@ -1581,16 +1594,19 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
+    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
 
     if( split_to_tetrahedra_policy == 0 )
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
+            _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
+            _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
         }
     else if ( split_to_tetrahedra_policy != -1 )
         {
@@ -1850,6 +1866,8 @@ Mesh::operator= ( const Mesh& mesh )
 	_numberOfEdges = mesh.getNumberOfEdges();
     
     _isStructured = mesh.isStructured();
+    _unstructuredMeshLoaded = mesh.isUnstructuredMeshLoaded();
+    
     if(_isStructured)
     {
         _nxyz = mesh.getCellGridStructure() ;
@@ -1973,6 +1991,9 @@ void
 Mesh::writeVTK ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
+	if( !_mesh )
+		throw CdmathException("Mesh::writeVTK : Cannot save mesh : MEDCouplingMesh pointer is NULL");
+		
 	string fname=fileName+".vtu";
 	_mesh->writeVTK(fname.c_str()) ;
 }
@@ -1982,6 +2003,9 @@ void
 Mesh::writeMED ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
+	if( !_mesh )
+		throw CdmathException("Mesh::writeMED : Cannot save mesh : MEDCouplingMesh pointer is NULL");
+		
 	string fname=fileName+".med";
 	MEDCouplingUMesh* mu=_mesh->buildUnstructured();
 	MEDCoupling::WriteUMesh(fname.c_str(),mu,true);
@@ -2055,3 +2079,13 @@ Mesh::setNodeGroupByIds(std::vector< int > nodeIds, std::string groupName)
         getNode(nodeIds[i]).setGroupName(groupName);
 }
 
+void Mesh::deleteMEDCouplingUMesh()
+{ 
+	if(_unstructuredMeshLoaded) 
+	{
+		_mesh->decrRef(); 
+		_unstructuredMeshLoaded=false;
+	} 
+	else 
+		throw CdmathException("Mesh::deleteMEDCouplingMesh() : mesh is not loaded");
+};

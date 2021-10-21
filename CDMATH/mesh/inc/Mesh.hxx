@@ -355,12 +355,29 @@ public: //----------------------------------------------------------------
 	 */
     int getMaxNbNeighbours(EntityType type) const;
     
+    /** 
+     * \brief Delete the medcoupling mesh so save memory space
+     */
+     void deleteMEDCouplingUMesh();
+    
+    /** 
+     * \brief Returns true iff the mesh has been loaded
+     */
+     bool isUnstructuredMeshLoaded() const {return _unstructuredMeshLoaded;}
+    
 private: //----------------------------------------------------------------
 
 	MEDCoupling::MEDCouplingUMesh*  setMesh( void ) ;
 
 	void setGroups( const MEDCoupling::MEDFileUMesh* medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;
 
+	/*
+	 * The MEDCoupling mesh
+	 */
+	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> _mesh;
+
+	bool _unstructuredMeshLoaded;
+	
     std::string _name;
     
 	/**
@@ -447,11 +464,6 @@ private: //----------------------------------------------------------------
 	 * The list of node groups.
 	 */
 	std::vector<MEDCoupling::DataArrayIdType *> _nodeGroups;
-	/*
-	 * The mesh MEDCoupling
-	 */
-	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> _mesh;
-
 	std::vector< INTERP_KERNEL::NormalizedCellType > _eltsTypes;//List of cell types contained in the mesh
 	std::vector< std::string > _eltsTypesNames;//List of cell types contained in the mesh
     std::vector< INTERP_KERNEL::NormalizedCellType > getElementTypes() const;    

@@ -81,6 +81,7 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT_EQUAL( 3., M1.getNode(3).x() );
 	CPPUNIT_ASSERT_EQUAL( 4., M1.getFace(4).x() );
 	CPPUNIT_ASSERT_EQUAL( 4., M1.getNode(4).x() );
+    CPPUNIT_ASSERT(!M1.isUnstructuredMeshLoaded());
 	double x11=M1.getCells()[1].x();
 	double y11=M1.getCells()[1].y();
 	CPPUNIT_ASSERT_EQUAL( x11, 1.5 );
@@ -116,6 +117,7 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT_EQUAL( 40, M2.getNumberOfFaces() );
 	CPPUNIT_ASSERT_EQUAL( 40, M2.getNumberOfEdges() );
 	CPPUNIT_ASSERT(M2.isQuadrangular());
+    CPPUNIT_ASSERT(!M2.isUnstructuredMeshLoaded());
 	int nbCellsM2 = M2.getNumberOfCells();
 	double areaM2=0;
 	for(int i=0; i<nbCellsM2; i++)
@@ -173,6 +175,7 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT_EQUAL( 40+16, M2Triangle.getNumberOfFaces() );
 	CPPUNIT_ASSERT_EQUAL( 40+16, M2Triangle.getNumberOfEdges() );
 	CPPUNIT_ASSERT(M2Triangle.isTriangular());
+    CPPUNIT_ASSERT(M2Triangle.isUnstructuredMeshLoaded());
 	int nbCellsM2Triangle = M2Triangle.getNumberOfCells();
 	double areaM2Triangle=0;
 	for(int i=0; i<nbCellsM2Triangle; i++)
@@ -207,6 +210,7 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT_EQUAL( 5*4*4*3, M3.getNumberOfFaces() );
 	CPPUNIT_ASSERT_EQUAL( 5*5*4*3, M3.getNumberOfEdges() );
     CPPUNIT_ASSERT(M3.isHexahedral());
+    CPPUNIT_ASSERT(!M3.isUnstructuredMeshLoaded());
     int nbCellsM3 = M3.getNumberOfCells();
     double volM3=0;
     for(int i=0; i<nbCellsM3; i++)
@@ -251,14 +255,18 @@ MeshTests::testClassMesh( void )
 
     cout<<"Test mesh M3 normals"<<endl;
     testNormals(M3);
+    CPPUNIT_ASSERT(!M3.isUnstructuredMeshLoaded());
 
     // Testing copies
+    CPPUNIT_ASSERT(!M1.isUnstructuredMeshLoaded());
     Mesh Mcopy1(M1);
+    CPPUNIT_ASSERT(!M1.isUnstructuredMeshLoaded());
     CPPUNIT_ASSERT_EQUAL( 1, Mcopy1.getSpaceDimension() );
     CPPUNIT_ASSERT_EQUAL( 5, Mcopy1.getNumberOfNodes() );
     CPPUNIT_ASSERT_EQUAL( 4, Mcopy1.getNumberOfCells() );
     CPPUNIT_ASSERT_EQUAL( 5, Mcopy1.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 4, Mcopy1.getNumberOfEdges() );
+    CPPUNIT_ASSERT(!Mcopy1.isUnstructuredMeshLoaded());
 
     Mcopy1=M2;
     CPPUNIT_ASSERT_EQUAL( 2, Mcopy1.getSpaceDimension() );
@@ -266,6 +274,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 16, Mcopy1.getNumberOfCells() );
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy1.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy1.getNumberOfEdges() );
+    CPPUNIT_ASSERT(!Mcopy1.isUnstructuredMeshLoaded());
 
     Mesh Mcopy2;
     Mcopy2=Mcopy1;
@@ -274,6 +283,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 16, Mcopy2.getNumberOfCells() );
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy2.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy2.getNumberOfEdges() );
+    CPPUNIT_ASSERT(!Mcopy2.isUnstructuredMeshLoaded());
 
 
     // Connection with MED
@@ -287,6 +297,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 16, M22.getNumberOfCells() );
     CPPUNIT_ASSERT_EQUAL( 40, M22.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, M22.getNumberOfEdges() );
+    CPPUNIT_ASSERT(M22.isUnstructuredMeshLoaded());
 
     cout<<"Test mesh M22 normals "<<endl;
     testNormals(M22);
@@ -308,6 +319,7 @@ MeshTests::testClassMesh( void )
 	M3Tetra.setGroupAtPlan(ymax,1,eps,"TopEdge");
 	M3Tetra.setGroupAtPlan(zmin,2,eps,"DownEdge");
 	M3Tetra.setGroupAtPlan(zmax,2,eps,"UpEdge");
+    CPPUNIT_ASSERT(M3Tetra.isUnstructuredMeshLoaded());
 	CPPUNIT_ASSERT_EQUAL( 7, int(M3Tetra.getNameOfFaceGroups().size()) );//There is a default group named "Boundary" that is created by the mesh class
 	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[1].compare("DownEdge")==0);
 	indexFaces=M3Tetra.getIndexFacePeriodic();
@@ -316,13 +328,14 @@ MeshTests::testClassMesh( void )
     testNormals(M3Tetra);
 
     //Testing a 2D unstructured mesh (triangles)
-    Mesh M23("meshSquare.med");
+    Mesh M23("./meshSquare.med");
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups().size() == 5);//There is a default group named "Boundary" that is created by the mesh class;
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[3].compare("Bottom")==0);
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[2].compare("Left")==0);
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[1].compare("Right")==0);
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[0].compare("Top")==0);
     CPPUNIT_ASSERT(M23.isTriangular());
+    CPPUNIT_ASSERT(M23.isUnstructuredMeshLoaded());
     int nbCellsM23 = M23.getNumberOfCells();
     double areaM23=0;
     for(int i=0; i<nbCellsM23; i++)
@@ -340,6 +353,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 16, M6.getNumberOfCells() );
     CPPUNIT_ASSERT_EQUAL( 40, M6.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, M6.getNumberOfEdges() );
+    CPPUNIT_ASSERT(M6.isUnstructuredMeshLoaded());
 
     /*
     const MEDCouplingMesh* M1MEDMesh = M2.getMEDCouplingMesh();
@@ -353,6 +367,7 @@ MeshTests::testClassMesh( void )
     for(int i=0; i<nbCellsM4; i++)
         areaM4+=M4.getCell(i).getMeasure();
     CPPUNIT_ASSERT_DOUBLES_EQUAL( 4*3.14, areaM4, 1 );
+    CPPUNIT_ASSERT(M4.isUnstructuredMeshLoaded());
 
     cout<<"Test mesh M4 normals"<<endl;
     testNormals(M4);
@@ -360,6 +375,7 @@ MeshTests::testClassMesh( void )
     //Testing a 3D unstructured mesh (tétraèdres)
     Mesh M5("meshCube.med");
     CPPUNIT_ASSERT(M5.isTetrahedral());
+    CPPUNIT_ASSERT(M5.isUnstructuredMeshLoaded());
     int nbCellsM5 = M5.getNumberOfCells();
     double volM5=0;
     for(int i=0; i<nbCellsM5; i++)
@@ -389,9 +405,18 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_DOUBLES_EQUAL(points[nbNodes-1],xmax,eps);
 
     Mesh M7(points, "Checkerboard mesh");
+    CPPUNIT_ASSERT(M7.isUnstructuredMeshLoaded());
 
     double volM7=0;
     for(int i=0; i<nbCellsM7; i++)
         volM7+=M7.getCell(i).getMeasure();
     CPPUNIT_ASSERT_DOUBLES_EQUAL( 1., volM7, eps );
+    
+    //Testing deletion of MEDCoupling for unstructured meshes
+    M2Triangle.deleteMEDCouplingUMesh();
+    M3Tetra.deleteMEDCouplingUMesh();
+    CPPUNIT_ASSERT(M7.isUnstructuredMeshLoaded());
+    //The following does not work. Bug ?
+    //M7.deleteMEDCouplingUMesh();
+    
 }
