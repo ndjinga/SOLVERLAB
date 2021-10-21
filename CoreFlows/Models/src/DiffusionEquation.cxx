@@ -1,5 +1,4 @@
 #include "DiffusionEquation.hxx"
-#include "Node.hxx"
 #include "math.h"
 #include <algorithm> 
 #include <fstream>
@@ -47,22 +46,22 @@ int DiffusionEquation::globalNodeIndex(int unknownNodeIndex, std::vector< int > 
         return unknownNodeIndex - unknownNodeMax + dirichletNodes[j]-1;
 }
 
-Vector DiffusionEquation::gradientNodal(Matrix M, vector< double > values
+Vector DiffusionEquation::gradientNodal(Matrix M, vector< double > values)
 {
 	if(! M.isSquare() )
 		throw CdmathException("DiffusionEquation::gradientNodal Matrix M should be square !!!");
 		
-	Ndim = M.getNumberOfRows()
+	int Ndim = M.getNumberOfRows();
     vector< Matrix > matrices(Ndim);
     
-    for (int idim=0; idim<_Ndim;idim++){
+    for (int idim=0; idim<Ndim;idim++){
         matrices[idim]=M.deepCopy();
         for (int jdim=0; jdim<Ndim+1;jdim++)
 			matrices[idim](jdim,idim) = values[jdim] ;
     }
 
 	Vector result(Ndim);
-    for (int idim=0; idim<_Ndim;idim++)
+    for (int idim=0; idim<Ndim;idim++)
         result[idim] = matrices[idim].determinant();
 
 	return result;    
@@ -72,17 +71,17 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
     /* Control input value are acceptable */
     if(rho<_precision or cp<_precision)
     {
-        std::cout<<"rho="<<rho<<", cp= "<<cp<< ", precision= "<<_precision;
+        std::cout<<"rho = "<<rho<<", cp = "<<cp<< ", precision = "<<_precision;
         throw CdmathException("Error : parameters rho and cp should be strictly positive");
     }
     if(lambda < 0.)
     {
-        std::cout<<"conductivity="<<lambda<<endl;
+        std::cout<<"Conductivity = "<<lambda<<endl;
         throw CdmathException("Error : conductivity parameter lambda cannot  be negative");
     }
     if(dim<=0)
     {
-        std::cout<<"space dimension="<<dim<<endl;
+        std::cout<<"Space dimension = "<<dim<<endl;
         throw CdmathException("Error : parameter dim cannot  be negative");
     }
 
@@ -101,6 +100,8 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
     _NboundaryNodes=0;
     _NdirichletNodes=0;
     _NunknownNodes=0;
+    _dirichletValuesSet=false;   
+    _neumannValuesSet=false;   
 
     /* Physical parameters */
 	_conductivity=lambda;
@@ -295,7 +296,7 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
 double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	Cell Cj;
 	string nameOfGroup;
-	double dij;//Diffusion coefficients between nodes i and j
+	double coeff;//Diffusion coefficients between nodes i and j
 	MatZeroEntries(_A);
 	VecZeroEntries(_b);
     
@@ -340,24 +341,27 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
                     {//Second node of the edge is not Dirichlet node
                         j_int= unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                        dij=_conductivity*(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure();
-                        MatSetValue(_A,i_int,j_int,dij, ADD_VALUES);
-                        if(fabs(dij)>_maxvp)
-                            _maxvp=fabs(dij);
+                        MatSetValue(_A,i_int,j_int,_conductivity*(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
                     }
                     else if (!dirichletCell_treated)
                     {//Second node of the edge is a Dirichlet node
                         dirichletCell_treated=true;
                         for (int kdim=0; kdim<_Ndim+1;kdim++)
                         {
-                            if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[kdim])!=_dirichletNodeIds.end())
-                                valuesBorder[kdim]=_limitField[nameOfGroup].T;
+							std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
+							if( it != _dirichletBoundaryValues.end() )
+                            {
+                                if( _dirichletValuesSet )
+                                    valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
+                                else    
+                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
+                            }
                             else
                                 valuesBorder[kdim]=0;                            
                         }
                         GradShapeFuncBorder=gradientNodal(M,valuesBorder)/fact(_Ndim);
-                        dij =-_conductivity*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
-                        VecSetValue(_b,i_int,dij, ADD_VALUES);                        
+                        coeff =-_conductivity*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
+                        VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
                     }
                 }
             }
@@ -799,6 +803,21 @@ void DiffusionEquation::terminate(){
 	VecDestroy(&_b);
 	MatDestroy(&_A);
 }
+
+void 
+DiffusionEquation::setDirichletValues(map< int, double> dirichletBoundaryValues)
+{
+    _dirichletValuesSet=true;
+    _dirichletBoundaryValues=dirichletBoundaryValues;
+}
+
+void 
+DiffusionEquation::setNeumannValues(map< int, double> neumannBoundaryValues)
+{
+    _neumannValuesSet=true;
+    _neumannBoundaryValues=neumannBoundaryValues;
+}
+
 
 vector<string> DiffusionEquation::getOutputFieldsNames()
 {

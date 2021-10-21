@@ -19,6 +19,7 @@
 #define DiffusionEquation_HXX_
 
 #include "ProblemCoreFlows.hxx"
+#include "Node.hxx"
 
 using namespace std;
 
@@ -87,6 +88,9 @@ public :
 		_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1, normalFlux);
 	};
 
+	void setDirichletValues(map< int, double> dirichletBoundaryValues);
+	void setNeumannValues(map< int, double> neumannBoundaryValues);
+
 	void setRodDensity(double rho){
 		_rho=rho;
 	};
@@ -134,7 +138,6 @@ protected :
     
     /************ Data for FE calculation *************/
     bool _FECalculation;
-	int _Nnodes;/* number of nodes for FE calculation */
 	int _neibMaxNbNodes;/* maximum number of nodes around a node */
 	int _NunknownNodes;/* number of unknown nodes for FE calculation */
 	int _NboundaryNodes;/* total number of boundary nodes */
