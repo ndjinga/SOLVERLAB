@@ -56,13 +56,13 @@ Download from GitHub
 
 Set the environment for the compilation of SOLVERLAB
 ---------------------------------------------
-Dependencies. The following package list is sufficient on Ubuntu 14.04, 16.04, 18.04 and 20.04 :
+Dependencies. The following package list is sufficient on Ubuntu 20.04 :
 
  - `cmake3` (mandatory)
  - `g++` or another C++ compiler (mandatory)
- - `python-dev`, `python-numpy` and `swig3`for python scripts (mandatory)
+ - `python3-dev`, `python3-numpy` and `swig3`for python scripts (mandatory)
  - `pyqt5-dev-tools` to generate the Graphical User Interface (optional)
- - `python-matplotlib` and `paraview-devel` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (optional)
+ - `python3-matplotlib`, `paraview-dev`, `libnetcdf-dev` (on Ubuntu 20.04) and `python3-paraview` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (optional)
  - `ffmpeg` and `ffmpeg-devel` to generate an animation from a set of curves (optional)
  - `doxygen`, `graphviz` and `mscgen`, if you want to generate a nice source code documentation in `~/workspace/SOLVERLAB/SOLVERLAB_install/share/doc/`. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
  - `libcppunit-dev`, if you want to generate unit tests. Use the compilation option `-DSOLVERLAB_WITH_TESTS=ON` (optional).
