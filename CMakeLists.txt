@@ -530,6 +530,7 @@ else( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
     endif( EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
   else(  ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
     message(STATUS "Python Paraview library found. Post processing will work in SOLVERLAB scripts.")
+    set(PARAVIEW_ON_UBUNTU20 OFF)
   endif( ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
 endif( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
 
