@@ -146,7 +146,32 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       set(PETSC_INCLUDES  /usr/include/petsc /usr/include/petsc/petsc/mpiuni)
       set(PETSC_LIBRARIES /usr/lib64/libpetsc.so)
 
-      set(PETSC_VERSION "3.8") #3.8 for fedora 26 , 3.9 for fedora 29 , 3.10 for fedora 30, , 3.12 for fedora 32
+      file(STRINGS /usr/include/petsc/petscversion.h petscversion_file)
+      FOREACH(line ${petscversion_file})
+        string(FIND "${line}" "#define PETSC_VERSION_MAJOR      " pos)
+        IF(NOT ${pos} EQUAL -1)
+          string(LENGTH ${line} line_length_major)#length of the line
+          MATH(EXPR petsc_version_major "${line_length_major}-1")#line ends with "x", that counts for 1 character
+          string(SUBSTRING ${line} ${petsc_version_major} 1 PETSC_VERSION_MAJOR)
+          break()
+        ENDIF(NOT ${pos} EQUAL -1)
+      ENDFOREACH(line ${petscversion_file})
+      FOREACH(line ${petscversion_file})
+        string(FIND "${line}" "#define PETSC_VERSION_MINOR      " pos)
+        IF(NOT ${pos} EQUAL -1)
+          string(LENGTH ${line} line_length_minor)#length of the line
+          if(${line_length_minor} EQUAL ${line_length_major})
+            MATH(EXPR petsc_version_minor "${line_length_minor}-1")#line ends with "y", that counts for 1 character
+            string(SUBSTRING ${line} ${petsc_version_minor} 1 PETSC_VERSION_MINOR)
+          break()
+          else(${line_length_minor} EQUAL ${line_length_major})
+            MATH(EXPR petsc_version_minor "${line_length_minor}-2")#line ends with "yy", that counts for two characters
+            string(SUBSTRING ${line} ${petsc_version_minor} 2 PETSC_VERSION_MINOR)
+          endif(${line_length_minor} EQUAL ${line_length_major})
+        ENDIF(NOT ${pos} EQUAL -1)
+      ENDFOREACH(line ${petscversion_file})
+      set(PETSC_VERSION ${PETSC_VERSION_MAJOR}.${PETSC_VERSION_MINOR}) #3.8 for fedora 26 , 3.9 for fedora 29 , 3.10 for fedora 30 , 3.12 for fedora 32 , 3.14 for fedora 34 , 3.15 for fedora 35
+      message(STATUS "PETSc detected, version is ${PETSC_VERSION_MAJOR}.${PETSC_VERSION_MINOR}" )
       
       set(CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES}, petsc-devel (>= 3.4)") # This is not fully working yet. 
       set(PETSC_INSTALL ${PETSC_DIR})
@@ -158,6 +183,32 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
         set(SLEPC_DIR /usr/)
         set(SLEPC_INCLUDES  ${SLEPC_DIR}/include)
         set(SLEPC_LIBRARIES ${SLEPC_DIR}/lib/libslepc.so)
+        file(STRINGS /usr/include/slepc/slepcversion.h slepcversion_file)
+        FOREACH(line ${slepcversion_file})
+          string(FIND "${line}" "#define SLEPC_VERSION_MAJOR      " pos)
+          IF(NOT ${pos} EQUAL -1)
+            string(LENGTH ${line} line_length_major)#length of the line
+            MATH(EXPR slepc_version_major "${line_length_major}-1")#line ends with "x", that counts for 1 character
+            string(SUBSTRING ${line} ${slepc_version_major} 1 SLEPC_VERSION_MAJOR)
+            break()
+          ENDIF(NOT ${pos} EQUAL -1)
+        ENDFOREACH(line ${slepcversion_file})
+        FOREACH(line ${slepcversion_file})
+          string(FIND "${line}" "#define SLEPC_VERSION_MINOR      " pos)
+          IF(NOT ${pos} EQUAL -1)
+            string(LENGTH ${line} line_length_minor)#length of the line
+            if(${line_length_minor} EQUAL ${line_length_major})
+              MATH(EXPR slepc_version_minor "${line_length_minor}-1")#line ends with "y", that counts for 1 character
+              string(SUBSTRING ${line} ${slepc_version_minor} 1 SLEPC_VERSION_MINOR)
+            break()
+            else(${line_length_minor} EQUAL ${line_length_major})
+              MATH(EXPR slepc_version_minor "${line_length_minor}-2")#line ends with "yy", that counts for two characters
+              string(SUBSTRING ${line} ${slepc_version_minor} 2 SLEPC_VERSION_MINOR)
+            endif(${line_length_minor} EQUAL ${line_length_major})
+          ENDIF(NOT ${pos} EQUAL -1)
+        ENDFOREACH(line ${slepcversion_file})
+        set(SLEPC_VERSION ${SLEPC_VERSION_MAJOR}.${SLEPC_VERSION_MINOR}) #3.8 for fedora 26 , 3.9 for fedora 29 , 3.10 for fedora 30 , 3.12 for fedora 32 , 3.14 for fedora 34 , 3.15 for fedora 35
+        message(STATUS "SLEPc detected, version is ${SLEPC_VERSION_MAJOR}.${SLEPC_VERSION_MINOR}" )
         set (CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES}, slepc-devel (>= 3.4)") # This is not fully working yet. 
       else ( IS_DIRECTORY "/usr/include/slepc/" AND EXISTS "/usr/lib64/libslepc.so" )
         message( FATAL_ERROR "SLEPc not found in the system" )
