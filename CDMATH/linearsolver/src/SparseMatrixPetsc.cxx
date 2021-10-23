@@ -701,7 +701,12 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
   /*
      Set operators. In this case, it is a standard singular value problem
   */
-  SVDSetOperators(svd,_mat,NULL);
+#if (SLEPC_VERSION_MAJOR==3) && (SLEPC_VERSION_MINOR > 14)
+	SVDSetOperators(svd,_mat,NULL);
+#else
+	SVDSetOperator(svd,_mat);
+#endif
+  
   SVDSetWhichSingularTriplets(svd,which);
   SVDSetDimensions(svd,nsv,PETSC_DEFAULT,PETSC_DEFAULT);
   SVDSetTolerances(svd,tol,PETSC_DEFAULT);
