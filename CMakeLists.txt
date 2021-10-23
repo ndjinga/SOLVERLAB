@@ -442,7 +442,7 @@ if  ( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
     set( PARAVIEW_LIBRARIES_DIR $ENV{PARAVIEW_ROOT_DIR}/lib)
   endif( PARAVIEW_ROOT_DIR )
 else( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
-  message(STATUS "PARAVIEW_ROOT_DIR not set. Trying to detect paraview.")
+  message(STATUS "PARAVIEW_ROOT_DIR not set. Trying to detect paraview in the system.")
   set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
   set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/:/usr/lib/x86_64-linux-gnu)
 endif( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
@@ -507,6 +507,32 @@ ELSE (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   set(Python_VERSION_MINOR ${PYTHON_VERSION_MINOR})
 ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 
+message(STATUS "Python version found is ${Python_VERSION}")
+
+#Paraview library paths
+set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
+set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}/dist-packages/:/usr/lib/python${Python_VERSION_MAJOR}/dist-packages/paraview/:/usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/:${MATPLOTLIB_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages:${PYQT5_ROOT_DIR}:${PYQT5_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
+
+# Detection of python-paraview
+string(REPLACE ":" ";"  PV_PYTHON_DIR_PATHS "${PV_PYTHON_DIR}")# use semicolon instead of colon in PATH search
+find_file(python-paraview simple.py PATHS ${PV_PYTHON_DIR_PATHS})
+if( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
+  message(WARNING "Python Paraview library not found. Post processing will fail in SOLVERLAB scripts.")
+else( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
+  if(    ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
+    message ( STATUS "Using system Paraview python libraries on Ubuntu 20.04 requires the presence and preload of library netcdf (bug in linkage)." )
+    if(    EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
+      message ( STATUS "Library netcdf found in the system. Paraview python libraries should be functional." )
+      set(PARAVIEW_ON_UBUNTU20 ON)
+    else(  EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
+      message ( WARNING "Library netcdf not found in system. Paraview python libraries may not be functional (bug in linkage)." )
+      set(PARAVIEW_ON_UBUNTU20 OFF)
+    endif( EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
+  else(  ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
+    message(STATUS "Python Paraview library found. Post processing will work in SOLVERLAB scripts.")
+  endif( ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
+endif( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
+
 #PyQt5 root dir
 IF   ( NOT DEFINED PYQT5_ROOT_DIR )
     set(PYQT5_ROOT_DIR $ENV{PYQT5_ROOT_DIR} )
@@ -525,13 +551,6 @@ IF   ( NOT HDF5_ROOT_DIR )
     set(HDF5_ROOT_DIR ${HDF5_ROOT} )
   ENDIF( ENV{HDF5_ROOT_DIR} )
 ENDIF( NOT HDF5_ROOT_DIR )
-
-
-#Paraview library paths
-set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
-set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}/dist-packages/:/usr/lib/python${Python_VERSION_MAJOR}/dist-packages/paraview/:/usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/:${MATPLOTLIB_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages:${PYQT5_ROOT_DIR}:${PYQT5_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
-
-message(STATUS "Python version found is ${Python_VERSION}")
 
 # Find SWIG
 IF   ( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
@@ -589,5 +608,4 @@ configure_file(
     ${CMAKE_INSTALL_PREFIX}/env_SOLVERLAB.sh
     @ONLY
 )
-
 
