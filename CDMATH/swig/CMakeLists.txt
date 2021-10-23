@@ -7,14 +7,12 @@ INCLUDE_DIRECTORIES(
   ${MESH_DIR}/inc
 )
 
-SET(_extra_lib_SWIG)
 if (CDMATH_WITH_PETSC)
     INCLUDE_DIRECTORIES(
       ${PETSC_INCLUDES}
       ${SLEPC_INCLUDES}
       ${LINEARSOLVER_DIR}/inc
     )
-    SET(_extra_lib_SWIG linearsolver ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES})
     file(COPY cdmath_with_petsc.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     file(RENAME ${CMAKE_CURRENT_BINARY_DIR}/cdmath_with_petsc.i ${CMAKE_CURRENT_BINARY_DIR}/cdmath.i)
 else (CDMATH_WITH_PETSC)
@@ -39,8 +37,12 @@ IF   (${CMAKE_VERSION} VERSION_LESS "3.8.0")
 ELSE (${CMAKE_VERSION} VERSION_LESS "3.8.0") 
   SWIG_ADD_LIBRARY(cdmath TYPE SHARED LANGUAGE python SOURCES ${CMAKE_CURRENT_BINARY_DIR}/cdmath.i)
 ENDIF(${CMAKE_VERSION} VERSION_LESS "3.8.0")
- 
-SWIG_LINK_LIBRARIES(cdmath ${Python_LIBRARIES} base mesh ${medloader} ${medcoupling} ${_extra_lib_SWIG})
+
+if (CDMATH_WITH_PETSC) 
+  SWIG_LINK_LIBRARIES(cdmath ${Python_LIBRARIES} base mesh ${medloader} ${medcoupling} linearsolver ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES})
+else (CDMATH_WITH_PETSC)
+  SWIG_LINK_LIBRARIES(cdmath ${Python_LIBRARIES} base mesh ${medloader} ${medcoupling} )
+endif (CDMATH_WITH_PETSC)
 
 INSTALL(TARGETS _cdmath DESTINATION lib/cdmath)
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/cdmath.py DESTINATION bin/cdmath)

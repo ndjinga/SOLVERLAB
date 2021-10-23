@@ -98,10 +98,10 @@ INCLUDE_DIRECTORIES(						   					    #
 SET(MAIN_SOURCES											    #
   mainCoreFlows.cxx												    #
   )													    #
-SET(_extra_lib_CoreFlows ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} )					    #
+
 ADD_EXECUTABLE(CoreFlowsMainExe ${MAIN_SOURCES})							    #
 SET_TARGET_PROPERTIES(CoreFlowsMainExe PROPERTIES COMPILE_FLAGS "")					    #
-TARGET_LINK_LIBRARIES(CoreFlowsMainExe CoreFlowsLibs  ${_extra_lib_CoreFlows})				    #
+TARGET_LINK_LIBRARIES(CoreFlowsMainExe CoreFlowsLibs  ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES} )				    #
 INSTALL(TARGETS CoreFlowsMainExe DESTINATION bin)						    #
 													    #
 configure_file(
