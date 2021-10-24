@@ -82,6 +82,8 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT_EQUAL( 4., M1.getFace(4).x() );
 	CPPUNIT_ASSERT_EQUAL( 4., M1.getNode(4).x() );
     CPPUNIT_ASSERT(!M1.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(M1.isStructured());
+
 	double x11=M1.getCells()[1].x();
 	double y11=M1.getCells()[1].y();
 	CPPUNIT_ASSERT_EQUAL( x11, 1.5 );
@@ -109,6 +111,9 @@ MeshTests::testClassMesh( void )
 	double ymin=0.0;
 	double ymax=4.0;
 	Mesh M2(xmin,xmax,4,ymin,ymax,4);
+	CPPUNIT_ASSERT(M2.isQuadrangular());
+    CPPUNIT_ASSERT(!M2.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(M2.isStructured());
 	CPPUNIT_ASSERT_EQUAL( 4, M2.getNx() );
 	CPPUNIT_ASSERT_EQUAL( 4, M2.getNy() );
 	CPPUNIT_ASSERT_EQUAL( 2, M2.getSpaceDimension() );
@@ -116,8 +121,7 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT_EQUAL( 16, M2.getNumberOfCells() );
 	CPPUNIT_ASSERT_EQUAL( 40, M2.getNumberOfFaces() );
 	CPPUNIT_ASSERT_EQUAL( 40, M2.getNumberOfEdges() );
-	CPPUNIT_ASSERT(M2.isQuadrangular());
-    CPPUNIT_ASSERT(!M2.isUnstructuredMeshLoaded());
+
 	int nbCellsM2 = M2.getNumberOfCells();
 	double areaM2=0;
 	for(int i=0; i<nbCellsM2; i++)
@@ -167,15 +171,16 @@ MeshTests::testClassMesh( void )
     // Testing 2D simplexization (regular triangle mesh)
     int splittingPolicy =0;
 	Mesh M2Triangle(xmin,xmax,4,ymin,ymax,4,splittingPolicy);
-	CPPUNIT_ASSERT_EQUAL( 4, M2Triangle.getNx() );
-	CPPUNIT_ASSERT_EQUAL( 4, M2Triangle.getNy() );
+	CPPUNIT_ASSERT(M2Triangle.isTriangular());
+    CPPUNIT_ASSERT(M2Triangle.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(!M2Triangle.isStructured());
+
 	CPPUNIT_ASSERT_EQUAL( 2, M2Triangle.getSpaceDimension() );
 	CPPUNIT_ASSERT_EQUAL( 25, M2Triangle.getNumberOfNodes() );
 	CPPUNIT_ASSERT_EQUAL( 32, M2Triangle.getNumberOfCells() );
 	CPPUNIT_ASSERT_EQUAL( 40+16, M2Triangle.getNumberOfFaces() );
 	CPPUNIT_ASSERT_EQUAL( 40+16, M2Triangle.getNumberOfEdges() );
-	CPPUNIT_ASSERT(M2Triangle.isTriangular());
-    CPPUNIT_ASSERT(M2Triangle.isUnstructuredMeshLoaded());
+
 	int nbCellsM2Triangle = M2Triangle.getNumberOfCells();
 	double areaM2Triangle=0;
 	for(int i=0; i<nbCellsM2Triangle; i++)
@@ -204,13 +209,19 @@ MeshTests::testClassMesh( void )
 	double zmin=0.0;
 	double zmax=1.0;
     Mesh M3(xmin,xmax,4,ymin,ymax,4,zmin,zmax,4);
+    CPPUNIT_ASSERT(M3.isHexahedral());
+    CPPUNIT_ASSERT(!M3.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(M3.isStructured());
+
+	CPPUNIT_ASSERT_EQUAL( 4, M3.getNx() );
+	CPPUNIT_ASSERT_EQUAL( 4, M3.getNy() );
+	CPPUNIT_ASSERT_EQUAL( 4, M3.getNz() );
     CPPUNIT_ASSERT_EQUAL( 3, M3.getSpaceDimension() );
 	CPPUNIT_ASSERT_EQUAL( 5*5*5, M3.getNumberOfNodes() );
 	CPPUNIT_ASSERT_EQUAL( 4*4*4, M3.getNumberOfCells() );
 	CPPUNIT_ASSERT_EQUAL( 5*4*4*3, M3.getNumberOfFaces() );
 	CPPUNIT_ASSERT_EQUAL( 5*5*4*3, M3.getNumberOfEdges() );
-    CPPUNIT_ASSERT(M3.isHexahedral());
-    CPPUNIT_ASSERT(!M3.isUnstructuredMeshLoaded());
+
     int nbCellsM3 = M3.getNumberOfCells();
     double volM3=0;
     for(int i=0; i<nbCellsM3; i++)
@@ -255,7 +266,6 @@ MeshTests::testClassMesh( void )
 
     cout<<"Test mesh M3 normals"<<endl;
     testNormals(M3);
-    CPPUNIT_ASSERT(!M3.isUnstructuredMeshLoaded());
 
     // Testing copies
     CPPUNIT_ASSERT(!M1.isUnstructuredMeshLoaded());
@@ -267,6 +277,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 5, Mcopy1.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 4, Mcopy1.getNumberOfEdges() );
     CPPUNIT_ASSERT(!Mcopy1.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(Mcopy1.isStructured());
 
     Mcopy1=M2;
     CPPUNIT_ASSERT_EQUAL( 2, Mcopy1.getSpaceDimension() );
@@ -275,6 +286,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy1.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy1.getNumberOfEdges() );
     CPPUNIT_ASSERT(!Mcopy1.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(Mcopy1.isStructured());
 
     Mesh Mcopy2;
     Mcopy2=Mcopy1;
@@ -284,6 +296,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy2.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, Mcopy2.getNumberOfEdges() );
     CPPUNIT_ASSERT(!Mcopy2.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(Mcopy2.isStructured());
 
 
     // Connection with MED
@@ -298,6 +311,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 40, M22.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, M22.getNumberOfEdges() );
     CPPUNIT_ASSERT(M22.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(!M22.isStructured());
 
     cout<<"Test mesh M22 normals "<<endl;
     testNormals(M22);
@@ -320,6 +334,7 @@ MeshTests::testClassMesh( void )
 	M3Tetra.setGroupAtPlan(zmin,2,eps,"DownEdge");
 	M3Tetra.setGroupAtPlan(zmax,2,eps,"UpEdge");
     CPPUNIT_ASSERT(M3Tetra.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(!M3Tetra.isStructured());
 	CPPUNIT_ASSERT_EQUAL( 7, int(M3Tetra.getNameOfFaceGroups().size()) );//There is a default group named "Boundary" that is created by the mesh class
 	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[1].compare("DownEdge")==0);
 	indexFaces=M3Tetra.getIndexFacePeriodic();
@@ -336,6 +351,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[0].compare("Top")==0);
     CPPUNIT_ASSERT(M23.isTriangular());
     CPPUNIT_ASSERT(M23.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(!M23.isStructured());
     int nbCellsM23 = M23.getNumberOfCells();
     double areaM23=0;
     for(int i=0; i<nbCellsM23; i++)
@@ -354,6 +370,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 40, M6.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, M6.getNumberOfEdges() );
     CPPUNIT_ASSERT(M6.isUnstructuredMeshLoaded());
+    CPPUNIT_ASSERT(!M6.isStructured());
 
     /*
     const MEDCouplingMesh* M1MEDMesh = M2.getMEDCouplingMesh();
@@ -362,6 +379,7 @@ MeshTests::testClassMesh( void )
     //Test of a mesh with spaceDim=3 different from meshDim=2 (triangles)
     Mesh M4("meshSphere.med");
     CPPUNIT_ASSERT(M4.isTriangular());
+    CPPUNIT_ASSERT(!M4.isStructured());
     int nbCellsM4 = M4.getNumberOfCells();
     double areaM4=0;
     for(int i=0; i<nbCellsM4; i++)
@@ -375,6 +393,7 @@ MeshTests::testClassMesh( void )
     //Testing a 3D unstructured mesh (tétraèdres)
     Mesh M5("meshCube.med");
     CPPUNIT_ASSERT(M5.isTetrahedral());
+    CPPUNIT_ASSERT(!M5.isStructured());
     CPPUNIT_ASSERT(M5.isUnstructuredMeshLoaded());
     int nbCellsM5 = M5.getNumberOfCells();
     double volM5=0;
@@ -405,6 +424,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_DOUBLES_EQUAL(points[nbNodes-1],xmax,eps);
 
     Mesh M7(points, "Checkerboard mesh");
+    CPPUNIT_ASSERT(!M7.isStructured());
     CPPUNIT_ASSERT(M7.isUnstructuredMeshLoaded());
 
     double volM7=0;
@@ -415,8 +435,9 @@ MeshTests::testClassMesh( void )
     //Testing deletion of MEDCoupling for unstructured meshes
     M2Triangle.deleteMEDCouplingUMesh();
     M3Tetra.deleteMEDCouplingUMesh();
-    CPPUNIT_ASSERT(M7.isUnstructuredMeshLoaded());
+
     //The following does not work. Bug ?
+    //CPPUNIT_ASSERT(M7.isUnstructuredMeshLoaded());
     //M7.deleteMEDCouplingUMesh();
     
 }

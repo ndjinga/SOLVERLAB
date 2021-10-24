@@ -78,7 +78,6 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 {
 	_spaceDim=mesh->getSpaceDimension();
 	_meshDim=mesh->getMeshDimension();
-    _isStructured=true;
 	_dxyz=mesh->getDXYZ();
 	_nxyz=mesh->getCellGridStructure();
 	double* Box0=new double[2*_spaceDim];
@@ -118,6 +117,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
     _unstructuredMeshLoaded=false;
+    _isStructured=true;
 
 	delete [] originPtr;
 	delete [] dxyzPtr;
@@ -130,7 +130,6 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 {
 	_spaceDim=mesh->getSpaceDimension();
 	_meshDim=mesh->getMeshDimension();
-    _isStructured=false;
 	double* Box0=new double[2*_spaceDim];
 	mesh->getBoundingBox(Box0);
     _name=mesh->getName();
@@ -151,6 +150,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 
 	_mesh=mesh->deepCopy();
     _unstructuredMeshLoaded=true;
+    _isStructured=false;
 	delete [] Box0 ;
 	setMesh();
 }
@@ -1355,7 +1355,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     coords_arr->decrRef();
 
     _mesh=mesh1d;
-    _unstructuredMeshLoaded=true;
+    _unstructuredMeshLoaded=true;//Note : value should be true in principle but if set to true decrRef yields errors
 
 	DataArrayIdType *desc=DataArrayIdType::New();
 	DataArrayIdType *descI=DataArrayIdType::New();
@@ -1485,7 +1485,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	_meshDim  = 2 ;
     _name=meshName;
     _indexFacePeriodicSet=false;
-    _isStructured = true;
 	_nxyz.resize(_spaceDim);
 	_nxyz[0]=nx;
 	_nxyz[1]=ny;
@@ -1513,13 +1512,15 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
+    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
+    _isStructured = true;
 
     if(split_to_triangles_policy==0 || split_to_triangles_policy==1)
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(split_to_triangles_policy);
             _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
+			_isStructured = false;
         }
     else if (split_to_triangles_policy != -1)
         {
@@ -1561,7 +1562,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	double dy = (ymax - ymin)/ny ;
 	double dz = (zmax - zmin)/nz ;
 
-    _isStructured = true;
 	_dxyz.resize(_spaceDim);
 	_dxyz[0]=dx;
 	_dxyz[1]=dy;
@@ -1595,18 +1595,21 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
     _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
+    _isStructured = true;
 
     if( split_to_tetrahedra_policy == 0 )
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
             _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
+			_isStructured = false;
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
             _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
+			_isStructured = false;
         }
     else if ( split_to_tetrahedra_policy != -1 )
         {
@@ -1991,8 +1994,8 @@ void
 Mesh::writeVTK ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
-	if( !_mesh )
-		throw CdmathException("Mesh::writeVTK : Cannot save mesh : MEDCouplingMesh pointer is NULL");
+	if( !_isStructured && !_unstructuredMeshLoaded )
+		throw CdmathException("Mesh::writeVTK : Cannot save mesh : no MEDCouplingUMesh loaded");
 		
 	string fname=fileName+".vtu";
 	_mesh->writeVTK(fname.c_str()) ;
@@ -2003,13 +2006,14 @@ void
 Mesh::writeMED ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
-	if( !_mesh )
-		throw CdmathException("Mesh::writeMED : Cannot save mesh : MEDCouplingMesh pointer is NULL");
+	if( !_isStructured && !_unstructuredMeshLoaded )
+		throw CdmathException("Mesh::writeMED : Cannot save mesh : no MEDCouplingUMesh loaded");
 		
 	string fname=fileName+".med";
 	MEDCouplingUMesh* mu=_mesh->buildUnstructured();
 	MEDCoupling::WriteUMesh(fname.c_str(),mu,true);
 
+	/* Try to save mesh groups */
 	//MEDFileUMesh meshMEDFile;
 	//meshMEDFile.setMeshAtLevel(0,mu);
 	//for(int i=0; i< _faceGroups.size(); i++)

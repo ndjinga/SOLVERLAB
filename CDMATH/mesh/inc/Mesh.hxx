@@ -356,9 +356,9 @@ public: //----------------------------------------------------------------
     int getMaxNbNeighbours(EntityType type) const;
     
     /** 
-     * \brief Delete the medcoupling mesh so save memory space
+     * \brief Delete the medcoupling mesh to save memory space
      */
-     void deleteMEDCouplingUMesh();
+    void deleteMEDCouplingUMesh();
     
     /** 
      * \brief Returns true iff the mesh has been loaded
