@@ -10,6 +10,7 @@
 #include "Face.hxx"
 #include "Field.hxx"
 #include "MEDFileMesh.hxx"
+#include "MEDFileField1TS.hxx"
 #include "MEDLoader.hxx"
 #include "MEDCouplingUMesh.hxx"
 #include "MEDCouplingFieldDouble.hxx"
@@ -980,6 +981,9 @@ void
 Field::writeVTK (std::string fileName, bool fromScratch) const
 //----------------------------------------------------------------------
 {
+	if( !_mesh.isStructured() && !_mesh.isUnstructuredMeshLoaded() )
+		throw CdmathException("Field::writeVTK : Cannot save field in VTK format : unstructured mesh with no MEDCouplingUMesh loaded. Use med format.");
+
 	string fname=fileName+".pvd";
 	int iter,order;
 	double time=_field->getTime(iter,order);
@@ -1117,10 +1121,18 @@ Field::writeMED ( const std::string fileName, bool fromScratch) const
 //----------------------------------------------------------------------
 {
 	string fname=fileName+".med";
-	if (fromScratch)
-		MEDCoupling::WriteField(fname.c_str(),_field,fromScratch);
+	
+	if(_mesh.isStructured() || _mesh.isUnstructuredMeshLoaded())
+		if (fromScratch)
+			MEDCoupling::WriteField(fname.c_str(),_field,fromScratch);
+		else
+			MEDCoupling::WriteFieldUsingAlreadyWrittenMesh(fname.c_str(),_field);
 	else
-		MEDCoupling::WriteFieldUsingAlreadyWrittenMesh(fname.c_str(),_field);
+	{
+		MEDFileField1TS *ff ;
+		ff->setFieldNoProfileSBT(  _field );
+		ff->write(fileName, fromScratch);
+	}
 }
 
 Field
@@ -1190,4 +1202,9 @@ std::ostream& operator<<(std::ostream& out, const Field& field )
 	cout << "Field " << field.getName() << " : " << endl ;
 	out<< field.getField().retn()->getArray()->repr();
 	return out;
+}
+
+void Field::deleteMEDCouplingUMesh()
+{ 
+	return _mesh.deleteMEDCouplingUMesh();
 }

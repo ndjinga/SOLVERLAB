@@ -250,6 +250,11 @@ class Field
 
     void setFieldByDataArrayDouble ( const MEDCoupling::DataArrayDouble* array );
 
+    /** 
+	 * \brief Delete the medcoupling mesh to save memory space
+     */
+    void deleteMEDCouplingUMesh();
+    
     Vector getNormEuclidean( void ) const ;
 
     double max( int component=0 ) const ;
