@@ -106,7 +106,7 @@ public: //----------------------------------------------------------------
 	 * @param nx : Number of cells in x direction
 	 * @param ny : Number of cells in y direction
 	 * @param nz : Number of cells in z direction
-     * @param split_to_tetrahedra_policy : each cuboid will be split into 5 tetrahedra if value is INTERP_KERNEL::PLANAR_FACE_5 or 6 tetrahedra if the value is INTERP_KERNEL::PLANAR_FACE_6
+     * @param split_to_tetrahedra_policy : each cuboid will be split into 5 tetrahedra if value is 0 or 6 tetrahedra if the value is 1
 	 */
 	Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz, int split_to_tetrahedra_policy=-1, std::string meshName="MESH3D_Regular_Cuboid_Grid") ;
 
