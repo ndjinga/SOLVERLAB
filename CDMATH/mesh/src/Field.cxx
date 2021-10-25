@@ -981,7 +981,7 @@ void
 Field::writeVTK (std::string fileName, bool fromScratch) const
 //----------------------------------------------------------------------
 {
-	if( !_mesh.isStructured() && !_mesh.isUnstructuredMeshLoaded() )
+	if( !_mesh.isStructured() && !_mesh.unstructuredMeshLoaded() )
 		throw CdmathException("Field::writeVTK : Cannot save field in VTK format : unstructured mesh with no MEDCouplingUMesh loaded. Use med format.");
 
 	string fname=fileName+".pvd";
@@ -1122,7 +1122,7 @@ Field::writeMED ( const std::string fileName, bool fromScratch) const
 {
 	string fname=fileName+".med";
 	
-	if(_mesh.isStructured() || _mesh.isUnstructuredMeshLoaded())
+	if(_mesh.isStructured() || _mesh.unstructuredMeshLoaded())
 		if (fromScratch)
 			MEDCoupling::WriteField(fname.c_str(),_field,fromScratch);
 		else

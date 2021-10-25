@@ -212,7 +212,7 @@ Mesh::Mesh( const Mesh& mesh )
     
 	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->deepCopy();
 	_mesh=m1;
-    _unstructuredMeshLoaded=mesh.isUnstructuredMeshLoaded();
+    _unstructuredMeshLoaded=mesh.unstructuredMeshLoaded();
 }
 
 //----------------------------------------------------------------------
@@ -1869,7 +1869,7 @@ Mesh::operator= ( const Mesh& mesh )
 	_numberOfEdges = mesh.getNumberOfEdges();
     
     _isStructured = mesh.isStructured();
-    _unstructuredMeshLoaded = mesh.isUnstructuredMeshLoaded();
+    _unstructuredMeshLoaded = mesh.unstructuredMeshLoaded();
     
     if(_isStructured)
     {

@@ -361,9 +361,9 @@ public: //----------------------------------------------------------------
     void deleteMEDCouplingUMesh();
     
     /** 
-     * \brief Returns true iff the mesh has been loaded
+     * \brief Returns true iff an unstructured mesh has been loaded
      */
-     bool isUnstructuredMeshLoaded() const {return _unstructuredMeshLoaded;}
+     bool unstructuredMeshLoaded() const {return _unstructuredMeshLoaded;}
     
 private: //----------------------------------------------------------------
 
