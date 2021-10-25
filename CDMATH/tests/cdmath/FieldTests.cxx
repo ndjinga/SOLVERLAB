@@ -249,6 +249,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 1, concF2.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 0.0, concF2.getTime() );
 	CPPUNIT_ASSERT_EQUAL( 8, concF2.getNumberOfElements() );
+    CPPUNIT_ASSERT(concF2.unstructuredMeshLoaded());
 	
 	Mesh M3(0.0,1.0,2,0.,1.,2,0.,1.,2);
 	Field concF3("CONCENTRATION",FACES,M3) ;
@@ -262,6 +263,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 1, concF3.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 0.0, concF3.getTime() );
 	CPPUNIT_ASSERT_EQUAL( 36, concF3.getNumberOfElements() );
+    CPPUNIT_ASSERT(!concF3.unstructuredMeshLoaded());
 	
 	//Load the Field CONCENTRATION in the file fileNameMED
 	Field concF4(fileNameMED,CELLS,"CONCENTRATION",0,0);
@@ -271,6 +273,7 @@ FieldTests::testClassField( void )
     for (int j=0;j<concF4.getNumberOfComponents();j++)
     	for (int i=0;i<concF4.getNumberOfElements();i++)
     		CPPUNIT_ASSERT_EQUAL( double(i+j), concF4(i,j) );
+    CPPUNIT_ASSERT(concF4.unstructuredMeshLoaded());
 	
 	//Create a constant field on the mesh fileNameMEDn
 	Field concF5(fileNameMEDn,NODES,std::vector<double> (3,1),"CONSTANT_Field");
@@ -280,4 +283,5 @@ FieldTests::testClassField( void )
     for (int j=0;j<concF5.getNumberOfComponents();j++)
     	for (int i=0;i<concF5.getNumberOfElements();i++)
     		CPPUNIT_ASSERT_EQUAL( 1., concF5(i,j) );
+    CPPUNIT_ASSERT(concF5.unstructuredMeshLoaded());
 }

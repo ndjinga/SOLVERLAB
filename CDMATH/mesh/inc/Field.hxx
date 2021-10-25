@@ -255,6 +255,11 @@ class Field
      */
     void deleteMEDCouplingUMesh();
     
+    /** 
+     * \brief Returns true iff an unstructured mesh has been loaded
+     */
+     bool unstructuredMeshLoaded() const {return _mesh.unstructuredMeshLoaded();}
+    
     Vector getNormEuclidean( void ) const ;
 
     double max( int component=0 ) const ;
