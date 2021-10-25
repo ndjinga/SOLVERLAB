@@ -569,6 +569,7 @@ string(REPLACE ":" ";"  PV_PYTHON_DIR_PATHS "${PV_PYTHON_DIR}")# use semicolon i
 find_file(python-paraview simple.py PATHS ${PV_PYTHON_DIR_PATHS})
 if( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
   message(WARNING "Python Paraview library not found. Post processing will fail in SOLVERLAB scripts.")
+  set(PARAVIEW_ON_UBUNTU20 OFF)
 else( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
   if(    ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
     message ( STATUS "Using system Paraview python libraries on Ubuntu 20.04 requires the presence and preload of library netcdf (bug in linkage)." )
