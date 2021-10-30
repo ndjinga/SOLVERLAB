@@ -200,7 +200,7 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
 	if(rank == 0)
 	    globalNbUnknowns=my_mesh.getNumberOfCells()*(my_mesh.getMeshDimension()+1);//nbCells*nbComp
 	
-	MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&globalNbUnknowns, 1, MPI_INT, 0, PETSC_COMM_WORLD);
  
     /* iteration vectors */
 	VecCreateMPI(PETSC_COMM_WORLD,PETSC_DECIDE    ,globalNbUnknowns,&Un);
@@ -219,8 +219,8 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
 	    d_nnz=(nbVoisinsMax+1)*(my_mesh.getMeshDimension()+1);//(nbVoisinsMax+1)*nbComp
 	    o_nnz= nbVoisinsMax   *(my_mesh.getMeshDimension()+1);//                 nbComp
 	}
-	MPI_Bcast(&d_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&o_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&d_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&o_nnz, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 
    	MatCreateAIJ(PETSC_COMM_WORLD,localNbUnknowns,localNbUnknowns,globalNbUnknowns,globalNbUnknowns,d_nnz,NULL,o_nnz,NULL,&divMat);
 
@@ -274,7 +274,7 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
 
 	//MatView(divMat,	PETSC_VIEWER_STDOUT_WORLD );
 
-	MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
 
     /* Time loop */
 	PetscPrintf(PETSC_COMM_WORLD,"Starting computation of the linear wave system on all processors : \n\n");
