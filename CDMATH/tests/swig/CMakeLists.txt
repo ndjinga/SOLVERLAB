@@ -21,9 +21,9 @@ if (CDMATH_WITH_POSTPRO)
 
   add_subdirectory (BoySurface)
 
+
+  ADD_TEST(Tests_Field_Creation_And_Saving_routines ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/testFieldCreationAndSave.py )
+
+  INSTALL(FILES ${MESH_MED}  mainTests.py test_VTK_routines.py test_PV_routines.py testFieldCreationAndSave.py DESTINATION bin/unit_tests)
 endif (CDMATH_WITH_POSTPRO)
-
-ADD_TEST(Tests_Field_Creation_And_Saving_routines ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/testFieldCreationAndSave.py )
-
-INSTALL(FILES ${MESH_MED}  mainTests.py test_VTK_routines.py test_PV_routines.py testFieldCreationAndSave.py DESTINATION bin/unit_tests)
 
