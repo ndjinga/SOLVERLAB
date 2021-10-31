@@ -728,6 +728,11 @@ protected :
 	string _path;//path to execution directory used for saving results
 	saveFormat _saveFormat;//file saving format : MED, VTK or CSV
 	
+	//MPI variables
+	PetscMPIInt    _size;        /* size of communicator */
+	PetscMPIInt    _rank;        /* processor rank */
+	
+	
 };
 
 #endif /* PROBLEMCOREFLOWS_HXX_ */

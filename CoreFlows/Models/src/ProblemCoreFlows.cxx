@@ -20,14 +20,26 @@ using namespace std;
 
 ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 {
-	/* Initialisation of PETSC (check if PETSC already initialised) */
+	/* Initialisation of PETSC */
+	//check if PETSC already initialised
 	PetscBool petscInitialized;
 	PetscInitialized(&petscInitialized);
 	if(!petscInitialized)
-	{
-		PETSC_COMM_WORLD = comm;
-		PetscInitialize(NULL,NULL,0,0);//Note htis is ok if MPI has been been initialised independently from PETSC
+	{//check if MPI already initialised
+		int mpiInitialized;
+		MPI_Initialized(&mpiInitialized);
+		if(mpiInitialized)
+			PETSC_COMM_WORLD = comm;
+		PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
 	}
+	MPI_Comm_rank(PETSC_COMM_WORLD,&_rank);
+	MPI_Comm_size(PETSC_COMM_WORLD,&_size);
+	if(_size==1)
+		cout<<"Sequential simulation on 1 Processor"<<endl;
+	else if(_rank=0)
+		cout<<"Parallel simulation on "<<_size << " Processors"<<endl;
+
+	cout<<"Processor "<< _rank << " ready for action"<<endl;
 
 	/* Numerical parameter */
 	_dt = 0;
