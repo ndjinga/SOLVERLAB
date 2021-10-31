@@ -90,7 +90,7 @@ class ProblemCoreFlows
 {
 public :
 	//! Constructeur par défaut
-	ProblemCoreFlows();
+	ProblemCoreFlows(MPI_Comm comm = MPI_COMM_WORLD);
 	virtual ~ProblemCoreFlows();
 	
 	// -*-*-*- Gestion du calcul (interface ICoCo) -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*

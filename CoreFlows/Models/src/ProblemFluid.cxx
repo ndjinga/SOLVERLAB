@@ -3,7 +3,8 @@
 
 using namespace std;
 
-ProblemFluid::ProblemFluid(void){
+ProblemFluid::ProblemFluid(MPI_Comm comm):ProblemCoreFlows(comm)
+{
 	_latentHeat=1e30;
 	_Tsat=1e30;
 	_Psat=-1e30;

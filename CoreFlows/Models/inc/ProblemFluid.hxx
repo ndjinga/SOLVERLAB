@@ -84,7 +84,7 @@ public :
 	/**\fn
 	 * \brief constructeur de la classe ProblemFluid
 	 */
-	ProblemFluid(void);
+	ProblemFluid(MPI_Comm comm = MPI_COMM_WORLD);
 
 	//Gestion du calcul (interface ICoCo)
 

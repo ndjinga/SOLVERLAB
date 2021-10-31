@@ -18,12 +18,18 @@
 
 using namespace std;
 
-ProblemCoreFlows::ProblemCoreFlows()
+ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 {
+	/* Initialisation of PETSC (check if PETSC already initialised) */
 	PetscBool petscInitialized;
 	PetscInitialized(&petscInitialized);
 	if(!petscInitialized)
-		PetscInitialize(NULL,NULL,0,0);
+	{
+		PETSC_COMM_WORLD = comm;
+		PetscInitialize(NULL,NULL,0,0);//Note htis is ok if MPI has been been initialised independently from PETSC
+	}
+
+	/* Numerical parameter */
 	_dt = 0;
 	_time = 0;
 	_nbTimeStep=0;
@@ -34,35 +40,45 @@ ProblemCoreFlows::ProblemCoreFlows()
 	_precision_Newton=_precision;
 	_erreur_rel= 0;
 	_isStationary=false;
-	_Ndim=0;
-	_minl=0;
-	_neibMaxNb=0;
-	_fileName = "myCoreFlowsProblem";
-	_freqSave = 1;
-	_initialDataSet=false;
-	_initializedMemory=false;
-	_restartWithNewTimeScheme=false;
-	_restartWithNewFileName=false;
 	_timeScheme=Explicit;
 	_wellBalancedCorrection=false;
     _FECalculation=false;
-	_maxPetscIts=50;
+	_nonLinearSolver = Newton_SOLVERLAB;
+	_conditionNumber=false;
+	_maxvp=0;
+	_runLogFile=new ofstream;
+
+	/* Monitoring of simulation */
+	_restartWithNewTimeScheme=false;
+	_restartWithNewFileName=false;
+	_fileName = "myCoreFlowsProblem";
+	_freqSave = 1;
+	_verbose = false;
+	_system = false;
+
+	/* Mesh parameters */
+	_Ndim=0;
+	_minl=0;
+	_neibMaxNb=0;
+
+	/* Memory and restart */
+	_initialDataSet=false;
+	_initializedMemory=false;
+
+	/* PETSc and linear solver parameters */
 	_MaxIterLinearSolver=0;//During several newton iterations, stores the max petssc interations
-	_maxNewtonIts=50;
 	_NEWTON_its=0;
-	int _PetscIts=0;//the number of iterations of the linear solver
+	_maxPetscIts=50;
+	_maxNewtonIts=50;
+	_PetscIts=0;//the number of iterations of the linear solver
 	_ksptype = (char*)&KSPGMRES;
 	_pctype = (char*)&PCLU;
-	_nonLinearSolver = Newton_SOLVERLAB;
+
+	/* Physical parameter */
 	_heatPowerFieldSet=false;
 	_heatTransfertCoeff=0;
 	_rodTemperatureFieldSet=false;
 	_heatSource=0;
-	_verbose = false;
-	_system = false;
-	_conditionNumber=false;
-	_maxvp=0;
-	_runLogFile=new ofstream;
 
 	//extracting current directory
 	char result[ PATH_MAX ];

@@ -67,7 +67,8 @@ Vector DiffusionEquation::gradientNodal(Matrix M, vector< double > values)
 	return result;    
 }
 
-DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,double cp, double lambda){
+DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,double cp, double lambda, MPI_Comm comm ):ProblemCoreFlows(comm)
+{
     /* Control input value are acceptable */
     if(rho<_precision or cp<_precision)
     {

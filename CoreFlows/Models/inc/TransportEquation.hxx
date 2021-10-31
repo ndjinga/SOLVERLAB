@@ -64,7 +64,7 @@ public :
 			 * \param [in] pressureMagnitude : \ref around1bar or \ref around155bars
 			 * \param [in] vector<double> : fluid velocity (assumed constant)
 			 *  */
-	TransportEquation(phase fluid, pressureMagnitude pEstimate,vector<double> vitesseTransport);
+	TransportEquation(phase fluid, pressureMagnitude pEstimate,vector<double> vitesseTransport, MPI_Comm comm = MPI_COMM_WORLD);
 
 	//Gestion du calcul
 	virtual void initialize();

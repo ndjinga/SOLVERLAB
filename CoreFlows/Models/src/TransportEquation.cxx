@@ -5,7 +5,8 @@
 
 using namespace std;
 
-TransportEquation::TransportEquation(phase fluid, pressureMagnitude pEstimate,vector<double> vitesseTransport){
+TransportEquation::TransportEquation(phase fluid, pressureMagnitude pEstimate,vector<double> vitesseTransport, MPI_Comm comm):ProblemCoreFlows(comm)
+{
 	if(pEstimate==around1bar300KTransport){
 		_Tref=300;
 		if(fluid==GasPhase){//Nitrogen pressure 1 bar and temperature 27°C

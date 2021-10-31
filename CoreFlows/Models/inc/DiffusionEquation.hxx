@@ -52,7 +52,7 @@ public :
 			 * \param [in] double : solid conductivity
 			 *  */
 
-	DiffusionEquation( int dim,bool FECalculation=true,double rho=10000,double cp=300,double lambda=5);
+	DiffusionEquation( int dim,bool FECalculation=true,double rho=10000,double cp=300,double lambda=5, MPI_Comm comm = MPI_COMM_WORLD);
 
 	//Gestion du calcul
 	void initialize();
