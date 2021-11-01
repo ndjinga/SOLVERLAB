@@ -4,6 +4,11 @@
 %include std_vector.i
 %include std_map.i
 
+#ifdef MPI4PY_ROOT_DIR
+%include ${MPI4PY_ROOT_DIR}/include/mpi4py/mpi4py.i
+%mpi4py_typemap(Comm, MPI_Comm);
+#endif
+
 %apply bool& INOUT {bool &stop}
 
 namespace std {
