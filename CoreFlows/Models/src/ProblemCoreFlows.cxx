@@ -21,11 +21,11 @@ using namespace std;
 ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 {
 	/* Initialisation of PETSC */
-	//check if PETSC already initialised
+	//check if PETSC is already initialised
 	PetscBool petscInitialized;
 	PetscInitialized(&petscInitialized);
 	if(!petscInitialized)
-	{//check if MPI already initialised
+	{//check if MPI is already initialised
 		int mpiInitialized;
 		MPI_Initialized(&mpiInitialized);
 		if(mpiInitialized)
@@ -34,13 +34,18 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	}
 	MPI_Comm_rank(PETSC_COMM_WORLD,&_rank);
 	MPI_Comm_size(PETSC_COMM_WORLD,&_size);
-	if(_size==1)
-		cout<<"Sequential simulation on 1 Processor"<<endl;
-	else if(_rank=0)
-		cout<<"Parallel simulation on "<<_size << " Processors"<<endl;
+	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
+	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
-	cout<<"Processor "<< _rank << " ready for action"<<endl;
-
+	if(_size>1)
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected : running a parallel simulation ----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- Limited parallelism : input and output fields remain sequential ----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- Only the matrixoperations are done in parallel thanks to PETSc----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- Processor %d is in charge of building the mesh, saving the results, filling and then distributing the matrix to other processors.\n\n",_rank);
+	}
+	
 	/* Numerical parameter */
 	_dt = 0;
 	_time = 0;
@@ -175,7 +180,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	Face Fk;
 
 	if(_verbose)
-		cout<<"Computing cell perimeters and mesh minimal diameter"<<endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Computing cell perimeters and mesh minimal diameter\n");
 
     if(VV.getTypeOfField()==NODES)
     {
@@ -278,17 +283,14 @@ void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> V
 		double zmin, double zmax, int nz, string bottomSide, string topSide, EntityType typeField)
 {
 	Mesh M;
-	if(nDim==1){
-		//cout<<"coucou1 xmin="<<xmin<<", xmax= "<<xmax<< ", nx= "<<nx<<endl;
+	if(nDim==1)
 		M=Mesh(xmin,xmax,nx);
-		//cout<<"coucou2"<<endl;
-	}
 	else if(nDim==2)
 		M=Mesh(xmin,xmax,nx,ymin,ymax,ny);
 	else if(nDim==3)
 		M=Mesh(xmin,xmax,nx,ymin,ymax,ny,zmin,zmax,nz);
 	else{
-		cout<<"ProblemCoreFlows::setInitialFieldConstant: Space dimension nDim should be between 1 and 3"<<endl;
+		PetscPrintf(PETSC_COMM_WORLD,"ProblemCoreFlows::setInitialFieldConstant: Space dimension nDim should be between 1 and 3\n");
 		*_runLogFile<<"ProblemCoreFlows::setInitialFieldConstant: Space dimension nDim should be between 1 and 3"<<endl;
 		_runLogFile->close();
 		throw CdmathException("Space dimension nDim should be between 1 and 3");
@@ -325,7 +327,7 @@ void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV
 			component_value=VV.getElementComponent(j, direction);
 		else
 		{
-			cout<< "Error : space dimension is "<< M.getSpaceDimension()<<", direction asked is "<<direction<<endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Error : space dimension is %d,  direction asked is \%d \n",M.getSpaceDimension(),direction);
 			_runLogFile->close();
 			throw CdmathException( "ProblemCoreFlows::setStepFunctionInitialField: direction should be an integer between 0 and 2");
 		}
@@ -378,7 +380,7 @@ void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const 
 {
 	if((Center.size()!=M.getSpaceDimension()) || (Vout.size() != Vin.size()) )
 	{
-		cout<< "Vout.size()= "<<Vout.size() << ", Vin.size()= "<<Vin.size()<<", Center.size()="<<Center.size()<<", M.getSpaceDim= "<< M.getSpaceDimension()<<endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Vout.size() = %d, Vin.size()= %d, Center.size() = %d, M.getSpaceDim = %d \n",Vout.size(),Vin.size(),Center.size(), M.getSpaceDimension());
 		throw CdmathException("ProblemCoreFlows::setInitialFieldSphericalStepFunction : Vector size error");
 	}
 	int nVar=Vout.size();
@@ -437,7 +439,7 @@ void ProblemCoreFlows::setLinearSolver(linearSolver kspType, preconditioner pcTy
 	else if (kspType==BCGS)
 		_ksptype = (char*)&KSPBCGS;
 	else {
-		cout << "!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!" << endl;
+		PetscPrintf(PETSC_COMM_WORLD,"!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!\n");
 		*_runLogFile << "!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!" << endl;
 		_runLogFile->close();
 		throw CdmathException("!!! Error : only 'GMRES', 'CG' or 'BCGS' algorithm is acceptable !!!");
@@ -454,7 +456,7 @@ void ProblemCoreFlows::setLinearSolver(linearSolver kspType, preconditioner pcTy
 	else if (pcType == ICC)
 		_pctype = (char*)&PCICC;
 	else {
-		cout << "!!! Error : only 'NOPC', 'LU', 'ILU', 'CHOLESKY' or 'ICC' preconditioners are acceptable !!!" << endl;
+		PetscPrintf(PETSC_COMM_WORLD,"!!! Error : only 'NOPC', 'LU', 'ILU', 'CHOLESKY' or 'ICC' preconditioners are acceptable !!!\n");
 		*_runLogFile << "!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" << endl;
 		_runLogFile->close();
 		throw CdmathException("!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" );
@@ -486,7 +488,7 @@ bool ProblemCoreFlows::run()
 	bool ok; // Is the time interval successfully solved ?
 	_isStationary=false;//in case of a second run with a different physics or cfl
 
-	cout<< "Running test case "<< _fileName<<endl<<endl;
+	PetscPrintf(PETSC_COMM_WORLD,"Running test case %d\n",_fileName);
 
 	_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
 	*_runLogFile<< "Running test case "<< _fileName<<endl;
@@ -499,7 +501,7 @@ bool ProblemCoreFlows::run()
 		// Guess the next time step length
 		_dt=computeTimeStep(stop);
 		if (stop){
-			cout << "Failed computing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Failed computing time step %d, time = %f, dt= %f, stopping calculation",_nbTimeStep,_time,_dt);
 			*_runLogFile << "Failed computing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
 			break;
 		}
@@ -509,7 +511,7 @@ bool ProblemCoreFlows::run()
 			stop=!initTimeStep(_dt);
 			// Prepare the next time step
 			if (stop){
-				cout << "Failed initializing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
+				PetscPrintf(PETSC_COMM_WORLD,"Failed initializing time step %d, time = %f, dt= %f, stopping calculation",_nbTimeStep,_time,_dt);
 				*_runLogFile << "Failed initializing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
 				break;
 			}
@@ -529,7 +531,7 @@ bool ProblemCoreFlows::run()
 					//_dt=computeTimeStep(stop);
 				}
 				else{*/
-					cout << "Failed solving time step "<<_nbTimeStep<<", _time = " << _time<<" _dt= "<<_dt<<", cfl= "<<_cfl <<", stopping calculation"<< endl;
+					PetscPrintf(PETSC_COMM_WORLD,"Failed solving time step %d, time = %f, dt= %f, cfl = %f, stopping calculation \n",_nbTimeStep,_time,_dt,_cfl);
 					*_runLogFile << "Failed solving time step "<<_nbTimeStep<<", _time = " << _time<<" _dt= "<<_dt<<", cfl= "<<_cfl <<", stopping calculation"<< endl;
 					stop=true; // Impossible to solve the next time step, the Problem has given up
 					break;
@@ -539,29 +541,29 @@ bool ProblemCoreFlows::run()
 			{
 				validateTimeStep();
 				if ((_nbTimeStep-1)%_freqSave ==0){
-					cout << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
+					PetscPrintf(PETSC_COMM_WORLD,"Time step = %d, dt = %f, time = %f, ||Un+1-Un||= %f\n\n",_nbTimeStep,_dt,_time,_erreur_rel);
 					*_runLogFile << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
 				}
 			}
 		}
 	}
 	if(_isStationary){
-		cout << "Stationary state reached" <<endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Stationary state reached\n");
 		*_runLogFile << "Stationary state reached" <<endl;
 	}
 	else if(_time>=_timeMax){
-		cout<<"Maximum time "<<_timeMax<<" reached"<<endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Maximum time %f reached\n",_timeMax);
 		*_runLogFile<<"Maximum time "<<_timeMax<<" reached"<<endl;
 	}
 	else if(_nbTimeStep>=_maxNbOfTimeStep){
-		cout<<"Maximum number of time steps "<<_maxNbOfTimeStep<<" reached"<<endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Maximum number of time steps %d reached\n",_maxNbOfTimeStep);
 		*_runLogFile<<"Maximum number of time steps "<<_maxNbOfTimeStep<<" reached"<<endl;
 	}
 	else{
-		cout<<"Error problem wants to stop!"<<endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Error problem wants to stop!\n");
 		*_runLogFile<<"Error problem wants to stop!"<<endl;
 	}
-	cout << "End of calculation time t= " << _time << " at time step number "<< _nbTimeStep << endl;
+	PetscPrintf(PETSC_COMM_WORLD,"End of calculation at time t = %f and time step number %d\n",_time,_nbTimeStep);
 	*_runLogFile << "End of calculation time t= " << _time << " at time step number "<< _nbTimeStep << endl;
 
 	_runLogFile->close();
@@ -609,14 +611,14 @@ bool ProblemCoreFlows::solveTimeStep(){
 
 		if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)//To monitor the convergence of the newton scheme
 		{
-			cout << " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
+			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %d iterations : %d maximum variation ||Uk+1-Uk||: %f\n",_NEWTON_its,_ksptype,_PetscIts,_erreur_rel);
 			*_runLogFile<< " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
 
 			if(_conditionNumber)
 			{
 				PetscReal sv_max, sv_min;
 				KSPComputeExtremeSingularValues(_ksp, &sv_max, &sv_min);
-				cout<<" Singular value max = " << sv_max <<", singular value min = " << sv_min <<", condition number = " << sv_max/sv_min <<endl;
+				PetscPrintf(PETSC_COMM_WORLD," Singular value max = %f, singular value min = %f, condition number = %f\n",sv_max,sv_min,sv_max/sv_min);
 				*_runLogFile<<" Singular value max = " << sv_max <<", singular value min = " << sv_min <<", condition number = " << sv_max/sv_min <<endl;
 			}
 		}
@@ -624,17 +626,17 @@ bool ProblemCoreFlows::solveTimeStep(){
 	}
 	if(!converged){
 		if(_NEWTON_its >= _maxNewtonIts){
-			cout << "Maximum number of Newton iterations "<<_maxNewtonIts<<" reached"<< endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Maximum number of Newton iterations %d reached\n",_maxNewtonIts);
 			*_runLogFile << "Maximum number of Newton iterations "<<_maxNewtonIts<<" reached"<< endl;
 		}
 		else if(!ok){
-			cout<<"iterateTimeStep: solving Newton iteration "<<_NEWTON_its<<" Failed"<<endl;
+			PetscPrintf(PETSC_COMM_WORLD,"iterateTimeStep: solving Newton iteration %d Failed\n",_NEWTON_its);
 			*_runLogFile<<"iterateTimeStep: solving Newton iteration "<<_NEWTON_its<<" Failed"<<endl;
 		}
 	}
 	else if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)
 	{
-		cout << "Nombre d'iterations de Newton "<< _NEWTON_its << ", Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl << endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Nombre d'iterations de Newton %d, Nombre max d'iterations %d : %d\n\n",_NEWTON_its, _ksptype, _MaxIterLinearSolver);
 		*_runLogFile <<endl;
 		*_runLogFile << "Nombre d'iterations de Newton "<< _NEWTON_its << "Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl << endl;
 		_MaxIterLinearSolver = 0;
