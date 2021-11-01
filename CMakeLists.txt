@@ -14,6 +14,7 @@ option (SOLVERLAB_WITH_GUI           "Compile a Graphic user Interface for SOLVE
 option (SOLVERLAB_WITH_PACKAGE       "Generate RPM, Debian and tarball packages" OFF)
 option (SOLVERLAB_WITH_COREFLOWS     "Generate COREFLOWS module" ON)
 option (SOLVERLAB_WITH_TESTS         "Generate SOLVERLAB example tests" ON)
+option (SOLVERLAB_WITH_MPI         "Generate a parallel version of SOLVERLAB" OFF)
 
 #Path to installed libraries
 set (PETSC_DIR            OFF CACHE STRING "PETSc library path" )
@@ -23,6 +24,7 @@ set (MEDFILE_ROOT_DIR     OFF CACHE STRING "MED library path" )
 set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
 set (PYTHON_ROOT_DIR      OFF CACHE STRING "Python library path" )
 set (PARAVIEW_ROOT_DIR    OFF CACHE STRING "PARAVIEW library path" )
+set (MPI4PY_ROOT_DIR      OFF CACHE STRING "MPI4PY library path" )
 
 #url of tarball librairies
 set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz 
@@ -39,8 +41,10 @@ set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCou
      CACHE STRING           "MEDCoupling tarball path/url" )
 set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
      CACHE STRING           "OPENMPI tarball path/url" )
-set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.20.0.zip
+set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.23.0.zip
      CACHE STRING           "HYPRE tarball path/url" )
+set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.1.tar.gz
+     CACHE STRING           "MPY4PY tarball path/url" )
 
 set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
 
@@ -267,7 +271,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       URL               ${DOWNLOAD_PETSC}   
       SOURCE_DIR        ${PETSC_DIR}
       BUILD_IN_SOURCE   TRUE
-      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-mpi=0 --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}   --with-petsc4py=yes --download-slepc-configure-arguments="--with-slepc4py=yes" # --download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-mpi=0 --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}   --with-petsc4py=yes --download-slepc-configure-arguments="--with-slepc4py=yes" # --download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE} --download-mpi4py=${DOWNLOAD_MPI4PY}
       BUILD_COMMAND     make all
       TEST_COMMAND      make check
       INSTALL_COMMAND   make install
@@ -328,6 +332,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       #set(MPI_HOME    ${PETSC_INSTALL} )
       #set(MPI_LIBRARY ${PETSC_INSTALL}/lib/libmpi.so)
       #set(MPIEXEC     ${PETSC_INSTALL}/bin/mpiexec)
+      #set(MPI4PY_ROOT_DIR    ${PETSC_INSTALL}/lib/mpi4py )
 
     endif ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )
   endif ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
