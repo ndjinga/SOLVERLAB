@@ -72,7 +72,7 @@ else(  DEFINED ENV{MPI_HOME} OR MPI_HOME )
 endif( DEFINED ENV{MPI_HOME} OR MPI_HOME )
 
 ############################
-# Definition of HDF5_HOME  #
+# Definition of HDF5_ROOT  #
 ############################
 if   ( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
   if   ( DEFINED  ENV{HDF5_ROOT_DIR} )
@@ -267,7 +267,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       URL               ${DOWNLOAD_PETSC}   
       SOURCE_DIR        ${PETSC_DIR}
       BUILD_IN_SOURCE   TRUE
-      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5} --with-mpi=0 # --download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE}
+      CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-mpi=0 --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}   --with-petsc4py=yes --download-slepc-configure-arguments="--with-slepc4py=yes" # --download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE}
       BUILD_COMMAND     make all
       TEST_COMMAND      make check
       INSTALL_COMMAND   make install
@@ -560,6 +560,16 @@ ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 
 message(STATUS "Python version found is ${Python_VERSION}")
 
+#Matplotlib root dir
+IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
+    set(MATPLOTLIB_ROOT_DIR $ENV{MATPLOTLIB_ROOT_DIR} )
+ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
+
+#PyQt5 root dir
+IF   ( NOT DEFINED PYQT5_ROOT_DIR )
+    set(PYQT5_ROOT_DIR $ENV{PYQT5_ROOT_DIR} )
+ENDIF( NOT DEFINED PYQT5_ROOT_DIR )
+
 #Paraview library paths
 set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
 set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}/dist-packages/:/usr/lib/python${Python_VERSION_MAJOR}/dist-packages/paraview/:/usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/:${MATPLOTLIB_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages:${PYQT5_ROOT_DIR}:${PYQT5_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
@@ -585,25 +595,6 @@ else( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
     set(PRELOAD_NETCDF_ON_UBUNTU20 OFF)
   endif( ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
 endif( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
-
-#PyQt5 root dir
-IF   ( NOT DEFINED PYQT5_ROOT_DIR )
-    set(PYQT5_ROOT_DIR $ENV{PYQT5_ROOT_DIR} )
-ENDIF( NOT DEFINED PYQT5_ROOT_DIR )
-
-#Matplotlib root dir
-IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
-    set(MATPLOTLIB_ROOT_DIR $ENV{MATPLOTLIB_ROOT_DIR} )
-ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
-
-#define HDF5_ROOT_DIR
-IF   ( NOT HDF5_ROOT_DIR )
-  IF  ( ENV{HDF5_ROOT_DIR} )
-    set(HDF5_ROOT_DIR $ENV{HDF5_ROOT_DIR} )
-  ELSE( ENV{HDF5_ROOT_DIR} )
-    set(HDF5_ROOT_DIR ${HDF5_ROOT} )
-  ENDIF( ENV{HDF5_ROOT_DIR} )
-ENDIF( NOT HDF5_ROOT_DIR )
 
 # Find SWIG
 IF   ( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
