@@ -611,7 +611,7 @@ bool ProblemCoreFlows::solveTimeStep(){
 
 		if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)//To monitor the convergence of the newton scheme
 		{
-			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %d iterations : %d maximum variation ||Uk+1-Uk||: %f\n",_NEWTON_its,_ksptype,_PetscIts,_erreur_rel);
+			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %s iterations : %d maximum variation ||Uk+1-Uk||: %f\n",_NEWTON_its,_ksptype,_PetscIts,_erreur_rel);
 			*_runLogFile<< " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
 
 			if(_conditionNumber)
@@ -636,7 +636,7 @@ bool ProblemCoreFlows::solveTimeStep(){
 	}
 	else if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)
 	{
-		PetscPrintf(PETSC_COMM_WORLD,"Nombre d'iterations de Newton %d, Nombre max d'iterations %d : %d\n\n",_NEWTON_its, _ksptype, _MaxIterLinearSolver);
+		PetscPrintf(PETSC_COMM_WORLD,"Nombre d'iterations de Newton %d, Nombre max d'iterations %s : %d\n\n",_NEWTON_its, _ksptype, _MaxIterLinearSolver);
 		*_runLogFile <<endl;
 		*_runLogFile << "Nombre d'iterations de Newton "<< _NEWTON_its << "Nombre max d'iterations "<< _ksptype << " : " << _MaxIterLinearSolver << endl << endl;
 		_MaxIterLinearSolver = 0;
