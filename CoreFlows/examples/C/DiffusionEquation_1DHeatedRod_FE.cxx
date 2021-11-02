@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 	VV_Constant(0) = 623;//Rod clad temperature
 
 	cout << "Building initial data" << endl;
-	myProblem.setInitialFieldConstant(M,VV_Constant);
+	myProblem.setInitialFieldConstant(M,VV_Constant,NODES);
 
 	//set the boundary conditions
 	myProblem.setNeumannBoundaryCondition("Neumann");
