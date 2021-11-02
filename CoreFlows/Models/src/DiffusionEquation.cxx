@@ -86,7 +86,7 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
         throw CdmathException("Error : parameter dim cannot  be negative");
     }
 
-    PetscPrintf(PETSC_COMM_WORLD,"Diffusion problem with density %d, specific heat %d, conductivity %d", rho,cp,lambda);
+    PetscPrintf(PETSC_COMM_WORLD,"Diffusion problem with density %f, specific heat %f, conductivity %f", rho,cp,lambda);
     if(FECalculation)
         PetscPrintf(PETSC_COMM_WORLD," and finite elements method\n");
     else
