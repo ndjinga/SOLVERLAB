@@ -1970,7 +1970,7 @@ Mesh::getBoundaryMesh ( void )  const
 int 
 Mesh::getMaxNbNeighbours(EntityType type) const
 {
-    double result=0;
+    int result=0;
     
     if (type==CELLS)
 	{
