@@ -294,6 +294,7 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
 }
 
 double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
+
 	Cell Cj;
 	string nameOfGroup;
 	double coeff;//Diffusion coefficients between nodes i and j
@@ -375,15 +376,15 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         int NboundaryFaces=boundaryFaces.size();
         for(int i = 0; i< NboundaryFaces ; i++)//On parcourt les faces du bord
         {
-            Face Fi = _mesh.getFace(i);
+            Face Fi = _mesh.getFace(boundaryFaces[i]);
             for(int j = 0 ; j<_Ndim ; j++)//On parcourt les noeuds de la face
             {
-                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is an Neumann BC node (not a Dirichlet BC node)
+                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is a Neumann BC node (not a Dirichlet BC node)
                 {
                     j_int=unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
                     if( _neumannValuesSet )
                         coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
-                    else    
+                    else
                         coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
                     VecSetValue(_b, j_int, coeff, ADD_VALUES);
                 }
