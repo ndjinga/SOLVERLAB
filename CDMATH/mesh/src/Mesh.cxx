@@ -1974,9 +1974,18 @@ Mesh::getMaxNbNeighbours(EntityType type) const
     
     if (type==CELLS)
 	{
+		int nbNeib;//local number of neighbours
         for(int i=0; i<_numberOfCells; i++)
-            if(result < _cells[i].getNumberOfFaces())
-                result=_cells[i].getNumberOfFaces();
+        {
+            Cell Ci = _cells[i];
+            //Careful with mesh with junctions : do not just take Ci.getNumberOfFaces()
+            nbNeib=0;
+            for(int j=0; j<Ci.getNumberOfFaces(); j++)
+                nbNeib+=_faces[Ci.getFacesId()[j]].getNumberOfCells()-1;//Without junction this would be +=1
+            
+            if(result < nbNeib)
+                result=nbNeib;
+		}
 	}
     else if(type==NODES)
 	{
