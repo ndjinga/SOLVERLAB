@@ -51,7 +51,7 @@ Vector DiffusionEquation::gradientNodal(Matrix M, vector< double > values)
 	if(! M.isSquare() )
 		throw CdmathException("DiffusionEquation::gradientNodal Matrix M should be square !!!");
 		
-	int Ndim = M.getNumberOfRows();
+	int Ndim = M.getNumberOfRows()-1;
     vector< Matrix > matrices(Ndim);
     
     for (int idim=0; idim<Ndim;idim++){
@@ -88,14 +88,13 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
 
     PetscPrintf(PETSC_COMM_WORLD,"Diffusion problem with density %d, specific heat %d, conductivity %d", rho,cp,lambda);
     if(FECalculation)
-        PetscPrintf(PETSC_COMM_WORLD," and finite elements method");
+        PetscPrintf(PETSC_COMM_WORLD," and finite elements method\n");
     else
-        PetscPrintf(PETSC_COMM_WORLD," and finite volumes method");
+        PetscPrintf(PETSC_COMM_WORLD," and finite volumes method\n");
     
     _FECalculation=FECalculation;
     
     /* Finite element data */
-    _neibMaxNbNodes=0;    
     _boundaryNodeIds=std::vector< int >(0);
     _dirichletNodeIds=std::vector< int >(0);
     _NboundaryNodes=0;
@@ -222,7 +221,7 @@ void DiffusionEquation::initialize()
                 _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
         _NdirichletNodes=_dirichletNodeIds.size();
         _NunknownNodes=_Nnodes - _NdirichletNodes;
-        PetscPrintf(PETSC_COMM_WORLD,"Number of unknown nodes %d, Number of boundary nodes %d, Number of Dirichlet boundary nodes \n\n", _NunknownNodes,_NboundaryNodes, _NdirichletNodes);
+        PetscPrintf(PETSC_COMM_WORLD,"Number of unknown nodes %d, Number of boundary nodes %d, Number of Dirichlet boundary nodes %d\n\n", _NunknownNodes,_NboundaryNodes, _NdirichletNodes);
         *_runLogFile<<"Number of unknown nodes " << _NunknownNodes <<", Number of boundary nodes " << _NboundaryNodes<< ", Number of Dirichlet boundary nodes " << _NdirichletNodes <<endl<<endl;
     }
 

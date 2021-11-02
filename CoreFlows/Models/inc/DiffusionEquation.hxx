@@ -138,7 +138,6 @@ protected :
     
     /************ Data for FE calculation *************/
     bool _FECalculation;
-	int _neibMaxNbNodes;/* maximum number of nodes around a node */
 	int _NunknownNodes;/* number of unknown nodes for FE calculation */
 	int _NboundaryNodes;/* total number of boundary nodes */
 	int _NdirichletNodes;/* number of boundary nodes with Dirichlet BC for FE calculation */
