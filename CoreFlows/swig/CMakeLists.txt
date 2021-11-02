@@ -17,7 +17,7 @@ IF(    ${SOLVERLAB_WITH_MPI} )
     ${CoreFlows_INCLUDES}											    #
     ${PETSC_INCLUDES}
     ${SLEPC_INCLUDES}
-    ${MPI4PY_ROOT_DIR}/include/mpi4py
+    ${MPI4PY_ROOT_DIR}/include/
   ) 
 ENDIF( ${SOLVERLAB_WITH_MPI} )
 
