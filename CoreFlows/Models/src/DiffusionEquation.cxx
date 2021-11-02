@@ -342,7 +342,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
                     {//Second node of the edge is not Dirichlet node
                         j_int= unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                        MatSetValue(_A,i_int,j_int,_conductivity*(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
+                        MatSetValue(_A,i_int,j_int,_diffusivity*(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
                     }
                     else if (!dirichletCell_treated)
                     {//Second node of the edge is a Dirichlet node
@@ -361,7 +361,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                                 valuesBorder[kdim]=0;                            
                         }
                         GradShapeFuncBorder=gradientNodal(M,valuesBorder)/fact(_Ndim);
-                        coeff =-_conductivity*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
+                        coeff =-_diffusivity*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
                         VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
                     }
                 }
@@ -400,6 +400,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	_diffusionMatrixSet=true;
     stop=false ;
 
+	_maxvp=_diffusivity;//To do : optimise value with the mesh while respecting stability
 	PetscPrintf(PETSC_COMM_SELF,"Maximum diffusivity is %f, CFL = %f, Delta x = %f\n",_maxvp,_cfl,_minl);
 	if(fabs(_maxvp)<_precision)
 		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFE(): Error computing time step ! Maximum diffusivity is zero => division by zero");
@@ -437,7 +438,7 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
         }
 
 		//Compute velocity at the face Fj
-		dn=_conductivity*(_DiffusionTensor*normale)*normale;
+		dn=_diffusivity*(_DiffusionTensor*normale)*normale;
 		if(fabs(dn)>_maxvp)
 			_maxvp=fabs(dn);
 
@@ -520,17 +521,14 @@ double DiffusionEquation::computeRHS(bool & stop){
     double Ti;  
     if(!_FECalculation)
         for (int i=0; i<_Nmailles;i++)
-        {
-            VecSetValue(_b,i,_heatPowerField(i)/(_rho*_cp),ADD_VALUES);//Contribution of the volumic heat power
-            //Contribution due to fluid/solide heat exchange
+            //Contribution due to fluid/solide heat exchange + Contribution of the volumic heat power
             if(_timeScheme == Explicit)
             {
                 VecGetValues(_Tn, 1, &i, &Ti);
-                VecSetValue(_b,i,_heatTransfertCoeff/(_rho*_cp)*(_fluidTemperatureField(i)-Ti),ADD_VALUES);
+                VecSetValue(_b,i,(_heatTransfertCoeff*(_fluidTemperatureField(i)-Ti)+_heatPowerField(i))/(_rho*_cp),ADD_VALUES);
             }
             else//Implicit scheme    
-                VecSetValue(_b,i,_heatTransfertCoeff/(_rho*_cp)* _fluidTemperatureField(i)    ,ADD_VALUES);
-        }
+                VecSetValue(_b,i,(_heatTransfertCoeff* _fluidTemperatureField(i)    +_heatPowerField(i))/(_rho*_cp)    ,ADD_VALUES);
     else
         {
             Cell Ci;
@@ -542,7 +540,7 @@ double DiffusionEquation::computeRHS(bool & stop){
                 for (int j=0; j<nodesId.size();j++)
                     if(!_mesh.isBorderNode(nodesId[j])) //or for better performance nodeIds[idim]>dirichletNodes.upper_bound()
                     {
-                        double coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]);
+                        double coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j])/(_rho*_cp);
                         VecSetValue(_b,unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
                     }
             }
