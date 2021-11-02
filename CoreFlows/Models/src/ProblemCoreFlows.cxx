@@ -184,7 +184,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 
     if(VV.getTypeOfField()==NODES)
     {
-        _minl = _mesh.getMaxNbNeighbours(NODES);
+	    _minl = _mesh.getMaxNbNeighbours(NODES);
         _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
     }
     else
@@ -219,6 +219,9 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 }
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type)
 {
+	if(_FECalculation && field_support_type!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
+
 	Field VV;
 	
 	switch(field_support_type)
@@ -242,12 +245,17 @@ void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int ti
 }
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField)
 {
+	if(_FECalculation && typeField!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
+
 	Field VV(fileName, typeField, fieldName, timeStepNumber, 0);
 	
 	setInitialField(VV);
 }
 void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<double> Vconstant, EntityType typeField)
 {
+	if(_FECalculation && typeField!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
 	Mesh M(fileName);
 	Field VV("SOLVERLAB results", typeField, M, Vconstant.size());
 
@@ -260,6 +268,9 @@ void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<dou
 }
 void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant, EntityType typeField)
 {
+	if(_FECalculation && typeField!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
+
 	Field VV("SOLVERLAB results", typeField, M, Vconstant.getNumberOfRows());
 
 	for (int j = 0; j < VV.getNumberOfElements(); j++) {
@@ -270,6 +281,9 @@ void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vcon
 }
 void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const vector<double> Vconstant, EntityType typeField)
 {
+	if(_FECalculation && typeField!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
+
 	Field VV("SOLVERLAB results", typeField, M, Vconstant.size());
 
 	for (int j = 0; j < VV.getNumberOfElements(); j++) {
@@ -311,6 +325,9 @@ void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> V
 }
 void ProblemCoreFlows::setInitialFieldStepFunction(const Mesh M, const Vector VV_Left, const Vector VV_Right, double disc_pos, int direction, EntityType typeField)
 {
+	if(_FECalculation && typeField!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
+
 	if  (VV_Right.getNumberOfRows()!=VV_Left.getNumberOfRows())
 	{
 		*_runLogFile<<"ProblemCoreFlows::setStepFunctionInitialField: Vectors VV_Left and VV_Right have different sizes"<<endl;
@@ -378,6 +395,9 @@ void ProblemCoreFlows::setInitialFieldStepFunction( int nDim, const vector<doubl
 
 void ProblemCoreFlows::setInitialFieldSphericalStepFunction(const Mesh M, const Vector Vin, const Vector Vout, double radius, const Vector Center, EntityType typeField)
 {
+	if(_FECalculation && typeField!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
+
 	if((Center.size()!=M.getSpaceDimension()) || (Vout.size() != Vin.size()) )
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Vout.size() = %d, Vin.size()= %d, Center.size() = %d, M.getSpaceDim = %d \n",Vout.size(),Vin.size(),Center.size(), M.getSpaceDimension());
