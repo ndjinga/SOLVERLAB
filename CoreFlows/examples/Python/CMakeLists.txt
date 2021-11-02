@@ -135,6 +135,10 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DEF_Ro
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_StructuredCubes.py)
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_UnstructuredTetras.py)
 
+if( SOLVERLAB_WITH_MPI )
+  add_test(NAME test_MPI4PY_2Procs         COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testMPI4PY.py")     
+endif( SOLVERLAB_WITH_MPI )
+
 ############# python convergence tests
 
 function(CreatePythonConvergenceTest model convergenceTest pythonSolver MESHES_AND_PICTURES_PATH)
