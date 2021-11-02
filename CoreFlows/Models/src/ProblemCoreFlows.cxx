@@ -168,12 +168,15 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	_VV.setName("SOLVERLAB results");
 	_time=_VV.getTime();
 	_mesh=_VV.getMesh();
+	_initialDataSet=true;
+
+	//Mesh data
 	_Nmailles = _mesh.getNumberOfCells();
 	_Nnodes =   _mesh.getNumberOfNodes();
 	_Nfaces =   _mesh.getNumberOfFaces();
 	_perimeters=Field("Perimeters", CELLS, _mesh,1);
 
-	// find _minl and maximum nb of neibourghs
+	// find _minl (delta x) and maximum nb of neibourghs
 	_minl  = INFINITY;
 	int nbNeib,indexFace;
 	Cell Ci;
@@ -182,38 +185,28 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	if(_verbose)
 		PetscPrintf(PETSC_COMM_WORLD,"Computing cell perimeters and mesh minimal diameter\n");
 
+	//Compute the maximum number of neighbours for nodes or cells
     if(VV.getTypeOfField()==NODES)
-    {
-	    _minl = _mesh.getMaxNbNeighbours(NODES);
         _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
-    }
     else
-        for (int i=0; i<_mesh.getNumberOfCells(); i++){
-            Ci = _mesh.getCell(i);
-            //Detect mesh with junction
-            nbNeib=0;
-            for(int j=0; j<Ci.getNumberOfFaces(); j++){
-                Fk=_mesh.getFace(Ci.getFacesId()[j]);
-                nbNeib+=Fk.getNumberOfCells()-1;
-            }
-            if(nbNeib>_neibMaxNb)
-                _neibMaxNb=nbNeib;
-            //Compute mesh data
-            if (_Ndim > 1){
-                _perimeters(i)=0;
-                for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
-                    indexFace=Ci.getFacesId()[k];
-                    Fk = _mesh.getFace(indexFace);
-                    _minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
-                    _perimeters(i)+=Fk.getMeasure();
-                }
-            }else{
-                _minl = min(_minl,Ci.getMeasure());
-                _perimeters(i)=Ci.getNumberOfFaces();
-            }
-        }
-	_initialDataSet=true;
-
+        _neibMaxNb=_mesh.getMaxNbNeighbours(CELLS);
+        
+	//Compute Delta x and the cell perimeters
+	for (int i=0; i<_mesh.getNumberOfCells(); i++){
+		Ci = _mesh.getCell(i);
+		if (_Ndim > 1){
+			_perimeters(i)=0;
+			for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
+				indexFace=Ci.getFacesId()[k];
+				Fk = _mesh.getFace(indexFace);
+				_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
+				_perimeters(i)+=Fk.getMeasure();
+			}
+		}else{
+			_minl = min(_minl,Ci.getMeasure());
+			_perimeters(i)=Ci.getNumberOfFaces();
+		}
+	}
 	if(_verbose)
 		cout<<_perimeters<<endl;
 }
@@ -268,6 +261,7 @@ void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<dou
 }
 void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant, EntityType typeField)
 {
+	
 	if(_FECalculation && typeField!= NODES)
 		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
 
