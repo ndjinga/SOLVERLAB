@@ -72,17 +72,17 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
     /* Control input value are acceptable */
     if(rho<_precision or cp<_precision)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"rho = %d, cp = %d, precision = %d\n",rho,cp,_precision);
+        PetscPrintf(PETSC_COMM_WORLD,"rho = %f, cp = %f, precision = %f\n",rho,cp,_precision);
         throw CdmathException("Error : parameters rho and cp should be strictly positive");
     }
     if(lambda < 0.)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"Conductivity = %d\n",lambda);
+        PetscPrintf(PETSC_COMM_WORLD,"Conductivity = %f\n",lambda);
         throw CdmathException("Error : conductivity parameter lambda cannot  be negative");
     }
     if(dim<=0)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"Space dimension = %d\n",dim);
+        PetscPrintf(PETSC_COMM_WORLD,"Space dimension = %f\n",dim);
         throw CdmathException("Error : parameter dim cannot  be negative");
     }
 
@@ -399,7 +399,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	_diffusionMatrixSet=true;
     stop=false ;
 
-	PetscPrintf(PETSC_COMM_SELF,"Maximum diffusivity is %d, CFL = %d, Delta x = %d\n",_maxvp,_cfl,_minl);
+	PetscPrintf(PETSC_COMM_SELF,"Maximum diffusivity is %f, CFL = %f, Delta x = %f\n",_maxvp,_cfl,_minl);
 	if(fabs(_maxvp)<_precision)
 		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFE(): Error computing time step ! Maximum diffusivity is zero => division by zero");
 	else
@@ -576,7 +576,7 @@ bool DiffusionEquation::initTimeStep(double dt){
     }
     else//dt<=0
     {
-        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep %d = \n",dt);
+        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep %f = \n",dt);
         throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
     }
     //At this stage _b contains _b0 + power + heat exchange
@@ -691,7 +691,7 @@ void DiffusionEquation::validateTimeStep()
 	VecCopy(_Tk, _Tkm1);
 
 	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		PetscPrintf(PETSC_COMM_WORLD,"Valeur propre locale max: %d\n", _maxvp);
+		PetscPrintf(PETSC_COMM_WORLD,"Valeur propre locale max: %f\n", _maxvp);
 
 	_time+=_dt;
 	_nbTimeStep++;
