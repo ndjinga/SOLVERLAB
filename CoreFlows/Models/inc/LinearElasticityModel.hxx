@@ -55,7 +55,7 @@ public :
 			 * \param [in] double : second  Lamé coefficient
 			 *  */
 
-	LinearElasticityModel( int dim, bool FECalculation=true, double rho, double lambda, double mu);
+	LinearElasticityModel( int dim, bool FECalculation=true, double rho, double lambda, double mu,MPI_Comm comm = MPI_COMM_WORLD);
 
 	void setConstantDensity(double rho) { _rho=rho; }
 	void setDensityField(Field densityField) { _densityField=densityField; _densityFieldSet=true;}
@@ -164,6 +164,7 @@ protected :
 
 	double computeRHS(bool & stop);
 	double computeStiffnessMatrixFV(bool & stop);
+	double computeStiffnessMatrixFE(bool & stop);
 
     /************ Data for FE calculation *************/
     bool _FECalculation;
@@ -175,18 +176,15 @@ protected :
     std::vector< int > _boundaryNodeIds;/* List of boundary nodes */
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
 
-    /*********** Functions for finite element method ***********/
-    Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
-	double computeStiffnessMatrixFE(bool & stop);
-    static int fact(int n);
-    static int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
-    static int globalNodeIndex(int unknownIndex, std::vector< int > dirichletNodes);
-
     /********* Possibility to set a boundary field as Dirichlet boundary condition *********/
     bool _dirichletValuesSet;
     bool _neumannValuesSet;
     std::map< int, double> _dirichletBoundaryValues;
     std::map< int, double> _neumannBoundaryValues;
+
+	//MPI variables
+	PetscMPIInt    _size;        /* size of communicator */
+	PetscMPIInt    _rank;        /* processor rank */
 };
 
 #endif /* LinearElasticityModel_HXX_ */

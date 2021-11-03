@@ -8,51 +8,24 @@
 
 using namespace std;
 
-int LinearElasticityModel::fact(int n)
-{
-  return (n == 1 || n == 0) ? 1 : fact(n - 1) * n;
-}
-int LinearElasticityModel::unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes)
-{//assumes Dirichlet node numbering is strictly increasing
-    int j=0;//indice de parcours des noeuds frontière avec CL Dirichlet
-    int boundarySize=dirichletNodes.size();
-    while(j<boundarySize and dirichletNodes[j]<globalIndex)
-        j++;
-    if(j==boundarySize)
-        return globalIndex-boundarySize;
-    else if (dirichletNodes[j]>globalIndex)
-        return globalIndex-j;
-    else
-        throw CdmathException("LinearElasticityModel::unknownNodeIndex : Error : node is a Dirichlet boundary node");
-}
-
-int LinearElasticityModel::globalNodeIndex(int unknownNodeIndex, std::vector< int > dirichletNodes)
-{//assumes Dirichlet boundary node numbering is strictly increasing
-    int boundarySize=dirichletNodes.size();
-    /* trivial case where all boundary nodes are Neumann BC */
-    if(boundarySize==0)
-        return unknownNodeIndex;
-        
-    double unknownNodeMax=-1;//max unknown node number in the interval between jth and (j+1)th Dirichlet boundary nodes
-    int j=0;//indice de parcours des noeuds frontière
-    //On cherche l'intervale [j,j+1] qui contient le noeud de numéro interieur unknownNodeIndex
-    while(j+1<boundarySize and unknownNodeMax<unknownNodeIndex)
-    {
-        unknownNodeMax += dirichletNodes[j+1]-dirichletNodes[j]-1;
-        j++;
-    }    
-
-    if(j+1==boundarySize)
-        return unknownNodeIndex+boundarySize;
-    else //unknownNodeMax>=unknownNodeIndex) hence our node global number is between dirichletNodes[j-1] and dirichletNodes[j]
-        return unknownNodeIndex - unknownNodeMax + dirichletNodes[j]-1;
-}
-
-LinearElasticityModel::LinearElasticityModel(int dim, bool FECalculation,  double rho, double lambda, double mu){
+LinearElasticityModel::LinearElasticityModel(int dim, bool FECalculation,  double rho, double lambda, double mu,MPI_Comm comm){
+	/* Initialisation of PETSC */
+	//check if PETSC is already initialised
 	PetscBool petscInitialized;
 	PetscInitialized(&petscInitialized);
 	if(!petscInitialized)
-		PetscInitialize(NULL,NULL,0,0);
+	{//check if MPI is already initialised
+		int mpiInitialized;
+		MPI_Initialized(&mpiInitialized);
+		if(mpiInitialized)
+			PETSC_COMM_WORLD = comm;
+		PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+	}
+	MPI_Comm_rank(PETSC_COMM_WORLD,&_rank);
+	MPI_Comm_size(PETSC_COMM_WORLD,&_size);
+	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
+	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
     if(lambda < 0.)
     {
@@ -263,22 +236,6 @@ void LinearElasticityModel::initialize()
 
 }
 
-Vector LinearElasticityModel::gradientNodal(Matrix M, vector< double > values){
-    vector< Matrix > matrices(_Ndim);
-    
-    for (int idim=0; idim<_Ndim;idim++){
-        matrices[idim]=M.deepCopy();
-        for (int jdim=0; jdim<_Ndim+1;jdim++)
-			matrices[idim](jdim,idim) = values[jdim] ;
-    }
-
-	Vector result(_Ndim);
-    for (int idim=0; idim<_Ndim;idim++)
-        result[idim] = matrices[idim].determinant();
-
-	return result;    
-}
-
 double LinearElasticityModel::computeStiffnessMatrix(bool & stop)
 {
     double result;
@@ -328,20 +285,20 @@ double LinearElasticityModel::computeStiffnessMatrixFE(bool & stop){
             M(idim,_Ndim)=1;
         }
         for (int idim=0; idim<_Ndim+1;idim++)
-            GradShapeFuncs[idim]=gradientNodal(M,values[idim])/fact(_Ndim);
+            GradShapeFuncs[idim]=DiffusionEquation::gradientNodal(M,values[idim])/DiffusionEquation::fact(_Ndim);
 
         /* Loop on the edges of the cell */
         for (int idim=0; idim<_Ndim+1;idim++)
         {
             if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[idim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[idim])
             {//First node of the edge is not Dirichlet node
-                i_int=unknownNodeIndex(nodeIds[idim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
+                i_int=DiffusionEquation::unknownNodeIndex(nodeIds[idim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
                 dirichletCell_treated=false;
                 for (int jdim=0; jdim<_Ndim+1;jdim++)
                 {
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
                     {//Second node of the edge is not Dirichlet node
-                        j_int= unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
+                        j_int= DiffusionEquation::unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
                         MatSetValue(_A,i_int,j_int,_conductivity*(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
                     }
                     else if (!dirichletCell_treated)
@@ -360,7 +317,7 @@ double LinearElasticityModel::computeStiffnessMatrixFE(bool & stop){
                             else
                                 valuesBorder[kdim]=Vector(_Ndim);                            
                         }
-                        GradShapeFuncBorder=gradientNodal(M,valuesBorder)/fact(_Ndim);
+                        GradShapeFuncBorder=DiffusionEquation::gradientNodal(M,valuesBorder)/DiffusionEquation::fact(_Ndim);
                         double coeff =-_conductivity*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
                         VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
                     }
@@ -381,7 +338,7 @@ double LinearElasticityModel::computeStiffnessMatrixFE(bool & stop){
             {
                 if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is an Neumann BC node (not a Dirichlet BC node)
                 {
-                    j_int=unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
+                    j_int=DiffusionEquation::unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
                     if( _neumannValuesSet )
                         coeff =Fi.getMeasure()/(_Ndim+1)*_neumannBoundaryValues[Fi.getNodeId(j)];
                     else    
@@ -540,7 +497,7 @@ double LinearElasticityModel::computeRHS(bool & stop)//Contribution of the PDE R
                 for (int j=0; j<nodesId.size();j++)
                     if(!_mesh.isBorderNode(nodesId[j]))
 						for (int k=0; k<_Ndim; k++)
-							VecSetValue(_b,unknownNodeIndex(nodesId[j], _dirichletNodeIds)*nVar+k, _gravity(k)*_densityField(j)*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
+							VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[j], _dirichletNodeIds)*nVar+k, _gravity(k)*_densityField(j)*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
             }
         }
     
@@ -790,7 +747,7 @@ void LinearElasticityModel::save(){
         int globalIndex;
         for(int i=0; i<_NunknownNodes; i++)
         {
-			globalIndex = globalNodeIndex(i, _dirichletNodeIds);
+			globalIndex = DiffusionEquation::globalNodeIndex(i, _dirichletNodeIds);
 			for(int j=0; j<_nVar; j++)
 			{
 				int k=i*_nVar+j;
