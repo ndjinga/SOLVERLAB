@@ -5,7 +5,7 @@
  * \version 1.0
  * \date 24 March 2015
  * \brief Heat diffusion equation
- * dT/dt - \lambda\Delta T = \Phi + \lambda_{sf} (T_{fluid}-T)
+ * rho*cp*dT/dt - \lambda\Delta T = \Phi + \lambda_{sf} (T_{fluid}-T)
  * Dirichlet (imposed temperature) or Neumann (imposed normal flux) boundary conditions.
  * */
 //============================================================================
@@ -13,7 +13,7 @@
 /*! \class DiffusionEquation DiffusionEquation.hxx "DiffusionEquation.hxx"
  *  \brief Scalar heat equation for the Uranium rods temperature
  *  \details see \ref DiffusionEqPage for more details
- * dT/dt - \lambda\Delta T = \Phi + \lambda_{sf} (T_{fluid}-T)
+ * rho*cp*dT/dt - \lambda\Delta T = \Phi + \lambda_{sf} (T_{fluid}-T)
  */
 #ifndef DiffusionEquation_HXX_
 #define DiffusionEquation_HXX_
