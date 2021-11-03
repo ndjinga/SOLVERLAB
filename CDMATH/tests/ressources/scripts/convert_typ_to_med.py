@@ -1,5 +1,5 @@
 import MEDLoader as ml
-import os
+import os, sys
 
 def read_typ2(fichier, nom_med):
     with open(fichier, "r") as fic: lines = fic.readlines()
@@ -63,7 +63,7 @@ def connectivity_from_string(string):
 
 def read_typ3(fichier, nom_med):
     with open(fichier, "r") as fic: lines = fic.readlines()
-    nb_som = int(lines[9].strip())
+    nb_som = int(float(lines[9].strip())
     nb_cel = int(lines[11].strip())
     nb_fac = int(lines[13].strip())
 
@@ -112,18 +112,37 @@ def read_typ3(fichier, nom_med):
 
     mm.write("{}/mesh.med".format(nom_med), 2)
 
-# maillages 3D
-meshes = (("meshAA-random",      "RandMesh",     ("4", "8", "16", "32")),
-          #("meshBB_well",        "WellMesh_",     ("1", "2", "3", "4", "5", "6", "7")),
-          #("meshB_tetra",        "tet.",          ("00", "0", "1", "2", "3", "4", "5", "6")),
-          ("meshC_voro",         "vmesh_",        ("1", "2", "3", "4", "5")),
-          ("meshD_kershaw",      "dkershaw",      ("08", "16", "32", "64")),
-          ("meshF_dbls",         "dbls_",         ("10", "20", "30", "40")))
-          # ("meshH_locrafgrid",   "locrafgrid_",   ("1", "2", "3", "4", "5")),
-          # ("meshI_checkerboard", "checkerboard_", ("2x2x2", "4x4x4", "8x8x8", "16x16x16", "32x32x32")))
-for t, m, d in meshes:
-    for n in d:
-        print t, n
-        folder = "{}/jdd_{}".format(t, n)
-        os.system("mkdir -p {}".format(folder))
-        read_typ3("Meshes_3D/{}/{}{}.msh".format(t, m, n), folder)
+# maillages 3D du benchmark FVCA6
+# meshes = (("meshAA-random",      "RandMesh",     ("4", "8", "16", "32")),
+          # #("meshBB_well",        "WellMesh_",     ("1", "2", "3", "4", "5", "6", "7")),
+          # #("meshB_tetra",        "tet.",          ("00", "0", "1", "2", "3", "4", "5", "6")),
+          # ("meshC_voro",         "vmesh_",        ("1", "2", "3", "4", "5")),
+          # ("meshD_kershaw",      "dkershaw",      ("08", "16", "32", "64")),
+          # ("meshF_dbls",         "dbls_",         ("10", "20", "30", "40")))
+          # # ("meshH_locrafgrid",   "locrafgrid_",   ("1", "2", "3", "4", "5")),
+          # # ("meshI_checkerboard", "checkerboard_", ("2x2x2", "4x4x4", "8x8x8", "16x16x16", "32x32x32")))
+# for t, m, d in meshes:
+    # for n in d:
+        # print( t, n)
+        # folder = "{}/jdd_{}".format(t, n)
+        # os.system("mkdir -p {}".format(folder))
+        # read_typ3("Meshes_3D/{}/{}{}.msh".format(t, m, n), folder)
+
+if __name__ == "__main__":
+
+	if len(sys.argv) != 2:
+	  print("USAGE: convert_gmsh_to_med.py file.typ")
+	  sys.exit(-1)
+	
+	filename = sys.argv[1]
+	print("Converting ", filename)
+
+	l=len(filename)
+	name=filename[:l-5]
+	extension=filename[l-5:]
+	if extension==".typ2":
+		read_typ2(filename, name+".med")
+	elif extension==".typ3":
+		read_typ3(filename, name+".med")
+	else :
+		raise ValueError("File "+filename+" has unknown file extension "+extension)

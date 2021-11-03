@@ -3,19 +3,19 @@
 
 import sys
 
-import MEDCoupling as MC
+import medcoupling as MC
 import MEDLoader as ML
 
 #filename = "locrafgrid_1_new.msh"
 #filename = "checkerboard_2x2x2_new.msh"
 
 if len(sys.argv) != 2:
-  print "USAGE: convert_gmsh_to_med.py file.msh"
+  print( "USAGE: convert_gmsh_to_med.py file.msh")
   sys.exit(-1)
 
 filename = sys.argv[1]
 
-print "Converting ", filename
+print( "Converting ", filename)
 
 # type de maille en fonction du nombre de noeuds.
 # cf INTERP_KERNEL/CellModel.cxx
@@ -168,4 +168,4 @@ meshMEDFile.addGroup(-1, arr_front)
 med_filename = filename.replace(".msh", ".med")
 meshMEDFile.write(med_filename,2) # 2 stands for write from scratch
 
-print "...done"
+print( "...done")
