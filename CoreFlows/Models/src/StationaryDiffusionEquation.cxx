@@ -606,13 +606,18 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
         VecAssemblyBegin(_deltaT);
         VecAssemblyEnd(  _deltaT);
 
-		for(int i=0; i<_VV.getNumberOfElements(); i++)
+		if(_verbose)
+			cout<<"Début calcul de la variation relative"<<endl;
+
+		for(int i=0; i<_NunknownNodes; i++)
 		{
 			VecGetValues(_deltaT, 1, &i, &dTi);
 			VecGetValues(_Tk, 1, &i, &Ti);
 			if(_erreur_rel < fabs(dTi/Ti))
 				_erreur_rel = fabs(dTi/Ti);
 		}
+		if(_verbose)
+			cout<<"Fin calcul de la variation relative, erreur relative maximale : " << _erreur_rel <<endl;
         stop=false;
         converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
     }
