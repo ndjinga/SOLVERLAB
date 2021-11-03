@@ -63,7 +63,7 @@ def connectivity_from_string(string):
 
 def read_typ3(fichier, nom_med):
     with open(fichier, "r") as fic: lines = fic.readlines()
-    nb_som = int(float(lines[9].strip())
+    nb_som = int(lines[9].strip())
     nb_cel = int(lines[11].strip())
     nb_fac = int(lines[13].strip())
 
