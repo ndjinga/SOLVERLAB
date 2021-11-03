@@ -121,9 +121,16 @@ public :
 		return _fluidTemperatureField;
 	}
 
+    /*********** Generic functions for finite element method ***********/
+    static Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
+    static int fact(int n);
+    static int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
+    static int globalNodeIndex(int unknownIndex, std::vector< int > dirichletNodes);
+
 protected :
 	double computeDiffusionMatrix(bool & stop);
 	double computeDiffusionMatrixFV(bool & stop);
+	double computeDiffusionMatrixFE(bool & stop);
 	double computeRHS(bool & stop);
 
 	Field _fluidTemperatureField;
@@ -143,13 +150,6 @@ protected :
 	int _NdirichletNodes;/* number of boundary nodes with Dirichlet BC for FE calculation */
     std::vector< int > _boundaryNodeIds;/* List of boundary nodes */
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
-
-    /*********** Functions for finite element method ***********/
-    static Vector gradientNodal(Matrix M, vector< double > v);//gradient of nodal shape functions
-	double computeDiffusionMatrixFE(bool & stop);
-    static int fact(int n);
-    static int unknownNodeIndex(int globalIndex, std::vector< int > dirichletNodes);
-    static int globalNodeIndex(int unknownIndex, std::vector< int > dirichletNodes);
 
 	TimeScheme _timeScheme;
 	map<string, LimitFieldDiffusion> _limitField;
