@@ -146,6 +146,19 @@ public :
 		_heatPowerFieldSet=true;
 	}
 
+	/** \fn setVerbose
+	 * \brief Updates display options
+	 * \details
+	 * \param [in] bool
+	 * \param [in] bool
+	 * \param [out] void
+	 *  */
+	void setVerbose(bool verbose,  bool system=false)
+	{
+		_verbose = verbose;
+		_system = system;
+	};
+
 protected :
 	//Main unknown field
 	Field _VV;
