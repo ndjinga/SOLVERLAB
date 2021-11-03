@@ -72,21 +72,21 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
     /* Control input value are acceptable */
     if(rho<_precision or cp<_precision)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"rho = %f, cp = %f, precision = %f\n",rho,cp,_precision);
+        PetscPrintf(PETSC_COMM_WORLD,"rho = %.2f, cp = %.2f, precision = %.2f\n",rho,cp,_precision);
         throw CdmathException("Error : parameters rho and cp should be strictly positive");
     }
     if(lambda < 0.)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"Conductivity = %f\n",lambda);
+        PetscPrintf(PETSC_COMM_WORLD,"Conductivity = %.2f\n",lambda);
         throw CdmathException("Error : conductivity parameter lambda cannot  be negative");
     }
     if(dim<=0)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"Space dimension = %f\n",dim);
+        PetscPrintf(PETSC_COMM_WORLD,"Space dimension = %.2f\n",dim);
         throw CdmathException("Error : parameter dim cannot  be negative");
     }
 
-    PetscPrintf(PETSC_COMM_WORLD,"Diffusion problem with density %f, specific heat %f, conductivity %f", rho,cp,lambda);
+    PetscPrintf(PETSC_COMM_WORLD,"Diffusion problem with density %.2f, specific heat %.2f, conductivity %.2f", rho,cp,lambda);
     if(FECalculation)
         PetscPrintf(PETSC_COMM_WORLD," and finite elements method\n");
     else
@@ -401,7 +401,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
     stop=false ;
 
 	_maxvp=_diffusivity;//To do : optimise value with the mesh while respecting stability
-	PetscPrintf(PETSC_COMM_SELF,"Maximum diffusivity is %f, CFL = %f, Delta x = %f\n",_maxvp,_cfl,_minl);
+	PetscPrintf(PETSC_COMM_SELF,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
 	if(fabs(_maxvp)<_precision)
 		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFE(): Error computing time step ! Maximum diffusivity is zero => division by zero");
 	else
@@ -548,8 +548,10 @@ double DiffusionEquation::computeRHS(bool & stop){
 	VecAssemblyEnd(_b);
 
     if(_verbose or _system)
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
         VecView(_b,PETSC_VIEWER_STDOUT_SELF);
-
+	}
     stop=false ;
     if(_heatTransfertCoeff>_precision)
         return _rho*_cp/_heatTransfertCoeff;
@@ -575,7 +577,7 @@ bool DiffusionEquation::initTimeStep(double dt){
     }
     else//dt<=0
     {
-        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep %f = \n",dt);
+        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep %.2f = \n",dt);
         throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
     }
     //At this stage _b contains _b0 + power + heat exchange
@@ -584,8 +586,11 @@ bool DiffusionEquation::initTimeStep(double dt){
 	_dt = dt;
 
 	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"Matrix of the linear system\n");
 		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-
+	}
+	
 	return _dt>0;
 }
 
@@ -690,7 +695,7 @@ void DiffusionEquation::validateTimeStep()
 	VecCopy(_Tk, _Tkm1);
 
 	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		PetscPrintf(PETSC_COMM_WORLD,"Valeur propre locale max: %f\n", _maxvp);
+		PetscPrintf(PETSC_COMM_WORLD,"Valeur propre locale max: %.2f\n", _maxvp);
 
 	_time+=_dt;
 	_nbTimeStep++;
@@ -708,8 +713,10 @@ void DiffusionEquation::save(){
 	resultFile+=_fileName;
 
     if(_verbose or _system)
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"Unknown of the linear system :\n");
         VecView(_Tk,PETSC_VIEWER_STDOUT_SELF);
-
+	}
     //On remplit le champ
     double Ti;
     if(!_FECalculation)
