@@ -47,7 +47,7 @@ def createBrickWallMesh( xmin=0., xmax=1., nx=15, ymin=0., ymax=1., ny=15,mesh_n
     print( "Spatial dimension is", mesh.getCoords().getNumberOfComponents() )
     mesh.allocateCells(nx*ny)
     for i in range(nx*ny):
-            cell_connec = [4*i,4*i+1,4*i+2,4*i+3)
+            cell_connec = [4*i,4*i+1,4*i+2,4*i+3]
             mesh.insertNextCell(mc.NORM_QUAD4, cell_connec)
             pass
     
@@ -88,10 +88,10 @@ def createBrickWallMesh( xmin=0., xmax=1., nx=15, ymin=0., ymax=1., ny=15,mesh_n
         else:
             raise ValueError("Pb with boundary construction : barycenter does not belong to any border group")
         
-    arr_left = mc.DataArrayIdType(ids_left)
-    arr_right = mc.DataArrayIdType(ids_right)
-    arr_bottom = mc.DataArrayIdType(ids_bottom)
-    arr_top = mc.DataArrayIdType(ids_top)
+    arr_left = mc.DataArrayInt64(ids_left)
+    arr_right = mc.DataArrayInt64(ids_right)
+    arr_bottom = mc.DataArrayInt64(ids_bottom)
+    arr_top = mc.DataArrayInt64(ids_top)
     
     arr_left.setName("Left")
     arr_right.setName("Right")
