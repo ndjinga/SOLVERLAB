@@ -15,8 +15,8 @@ int main(int argc, char** argv)
 	double xsup=1.0;
 	double yinf=0.0;
 	double ysup=1.0;
-	int nx=20;
-	int ny=20;
+	int nx=10;
+	int ny=10;
 
     /* Mesh construction */
 	Mesh M(xinf,xsup,nx,yinf,ysup,ny,0); //Regular triangular mesh
@@ -65,7 +65,8 @@ int main(int argc, char** argv)
     /* name the result file */
 	string fileName = "StationnaryDiffusion_2DFV_StructuredTriangles";
 	myProblem.setFileName(fileName);
-
+	myProblem.setVerbose(true,  true);
+	
 	/* Run the computation */
 	myProblem.initialize();
 	bool ok = myProblem.solveStationaryProblem();
