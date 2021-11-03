@@ -515,7 +515,7 @@ bool ProblemCoreFlows::run()
 		// Guess the next time step length
 		_dt=computeTimeStep(stop);
 		if (stop){
-			PetscPrintf(PETSC_COMM_WORLD,"Failed computing time step %d, time = %f, dt= %f, stopping calculation",_nbTimeStep,_time,_dt);
+			PetscPrintf(PETSC_COMM_WORLD,"Failed computing time step %d, time = %.2f, dt= %.2f, stopping calculation",_nbTimeStep,_time,_dt);
 			*_runLogFile << "Failed computing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
 			break;
 		}
@@ -525,7 +525,7 @@ bool ProblemCoreFlows::run()
 			stop=!initTimeStep(_dt);
 			// Prepare the next time step
 			if (stop){
-				PetscPrintf(PETSC_COMM_WORLD,"Failed initializing time step %d, time = %f, dt= %f, stopping calculation",_nbTimeStep,_time,_dt);
+				PetscPrintf(PETSC_COMM_WORLD,"Failed initializing time step %d, time = %.2f, dt= %.2f, stopping calculation",_nbTimeStep,_time,_dt);
 				*_runLogFile << "Failed initializing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
 				break;
 			}
@@ -545,7 +545,7 @@ bool ProblemCoreFlows::run()
 					//_dt=computeTimeStep(stop);
 				}
 				else{*/
-					PetscPrintf(PETSC_COMM_WORLD,"Failed solving time step %d, time = %f, dt= %f, cfl = %f, stopping calculation \n",_nbTimeStep,_time,_dt,_cfl);
+					PetscPrintf(PETSC_COMM_WORLD,"Failed solving time step %d, time = %.2f, dt= %.2f, cfl = %.2f, stopping calculation \n",_nbTimeStep,_time,_dt,_cfl);
 					*_runLogFile << "Failed solving time step "<<_nbTimeStep<<", _time = " << _time<<" _dt= "<<_dt<<", cfl= "<<_cfl <<", stopping calculation"<< endl;
 					stop=true; // Impossible to solve the next time step, the Problem has given up
 					break;
@@ -555,7 +555,7 @@ bool ProblemCoreFlows::run()
 			{
 				validateTimeStep();
 				if ((_nbTimeStep-1)%_freqSave ==0){
-					PetscPrintf(PETSC_COMM_WORLD,"Time step = %d, dt = %f, time = %f, ||Un+1-Un||= %f\n\n",_nbTimeStep,_dt,_time,_erreur_rel);
+					PetscPrintf(PETSC_COMM_WORLD,"Time step = %d, dt = %.2f, time = %.2f, ||Un+1-Un||= %.2f\n\n",_nbTimeStep,_dt,_time,_erreur_rel);
 					*_runLogFile << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
 				}
 			}
@@ -566,7 +566,7 @@ bool ProblemCoreFlows::run()
 		*_runLogFile << "Stationary state reached" <<endl;
 	}
 	else if(_time>=_timeMax){
-		PetscPrintf(PETSC_COMM_WORLD,"Maximum time %f reached\n",_timeMax);
+		PetscPrintf(PETSC_COMM_WORLD,"Maximum time %.2f reached\n",_timeMax);
 		*_runLogFile<<"Maximum time "<<_timeMax<<" reached"<<endl;
 	}
 	else if(_nbTimeStep>=_maxNbOfTimeStep){
@@ -577,7 +577,7 @@ bool ProblemCoreFlows::run()
 		PetscPrintf(PETSC_COMM_WORLD,"Error problem wants to stop!\n");
 		*_runLogFile<<"Error problem wants to stop!"<<endl;
 	}
-	PetscPrintf(PETSC_COMM_WORLD,"End of calculation at time t = %f and time step number %d\n",_time,_nbTimeStep);
+	PetscPrintf(PETSC_COMM_WORLD,"End of calculation at time t = %.2f and time step number %d\n",_time,_nbTimeStep);
 	*_runLogFile << "End of calculation time t= " << _time << " at time step number "<< _nbTimeStep << endl;
 
 	_runLogFile->close();
@@ -625,14 +625,14 @@ bool ProblemCoreFlows::solveTimeStep(){
 
 		if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)//To monitor the convergence of the newton scheme
 		{
-			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %s iterations : %d maximum variation ||Uk+1-Uk||: %f\n",_NEWTON_its,_ksptype,_PetscIts,_erreur_rel);
+			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %s iterations : %d maximum variation ||Uk+1-Uk||: %.2f\n",_NEWTON_its,_ksptype,_PetscIts,_erreur_rel);
 			*_runLogFile<< " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
 
 			if(_conditionNumber)
 			{
 				PetscReal sv_max, sv_min;
 				KSPComputeExtremeSingularValues(_ksp, &sv_max, &sv_min);
-				PetscPrintf(PETSC_COMM_WORLD," Singular value max = %f, singular value min = %f, condition number = %f\n",sv_max,sv_min,sv_max/sv_min);
+				PetscPrintf(PETSC_COMM_WORLD," Singular value max = %.2f, singular value min = %.2f, condition number = %.2f\n",sv_max,sv_min,sv_max/sv_min);
 				*_runLogFile<<" Singular value max = " << sv_max <<", singular value min = " << sv_min <<", condition number = " << sv_max/sv_min <<endl;
 			}
 		}
