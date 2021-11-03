@@ -618,8 +618,8 @@ public :
 		_heatTransfertCoeff=heatTransfertCoeff;
 	}
 
-	/** \fn setDISPLAY
-	 * \brief met à jour les paramètres de l'affichage
+	/** \fn setVerbose
+	 * \brief Updates display options
 	 * \details
 	 * \param [in] bool
 	 * \param [in] bool
