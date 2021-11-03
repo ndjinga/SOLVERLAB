@@ -16,7 +16,7 @@ def convergence_StationaryDiffusion_2DFV_Dirichlet_DelaunayTriangles():
     method = 'FV'
     BC = 'Dirichlet'
     meshList=['squareWithTriangles_1','squareWithTriangles_2','squareWithTriangles_3','squareWithTriangles_4','squareWithTriangles_5']
-    mesh_path=os.environ['CDMATH_INSTALL']+'/share/meshes//2DTriangles/'
+    mesh_path=os.environ['SOLVERLAB_INSTALL']+'/share/meshes//2DTriangles/'
     mesh_name='squareWithDelaunayTriangles'
     meshType="Unstructured_triangles"
     nbMeshes=len(meshList)

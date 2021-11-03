@@ -18,7 +18,7 @@ def convergence_StationaryDiffusion_2DFV_Dirichlet_EquilateralTriangles():
     method = 'FV'
     BC = 'Dirichlet'
     meshList=['squareWithEquilateralTriangles5','squareWithEquilateralTriangles20','squareWithEquilateralTriangles50','squareWithEquilateralTriangles100','squareWithEquilateralTriangles200']
-    mesh_path=os.environ['CDMATH_INSTALL']+'/share/meshes/2DEquilateralTriangles/'
+    mesh_path=os.environ['SOLVERLAB_INSTALL']+'/share/meshes/2DEquilateralTriangles/'
     mesh_name='squareWithEquilateralTriangles'
     meshType="Equilateral_triangles"
     nbMeshes=len(meshList)

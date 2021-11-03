@@ -16,7 +16,7 @@ def convergence_StationaryDiffusion_2DFV_Dirichlet_Hexagons():
     method = 'FV'
     BC = 'Dirichlet'
     meshList=['squareWithHexagons_1','squareWithHexagons_2','squareWithHexagons_3','squareWithHexagons_4','squareWithHexagons_5']
-    mesh_path=os.environ['CDMATH_INSTALL']+'/share/meshes//2DHexagons/'
+    mesh_path=os.environ['SOLVERLAB_INSTALL']+'/share/meshes//2DHexagons/'
     mesh_name='squareWithHexagons'
     meshType="Structured_hexagons"
     nbMeshes=len(meshList)
