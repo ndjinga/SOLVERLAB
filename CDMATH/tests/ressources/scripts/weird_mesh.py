@@ -36,7 +36,7 @@ def getWeirdMesh(xmin, xmax, ymin, ymax, lx, ly, str, func=None, extr=-1, unpo=F
         off += len(p)
     mesh.finishInsertingCells()
 
-    pts = [p for i in xange(len(polys)) for p in polys[i]]
+    pts = [p for i in range(len(polys)) for p in polys[i]]
     co = ml.DataArrayDouble(pts, len(pts), 2)
     mesh.setCoords(co)
 
@@ -76,7 +76,7 @@ def getWeirdMesh(xmin, xmax, ymin, ymax, lx, ly, str, func=None, extr=-1, unpo=F
             for idx, b in enumerate(bf):
                 if abs(b[i] - [[xmin, xmax], [ymin, ymax], [0., 1.]][i][j]) < 1e-5:
                     g.append(idx)
-            grp = ml.DataArrayIdType.New(g)
+            grp = ml.DataArrayInt64.New(g)
             grp.setName(noms_cl[i][j])
             mm.addGroup(-1, grp)
 
