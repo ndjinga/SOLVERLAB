@@ -333,7 +333,7 @@ double LinearElasticityModel::computeStiffnessMatrixFE(bool & stop){
         int NboundaryFaces=boundaryFaces.size();
         for(int i = 0; i< NboundaryFaces ; i++)//On parcourt les faces du bord
         {
-            Face Fi = _mesh.getFace(i);
+            Face Fi = _mesh.getFace(boundaryFaces[i]);
             for(int j = 0 ; j<_Ndim ; j++)//On parcourt les noeuds de la face
             {
                 if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is an Neumann BC node (not a Dirichlet BC node)

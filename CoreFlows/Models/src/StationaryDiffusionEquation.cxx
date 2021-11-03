@@ -95,6 +95,11 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
 	_heatPowerFieldSet=false;
 	_heatTransfertCoeff=0;
 	_heatSource=0;
+
+    /* Default diffusion tensor is diagonal */
+   	_DiffusionTensor=Matrix(_Ndim);
+	for(int idim=0;idim<_Ndim;idim++)
+		_DiffusionTensor(idim,idim)=_conductivity;
 }
 
 void StationaryDiffusionEquation::initialize()
@@ -119,9 +124,6 @@ void StationaryDiffusionEquation::initialize()
         }
     }
     
-	_DiffusionTensor=Matrix(_Ndim);
-	for(int idim=0;idim<_Ndim;idim++)
-		_DiffusionTensor(idim,idim)=1;
 	/**************** Field creation *********************/
 
 	if(!_heatPowerFieldSet){
@@ -321,7 +323,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
                     {//Second node of the edge is not Dirichlet node
                         j_int= DiffusionEquation::unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                        MatSetValue(_A,i_int,j_int,_conductivity*(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
+                        MatSetValue(_A,i_int,j_int,(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
                     }
                     else if (!dirichletCell_treated)
                     {//Second node of the edge is a Dirichlet node
@@ -340,7 +342,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                                 valuesBorder[kdim]=0;                            
                         }
                         GradShapeFuncBorder=DiffusionEquation::gradientNodal(M,valuesBorder)/DiffusionEquation::fact(_Ndim);
-                        coeff =-_conductivity*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
+                        coeff =-1.*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
                         VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
                     }
                 }
@@ -355,21 +357,22 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         int NboundaryFaces=boundaryFaces.size();
         for(int i = 0; i< NboundaryFaces ; i++)//On parcourt les faces du bord
         {
-            Face Fi = _mesh.getFace(i);
+            Face Fi = _mesh.getFace(boundaryFaces[i]);
             for(int j = 0 ; j<_Ndim ; j++)//On parcourt les noeuds de la face
             {
-                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is an Neumann BC node (not a Dirichlet BC node)
+                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is a Neumann BC node (not a Dirichlet BC node)
                 {
                     j_int=DiffusionEquation::unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
                     if( _neumannValuesSet )
                         coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
-                    else    
+                    else
                         coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
                     VecSetValue(_b, j_int, coeff, ADD_VALUES);
                 }
             }
         }
     }
+
     MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 	VecAssemblyBegin(_b);
@@ -422,7 +425,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
         }
 
 		//Compute velocity at the face Fj
-		dn=_conductivity*(_DiffusionTensor*normale)*normale;
+		dn=(_DiffusionTensor*normale)*normale;
 
 		// compute 1/dxi = volume of Ci/area of Fj
         inv_dxi = Fj.getMeasure()/Cell1.getMeasure();
@@ -456,8 +459,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
                     MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                           , ADD_VALUES);
                     VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
                 }
-                else {//Problem for 3D tetrahera 
-					//cout<< "Fj.getGroupNames().size()= "<<Fj.getGroupNames().size()<<", Fj.x()= "<<Fj.x()<<", Fj.y()= "<<Fj.y()<<", Fj.z()= "<<Fj.z()<<endl;
+                else {
                     stop=true ;
                     cout<<"!!!!!!!!!!!!!!! Error StationaryDiffusionEquation::computeDiffusionMatrixFV !!!!!!!!!!"<<endl;
                     cout<<"!!!!!! No boundary condition set for boundary named "<<nameOfGroup<< "!!!!!!!!!! _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
@@ -520,13 +522,13 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
     return INFINITY;
 }
 
-double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix)
+double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix
 {
 	VecAssemblyBegin(_b);
 
     if(!_FECalculation)
         for (int i=0; i<_Nmailles;i++)
-            VecSetValue(_b,i,_heatTransfertCoeff*_fluidTemperatureField(i) + _heatPowerField(i),ADD_VALUES);
+            VecSetValue(_b,i, _heatTransfertCoeff*_fluidTemperatureField(i) + _heatPowerField(i) ,ADD_VALUES);
     else
         {
             Cell Ci;

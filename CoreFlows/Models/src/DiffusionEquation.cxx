@@ -122,10 +122,10 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
 
 	_runLogFile=new ofstream;
 
-    /* Default diffusion tensor is identity matrix */
+    /* Default diffusion tensor is diagonal */
    	_DiffusionTensor=Matrix(_Ndim);
 	for(int idim=0;idim<_Ndim;idim++)
-		_DiffusionTensor(idim,idim)=1;
+		_DiffusionTensor(idim,idim)=_diffusivity;
 }
 
 void DiffusionEquation::initialize()
@@ -342,7 +342,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
                     {//Second node of the edge is not Dirichlet node
                         j_int= unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                        MatSetValue(_A,i_int,j_int,_diffusivity*(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
+                        MatSetValue(_A,i_int,j_int,(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
                     }
                     else if (!dirichletCell_treated)
                     {//Second node of the edge is a Dirichlet node
@@ -361,7 +361,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                                 valuesBorder[kdim]=0;                            
                         }
                         GradShapeFuncBorder=gradientNodal(M,valuesBorder)/fact(_Ndim);
-                        coeff =-_diffusivity*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
+                        coeff =-1.*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
                         VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
                     }
                 }
@@ -438,7 +438,7 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
         }
 
 		//Compute velocity at the face Fj
-		dn=_diffusivity*(_DiffusionTensor*normale)*normale;
+		dn=(_DiffusionTensor*normale)*normale;
 		if(fabs(dn)>_maxvp)
 			_maxvp=fabs(dn);
 
@@ -516,7 +516,7 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 		return _cfl*_minl*_minl/_maxvp;
 }
 
-double DiffusionEquation::computeRHS(bool & stop){
+double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix
 	VecAssemblyBegin(_b);          
     double Ti;  
     if(!_FECalculation)
@@ -540,7 +540,7 @@ double DiffusionEquation::computeRHS(bool & stop){
                 for (int j=0; j<nodesId.size();j++)
                     if(!_mesh.isBorderNode(nodesId[j])) //or for better performance nodeIds[idim]>dirichletNodes.upper_bound()
                     {
-                        double coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j])/(_rho*_cp);
+                        double coeff = (_heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]))/(_rho*_cp);
                         VecSetValue(_b,unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
                     }
             }
