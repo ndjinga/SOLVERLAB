@@ -96,7 +96,7 @@ def StationaryDiffusionEquation_2DEF_StructuredTriangles_par(split_direction, ra
 	print("Processor ", rank, " : ------------ !!! End of calculation !!! -----------" );
 
 	myProblem.terminate();
-	return ok
+	return erreur_abs/max_abs_sol_exacte
 
 if __name__ == """__main__""":
 	comm = MPI.COMM_WORLD
@@ -108,4 +108,15 @@ if __name__ == """__main__""":
 		
 	print("My rank is ", rank, " among ", size, "processors ")
 	
-	my_ResultField=StationaryDiffusionEquation_2DEF_StructuredTriangles_par(rank, rank)
+	my_relative_error=StationaryDiffusionEquation_2DEF_StructuredTriangles_par(rank, rank)
+
+	if rank == 0:
+	    comm.send(my_relative_error, dest=1, tag=11)
+	    other_relative_error = comm.recv(source=1, tag=17)
+	elif rank == 1:
+	    other_relative_error = comm.recv(source=0, tag=11)
+	    comm.send(my_relative_error, dest=0, tag=17)
+	
+	print("Processor ", rank, " : Difference between the two processor relative errors is ", abs(my_relative_error-other_relative_error) )
+	#print("Processor ", rank, " : Difference between the two processors is ", (my_ResultField-other_ResultField).normMax()[0] )
+	
