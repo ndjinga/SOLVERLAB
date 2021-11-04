@@ -37,23 +37,30 @@ xarr.iota(0.)
 cmesh=mc.MEDCouplingCMesh.New()
 cmesh.setCoords(xarr,xarr,xarr)
 mesh=cmesh.buildUnstructured()
+mesh.setName("RegularSquare")
 
 #Create a field by application of an analytic function 
-
 if source_group.containsMyRank():
 	field=mesh.fillFromAnalytic(ON_CELLS,1,"(x-5.)*(x-5.)+(y-5.)*(y-5.)+(z-5.)*(z-5.)")
 	field.setName("SourceField")
+	mc.WriteField("toto1.med", field, True)
+	print("Processor ", rank, " has created and saved the source field")
 else:
-	field=MEDCouplingFieldDouble.New(ON_CELLS,ONE_TIME)
-	field.setMesh(mesh)
+	field=mesh.fillFromAnalytic(ON_CELLS,1,"0")
 	field.setName("TargetField")
-	field.fillFromAnalytic(1,"0")
+	print("Processor ", rank, " has created the target field")
 	
 dec.attachLocalField(field)
 dec.synchronize()
 
 if source_group.containsMyRank():
-    dec.sendData()
+	dec.sendData()
+	print("Processor ", rank, " has sent the source field")
 else:
-    dec.recvData()
-    #mc.WriteField("toto.med", field, True)
+	dec.recvData()
+	print("Processor ", rank, " has received the source field")
+	field2=mesh.fillFromAnalytic(ON_CELLS,1,"(x-5.)*(x-5.)+(y-5.)*(y-5.)+(z-5.)*(z-5.)")
+	error=(field-field2).normL2()[0]
+	print("Processor ", rank, " received source field differs from theoretical value by ", error )
+	assert abs(error)<1.e-6
+	mc.WriteField("toto2.med", field, True)
