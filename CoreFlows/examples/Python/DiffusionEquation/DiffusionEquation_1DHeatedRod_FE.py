@@ -2,6 +2,7 @@
 # -*-coding:utf-8 -*
 
 import CoreFlows as cf
+import cdmath as cm
 
 def DiffusionEquation_1DHeatedRod():
 	spaceDim = 1;
@@ -35,7 +36,7 @@ def DiffusionEquation_1DHeatedRod():
 	
     #Initial field creation
 	print("Building initial data" );
-	myProblem.setInitialFieldConstant(spaceDim,VV_Constant,xinf,xsup,nx,"Neumann","Neumann");
+	myProblem.setInitialFieldConstant(spaceDim,VV_Constant,xinf,xsup,nx,"Neumann","Neumann",cm.NODES);
 
     # the boundary conditions
 	myProblem.setNeumannBoundaryCondition("Neumann");
