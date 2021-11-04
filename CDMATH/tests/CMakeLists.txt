@@ -38,7 +38,7 @@ IF (CDMATH_WITH_TESTS)
 
   TARGET_LINK_LIBRARIES(TestCDMATH TestMesh base mesh ${CPPUNIT_LIBS} ${_extra_lib_TESTS})
 
-  ADD_TEST(UnitTestCDMATH TestCDMATH)
+  ADD_TEST(UnitTestCDMATH.exe TestCDMATH)
   INSTALL(TARGETS TestCDMATH DESTINATION bin/unit_tests)
 
   if   ( ${CPPUNIT_IS_OK} )
@@ -61,8 +61,12 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
   add_subdirectory (examples) #basic test that run a single calculation
   add_subdirectory (validation) # convergence studies (several runs)
 
-  add_custom_target (tests_CDMATH COMMAND ctest -O testsCDMATH.log)
+  add_custom_target (CDMATH COMMAND ctest -O testsCDMATH.log)
+
   add_custom_target (check COMMAND ctest -E 'validation|Example')# may be replace ctest -E with ctest -LE
+  add_custom_target (MEDCoupling COMMAND ctest -R MEDCoupling)
+  add_custom_target (vtk COMMAND ctest -R VTK)
+  add_custom_target (pv COMMAND ctest -R PV)
   add_custom_target (examples COMMAND ctest -R Example)# may be replace ctest -R with ctest -L
   add_custom_target (validation COMMAND ctest -R validation)# may be replace ctest -R with ctest -L
 
