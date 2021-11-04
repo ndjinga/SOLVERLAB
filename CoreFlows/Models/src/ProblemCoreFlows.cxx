@@ -159,9 +159,15 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	}
 	if(_FECalculation && VV.getTypeOfField()!=NODES)
 	{
-		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Element method"<<endl;
+		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Elements method"<<endl;
 		_runLogFile->close();
-		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Element method");
+		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Elements method");
+	}
+	else if(!_FECalculation && VV.getTypeOfField()==NODES)
+	{
+		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on cells or faces for the Finite Volumes method"<<endl;
+		_runLogFile->close();
+		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on cells or faces for the Finite Volumes method");
 	}
 
 	_VV=VV;
@@ -210,6 +216,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	if(_verbose)
 		cout<<_perimeters<<endl;
 }
+//Function needed because swig of enum EntityType fails
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type)
 {
 	if(_FECalculation && field_support_type!= NODES)
@@ -230,11 +237,40 @@ void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int ti
 		break;
 	default:
 		std::ostringstream message;
-		message << "Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
+		message << "Error ProblemCoreFlows::setInitialField \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
 		throw CdmathException(message.str().c_str());
 	}	
 
 	setInitialField(VV);
+}
+//Function needed because swig of enum EntityType fails
+void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> Vconstant, double xmin, double xmax, int nx, string leftSide, string rightSide,
+		double ymin, double ymax, int ny, string backSide, string frontSide,
+		double zmin, double zmax, int nz, string bottomSide, string topSide, int field_support_type)
+{	
+	if(_FECalculation && field_support_type!= NODES)
+		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
+
+	EntityType typeField;
+	
+	switch(field_support_type)
+	{
+	case CELLS:
+		typeField=CELLS;
+		break;
+	case NODES:
+		typeField=NODES;
+		break;
+	case FACES:
+		typeField=FACES;
+		break;
+	default:
+		std::ostringstream message;
+		message << "Error ProblemCoreFlows::setInitialField \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
+		throw CdmathException(message.str().c_str());
+	}	
+	
+	setInitialFieldConstant( nDim, Vconstant, xmin, xmax, nx, leftSide, rightSide, ymin, ymax, ny, backSide, frontSide, zmin, zmax, nz, bottomSide, topSide, typeField);
 }
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField)
 {
@@ -261,7 +297,6 @@ void ProblemCoreFlows::setInitialFieldConstant(string fileName, const vector<dou
 }
 void ProblemCoreFlows::	setInitialFieldConstant(const Mesh& M, const Vector Vconstant, EntityType typeField)
 {
-	
 	if(_FECalculation && typeField!= NODES)
 		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
 
