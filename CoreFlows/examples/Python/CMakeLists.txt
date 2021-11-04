@@ -138,6 +138,7 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_Ro
 if( SOLVERLAB_WITH_MPI )
   add_test(NAME test_MPI4PY_2Procs                    COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testMPI4PY.py")     
   add_test(NAME test_TwoIndependentSimulations_2Procs COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testTwoSimulations.py")     
+  add_test(NAME test_SendRecvMEDCouplingField_2Procs             COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testSendRecvField.py")     
 endif( SOLVERLAB_WITH_MPI )
 
 ############# python convergence tests
