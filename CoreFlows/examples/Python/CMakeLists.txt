@@ -138,7 +138,8 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_Ro
 if( SOLVERLAB_WITH_MPI )
   add_test(NAME MPI4PY_2Procs                    COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testMPI4PY.py")     
   add_test(NAME StationaryDiffusion_TwoIndependentSimulations_2Procs COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testTwoSimulations.py")     
-  add_test(NAME SendRecvMEDCouplingFieldSameMesh_2Procs             COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testSendRecvFieldSameMesh.py")     
+  add_test(NAME SendRecvMEDCouplingFieldSameMesh_2Procs              COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testSendRecvFieldSameMesh.py")     
+  add_test(NAME SendRecvMEDCouplingFieldDifferentMeshes_2Procs       COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Parallelism/testSendRecvFieldDifferentMeshes.py")     
 endif( SOLVERLAB_WITH_MPI )
 
 ############# python convergence tests
