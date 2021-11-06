@@ -25,8 +25,8 @@ procs_target = [1]
 procs_idle = [2]
 
 interface = mc.CommInterface()
-source_group = mc.MPIProcessorGroup(interface, procs_source)
-target_group = mc.MPIProcessorGroup(interface, procs_target)
+source_group = mc.MPIProcessorGroup(interface, procs_source,comm)
+target_group = mc.MPIProcessorGroup(interface, procs_target,comm)
 dec = mc.StructuredCoincidentDEC(source_group, target_group)
 
 # Create a MEDCouplingUMesh from a 3D cartesian mesh
