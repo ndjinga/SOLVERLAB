@@ -140,7 +140,7 @@ if( SOLVERLAB_WITH_MPI )
   add_test(NAME StationaryDiffusion_TwoIndependentSimulations_2Procs COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testTwoSimulations.py")     
   add_test(NAME SendRecvMEDCouplingFieldSameMesh_2Procs              COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testSendRecvFieldSameMesh.py")     
   add_test(NAME SendRecvMEDCouplingFieldDifferentMeshes_2Procs       COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testSendRecvFieldDifferentMeshes.py")     
-  add_test(NAME SendRecvMEDCouplingFieldSubComm_3Procs               COMMAND "${MPIEXEC}" "-n" "3" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testSendRecvFieldSubComm.py")     
+  add_test(NAME SendRecvMEDCouplingFieldSubComm_4Procs               COMMAND "${MPIEXEC}" "-n" "4" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testSendRecvFieldSubComm.py")     
 endif( SOLVERLAB_WITH_MPI )
 
 ############# python convergence tests
