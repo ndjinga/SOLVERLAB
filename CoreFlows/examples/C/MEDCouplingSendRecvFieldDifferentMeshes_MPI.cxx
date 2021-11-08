@@ -50,8 +50,8 @@ int main(int argc, char *argv[])
 	printf("WORLD RANK/SIZE: %d/%d \t subcommunicator RANK/SIZE: %d/%d\n",	rank, size, sub_rank, sub_size);
 
 	
-	procs_source.insert(0);/* rank 0 will send data */
-	procs_target.insert(1);/* rank 1 will receive data */
+	procs_source.insert(0);/* sub rank 0 will send data */
+	procs_target.insert(1);/* sub rank 1 will receive data */
 
 	MEDCoupling::CommInterface interface = MEDCoupling::CommInterface();
 	MEDCoupling::MPIProcessorGroup source_group = MEDCoupling::MPIProcessorGroup(interface, procs_source,sub_comm);
@@ -90,12 +90,12 @@ int main(int argc, char *argv[])
 	if(sub_rank == 0)
 	{
 		dec.sendData();
-		printf("Processor %d has sent the source field\n", rank);
+		printf("Processor with global rank %d has sent the source field\n", rank);
 	}
 	else
 	{
 		dec.recvData();
-		printf("Processor %d has received the source field on the target mesh\n", rank);
+		printf("Processor with global rank %d has received the source field on the target mesh\n", rank);
 		MEDCoupling::MEDCouplingFieldDouble * exact_field=mesh->fillFromAnalytic(MEDCoupling::ON_CELLS,1,"(x-5.)*(x-5.)+(y-5.)*(y-5.)");
 		exact_field->setName("ExactField");
 		//To do : compare target and exact field (maximul value etc ...

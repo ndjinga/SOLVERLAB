@@ -87,16 +87,17 @@ int main(int argc, char *argv[])
 	if(sub_rank == 0)
 	{
 		dec.sendData();
-		printf("Processor %d has sent the source field\n", rank);
+		printf("Processor with global rank %d has sent the source field\n", rank);
 	}
 	else
 	{
 		dec.recvData();
-		printf("Processor %d has received the source field on the target mesh\n", rank);
+		printf("Processor with global rank %d has received the source field on the target mesh\n", rank);
+		/* Solve the bug in StructuredCoincidentDEC then uncomment the lines below to check the result */
 		//MEDCoupling::MEDCouplingFieldDouble * exact_field=mesh->fillFromAnalytic(MEDCoupling::ON_CELLS,1,"(x-5.)*(x-5.)+(y-5.)*(y-5.)+(z-5.)*(z-5.)");
 		//exact_field->setName("ExactField");
   		//double error=((*field)-(*exact_field))->normMax(0)/exact_field->normMax(0);
-		//printf("Processor %d received source field that differs from theoretical value by %d (maximum relative norm on cells)\n", rank, error );
+		//printf("Processor with global rank %d received source field that differs from theoretical value by %d (maximum relative norm on cells)\n", rank, error );
 		//assert( fabs(error)<1.e-6 );
 		//MEDCoupling::WriteField("target_field"+to_string(rank)+".med", field, true);
 		//MEDCoupling::WriteField("exact_field"+to_string(rank)+".med", exact_field, true);	
