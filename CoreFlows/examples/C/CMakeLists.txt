@@ -136,5 +136,11 @@ if( SOLVERLAB_WITH_MPI )
   install(TARGETS MEDCouplingSendRecvFieldSameMesh_MPI.exe DESTINATION share/examples)
 
   add_test(NAME MEDCouplingSendRecvFieldSameMesh_MPI.exe                      COMMAND "${MPIEXEC}" "-n" "4" "./MEDCouplingSendRecvFieldSameMesh_MPI.exe" ) 
+
+  add_executable(MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe MEDCouplingSendRecvFieldDifferentMeshes_MPI.cxx)
+  target_link_libraries(MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe ${MPI_LIBRARY} medcoupling medloader paramedmem)
+  install(TARGETS MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe DESTINATION share/examples)
+
+  add_test(NAME MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe                      COMMAND "${MPIEXEC}" "-n" "4" "./MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe" ) 
 endif( SOLVERLAB_WITH_MPI )
 
