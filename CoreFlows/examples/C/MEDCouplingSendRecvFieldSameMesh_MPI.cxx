@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
 	
 	printf("WORLD RANK/SIZE: %d/%d \t subcommunicator RANK/SIZE: %d/%d\n",	rank, size, sub_rank, sub_size);
 
+	
 	procs_source.insert(0);/* sub rank 0 will send data */
 	procs_target.insert(1);/* sub rank 1 will receive data */
 
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
 	MEDCoupling::MPIProcessorGroup target_group = MEDCoupling::MPIProcessorGroup(interface, procs_target,sub_comm);
 	MEDCoupling::StructuredCoincidentDEC dec = MEDCoupling::StructuredCoincidentDEC(source_group, target_group);
 
-	//Create a MEDCouplingUMesh from a 3D cartesian mesh
+	//Create a MEDCouplingUMesh from a 2D cartesian mesh
 	MEDCoupling::DataArrayDouble * xarr=MEDCoupling::DataArrayDouble::New();
 	xarr->alloc(11,1);
 	xarr->iota(0.);
@@ -71,13 +72,13 @@ int main(int argc, char *argv[])
 		field = mesh->fillFromAnalytic(MEDCoupling::ON_CELLS,1,"(x-5.)*(x-5.)+(y-5.)*(y-5.)+(z-5.)*(z-5.)");
 		field->setName("SourceField");
 		MEDCoupling::WriteField("source_field"+to_string(rank)+".med", field, true);
-		printf("Processor %d has created and saved the source field\n", rank);
+		printf("Processor with global rank %d has created and saved the source field\n", rank);
 	}
 	else
 	{
 		field=mesh->fillFromAnalytic(MEDCoupling::ON_CELLS,1,"0");
 		field->setName("TargetField");
-		printf("Processor %d has created the target field\n", rank);
+		printf("Processor with global rank %d has created the target field\n", rank);
 	}
 	
 	dec.attachLocalField(field);
