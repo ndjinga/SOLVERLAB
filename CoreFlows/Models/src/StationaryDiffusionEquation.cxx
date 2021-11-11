@@ -919,7 +919,7 @@ void StationaryDiffusionEquation::terminate()
 	VecDestroy(&_b);
 	MatDestroy(&_A);
 	if(_mpi_size>1 && _mpi_rank == 0)
-		VecDestroy(&Un_seq);
+		VecDestroy(&_Tk_seq);
 
 }
 void 
