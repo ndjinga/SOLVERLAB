@@ -537,28 +537,30 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 
 double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix
 {
-	VecAssemblyBegin(_b);
 
-    if(!_FECalculation)
-        for (int i=0; i<_Nmailles;i++)
-            VecSetValue(_b,i, _heatTransfertCoeff*_fluidTemperatureField(i) + _heatPowerField(i) ,ADD_VALUES);
-    else
-        {
-            Cell Ci;
-            std::vector< int > nodesId;
-            for (int i=0; i<_Nmailles;i++)
-            {
-                Ci=_mesh.getCell(i);
-                nodesId=Ci.getNodesId();
-                for (int j=0; j<nodesId.size();j++)
-                    if(!_mesh.isBorderNode(nodesId[j])) 
-                    {
-                        double coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]);
-                        VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
-                    }
-            }
-        }
-    
+	if(_rank == 0)
+	{
+	    if(!_FECalculation)
+	        for (int i=0; i<_Nmailles;i++)
+	            VecSetValue(_b,i, _heatTransfertCoeff*_fluidTemperatureField(i) + _heatPowerField(i) ,ADD_VALUES);
+	    else
+	        {
+	            Cell Ci;
+	            std::vector< int > nodesId;
+	            for (int i=0; i<_Nmailles;i++)
+	            {
+	                Ci=_mesh.getCell(i);
+	                nodesId=Ci.getNodesId();
+	                for (int j=0; j<nodesId.size();j++)
+	                    if(!_mesh.isBorderNode(nodesId[j])) 
+	                    {
+	                        double coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]);
+	                        VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
+	                    }
+	            }
+	        }
+	}
+	VecAssemblyBegin(_b);
 	VecAssemblyEnd(_b);
 
     if(_verbose or _system)

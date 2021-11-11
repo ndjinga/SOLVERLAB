@@ -532,34 +532,39 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 }
 
 double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix
+
+	if(_rank == 0)
+	{
+	    double Ti;  
+	    if(!_FECalculation)
+	        for (int i=0; i<_Nmailles;i++)
+	            //Contribution due to fluid/solide heat exchange + Contribution of the volumic heat power
+	            if(_timeScheme == Explicit)
+	            {
+	                VecGetValues(_Tn, 1, &i, &Ti);
+	                VecSetValue(_b,i,(_heatTransfertCoeff*(_fluidTemperatureField(i)-Ti)+_heatPowerField(i))/(_rho*_cp),ADD_VALUES);
+	            }
+	            else//Implicit scheme    
+	                VecSetValue(_b,i,(_heatTransfertCoeff* _fluidTemperatureField(i)    +_heatPowerField(i))/(_rho*_cp)    ,ADD_VALUES);
+	    else
+	        {
+	            Cell Ci;
+	            std::vector< int > nodesId;
+	            for (int i=0; i<_Nmailles;i++)
+	            {
+	                Ci=_mesh.getCell(i);
+	                nodesId=Ci.getNodesId();
+	                for (int j=0; j<nodesId.size();j++)
+	                    if(!_mesh.isBorderNode(nodesId[j])) //or for better performance nodeIds[idim]>dirichletNodes.upper_bound()
+	                    {
+	                        double coeff = (_heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]))/(_rho*_cp);
+	                        VecSetValue(_b,unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
+	                    }
+	            }
+	        }
+	}
+
 	VecAssemblyBegin(_b);          
-    double Ti;  
-    if(!_FECalculation)
-        for (int i=0; i<_Nmailles;i++)
-            //Contribution due to fluid/solide heat exchange + Contribution of the volumic heat power
-            if(_timeScheme == Explicit)
-            {
-                VecGetValues(_Tn, 1, &i, &Ti);
-                VecSetValue(_b,i,(_heatTransfertCoeff*(_fluidTemperatureField(i)-Ti)+_heatPowerField(i))/(_rho*_cp),ADD_VALUES);
-            }
-            else//Implicit scheme    
-                VecSetValue(_b,i,(_heatTransfertCoeff* _fluidTemperatureField(i)    +_heatPowerField(i))/(_rho*_cp)    ,ADD_VALUES);
-    else
-        {
-            Cell Ci;
-            std::vector< int > nodesId;
-            for (int i=0; i<_Nmailles;i++)
-            {
-                Ci=_mesh.getCell(i);
-                nodesId=Ci.getNodesId();
-                for (int j=0; j<nodesId.size();j++)
-                    if(!_mesh.isBorderNode(nodesId[j])) //or for better performance nodeIds[idim]>dirichletNodes.upper_bound()
-                    {
-                        double coeff = (_heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]))/(_rho*_cp);
-                        VecSetValue(_b,unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
-                    }
-            }
-        }
 	VecAssemblyEnd(_b);
 
     if(_verbose or _system)
