@@ -595,9 +595,9 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
     KSPGetResidualNorm(_ksp,&residu);
 	if (reason!=2 and reason!=3)
     {
-        cout<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
-        cout<<"!!!!!!!!!!!!! Itérations maximales "<<_maxPetscIts<<" atteintes, résidu="<<residu<<", précision demandée= "<<_precision<<endl;
-        cout<<"Solver used "<<  _ksptype<<", preconditioner "<<_pctype<<", Final number of iteration= "<<_PetscIts<<endl;
+        PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.");
+        PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2f, précision demandée= %1.2f",_maxPetscIts,residu,_precision);
+        PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d",_ksptype,_pctype,_PetscIts);
 		*_runLogFile<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
         *_runLogFile<<"!!!!!!!!!!!!! Itérations maximales "<<_maxPetscIts<<" atteintes, résidu="<<residu<<", précision demandée= "<<_precision<<endl;
         *_runLogFile<<"Solver used "<<  _ksptype<<", preconditioner "<<_pctype<<", Final number of iteration= "<<_PetscIts<<endl;
@@ -608,7 +608,7 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
     else{
         if( _MaxIterLinearSolver < _PetscIts)
             _MaxIterLinearSolver = _PetscIts;
-        cout<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<endl<<endl;
+        PetscPrintf(PETSC_COMM_WORLD,"## Système linéaire résolu en %d itérations par le solveur %s et le preconditioneur %s, précision demandée = %1.2f",_PetscIts,_ksptype,_pctype,_precision);
 		*_runLogFile<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<endl<<endl;
         VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
         VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
@@ -622,7 +622,7 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
         VecAssemblyEnd(  _deltaT);
 
 		if(_verbose)
-			cout<<"Début calcul de la variation relative"<<endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Début calcul de la variation relative");
 
 		for(int i=0; i<_NunknownNodes; i++)
 		{
@@ -632,7 +632,7 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
 				_erreur_rel = fabs(dTi/Ti);
 		}
 		if(_verbose)
-			cout<<"Fin calcul de la variation relative, erreur relative maximale : " << _erreur_rel <<endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Fin calcul de la variation relative, erreur relative maximale : %1.2f", _erreur_rel );
         stop=false;
         converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
     }
@@ -775,36 +775,36 @@ bool StationaryDiffusionEquation::solveStationaryProblem()
 	bool stop=false; // Does the Problem want to stop (error) ?
 	bool converged=false; // has the newton scheme converged (end) ?
 
-	cout<< "!!! Running test case "<< _fileName << " using ";
+	PetscPrintf(PETSC_COMM_WORLD,"!!! Running test case %s using ",_fileName);
 	*_runLogFile<< "!!! Running test case "<< _fileName<< " using ";
 
     if(!_FECalculation)
     {
-        cout<< "Finite volumes method"<<endl<<endl;
+        PetscPrintf(PETSC_COMM_WORLD,"Finite volumes method\n\n");
 		*_runLogFile<< "Finite volumes method"<<endl<<endl;
 	}
     else
 	{
-        cout<< "Finite elements method"<<endl<<endl;
+        PetscPrintf(PETSC_COMM_WORLD,"Finite elements method\n\n");
 		*_runLogFile<< "Finite elements method"<< endl<<endl;
 	}
 
     computeDiffusionMatrix( stop);//For the moment the conductivity does not depend on the temperature (linear LHS)
     if (stop){
-        cout << "Error : failed computing diffusion matrix, stopping calculation"<< endl;
+        PetscPrintf(PETSC_COMM_WORLD,"Error : failed computing diffusion matrix, stopping calculation\n");
         *_runLogFile << "Error : failed computing diffusion matrix, stopping calculation"<< endl;
  		_runLogFile->close();
        throw CdmathException("Failed computing diffusion matrix");
     }
     computeRHS(stop);//For the moment the heat power does not depend on the unknown temperature (linear RHS)
     if (stop){
-        cout << "Error : failed computing right hand side, stopping calculation"<< endl;
+        PetscPrintf(PETSC_COMM_WORLD,"Error : failed computing right hand side, stopping calculation\n");
         *_runLogFile << "Error : failed computing right hand side, stopping calculation"<< endl;
         throw CdmathException("Failed computing right hand side");
     }
     stop = iterateNewtonStep(converged);
     if (stop){
-        cout << "Error : failed solving linear system, stopping calculation"<< endl;
+        PetscPrintf(PETSC_COMM_WORLD,"Error : failed solving linear system, stopping calculation\n");
         *_runLogFile << "Error : failed linear system, stopping calculation"<< endl;
 		_runLogFile->close();
         throw CdmathException("Failed solving linear system");
@@ -846,7 +846,7 @@ bool StationaryDiffusionEquation::solveStationaryProblem()
 }
 
 void StationaryDiffusionEquation::save(){
-    cout<< "Saving numerical results"<<endl<<endl;
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results\n\n");
     *_runLogFile<< "Saving numerical results"<< endl<<endl;
 
 	string resultFile(_path+"/StationaryDiffusionEquation");//Results
@@ -858,49 +858,56 @@ void StationaryDiffusionEquation::save(){
     string suppress ="rm -rf "+resultFile+"_*";
     system(suppress.c_str());//Nettoyage des précédents calculs identiques
     
+	if(_mpi_size>1){
+		VecScatterBegin(scat,_Tk,_Tk_seq,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterEnd(  scat,_Tk,_Tk_seq,INSERT_VALUES,SCATTER_FORWARD);
+	}
+
     if(_verbose or _system)
         VecView(_Tk,PETSC_VIEWER_STDOUT_WORLD);
 
-    double Ti; 
-    if(!_FECalculation)
-        for(int i=0; i<_Nmailles; i++)
-            {
-                VecGetValues(_Tk, 1, &i, &Ti);
-                _VV(i)=Ti;
-            }
-    else
-    {
-        int globalIndex;
-        for(int i=0; i<_NunknownNodes; i++)
-        {
-            VecGetValues(_Tk, 1, &i, &Ti);
-            globalIndex = DiffusionEquation::globalNodeIndex(i, _dirichletNodeIds);
-            _VV(globalIndex)=Ti;
-        }
-
-        Node Ni;
-        string nameOfGroup;
-        for(int i=0; i<_NdirichletNodes; i++)
-        {
-            Ni=_mesh.getNode(_dirichletNodeIds[i]);
-            nameOfGroup = Ni.getGroupName();
-            _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
-        }
-    }
-
-    _VV.setInfoOnComponent(0,"Temperature_(K)");
-    switch(_saveFormat)
-    {
-        case VTK :
-            _VV.writeVTK(resultFile);
-            break;
-        case MED :
-            _VV.writeMED(resultFile);
-            break;
-        case CSV :
-            _VV.writeCSV(resultFile);
-            break;
-    }
+	if(_mpi_rank>1){
+	    double Ti; 
+	    if(!_FECalculation)
+	        for(int i=0; i<_Nmailles; i++)
+	            {
+	                VecGetValues(_Tk, 1, &i, &Ti);
+	                _VV(i)=Ti;
+	            }
+	    else
+	    {
+	        int globalIndex;
+	        for(int i=0; i<_NunknownNodes; i++)
+	        {
+	            VecGetValues(_Tk, 1, &i, &Ti);
+	            globalIndex = DiffusionEquation::globalNodeIndex(i, _dirichletNodeIds);
+	            _VV(globalIndex)=Ti;
+	        }
+	
+	        Node Ni;
+	        string nameOfGroup;
+	        for(int i=0; i<_NdirichletNodes; i++)
+	        {
+	            Ni=_mesh.getNode(_dirichletNodeIds[i]);
+	            nameOfGroup = Ni.getGroupName();
+	            _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
+	        }
+	    }
+	
+	    _VV.setInfoOnComponent(0,"Temperature_(K)");
+	    switch(_saveFormat)
+	    {
+	        case VTK :
+	            _VV.writeVTK(resultFile);
+	            break;
+	        case MED :
+	            _VV.writeMED(resultFile);
+	            break;
+	        case CSV :
+	            _VV.writeCSV(resultFile);
+	            break;
+	    }
+	}
 }
 Field 
 StationaryDiffusionEquation::getOutputTemperatureField()

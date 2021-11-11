@@ -732,92 +732,100 @@ void DiffusionEquation::save(){
 	resultFile+="_";
 	resultFile+=_fileName;
 
+	if(_mpi_size>1){
+		VecScatterBegin(scat,_Tn,_Tn_seq,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterEnd(  scat,_Tn,_Tn_seq,INSERT_VALUES,SCATTER_FORWARD);
+	}
+	
     if(_verbose or _system)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Unknown of the linear system :\n");
         VecView(_Tk,PETSC_VIEWER_STDOUT_WORLD);
 	}
-    //On remplit le champ
-    double Ti;
-    if(!_FECalculation)
-        for(int i =0; i<_Nmailles;i++)
-        {
-            VecGetValues(_Tn, 1, &i, &Ti);
-            _VV(i)=Ti;
-        }
-    else
-    {
-        int globalIndex;
-        for(int i=0; i<_NunknownNodes; i++)
-        {
-            VecGetValues(_Tk, 1, &i, &Ti);
-            globalIndex = globalNodeIndex(i, _dirichletNodeIds);
-            _VV(globalIndex)=Ti;//Assumes node numbering starts with border nodes
-        }
 
-        Node Ni;
-        string nameOfGroup;
-        for(int i=0; i<_NdirichletNodes; i++)//Assumes node numbering starts with border nodes
-        {
-            Ni=_mesh.getNode(_dirichletNodeIds[i]);
-            nameOfGroup = Ni.getGroupName();
-            _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
-        }
-    }
-	_VV.setTime(_time,_nbTimeStep);
-
-	// create mesh and component info
-	if (_nbTimeStep ==0 || _restartWithNewFileName){
-		if (_restartWithNewFileName)
-			_restartWithNewFileName=false;
-		string suppress ="rm -rf "+resultFile+"_*";
-		system(suppress.c_str());//Nettoyage des précédents calculs identiques
-        
-        _VV.setInfoOnComponent(0,"Temperature_(K)");
-		switch(_saveFormat)
-		{
-		case VTK :
-			_VV.writeVTK(resultFile);
-			break;
-		case MED :
-			_VV.writeMED(resultFile);
-			break;
-		case CSV :
-			_VV.writeCSV(resultFile);
-			break;
+	if(_mpi_rank>1){
+	    //On remplit le champ
+	    double Ti;
+	    if(!_FECalculation)
+	        for(int i =0; i<_Nmailles;i++)
+	        {
+	            VecGetValues(_Tn, 1, &i, &Ti);
+	            _VV(i)=Ti;
+	        }
+	    else
+	    {
+	        int globalIndex;
+	        for(int i=0; i<_NunknownNodes; i++)
+	        {
+	            VecGetValues(_Tk, 1, &i, &Ti);
+	            globalIndex = globalNodeIndex(i, _dirichletNodeIds);
+	            _VV(globalIndex)=Ti;//Assumes node numbering starts with border nodes
+	        }
+	
+	        Node Ni;
+	        string nameOfGroup;
+	        for(int i=0; i<_NdirichletNodes; i++)//Assumes node numbering starts with border nodes
+	        {
+	            Ni=_mesh.getNode(_dirichletNodeIds[i]);
+	            nameOfGroup = Ni.getGroupName();
+	            _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
+	        }
+	    }
+		_VV.setTime(_time,_nbTimeStep);
+	
+		// create mesh and component info
+		if (_nbTimeStep ==0 || _restartWithNewFileName){
+			if (_restartWithNewFileName)
+				_restartWithNewFileName=false;
+			string suppress ="rm -rf "+resultFile+"_*";
+			system(suppress.c_str());//Nettoyage des précédents calculs identiques
+	        
+	        _VV.setInfoOnComponent(0,"Temperature_(K)");
+			switch(_saveFormat)
+			{
+			case VTK :
+				_VV.writeVTK(resultFile);
+				break;
+			case MED :
+				_VV.writeMED(resultFile);
+				break;
+			case CSV :
+				_VV.writeCSV(resultFile);
+				break;
+			}
 		}
-	}
-	else{	// do not create mesh
-		switch(_saveFormat)
-		{
-		case VTK :
-			_VV.writeVTK(resultFile,false);
-			break;
-		case MED :
-			_VV.writeMED(resultFile,false);
-			break;
-		case CSV :
-			_VV.writeCSV(resultFile);
-			break;
+		else{	// do not create mesh
+			switch(_saveFormat)
+			{
+			case VTK :
+				_VV.writeVTK(resultFile,false);
+				break;
+			case MED :
+				_VV.writeMED(resultFile,false);
+				break;
+			case CSV :
+				_VV.writeCSV(resultFile);
+				break;
+			}
 		}
+	    
+	    if(_isStationary)
+		{
+	        resultFile+="_Stat";
+	        switch(_saveFormat)
+	        {
+	        case VTK :
+	            _VV.writeVTK(resultFile);
+	            break;
+	        case MED :
+	            _VV.writeMED(resultFile);
+	            break;
+	        case CSV :
+	            _VV.writeCSV(resultFile);
+	            break;
+	        }
+	    }
 	}
-    
-    if(_isStationary)
-	{
-        resultFile+="_Stat";
-        switch(_saveFormat)
-        {
-        case VTK :
-            _VV.writeVTK(resultFile);
-            break;
-        case MED :
-            _VV.writeMED(resultFile);
-            break;
-        case CSV :
-            _VV.writeCSV(resultFile);
-            break;
-        }
-    }
 }
 
 void DiffusionEquation::terminate(){
