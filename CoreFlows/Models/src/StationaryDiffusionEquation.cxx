@@ -104,86 +104,89 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
 
 void StationaryDiffusionEquation::initialize()
 {
-	_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
-
-	if(!_meshSet)
-		throw CdmathException("StationaryDiffusionEquation::initialize() set mesh first");
-	else
-    {
-		cout<<"!!!! Initialisation of the computation of the temperature diffusion in a solid using ";
-        *_runLogFile<<"!!!!! Initialisation of the computation of the temperature diffusion in a solid using ";
-        if(!_FECalculation)
-        {
-            cout<< "Finite volumes method"<<endl<<endl;
-            *_runLogFile<< "Finite volumes method"<<endl<<endl;
-        }
-        else
-        {
-            cout<< "Finite elements method"<<endl<<endl;
-            *_runLogFile<< "Finite elements method"<<endl<<endl;
-        }
-    }
-    
-	/**************** Field creation *********************/
-
-	if(!_heatPowerFieldSet){
-		_heatPowerField=Field("Heat power",_VV.getTypeOfField(),_mesh,1);
-		for(int i =0; i<_VV.getNumberOfElements(); i++)
-			_heatPowerField(i) = _heatSource;
-        _heatPowerFieldSet=true;
-    }
-	if(!_fluidTemperatureFieldSet){
-		_fluidTemperatureField=Field("Fluid temperature",_VV.getTypeOfField(),_mesh,1);
-		for(int i =0; i<_VV.getNumberOfElements(); i++)
-			_fluidTemperatureField(i) = _fluidTemperature;
-        _fluidTemperatureFieldSet=true;
+	if(_rank==0)
+	{
+		_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
+	
+		if(!_meshSet)
+			throw CdmathException("StationaryDiffusionEquation::initialize() set mesh first");
+		else
+	    {
+			cout<<"!!!! Initialisation of the computation of the temperature diffusion in a solid using ";
+	        *_runLogFile<<"!!!!! Initialisation of the computation of the temperature diffusion in a solid using ";
+	        if(!_FECalculation)
+	        {
+	            cout<< "Finite volumes method"<<endl<<endl;
+	            *_runLogFile<< "Finite volumes method"<<endl<<endl;
+	        }
+	        else
+	        {
+	            cout<< "Finite elements method"<<endl<<endl;
+	            *_runLogFile<< "Finite elements method"<<endl<<endl;
+	        }
+	    }
+	    
+		/**************** Field creation *********************/
+	
+		if(!_heatPowerFieldSet){
+			_heatPowerField=Field("Heat power",_VV.getTypeOfField(),_mesh,1);
+			for(int i =0; i<_VV.getNumberOfElements(); i++)
+				_heatPowerField(i) = _heatSource;
+	        _heatPowerFieldSet=true;
+	    }
+		if(!_fluidTemperatureFieldSet){
+			_fluidTemperatureField=Field("Fluid temperature",_VV.getTypeOfField(),_mesh,1);
+			for(int i =0; i<_VV.getNumberOfElements(); i++)
+				_fluidTemperatureField(i) = _fluidTemperature;
+	        _fluidTemperatureFieldSet=true;
+		}
+	
+	    /* Détection des noeuds frontière avec une condition limite de Dirichlet */
+	    if(_FECalculation)
+	    {
+	        if(_NboundaryNodes==_Nnodes)
+	            cout<<"!!!!! Warning : all nodes are boundary nodes !!!!!"<<endl<<endl;
+	
+	        for(int i=0; i<_NboundaryNodes; i++)
+	        {
+	            std::map<int,double>::iterator it=_dirichletBoundaryValues.find(_boundaryNodeIds[i]);
+	            if( it != _dirichletBoundaryValues.end() )
+	                _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
+	            else if( _mesh.getNode(_boundaryNodeIds[i]).getGroupNames().size()==0 )
+	            {
+	                cout<<"!!! No boundary group set for boundary node" << _boundaryNodeIds[i]<< endl;
+	                *_runLogFile<< "!!! No boundary group set for boundary node" << _boundaryNodeIds[i]<<endl;
+	                _runLogFile->close();
+	                throw CdmathException("Missing boundary group");
+	            }
+	            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==NoneBCStationaryDiffusion)
+	            {
+	                cout<<"!!! No boundary condition set for boundary node " << _boundaryNodeIds[i]<< endl;
+	                cout<<"!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion << endl;
+	                *_runLogFile<< "!!! No boundary condition set for boundary node " << _boundaryNodeIds[i]<<endl;
+	                *_runLogFile<< "!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion <<endl;
+	                _runLogFile->close();
+	                throw CdmathException("Missing boundary condition");
+	            }
+	            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==DirichletStationaryDiffusion)
+	                _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
+	            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType!=NeumannStationaryDiffusion)
+	            {
+	                cout<<"!!! Wrong boundary condition "<< _limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType<< " set for boundary node " << _boundaryNodeIds[i]<< endl;
+	                cout<<"!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion << endl;
+	                *_runLogFile<< "!!! Wrong boundary condition "<< _limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType<< " set for boundary node " << _boundaryNodeIds[i]<<endl;
+	                *_runLogFile<< "!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion <<endl;
+	                _runLogFile->close();
+	                throw CdmathException("Wrong boundary condition");
+	            }
+	        }	
+	        _NdirichletNodes=_dirichletNodeIds.size();
+	        _NunknownNodes=_Nnodes - _NdirichletNodes;
+	        cout<<"Number of unknown nodes " << _NunknownNodes <<", Number of boundary nodes " << _NboundaryNodes<< ", Number of Dirichlet boundary nodes " << _NdirichletNodes <<endl<<endl;
+			*_runLogFile<<"Number of unknown nodes " << _NunknownNodes <<", Number of boundary nodes " << _NboundaryNodes<< ", Number of Dirichlet boundary nodes " << _NdirichletNodes <<endl<<endl;
+	    }
 	}
-
-    /* Détection des noeuds frontière avec une condition limite de Dirichlet */
-    if(_FECalculation)
-    {
-        if(_NboundaryNodes==_Nnodes)
-            cout<<"!!!!! Warning : all nodes are boundary nodes !!!!!"<<endl<<endl;
-
-        for(int i=0; i<_NboundaryNodes; i++)
-        {
-            std::map<int,double>::iterator it=_dirichletBoundaryValues.find(_boundaryNodeIds[i]);
-            if( it != _dirichletBoundaryValues.end() )
-                _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
-            else if( _mesh.getNode(_boundaryNodeIds[i]).getGroupNames().size()==0 )
-            {
-                cout<<"!!! No boundary group set for boundary node" << _boundaryNodeIds[i]<< endl;
-                *_runLogFile<< "!!! No boundary group set for boundary node" << _boundaryNodeIds[i]<<endl;
-                _runLogFile->close();
-                throw CdmathException("Missing boundary group");
-            }
-            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==NoneBCStationaryDiffusion)
-            {
-                cout<<"!!! No boundary condition set for boundary node " << _boundaryNodeIds[i]<< endl;
-                cout<<"!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion << endl;
-                *_runLogFile<< "!!! No boundary condition set for boundary node " << _boundaryNodeIds[i]<<endl;
-                *_runLogFile<< "!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion <<endl;
-                _runLogFile->close();
-                throw CdmathException("Missing boundary condition");
-            }
-            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType==DirichletStationaryDiffusion)
-                _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
-            else if(_limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType!=NeumannStationaryDiffusion)
-            {
-                cout<<"!!! Wrong boundary condition "<< _limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType<< " set for boundary node " << _boundaryNodeIds[i]<< endl;
-                cout<<"!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion << endl;
-                *_runLogFile<< "!!! Wrong boundary condition "<< _limitField[_mesh.getNode(_boundaryNodeIds[i]).getGroupName()].bcType<< " set for boundary node " << _boundaryNodeIds[i]<<endl;
-                *_runLogFile<< "!!! Accepted boundary conditions are DirichletStationaryDiffusion "<< DirichletStationaryDiffusion <<" and NeumannStationaryDiffusion "<< NeumannStationaryDiffusion <<endl;
-                _runLogFile->close();
-                throw CdmathException("Wrong boundary condition");
-            }
-        }	
-        _NdirichletNodes=_dirichletNodeIds.size();
-        _NunknownNodes=_Nnodes - _NdirichletNodes;
-        cout<<"Number of unknown nodes " << _NunknownNodes <<", Number of boundary nodes " << _NboundaryNodes<< ", Number of Dirichlet boundary nodes " << _NdirichletNodes <<endl<<endl;
-		*_runLogFile<<"Number of unknown nodes " << _NunknownNodes <<", Number of boundary nodes " << _NboundaryNodes<< ", Number of Dirichlet boundary nodes " << _NdirichletNodes <<endl<<endl;
-    }
-
+	
 	//creation de la matrice
     if(!_FECalculation)
         MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
