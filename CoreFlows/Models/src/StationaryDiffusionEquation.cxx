@@ -285,103 +285,105 @@ double StationaryDiffusionEquation::computeDiffusionMatrix(bool & stop)
 }
 
 double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
-	Cell Cj;
-	string nameOfGroup;
-	double coeff;
-	MatZeroEntries(_A);
-	VecZeroEntries(_b);
-    
-    Matrix M(_Ndim+1,_Ndim+1);//cell geometry matrix
-    std::vector< Vector > GradShapeFuncs(_Ndim+1);//shape functions of cell nodes
-    std::vector< int > nodeIds(_Ndim+1);//cell node Ids
-    std::vector< Node > nodes(_Ndim+1);//cell nodes
-    int i_int, j_int; //index of nodes j and k considered as unknown nodes
-    bool dirichletCell_treated;
-    
-    std::vector< vector< double > > values(_Ndim+1,vector< double >(_Ndim+1,0));//values of shape functions on cell node
-    for (int idim=0; idim<_Ndim+1;idim++)
-        values[idim][idim]=1;
-
-    /* parameters for boundary treatment */
-    vector< double > valuesBorder(_Ndim+1);
-    Vector GradShapeFuncBorder(_Ndim+1);
-    
-	for (int j=0; j<_Nmailles;j++)
-    {
-		Cj = _mesh.getCell(j);
-
-        for (int idim=0; idim<_Ndim+1;idim++){
-            nodeIds[idim]=Cj.getNodeId(idim);
-            nodes[idim]=_mesh.getNode(nodeIds[idim]);
-            for (int jdim=0; jdim<_Ndim;jdim++)
-                M(idim,jdim)=nodes[idim].getPoint()[jdim];
-            M(idim,_Ndim)=1;
-        }
-        for (int idim=0; idim<_Ndim+1;idim++)
-            GradShapeFuncs[idim]=DiffusionEquation::gradientNodal(M,values[idim])/DiffusionEquation::fact(_Ndim);
-
-        /* Loop on the edges of the cell */
-        for (int idim=0; idim<_Ndim+1;idim++)
-        {
-            if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[idim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[idim])
-            {//First node of the edge is not Dirichlet node
-                i_int=DiffusionEquation::unknownNodeIndex(nodeIds[idim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                dirichletCell_treated=false;
-                for (int jdim=0; jdim<_Ndim+1;jdim++)
-                {
-                    if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
-                    {//Second node of the edge is not Dirichlet node
-                        j_int= DiffusionEquation::unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                        MatSetValue(_A,i_int,j_int,(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
-                    }
-                    else if (!dirichletCell_treated)
-                    {//Second node of the edge is a Dirichlet node
-                        dirichletCell_treated=true;
-                        for (int kdim=0; kdim<_Ndim+1;kdim++)
-                        {
-							std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
-							if( it != _dirichletBoundaryValues.end() )
-                            {
-                                if( _dirichletValuesSet )
-                                    valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
-                                else    
-                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
-                            }
-                            else
-                                valuesBorder[kdim]=0;                            
-                        }
-                        GradShapeFuncBorder=DiffusionEquation::gradientNodal(M,valuesBorder)/DiffusionEquation::fact(_Ndim);
-                        coeff =-1.*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
-                        VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
-                    }
-                }
-            }
-        }            
+	if(_rank == 0)
+		{
+		Cell Cj;
+		string nameOfGroup;
+		double coeff;
+		MatZeroEntries(_A);
+		VecZeroEntries(_b);
+	    
+	    Matrix M(_Ndim+1,_Ndim+1);//cell geometry matrix
+	    std::vector< Vector > GradShapeFuncs(_Ndim+1);//shape functions of cell nodes
+	    std::vector< int > nodeIds(_Ndim+1);//cell node Ids
+	    std::vector< Node > nodes(_Ndim+1);//cell nodes
+	    int i_int, j_int; //index of nodes j and k considered as unknown nodes
+	    bool dirichletCell_treated;
+	    
+	    std::vector< vector< double > > values(_Ndim+1,vector< double >(_Ndim+1,0));//values of shape functions on cell node
+	    for (int idim=0; idim<_Ndim+1;idim++)
+	        values[idim][idim]=1;
+	
+	    /* parameters for boundary treatment */
+	    vector< double > valuesBorder(_Ndim+1);
+	    Vector GradShapeFuncBorder(_Ndim+1);
+	    
+		for (int j=0; j<_Nmailles;j++)
+	    {
+			Cj = _mesh.getCell(j);
+	
+	        for (int idim=0; idim<_Ndim+1;idim++){
+	            nodeIds[idim]=Cj.getNodeId(idim);
+	            nodes[idim]=_mesh.getNode(nodeIds[idim]);
+	            for (int jdim=0; jdim<_Ndim;jdim++)
+	                M(idim,jdim)=nodes[idim].getPoint()[jdim];
+	            M(idim,_Ndim)=1;
+	        }
+	        for (int idim=0; idim<_Ndim+1;idim++)
+	            GradShapeFuncs[idim]=DiffusionEquation::gradientNodal(M,values[idim])/DiffusionEquation::fact(_Ndim);
+	
+	        /* Loop on the edges of the cell */
+	        for (int idim=0; idim<_Ndim+1;idim++)
+	        {
+	            if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[idim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[idim])
+	            {//First node of the edge is not Dirichlet node
+	                i_int=DiffusionEquation::unknownNodeIndex(nodeIds[idim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
+	                dirichletCell_treated=false;
+	                for (int jdim=0; jdim<_Ndim+1;jdim++)
+	                {
+	                    if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
+	                    {//Second node of the edge is not Dirichlet node
+	                        j_int= DiffusionEquation::unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
+	                        MatSetValue(_A,i_int,j_int,(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
+	                    }
+	                    else if (!dirichletCell_treated)
+	                    {//Second node of the edge is a Dirichlet node
+	                        dirichletCell_treated=true;
+	                        for (int kdim=0; kdim<_Ndim+1;kdim++)
+	                        {
+								std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
+								if( it != _dirichletBoundaryValues.end() )
+	                            {
+	                                if( _dirichletValuesSet )
+	                                    valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
+	                                else    
+	                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
+	                            }
+	                            else
+	                                valuesBorder[kdim]=0;                            
+	                        }
+	                        GradShapeFuncBorder=DiffusionEquation::gradientNodal(M,valuesBorder)/DiffusionEquation::fact(_Ndim);
+	                        coeff =-1.*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
+	                        VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
+	                    }
+	                }
+	            }
+	        }            
+		}
+	    
+	    //Calcul de la contribution de la condition limite de Neumann au second membre
+	    if( _NdirichletNodes !=_NboundaryNodes)
+	    {
+	        vector< int > boundaryFaces = _mesh.getBoundaryFaceIds();
+	        int NboundaryFaces=boundaryFaces.size();
+	        for(int i = 0; i< NboundaryFaces ; i++)//On parcourt les faces du bord
+	        {
+	            Face Fi = _mesh.getFace(boundaryFaces[i]);
+	            for(int j = 0 ; j<_Ndim ; j++)//On parcourt les noeuds de la face
+	            {
+	                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is a Neumann BC node (not a Dirichlet BC node)
+	                {
+	                    j_int=DiffusionEquation::unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
+	                    if( _neumannValuesSet )
+	                        coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
+	                    else
+	                        coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
+	                    VecSetValue(_b, j_int, coeff, ADD_VALUES);
+	                }
+	            }
+	        }
+	    }
 	}
-    
-    //Calcul de la contribution de la condition limite de Neumann au second membre
-    if( _NdirichletNodes !=_NboundaryNodes)
-    {
-        vector< int > boundaryFaces = _mesh.getBoundaryFaceIds();
-        int NboundaryFaces=boundaryFaces.size();
-        for(int i = 0; i< NboundaryFaces ; i++)//On parcourt les faces du bord
-        {
-            Face Fi = _mesh.getFace(boundaryFaces[i]);
-            for(int j = 0 ; j<_Ndim ; j++)//On parcourt les noeuds de la face
-            {
-                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is a Neumann BC node (not a Dirichlet BC node)
-                {
-                    j_int=DiffusionEquation::unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
-                    if( _neumannValuesSet )
-                        coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
-                    else
-                        coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
-                    VecSetValue(_b, j_int, coeff, ADD_VALUES);
-                }
-            }
-        }
-    }
-
     MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 	VecAssemblyBegin(_b);
@@ -405,110 +407,112 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 }
 
 double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
-	long nbFaces = _mesh.getNumberOfFaces();
-	Face Fj;
-	Cell Cell1,Cell2;
-	string nameOfGroup;
-	double inv_dxi, inv_dxj;
-	double barycenterDistance;
-	Vector normale(_Ndim);
-	double dn;
-	PetscInt idm, idn;
-	std::vector< int > idCells;
-	MatZeroEntries(_A);
-	VecZeroEntries(_b);
-
-	for (int j=0; j<nbFaces;j++){
-		Fj = _mesh.getFace(j);
-
-		// compute the normal vector corresponding to face j : from idCells[0] to idCells[1]
-		idCells = Fj.getCellsId();
-		Cell1 = _mesh.getCell(idCells[0]);
-		idm = idCells[0];
-        for(int l=0; l<Cell1.getNumberOfFaces(); l++){
-            if (j == Cell1.getFacesId()[l]){
-                for (int idim = 0; idim < _Ndim; ++idim)
-                    normale[idim] = Cell1.getNormalVector(l,idim);
-                break;
-            }
-        }
-
-		//Compute velocity at the face Fj
-		dn=(_DiffusionTensor*normale)*normale;
-
-		// compute 1/dxi = volume of Ci/area of Fj
-        inv_dxi = Fj.getMeasure()/Cell1.getMeasure();
-
-		// If Fj is on the boundary
-		if (Fj.getNumberOfCells()==1) {
-			if(_verbose )
-			{
-				cout << "face numero " << j << " cellule frontiere " << idCells[0] << " ; vecteur normal=(";
-				for(int p=0; p<_Ndim; p++)
-					cout << normale[p] << ",";
-				cout << ") "<<endl;
+	if(_rank == 0)
+	{
+		long nbFaces = _mesh.getNumberOfFaces();
+		Face Fj;
+		Cell Cell1,Cell2;
+		string nameOfGroup;
+		double inv_dxi, inv_dxj;
+		double barycenterDistance;
+		Vector normale(_Ndim);
+		double dn;
+		PetscInt idm, idn;
+		std::vector< int > idCells;
+		MatZeroEntries(_A);
+		VecZeroEntries(_b);
+	
+		for (int j=0; j<nbFaces;j++){
+			Fj = _mesh.getFace(j);
+	
+			// compute the normal vector corresponding to face j : from idCells[0] to idCells[1]
+			idCells = Fj.getCellsId();
+			Cell1 = _mesh.getCell(idCells[0]);
+			idm = idCells[0];
+	        for(int l=0; l<Cell1.getNumberOfFaces(); l++){
+	            if (j == Cell1.getFacesId()[l]){
+	                for (int idim = 0; idim < _Ndim; ++idim)
+	                    normale[idim] = Cell1.getNormalVector(l,idim);
+	                break;
+	            }
+	        }
+	
+			//Compute velocity at the face Fj
+			dn=(_DiffusionTensor*normale)*normale;
+	
+			// compute 1/dxi = volume of Ci/area of Fj
+	        inv_dxi = Fj.getMeasure()/Cell1.getMeasure();
+	
+			// If Fj is on the boundary
+			if (Fj.getNumberOfCells()==1) {
+				if(_verbose )
+				{
+					cout << "face numero " << j << " cellule frontiere " << idCells[0] << " ; vecteur normal=(";
+					for(int p=0; p<_Ndim; p++)
+						cout << normale[p] << ",";
+					cout << ") "<<endl;
+				}
+	
+	            std::map<int,double>::iterator it=_dirichletBoundaryValues.find(j);
+	            if( it != _dirichletBoundaryValues.end() )
+	            {
+	                barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
+	                MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                                     , ADD_VALUES);
+	                VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*it->second, ADD_VALUES);
+	            }
+	            else
+	            {
+	                nameOfGroup = Fj.getGroupName();
+	    
+	                if (_limitField[nameOfGroup].bcType==NeumannStationaryDiffusion){
+	                    VecSetValue(_b,idm,    -dn*inv_dxi*_limitField[nameOfGroup].normalFlux, ADD_VALUES);
+	                }
+	                else if(_limitField[nameOfGroup].bcType==DirichletStationaryDiffusion){
+	                    barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
+	                    MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                           , ADD_VALUES);
+	                    VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
+	                }
+	                else {
+	                    stop=true ;
+	                    cout<<"!!!!!!!!!!!!!!! Error StationaryDiffusionEquation::computeDiffusionMatrixFV !!!!!!!!!!"<<endl;
+	                    cout<<"!!!!!! No boundary condition set for boundary named "<<nameOfGroup<< "!!!!!!!!!! _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
+	                    cout<<"Accepted boundary conditions are NeumannStationaryDiffusion "<<NeumannStationaryDiffusion<< " and DirichletStationaryDiffusion "<<DirichletStationaryDiffusion<<endl;
+	                    *_runLogFile<<"!!!!!! Boundary condition not set for boundary named "<<nameOfGroup<< "!!!!!!!!!! _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
+	                    _runLogFile->close();
+	                    throw CdmathException("Boundary condition not set");
+	                }
+	            }
+				// if Fj is inside the domain
+			} else 	if (Fj.getNumberOfCells()==2 ){
+				if(_verbose )
+				{
+					cout << "face numero " << j << " cellule gauche " << idCells[0] << " cellule droite " << idCells[1];
+					cout << " ; vecteur normal=(";
+					for(int p=0; p<_Ndim; p++)
+						cout << normale[p] << ",";
+					cout << ") "<<endl;
+				}
+				Cell2 = _mesh.getCell(idCells[1]);
+				idn = idCells[1];
+				if (_Ndim > 1)
+					inv_dxj = Fj.getMeasure()/Cell2.getMeasure();
+				else
+					inv_dxj = 1/Cell2.getMeasure();
+				
+				barycenterDistance=Cell1.getBarryCenter().distance(Cell2.getBarryCenter());
+	
+				MatSetValue(_A,idm,idm, dn*inv_dxi/barycenterDistance, ADD_VALUES);
+				MatSetValue(_A,idm,idn,-dn*inv_dxi/barycenterDistance, ADD_VALUES);
+				MatSetValue(_A,idn,idn, dn*inv_dxj/barycenterDistance, ADD_VALUES);
+				MatSetValue(_A,idn,idm,-dn*inv_dxj/barycenterDistance, ADD_VALUES);
 			}
-
-            std::map<int,double>::iterator it=_dirichletBoundaryValues.find(j);
-            if( it != _dirichletBoundaryValues.end() )
-            {
-                barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
-                MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                                     , ADD_VALUES);
-                VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*it->second, ADD_VALUES);
-            }
-            else
-            {
-                nameOfGroup = Fj.getGroupName();
-    
-                if (_limitField[nameOfGroup].bcType==NeumannStationaryDiffusion){
-                    VecSetValue(_b,idm,    -dn*inv_dxi*_limitField[nameOfGroup].normalFlux, ADD_VALUES);
-                }
-                else if(_limitField[nameOfGroup].bcType==DirichletStationaryDiffusion){
-                    barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
-                    MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                           , ADD_VALUES);
-                    VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
-                }
-                else {
-                    stop=true ;
-                    cout<<"!!!!!!!!!!!!!!! Error StationaryDiffusionEquation::computeDiffusionMatrixFV !!!!!!!!!!"<<endl;
-                    cout<<"!!!!!! No boundary condition set for boundary named "<<nameOfGroup<< "!!!!!!!!!! _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
-                    cout<<"Accepted boundary conditions are NeumannStationaryDiffusion "<<NeumannStationaryDiffusion<< " and DirichletStationaryDiffusion "<<DirichletStationaryDiffusion<<endl;
-                    *_runLogFile<<"!!!!!! Boundary condition not set for boundary named "<<nameOfGroup<< "!!!!!!!!!! _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
-                    _runLogFile->close();
-                    throw CdmathException("Boundary condition not set");
-                }
-            }
-			// if Fj is inside the domain
-		} else 	if (Fj.getNumberOfCells()==2 ){
-			if(_verbose )
-			{
-				cout << "face numero " << j << " cellule gauche " << idCells[0] << " cellule droite " << idCells[1];
-				cout << " ; vecteur normal=(";
-				for(int p=0; p<_Ndim; p++)
-					cout << normale[p] << ",";
-				cout << ") "<<endl;
-			}
-			Cell2 = _mesh.getCell(idCells[1]);
-			idn = idCells[1];
-			if (_Ndim > 1)
-				inv_dxj = Fj.getMeasure()/Cell2.getMeasure();
 			else
-				inv_dxj = 1/Cell2.getMeasure();
-			
-			barycenterDistance=Cell1.getBarryCenter().distance(Cell2.getBarryCenter());
-
-			MatSetValue(_A,idm,idm, dn*inv_dxi/barycenterDistance, ADD_VALUES);
-			MatSetValue(_A,idm,idn,-dn*inv_dxi/barycenterDistance, ADD_VALUES);
-			MatSetValue(_A,idn,idn, dn*inv_dxj/barycenterDistance, ADD_VALUES);
-			MatSetValue(_A,idn,idm,-dn*inv_dxj/barycenterDistance, ADD_VALUES);
+	        {
+	            *_runLogFile<<"StationaryDiffusionEquation::computeDiffusionMatrixFV(): incompatible number of cells around a face"<<endl;
+				throw CdmathException("StationaryDiffusionEquation::computeDiffusionMatrixFV(): incompatible number of cells around a face");
+	        }
 		}
-		else
-        {
-            *_runLogFile<<"StationaryDiffusionEquation::computeDiffusionMatrixFV(): incompatible number of cells around a face"<<endl;
-			throw CdmathException("StationaryDiffusionEquation::computeDiffusionMatrixFV(): incompatible number of cells around a face");
-        }
 	}
-
 	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 	VecAssemblyBegin(_b);
