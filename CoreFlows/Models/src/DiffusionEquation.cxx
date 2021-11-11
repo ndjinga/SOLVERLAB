@@ -258,7 +258,7 @@ void DiffusionEquation::initialize()
 	}
 	
 	//Linear solver
-	KSPCreate(PETSC_COMM_SELF, &_ksp);
+	KSPCreate(PETSC_COMM_WORLD, &_ksp);
 	KSPSetType(_ksp, _ksptype);
 	// if(_ksptype == KSPGMRES) KSPGMRESSetRestart(_ksp,10000);
 	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
@@ -298,7 +298,7 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
         MatShift(_A,_heatTransfertCoeff/(_rho*_cp));//Contribution from the liquit/solid heat transfer
         
     if(_verbose or _system)
-        MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+        MatView(_A,PETSC_VIEWER_STDOUT_WORLD);
 
     return  result;
 }
@@ -411,7 +411,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
     stop=false ;
 
 	_maxvp=_diffusivity;//To do : optimise value with the mesh while respecting stability
-	PetscPrintf(PETSC_COMM_SELF,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
+	PetscPrintf(PETSC_COMM_WORLD,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
 	if(fabs(_maxvp)<_precision)
 		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFE(): Error computing time step ! Maximum diffusivity is zero => division by zero");
 	else
@@ -560,7 +560,7 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
     if(_verbose or _system)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
-        VecView(_b,PETSC_VIEWER_STDOUT_SELF);
+        VecView(_b,PETSC_VIEWER_STDOUT_WORLD);
 	}
     stop=false ;
     if(_heatTransfertCoeff>_precision)
@@ -598,7 +598,7 @@ bool DiffusionEquation::initTimeStep(double dt){
 	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Matrix of the linear system\n");
-		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+		MatView(_A,PETSC_VIEWER_STDOUT_WORLD);
 	}
 	
 	return _dt>0;
@@ -714,7 +714,7 @@ void DiffusionEquation::validateTimeStep()
 }
 
 void DiffusionEquation::save(){
-    PetscPrintf(PETSC_COMM_SELF,"Saving numerical results\n\n");
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results\n\n");
     *_runLogFile<< "Saving numerical results"<< endl<<endl;
 
 	string resultFile(_path+"/DiffusionEquation");//Results
@@ -725,7 +725,7 @@ void DiffusionEquation::save(){
     if(_verbose or _system)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Unknown of the linear system :\n");
-        VecView(_Tk,PETSC_VIEWER_STDOUT_SELF);
+        VecView(_Tk,PETSC_VIEWER_STDOUT_WORLD);
 	}
     //On remplit le champ
     double Ti;

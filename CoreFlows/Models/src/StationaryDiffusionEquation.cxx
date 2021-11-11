@@ -212,7 +212,7 @@ void StationaryDiffusionEquation::initialize()
 	VecScatterCreateToZero(_Tk,&_scat,&_Tk_seq);
 
 	//Linear solver
-	KSPCreate(PETSC_COMM_SELF, &_ksp);
+	KSPCreate(PETSC_COMM_WORLD, &_ksp);
 	KSPSetType(_ksp, _ksptype);
 	// if(_ksptype == KSPGMRES) KSPGMRESSetRestart(_ksp,10000);
 	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
@@ -279,7 +279,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrix(bool & stop)
         MatShift(_A,_heatTransfertCoeff);//Contribution from the liquit/solid heat transfer
         
     if(_verbose or _system)
-        MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+        MatView(_A,PETSC_VIEWER_STDOUT_WORLD);
 
     return  result;
 }
@@ -558,7 +558,7 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
 	VecAssemblyEnd(_b);
 
     if(_verbose or _system)
-        VecView(_b,PETSC_VIEWER_STDOUT_SELF);
+        VecView(_b,PETSC_VIEWER_STDOUT_WORLD);
 
     stop=false ;
 	return INFINITY;
@@ -853,7 +853,7 @@ void StationaryDiffusionEquation::save(){
     system(suppress.c_str());//Nettoyage des précédents calculs identiques
     
     if(_verbose or _system)
-        VecView(_Tk,PETSC_VIEWER_STDOUT_SELF);
+        VecView(_Tk,PETSC_VIEWER_STDOUT_WORLD);
 
     double Ti; 
     if(!_FECalculation)
