@@ -200,6 +200,8 @@ protected :
 	Vector _normale;
 	Matrix _DiffusionTensor;
 	Vec _deltaT, _Tk, _Tkm1, _b0;
+	Vec _Tk_seq; // Local sequential copy of the parallel vector _Tk, used for saving result files
+
 	double _dt_src;
     
 	//Heat transfert variables
@@ -236,9 +238,12 @@ protected :
     std::map< int, double> _dirichletBoundaryValues;
     std::map< int, double> _neumannBoundaryValues;
 
-	//MPI variables
+	/**** MPI related variables ***/
 	PetscMPIInt    _size;        /* size of communicator */
 	PetscMPIInt    _rank;        /* processor rank */
+	VecScatter _scat;			/* For the distribution of a local vector */
+	int _globalNbUnknowns, _localNbUnknowns;
+	int _d_nnz, _o_nnz;			/* local and "non local" numbers of non zeros corfficients */
 };
 
 #endif /* StationaryDiffusionEquation_HXX_ */

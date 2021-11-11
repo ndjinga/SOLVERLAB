@@ -191,7 +191,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 		Face Fk;
 	
 		if(_verbose)
-			PetscPrintf(PETSC_COMM_WORLD,"Computing cell perimeters and mesh minimal diameter\n");
+			PetscPrintf(PETSC_COMM_SELF,"Computing cell perimeters and mesh minimal diameter\n");
 	
 		//Compute the maximum number of neighbours for nodes or cells
 	    if(VV.getTypeOfField()==NODES)
@@ -221,14 +221,24 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 		}
 	}
 	
-	/* sharing informations with other procs */
+	/* Sharing informations with other procs */
 	MPI_Bcast(&_Nmailles, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 	MPI_Bcast(&_Nnodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 	MPI_Bcast(&_Nfaces, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 	MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 	MPI_Bcast(&_neibMaxNbNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 	MPI_Bcast(&_minl, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
+
+	/* MPI distribution parameters */
+	int nbVoisinsMax;//Mettre en attribut ?
+	if(!_FECalculation)
+		nbVoisinsMax = _neibMaxNbCells;
+	else
+		nbVoisinsMax = _neibMaxNbNodes;
+    _d_nnz = (nbVoisinsMax+1)*_nVar;
+    _o_nnz =  nbVoisinsMax   *_nVar;
 }
+
 //Function needed because swig of enum EntityType fails
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type)
 {

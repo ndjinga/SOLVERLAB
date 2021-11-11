@@ -228,20 +228,17 @@ void DiffusionEquation::initialize()
 	    }
 	}
 
-	//creation de la matrice
     if(!_FECalculation)
-        MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
+		_globalNbUnknowns = _Nmailles*_nVar;
     else
-        MatCreateSeqAIJ(PETSC_COMM_SELF, _NunknownNodes, _NunknownNodes, (1+_neibMaxNbNodes), PETSC_NULL, &_A);
+		_globalNbUnknowns = _NunknownNodes*_nVar;
 
-	VecCreate(PETSC_COMM_SELF, &_Tk);
-
-    if(!_FECalculation)
-        VecSetSizes(_Tk,PETSC_DECIDE,_Nmailles);
-    else
-        VecSetSizes(_Tk,PETSC_DECIDE,_NunknownNodes);
-
+	/* Vectors creations */
+	VecCreate(PETSC_COMM_WORLD, &_Tk);//main unknown
+    VecSetSizes(_Tk,PETSC_DECIDE,_globalNbUnknowns);
 	VecSetFromOptions(_Tk);
+	VecGetLocalSize(_Tk, &_localNbUnknowns);
+	
 	VecDuplicate(_Tk, &_Tn);
 	VecDuplicate(_Tk, &_Tkm1);
 	VecDuplicate(_Tk, &_deltaT);
@@ -250,6 +247,15 @@ void DiffusionEquation::initialize()
 
 	for(int i =0; i<_VV.getNumberOfElements();i++)
 		VecSetValue(_Tn,i,_VV(i), INSERT_VALUES);
+
+	/* Matrix creation */
+   	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
+	
+	/* Local sequential vector creation */
+	if(_rank == 0)
+		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tn_seq);//For saving results on proc 0
+
+	VecScatterCreateToZero(_Tn,&_scat,&_Tn_seq);
 
 	//Linear solver
 	KSPCreate(PETSC_COMM_SELF, &_ksp);
@@ -260,7 +266,8 @@ void DiffusionEquation::initialize()
 	PCSetType(_pc, _pctype);
 
 	_initializedMemory=true;
-	save();//save initial data
+	if(_rank == 0)
+		save();//save initial data
 }
 
 double DiffusionEquation::computeTimeStep(bool & stop){

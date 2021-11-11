@@ -187,23 +187,29 @@ void StationaryDiffusionEquation::initialize()
 	    }
 	}
 	
-	//creation de la matrice
     if(!_FECalculation)
-        MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
+		_globalNbUnknowns = _Nmailles*_nVar;
     else
-        MatCreateSeqAIJ(PETSC_COMM_SELF, _NunknownNodes, _NunknownNodes, (1+_neibMaxNbNodes), PETSC_NULL, &_A);
+		_globalNbUnknowns = _NunknownNodes*_nVar;
 
-	VecCreate(PETSC_COMM_SELF, &_Tk);
-
-    if(!_FECalculation)
-        VecSetSizes(_Tk,PETSC_DECIDE,_Nmailles);
-    else
-        VecSetSizes(_Tk,PETSC_DECIDE,_NunknownNodes);
-
+	/* Vectors creations */
+	VecCreate(PETSC_COMM_WORLD, &_Tk);//main unknown
+    VecSetSizes(_Tk,PETSC_DECIDE,_globalNbUnknowns);
 	VecSetFromOptions(_Tk);
+	VecGetLocalSize(_Tk, &_localNbUnknowns);
+	
 	VecDuplicate(_Tk, &_Tkm1);
 	VecDuplicate(_Tk, &_deltaT);
-	VecDuplicate(_Tk, &_b);//RHS of the linear system
+	VecDuplicate(_Tk, &_b);//RHS of the linear system: _b=Tn/dt + _b0 + puisance volumique + couplage thermique avec le fluide
+
+	/* Matrix creation */
+   	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
+	
+	/* Local sequential vector creation */
+	if(_rank == 0)
+		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tk_seq);//For saving results on proc 0
+
+	VecScatterCreateToZero(_Tk,&_scat,&_Tk_seq);
 
 	//Linear solver
 	KSPCreate(PETSC_COMM_SELF, &_ksp);

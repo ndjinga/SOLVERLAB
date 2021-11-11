@@ -141,7 +141,12 @@ protected :
 	Vector _normale;
 	Matrix _DiffusionTensor;
 	Vec _Tn, _deltaT, _Tk, _Tkm1, _b0;
+	Vec _Tn_seq; // Local sequential copy of the parallel vector _Tn, used for saving result files
+
 	double _dt_diffusion, _dt_src;
+	TimeScheme _timeScheme;
+	map<string, LimitFieldDiffusion> _limitField;
+
     
     /************ Data for FE calculation *************/
 	int _NunknownNodes;/* number of unknown nodes for FE calculation */
@@ -149,9 +154,6 @@ protected :
 	int _NdirichletNodes;/* number of boundary nodes with Dirichlet BC for FE calculation */
     std::vector< int > _boundaryNodeIds;/* List of boundary nodes */
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
-
-	TimeScheme _timeScheme;
-	map<string, LimitFieldDiffusion> _limitField;
 
     /********* Possibility to set a boundary field as DirichletNeumann boundary condition *********/
     bool _dirichletValuesSet;

@@ -759,11 +759,13 @@ protected :
 	string _path;//path to execution directory used for saving results
 	saveFormat _saveFormat;//file saving format : MED, VTK or CSV
 	
-	//MPI variables
+	//MPI related variables
 	PetscMPIInt    _size;        /* size of communicator */
 	PetscMPIInt    _rank;        /* processor rank */
-	
-	
+	VecScatter	   _scat;			/* For the distribution of a local vector */
+	int _globalNbUnknowns, _localNbUnknowns;
+	int _d_nnz, _o_nnz;			/* local and "non local" numbers of non zeros corfficients */
+
 };
 
 #endif /* PROBLEMCOREFLOWS_HXX_ */
