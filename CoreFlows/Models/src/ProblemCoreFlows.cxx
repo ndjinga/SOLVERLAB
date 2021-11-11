@@ -197,27 +197,37 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	    if(VV.getTypeOfField()==NODES)
 	        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
 	    else
+	    {
 	        _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
 	        
-		//Compute Delta x and the cell perimeters
-		for (int i=0; i<_mesh.getNumberOfCells(); i++){
-			Ci = _mesh.getCell(i);
-			if (_Ndim > 1){
-				_perimeters(i)=0;
-				for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
-					indexFace=Ci.getFacesId()[k];
-					Fk = _mesh.getFace(indexFace);
-					_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
-					_perimeters(i)+=Fk.getMeasure();
+			//Compute Delta x and the cell perimeters
+			for (int i=0; i<_mesh.getNumberOfCells(); i++){
+				Ci = _mesh.getCell(i);
+				if (_Ndim > 1){
+					_perimeters(i)=0;
+					for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
+						indexFace=Ci.getFacesId()[k];
+						Fk = _mesh.getFace(indexFace);
+						_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
+						_perimeters(i)+=Fk.getMeasure();
+					}
+				}else{
+					_minl = min(_minl,Ci.getMeasure());
+					_perimeters(i)=Ci.getNumberOfFaces();
 				}
-			}else{
-				_minl = min(_minl,Ci.getMeasure());
-				_perimeters(i)=Ci.getNumberOfFaces();
 			}
+			if(_verbose)
+				cout<<_perimeters<<endl;
 		}
-		if(_verbose)
-			cout<<_perimeters<<endl;
 	}
+	
+	/* sharing informations with other procs */
+	MPI_Bcast(&_Nmailles, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&_Nnodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&_Nfaces, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&_neibMaxNbNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&_minl, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
 }
 //Function needed because swig of enum EntityType fails
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type)
