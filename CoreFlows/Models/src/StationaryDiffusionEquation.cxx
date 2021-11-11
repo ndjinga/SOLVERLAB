@@ -858,7 +858,7 @@ void StationaryDiffusionEquation::save(){
     if(_verbose or _system)
         VecView(_Tk,PETSC_VIEWER_STDOUT_WORLD);
 
-	if(_mpi_rank>1){
+	if(_mpi_rank==0){
 	    double Ti; 
 	    if(!_FECalculation)
 	        for(int i=0; i<_Nmailles; i++)

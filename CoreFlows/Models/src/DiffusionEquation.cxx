@@ -734,7 +734,7 @@ void DiffusionEquation::save(){
         VecView(_Tk,PETSC_VIEWER_STDOUT_WORLD);
 	}
 
-	if(_mpi_rank>1){
+	if(_mpi_rank==0){
 	    //On remplit le champ
 	    double Ti;
 	    if(!_FECalculation)
