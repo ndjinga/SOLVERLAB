@@ -130,7 +130,7 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
 
 void DiffusionEquation::initialize()
 {
-	if(_rank==0)
+	if(_mpi_rank==0)
 	{
 		_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
 	
@@ -252,7 +252,7 @@ void DiffusionEquation::initialize()
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
 	
 	/* Local sequential vector creation */
-	if(_size>1 && _rank == 0){
+	if(_mpi_size>1 && _mpi_rank == 0){
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tn_seq);//For saving results on proc 0
 		VecScatterCreateToZero(_Tn,&_scat,&_Tn_seq);
 	}
@@ -266,7 +266,7 @@ void DiffusionEquation::initialize()
 	PCSetType(_pc, _pctype);
 
 	_initializedMemory=true;
-	if(_rank == 0)
+	if(_mpi_rank == 0)
 		save();//save initial data
 }
 
@@ -305,7 +305,7 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
 
 double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 
-	if(_rank == 0)
+	if(_mpi_rank == 0)
 	{
 		Cell Cj;
 		string nameOfGroup;
@@ -421,7 +421,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 }
 
 double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
-	if(_rank == 0)
+	if(_mpi_rank == 0)
 	{
 		long nbFaces = _mesh.getNumberOfFaces();
 		Face Fj;
@@ -533,7 +533,7 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 
 double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix
 
-	if(_rank == 0)
+	if(_mpi_rank == 0)
 	{
 	    double Ti;  
 	    if(!_FECalculation)
@@ -828,6 +828,8 @@ void DiffusionEquation::terminate(){
 	VecDestroy(&_b0);
 	VecDestroy(&_b);
 	MatDestroy(&_A);
+	if(_mpi_size>1 && _mpi_rank == 0)
+		VecDestroy(&Un_seq);
 }
 
 void 

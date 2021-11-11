@@ -22,10 +22,10 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
 			PETSC_COMM_WORLD = comm;
 		PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
 	}
-	MPI_Comm_rank(PETSC_COMM_WORLD,&_rank);
-	MPI_Comm_size(PETSC_COMM_WORLD,&_size);
-	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
+	MPI_Comm_rank(PETSC_COMM_WORLD,&_mpi_rank);
+	MPI_Comm_size(PETSC_COMM_WORLD,&_mpi_size);
+	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_mpi_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_mpi_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
 	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
     if(lambda < 0.)
@@ -104,7 +104,7 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
 
 void StationaryDiffusionEquation::initialize()
 {
-	if(_rank==0)
+	if(_mpi_rank==0)
 	{
 		_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
 	
@@ -206,7 +206,7 @@ void StationaryDiffusionEquation::initialize()
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
 	
 	/* Local sequential vector creation */
-	if(_size>1 && _rank == 0)
+	if(_mpi_size>1 && _mpi_rank == 0)
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tk_seq);//For saving results on proc 0
 
 	VecScatterCreateToZero(_Tk,&_scat,&_Tk_seq);
@@ -285,7 +285,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrix(bool & stop)
 }
 
 double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
-	if(_rank == 0)
+	if(_mpi_rank == 0)
 		{
 		Cell Cj;
 		string nameOfGroup;
@@ -407,7 +407,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 }
 
 double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
-	if(_rank == 0)
+	if(_mpi_rank == 0)
 	{
 		long nbFaces = _mesh.getNumberOfFaces();
 		Face Fj;
@@ -538,7 +538,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix
 {
 
-	if(_rank == 0)
+	if(_mpi_rank == 0)
 	{
 	    if(!_FECalculation)
 	        for (int i=0; i<_Nmailles;i++)
@@ -644,7 +644,7 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
 
 void StationaryDiffusionEquation::setMesh(const Mesh &M)
 {
-	if(_rank==0)
+	if(_mpi_rank==0)
 	{
 		if(_Ndim != M.getSpaceDimension() or _Ndim!=M.getMeshDimension())//for the moment we must have space dim=mesh dim
 		{
@@ -918,6 +918,9 @@ void StationaryDiffusionEquation::terminate()
 	VecDestroy(&_deltaT);
 	VecDestroy(&_b);
 	MatDestroy(&_A);
+	if(_mpi_size>1 && _mpi_rank == 0)
+		VecDestroy(&Un_seq);
+
 }
 void 
 StationaryDiffusionEquation::setDirichletValues(map< int, double> dirichletBoundaryValues)

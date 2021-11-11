@@ -32,18 +32,18 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 			PETSC_COMM_WORLD = comm;
 		PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
 	}
-	MPI_Comm_rank(PETSC_COMM_WORLD,&_rank);
-	MPI_Comm_size(PETSC_COMM_WORLD,&_size);
-	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
+	MPI_Comm_rank(PETSC_COMM_WORLD,&_mpi_rank);
+	MPI_Comm_size(PETSC_COMM_WORLD,&_mpi_size);
+	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_mpi_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
+	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_mpi_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
 	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
-	if(_size>1)
+	if(_mpi_size>1)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected : running a parallel simulation ----\n");
 		PetscPrintf(PETSC_COMM_WORLD,"---- Limited parallelism : input and output fields remain sequential ----\n");
 		PetscPrintf(PETSC_COMM_WORLD,"---- Only the matrixoperations are done in parallel thanks to PETSc----\n");
-		PetscPrintf(PETSC_COMM_WORLD,"---- Processor %d is in charge of building the mesh, saving the results, filling and then distributing the matrix to other processors.\n\n",_rank);
+		PetscPrintf(PETSC_COMM_WORLD,"---- Processor %d is in charge of building the mesh, saving the results, filling and then distributing the matrix to other processors.\n\n",_mpi_rank);
 	}
 	
 	/* Numerical parameter */
@@ -145,7 +145,7 @@ void ProblemCoreFlows::setPrecision(double precision)
 }
 void ProblemCoreFlows::setInitialField(const Field &VV)
 {
-	if(_rank==0)
+	if(_mpi_rank==0)
 	{
 		if(_Ndim != VV.getSpaceDimension()){
 			*_runLogFile<<"ProblemCoreFlows::setInitialField: mesh has incorrect space dimension"<<endl;

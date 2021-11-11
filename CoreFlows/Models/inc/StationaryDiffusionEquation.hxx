@@ -239,8 +239,8 @@ protected :
     std::map< int, double> _neumannBoundaryValues;
 
 	/**** MPI related variables ***/
-	PetscMPIInt    _size;        /* size of communicator */
-	PetscMPIInt    _rank;        /* processor rank */
+	PetscMPIInt    _mpi_size;        /* size of communicator */
+	PetscMPIInt    _mpi_rank;        /* processor rank */
 	VecScatter _scat;			/* For the distribution of a local vector */
 	int _globalNbUnknowns, _localNbUnknowns;
 	int _d_nnz, _o_nnz;			/* local and "non local" numbers of non zeros corfficients */
