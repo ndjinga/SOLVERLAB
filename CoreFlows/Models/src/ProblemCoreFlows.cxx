@@ -221,21 +221,18 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 		}
 	}
 	
-	/* Sharing informations with other procs */
-	if(_size>1){
-		MPI_Bcast(&_Nmailles, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-		MPI_Bcast(&_Nnodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-		MPI_Bcast(&_Nfaces, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-		MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-		MPI_Bcast(&_neibMaxNbNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-		MPI_Bcast(&_minl, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
-	}
 	/* MPI distribution parameters */
 	int nbVoisinsMax;//Mettre en attribut ?
-	if(!_FECalculation)
+	if(!_FECalculation){
+		MPI_Bcast(&_Nmailles      , 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 		nbVoisinsMax = _neibMaxNbCells;
-	else
+	}
+	else{
+		MPI_Bcast(&_Nnodes        , 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_neibMaxNbNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 		nbVoisinsMax = _neibMaxNbNodes;
+	}
     _d_nnz = (nbVoisinsMax+1)*_nVar;
     _o_nnz =  nbVoisinsMax   *_nVar;
 }
