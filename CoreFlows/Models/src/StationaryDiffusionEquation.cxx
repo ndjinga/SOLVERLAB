@@ -613,26 +613,18 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
         VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
         VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
 
-        _erreur_rel= 0;
-        double Ti, dTi;
-
         VecAssemblyBegin(_Tk);
         VecAssemblyEnd(  _Tk);
         VecAssemblyBegin(_deltaT);
         VecAssemblyEnd(  _deltaT);
 
 		if(_verbose)
-			PetscPrintf(PETSC_COMM_WORLD,"Début calcul de la variation relative");
+			PetscPrintf(PETSC_COMM_WORLD,"Début calcul de l'erreur maximale");
 
-		for(int i=0; i<_NunknownNodes; i++)
-		{
-			VecGetValues(_deltaT, 1, &i, &dTi);
-			VecGetValues(_Tk, 1, &i, &Ti);
-			if(_erreur_rel < fabs(dTi/Ti))
-				_erreur_rel = fabs(dTi/Ti);
-		}
+		VecNorm(_deltaT,NORM_INFINITY,&_erreur_rel);
+
 		if(_verbose)
-			PetscPrintf(PETSC_COMM_WORLD,"Fin calcul de la variation relative, erreur relative maximale : %1.2f", _erreur_rel );
+			PetscPrintf(PETSC_COMM_WORLD,"Fin calcul de la variation relative, erreur maximale : %1.2f", _erreur_rel );
         stop=false;
         converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
     }
@@ -859,8 +851,8 @@ void StationaryDiffusionEquation::save(){
     system(suppress.c_str());//Nettoyage des précédents calculs identiques
     
 	if(_mpi_size>1){
-		VecScatterBegin(scat,_Tk,_Tk_seq,INSERT_VALUES,SCATTER_FORWARD);
-		VecScatterEnd(  scat,_Tk,_Tk_seq,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterBegin(_scat,_Tk,_Tk_seq,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterEnd(  _scat,_Tk,_Tk_seq,INSERT_VALUES,SCATTER_FORWARD);
 	}
 
     if(_verbose or _system)

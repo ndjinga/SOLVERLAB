@@ -675,16 +675,7 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 		{
 			VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
 			VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
-			_erreur_rel= 0;
-			double Ti, dTi;
-
-			for(int i=0; i<_VV.getNumberOfElements(); i++)
-			{
-				VecGetValues(_deltaT, 1, &i, &dTi);
-				VecGetValues(_Tk, 1, &i, &Ti);
-				if(_erreur_rel < fabs(dTi/Ti))
-					_erreur_rel = fabs(dTi/Ti);
-			}
+			VecNorm(_deltaT,NORM_INFINITY,&_erreur_rel);
 			converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
 		}
 	}
@@ -733,8 +724,8 @@ void DiffusionEquation::save(){
 	resultFile+=_fileName;
 
 	if(_mpi_size>1){
-		VecScatterBegin(scat,_Tn,_Tn_seq,INSERT_VALUES,SCATTER_FORWARD);
-		VecScatterEnd(  scat,_Tn,_Tn_seq,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterBegin(_scat,_Tn,_Tn_seq,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterEnd(  _scat,_Tn,_Tn_seq,INSERT_VALUES,SCATTER_FORWARD);
 	}
 	
     if(_verbose or _system)
