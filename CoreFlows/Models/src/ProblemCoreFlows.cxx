@@ -222,13 +222,14 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	}
 	
 	/* Sharing informations with other procs */
-	MPI_Bcast(&_Nmailles, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-	MPI_Bcast(&_Nnodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-	MPI_Bcast(&_Nfaces, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-	MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-	MPI_Bcast(&_neibMaxNbNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
-	MPI_Bcast(&_minl, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
-
+	if(_size>1){
+		MPI_Bcast(&_Nmailles, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_Nnodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_Nfaces, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_neibMaxNbNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_minl, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
+	}
 	/* MPI distribution parameters */
 	int nbVoisinsMax;//Mettre en attribut ?
 	if(!_FECalculation)

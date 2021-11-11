@@ -206,7 +206,7 @@ void StationaryDiffusionEquation::initialize()
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
 	
 	/* Local sequential vector creation */
-	if(_rank == 0)
+	if(_size>1 && _rank == 0)
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tk_seq);//For saving results on proc 0
 
 	VecScatterCreateToZero(_Tk,&_scat,&_Tk_seq);
@@ -638,69 +638,88 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
 
 void StationaryDiffusionEquation::setMesh(const Mesh &M)
 {
-	if(_Ndim != M.getSpaceDimension() or _Ndim!=M.getMeshDimension())//for the moment we must have space dim=mesh dim
+	if(_rank==0)
 	{
-        cout<< "Problem : dimension defined is "<<_Ndim<< " but mesh dimension= "<<M.getMeshDimension()<<", and space dimension is "<<M.getSpaceDimension()<<endl;
-		*_runLogFile<< "Problem : dim = "<<_Ndim<< " but mesh dim= "<<M.getMeshDimension()<<", mesh space dim= "<<M.getSpaceDimension()<<endl;
-		*_runLogFile<<"StationaryDiffusionEquation::setMesh: mesh has incorrect dimension"<<endl;
-		_runLogFile->close();
-		throw CdmathException("StationaryDiffusionEquation::setMesh: mesh has incorrect  dimension");
+		if(_Ndim != M.getSpaceDimension() or _Ndim!=M.getMeshDimension())//for the moment we must have space dim=mesh dim
+		{
+	        cout<< "Problem : dimension defined is "<<_Ndim<< " but mesh dimension= "<<M.getMeshDimension()<<", and space dimension is "<<M.getSpaceDimension()<<endl;
+			*_runLogFile<< "Problem : dim = "<<_Ndim<< " but mesh dim= "<<M.getMeshDimension()<<", mesh space dim= "<<M.getSpaceDimension()<<endl;
+			*_runLogFile<<"StationaryDiffusionEquation::setMesh: mesh has incorrect dimension"<<endl;
+			_runLogFile->close();
+			throw CdmathException("StationaryDiffusionEquation::setMesh: mesh has incorrect  dimension");
+		}
+	
+		_mesh=M;
+		_Nmailles = _mesh.getNumberOfCells();
+		_Nnodes =   _mesh.getNumberOfNodes();
+	    
+	    cout<<"Mesh has "<< _Nmailles << " cells and " << _Nnodes << " nodes"<<endl<<endl;;
+		*_runLogFile<<"Mesh has "<< _Nmailles << " cells and " << _Nnodes << " nodes"<<endl<<endl;
+	    
+		// find  maximum nb of neibourghs
+	    if(!_FECalculation)
+	    {
+	    	_VV=Field ("Temperature", CELLS, _mesh, 1);
+	        _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
+	    }
+	    else
+	    {
+	        if(_Ndim==1 )//The 1D cdmath mesh is necessarily made of segments
+				cout<<"1D Finite element method on segments"<<endl;
+	        else if(_Ndim==2)
+	        {
+				if( _mesh.isTriangular() )//Mesh dim=2
+					cout<<"2D Finite element method on triangles"<<endl;
+				else if (_mesh.getMeshDimension()==1)//Mesh dim=1
+					cout<<"1D Finite element method on a 2D network : space dimension is "<<_Ndim<< ", mesh dimension is "<<_mesh.getMeshDimension()<<endl;			
+				else
+				{
+					cout<<"Error Finite element with Space dimension "<<_Ndim<< ", and mesh dimension  "<<_mesh.getMeshDimension()<< ", mesh should be either triangular either 1D network"<<endl;
+					*_runLogFile<<"StationaryDiffusionEquation::setMesh: mesh has incorrect dimension"<<endl;
+					_runLogFile->close();
+					throw CdmathException("StationaryDiffusionEquation::setMesh: mesh has incorrect cell types");
+				}
+	        }
+	        else if(_Ndim==3)
+	        {
+				if( _mesh.isTetrahedral() )//Mesh dim=3
+					cout<<"3D Finite element method on tetrahedra"<<endl;
+				else if (_mesh.getMeshDimension()==2 and _mesh.isTriangular())//Mesh dim=2
+					cout<<"2D Finite element method on a 3D surface : space dimension is "<<_Ndim<< ", mesh dimension is "<<_mesh.getMeshDimension()<<endl;			
+				else if (_mesh.getMeshDimension()==1)//Mesh dim=1
+					cout<<"1D Finite element method on a 3D network : space dimension is "<<_Ndim<< ", mesh dimension is "<<_mesh.getMeshDimension()<<endl;			
+				else
+				{
+					cout<<"Error Finite element with Space dimension "<<_Ndim<< ", and mesh dimension  "<<_mesh.getMeshDimension()<< ", mesh should be either tetrahedral, either a triangularised surface or 1D network"<<endl;
+					*_runLogFile<<"StationaryDiffusionEquation::setMesh: mesh has incorrect dimension"<<endl;
+					_runLogFile->close();
+					throw CdmathException("StationaryDiffusionEquation::setMesh: mesh has incorrect cell types");
+				}
+	        }
+	
+			_VV=Field ("Temperature", NODES, _mesh, 1);
+	
+	        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
+	        _boundaryNodeIds = _mesh.getBoundaryNodeIds();
+	        _NboundaryNodes=_boundaryNodeIds.size();
+	    }
 	}
-
-	_mesh=M;
-	_Nmailles = _mesh.getNumberOfCells();
-	_Nnodes =   _mesh.getNumberOfNodes();
-    
-    cout<<"Mesh has "<< _Nmailles << " cells and " << _Nnodes << " nodes"<<endl<<endl;;
-	*_runLogFile<<"Mesh has "<< _Nmailles << " cells and " << _Nnodes << " nodes"<<endl<<endl;
-    
-	// find  maximum nb of neibourghs
-    if(!_FECalculation)
-    {
-    	_VV=Field ("Temperature", CELLS, _mesh, 1);
-        _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
-    }
-    else
-    {
-        if(_Ndim==1 )//The 1D cdmath mesh is necessarily made of segments
-			cout<<"1D Finite element method on segments"<<endl;
-        else if(_Ndim==2)
-        {
-			if( _mesh.isTriangular() )//Mesh dim=2
-				cout<<"2D Finite element method on triangles"<<endl;
-			else if (_mesh.getMeshDimension()==1)//Mesh dim=1
-				cout<<"1D Finite element method on a 2D network : space dimension is "<<_Ndim<< ", mesh dimension is "<<_mesh.getMeshDimension()<<endl;			
-			else
-			{
-				cout<<"Error Finite element with Space dimension "<<_Ndim<< ", and mesh dimension  "<<_mesh.getMeshDimension()<< ", mesh should be either triangular either 1D network"<<endl;
-				*_runLogFile<<"StationaryDiffusionEquation::setMesh: mesh has incorrect dimension"<<endl;
-				_runLogFile->close();
-				throw CdmathException("StationaryDiffusionEquation::setMesh: mesh has incorrect cell types");
-			}
-        }
-        else if(_Ndim==3)
-        {
-			if( _mesh.isTetrahedral() )//Mesh dim=3
-				cout<<"3D Finite element method on tetrahedra"<<endl;
-			else if (_mesh.getMeshDimension()==2 and _mesh.isTriangular())//Mesh dim=2
-				cout<<"2D Finite element method on a 3D surface : space dimension is "<<_Ndim<< ", mesh dimension is "<<_mesh.getMeshDimension()<<endl;			
-			else if (_mesh.getMeshDimension()==1)//Mesh dim=1
-				cout<<"1D Finite element method on a 3D network : space dimension is "<<_Ndim<< ", mesh dimension is "<<_mesh.getMeshDimension()<<endl;			
-			else
-			{
-				cout<<"Error Finite element with Space dimension "<<_Ndim<< ", and mesh dimension  "<<_mesh.getMeshDimension()<< ", mesh should be either tetrahedral, either a triangularised surface or 1D network"<<endl;
-				*_runLogFile<<"StationaryDiffusionEquation::setMesh: mesh has incorrect dimension"<<endl;
-				_runLogFile->close();
-				throw CdmathException("StationaryDiffusionEquation::setMesh: mesh has incorrect cell types");
-			}
-        }
-
-		_VV=Field ("Temperature", NODES, _mesh, 1);
-
-        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
-        _boundaryNodeIds = _mesh.getBoundaryNodeIds();
-        _NboundaryNodes=_boundaryNodeIds.size();
-    }
+	
+	/* Sharing informations with other procs */
+	if(_size>1){
+		MPI_Bcast(&_Nmailles, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_Nnodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+		MPI_Bcast(&_neibMaxNbNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	}
+	/* MPI distribution parameters */
+	int nbVoisinsMax;//Mettre en attribut ?
+	if(!_FECalculation)
+		nbVoisinsMax = _neibMaxNbCells;
+	else
+		nbVoisinsMax = _neibMaxNbNodes;
+    _d_nnz = (nbVoisinsMax+1)*_nVar;
+    _o_nnz =  nbVoisinsMax   *_nVar;
 
 	_meshSet=true;
 }
