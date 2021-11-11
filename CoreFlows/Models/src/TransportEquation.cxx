@@ -91,7 +91,7 @@ void TransportEquation::initialize()
 	}
 
 	//creation de la matrice
-	MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNb), PETSC_NULL, &_A);
+	MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
 	VecDuplicate(_Hn, &_Hk);
 	VecDuplicate(_Hn, &_Hkm1);
 	VecDuplicate(_Hn, &_deltaH);

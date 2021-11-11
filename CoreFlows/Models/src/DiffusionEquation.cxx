@@ -130,104 +130,107 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
 
 void DiffusionEquation::initialize()
 {
-	_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
-
-	if(_Ndim != _mesh.getSpaceDimension() or _Ndim!=_mesh.getMeshDimension())//for the moment we must have space dim=mesh dim
+	if(_rank==0)
 	{
-        PetscPrintf(PETSC_COMM_WORLD,"Problem : dimension defined is %d but mesh dimension= %d, and space dimension is %d",_Ndim,_mesh.getMeshDimension(),_mesh.getSpaceDimension());
-		*_runLogFile<< "Problem : dim = "<<_Ndim<< " but mesh dim= "<<_mesh.getMeshDimension()<<", mesh space dim= "<<_mesh.getSpaceDimension()<<endl;
-		*_runLogFile<<"DiffusionEquation::initialize: mesh has incorrect dimension"<<endl;
-		_runLogFile->close();
-		throw CdmathException("DiffusionEquation::initialize: mesh has incorrect  dimension");
+		_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
+	
+		if(_Ndim != _mesh.getSpaceDimension() or _Ndim!=_mesh.getMeshDimension())//for the moment we must have space dim=mesh dim
+		{
+	        PetscPrintf(PETSC_COMM_SELF,"Problem : dimension defined is %d but mesh dimension= %d, and space dimension is %d",_Ndim,_mesh.getMeshDimension(),_mesh.getSpaceDimension());
+			*_runLogFile<< "Problem : dim = "<<_Ndim<< " but mesh dim= "<<_mesh.getMeshDimension()<<", mesh space dim= "<<_mesh.getSpaceDimension()<<endl;
+			*_runLogFile<<"DiffusionEquation::initialize: mesh has incorrect dimension"<<endl;
+			_runLogFile->close();
+			throw CdmathException("DiffusionEquation::initialize: mesh has incorrect  dimension");
+		}
+	
+		if(!_initialDataSet)
+			throw CdmathException("DiffusionEquation::initialize() set initial data first");
+		else
+	        {
+	            PetscPrintf(PETSC_COMM_SELF,"Initialising the diffusion of a solid temperature using ");
+	            *_runLogFile<<"Initialising the diffusion of a solid temperature using ";
+	            if(!_FECalculation)
+	            {
+	                PetscPrintf(PETSC_COMM_SELF,"Finite volumes method\n\n");
+	                *_runLogFile<< "Finite volumes method"<<endl<<endl;
+	            }
+	            else
+	            {
+	                PetscPrintf(PETSC_COMM_SELF,"Finite elements method\n\n");
+	                *_runLogFile<< "Finite elements method"<<endl<<endl;
+	            }
+	        }
+
+		/**************** Field creation *********************/
+	
+		if(!_heatPowerFieldSet){
+	        _heatPowerField=Field("Heat power",_VV.getTypeOfField(),_mesh,1);
+	        for(int i =0; i<_VV.getNumberOfElements(); i++)
+	            _heatPowerField(i) = _heatSource;
+	        _heatPowerFieldSet=true;
+	    }
+		if(!_fluidTemperatureFieldSet){
+			_fluidTemperatureField=Field("Fluid temperature",_VV.getTypeOfField(),_mesh,1);
+			for(int i =0; i<_VV.getNumberOfElements(); i++)
+				_fluidTemperatureField(i) = _fluidTemperature;
+	        _fluidTemperatureFieldSet=true;
+		}
+	
+	    /* Détection des noeuds frontière avec une condition limite de Dirichlet */
+	    if(_FECalculation)
+	    {
+	        if(_Ndim==1 )//The 1D cdmath mesh is necessarily made of segments
+				PetscPrintf(PETSC_COMM_SELF,"1D Finite element method on segments\n");
+	        else if(_Ndim==2)
+	        {
+				if( _mesh.isTriangular() )//Mesh dim=2
+					PetscPrintf(PETSC_COMM_SELF,"2D Finite element method on triangles\n");
+				else if (_mesh.getMeshDimension()==1)//Mesh dim=1
+					PetscPrintf(PETSC_COMM_SELF,"1D Finite element method on a 2D network : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());			
+				else
+				{
+					PetscPrintf(PETSC_COMM_SELF,"Error Finite element with space dimension %, and mesh dimension  %d, mesh should be either triangular either 1D network\n",_Ndim,_mesh.getMeshDimension());
+					*_runLogFile<<"DiffusionEquation::initialize mesh has incorrect dimension"<<endl;
+					_runLogFile->close();
+					throw CdmathException("DiffusionEquation::initialize: mesh has incorrect cell types");
+				}
+	        }
+	        else if(_Ndim==3)
+	        {
+				if( _mesh.isTetrahedral() )//Mesh dim=3
+					PetscPrintf(PETSC_COMM_SELF,"3D Finite element method on tetrahedra\n");
+				else if (_mesh.getMeshDimension()==2 and _mesh.isTriangular())//Mesh dim=2
+					PetscPrintf(PETSC_COMM_SELF,"2D Finite element method on a 3D surface : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());			
+				else if (_mesh.getMeshDimension()==1)//Mesh dim=1
+					PetscPrintf(PETSC_COMM_SELF,"1D Finite element method on a 3D network : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());			
+				else
+				{
+					PetscPrintf(PETSC_COMM_SELF,"Error Finite element with space dimension %d, and mesh dimension  %d, mesh should be either tetrahedral, either a triangularised surface or 1D network",_Ndim,_mesh.getMeshDimension());
+					*_runLogFile<<"DiffusionEquation::initialize mesh has incorrect dimension"<<endl;
+					_runLogFile->close();
+					throw CdmathException("DiffusionEquation::initialize: mesh has incorrect cell types");
+				}
+	        }
+				
+	        _boundaryNodeIds = _mesh.getBoundaryNodeIds();
+	        _NboundaryNodes=_boundaryNodeIds.size();
+	
+	        if(_NboundaryNodes==_Nnodes)
+	            PetscPrintf(PETSC_COMM_SELF,"!!!!! Warning : all nodes are boundary nodes !!!!!");
+	
+	        for(int i=0; i<_NboundaryNodes; i++)
+	            if(_limitField[(_mesh.getNode(_boundaryNodeIds[i])).getGroupName()].bcType==DirichletDiffusion)
+	                _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
+	        _NdirichletNodes=_dirichletNodeIds.size();
+	        _NunknownNodes=_Nnodes - _NdirichletNodes;
+	        PetscPrintf(PETSC_COMM_SELF,"Number of unknown nodes %d, Number of boundary nodes %d, Number of Dirichlet boundary nodes %d\n\n", _NunknownNodes,_NboundaryNodes, _NdirichletNodes);
+	        *_runLogFile<<"Number of unknown nodes " << _NunknownNodes <<", Number of boundary nodes " << _NboundaryNodes<< ", Number of Dirichlet boundary nodes " << _NdirichletNodes <<endl<<endl;
+	    }
 	}
-
-	if(!_initialDataSet)
-		throw CdmathException("DiffusionEquation::initialize() set initial data first");
-	else
-        {
-            PetscPrintf(PETSC_COMM_WORLD,"Initialising the diffusion of a solid temperature using ");
-            *_runLogFile<<"Initialising the diffusion of a solid temperature using ";
-            if(!_FECalculation)
-            {
-                PetscPrintf(PETSC_COMM_WORLD,"Finite volumes method\n\n");
-                *_runLogFile<< "Finite volumes method"<<endl<<endl;
-            }
-            else
-            {
-                PetscPrintf(PETSC_COMM_WORLD,"Finite elements method\n\n");
-                *_runLogFile<< "Finite elements method"<<endl<<endl;
-            }
-        }
-
-	/**************** Field creation *********************/
-
-	if(!_heatPowerFieldSet){
-        _heatPowerField=Field("Heat power",_VV.getTypeOfField(),_mesh,1);
-        for(int i =0; i<_VV.getNumberOfElements(); i++)
-            _heatPowerField(i) = _heatSource;
-        _heatPowerFieldSet=true;
-    }
-	if(!_fluidTemperatureFieldSet){
-		_fluidTemperatureField=Field("Fluid temperature",_VV.getTypeOfField(),_mesh,1);
-		for(int i =0; i<_VV.getNumberOfElements(); i++)
-			_fluidTemperatureField(i) = _fluidTemperature;
-        _fluidTemperatureFieldSet=true;
-	}
-
-    /* Détection des noeuds frontière avec une condition limite de Dirichlet */
-    if(_FECalculation)
-    {
-        if(_Ndim==1 )//The 1D cdmath mesh is necessarily made of segments
-			PetscPrintf(PETSC_COMM_WORLD,"1D Finite element method on segments\n");
-        else if(_Ndim==2)
-        {
-			if( _mesh.isTriangular() )//Mesh dim=2
-				PetscPrintf(PETSC_COMM_WORLD,"2D Finite element method on triangles\n");
-			else if (_mesh.getMeshDimension()==1)//Mesh dim=1
-				PetscPrintf(PETSC_COMM_WORLD,"1D Finite element method on a 2D network : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());			
-			else
-			{
-				PetscPrintf(PETSC_COMM_WORLD,"Error Finite element with space dimension %, and mesh dimension  %d, mesh should be either triangular either 1D network\n",_Ndim,_mesh.getMeshDimension());
-				*_runLogFile<<"DiffusionEquation::initialize mesh has incorrect dimension"<<endl;
-				_runLogFile->close();
-				throw CdmathException("DiffusionEquation::initialize: mesh has incorrect cell types");
-			}
-        }
-        else if(_Ndim==3)
-        {
-			if( _mesh.isTetrahedral() )//Mesh dim=3
-				PetscPrintf(PETSC_COMM_WORLD,"3D Finite element method on tetrahedra\n");
-			else if (_mesh.getMeshDimension()==2 and _mesh.isTriangular())//Mesh dim=2
-				PetscPrintf(PETSC_COMM_WORLD,"2D Finite element method on a 3D surface : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());			
-			else if (_mesh.getMeshDimension()==1)//Mesh dim=1
-				PetscPrintf(PETSC_COMM_WORLD,"1D Finite element method on a 3D network : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());			
-			else
-			{
-				PetscPrintf(PETSC_COMM_WORLD,"Error Finite element with space dimension %d, and mesh dimension  %d, mesh should be either tetrahedral, either a triangularised surface or 1D network",_Ndim,_mesh.getMeshDimension());
-				*_runLogFile<<"DiffusionEquation::initialize mesh has incorrect dimension"<<endl;
-				_runLogFile->close();
-				throw CdmathException("DiffusionEquation::initialize: mesh has incorrect cell types");
-			}
-        }
-			
-        _boundaryNodeIds = _mesh.getBoundaryNodeIds();
-        _NboundaryNodes=_boundaryNodeIds.size();
-
-        if(_NboundaryNodes==_Nnodes)
-            PetscPrintf(PETSC_COMM_WORLD,"!!!!! Warning : all nodes are boundary nodes !!!!!");
-
-        for(int i=0; i<_NboundaryNodes; i++)
-            if(_limitField[(_mesh.getNode(_boundaryNodeIds[i])).getGroupName()].bcType==DirichletDiffusion)
-                _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
-        _NdirichletNodes=_dirichletNodeIds.size();
-        _NunknownNodes=_Nnodes - _NdirichletNodes;
-        PetscPrintf(PETSC_COMM_WORLD,"Number of unknown nodes %d, Number of boundary nodes %d, Number of Dirichlet boundary nodes %d\n\n", _NunknownNodes,_NboundaryNodes, _NdirichletNodes);
-        *_runLogFile<<"Number of unknown nodes " << _NunknownNodes <<", Number of boundary nodes " << _NboundaryNodes<< ", Number of Dirichlet boundary nodes " << _NdirichletNodes <<endl<<endl;
-    }
 
 	//creation de la matrice
     if(!_FECalculation)
-        MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNb), PETSC_NULL, &_A);
+        MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
     else
         MatCreateSeqAIJ(PETSC_COMM_SELF, _NunknownNodes, _NunknownNodes, (1+_neibMaxNbNodes), PETSC_NULL, &_A);
 
