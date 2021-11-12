@@ -574,6 +574,7 @@ public :
 	void setHeatPowerField(Field heatPower){
 		_heatPowerField=heatPower;
 		_heatPowerFieldSet=true;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
 	}
 
 	/** \fn setHeatPowerField
@@ -586,6 +587,7 @@ public :
 	void setHeatPowerField(string fileName, string fieldName){
 		_heatPowerField=Field(fileName, CELLS,fieldName);
 		_heatPowerFieldSet=true;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
 	}
 
 	/** \fn setHeatSource
@@ -596,6 +598,7 @@ public :
 	 *  */
 	void setHeatSource(double phi){
 		_heatSource=phi;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
 	}
 
 	/** \fn getHeatPowerField
@@ -617,6 +620,7 @@ public :
 	void setRodTemperatureField(Field rodTemperature){
 		_rodTemperatureField=rodTemperature;
 		_rodTemperatureFieldSet=true;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
 	}
 
 	/** \fn setRodTemperature ??
@@ -627,6 +631,7 @@ public :
 	 *  */
 	void setRodTemperature(double rodTemp){
 		_rodTemperature=rodTemp;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
 	}
 
 	/** \fn getRodTemperatureField
@@ -647,6 +652,7 @@ public :
 	 *  */
 	void setHeatTransfertCoeff(double heatTransfertCoeff){
 		_heatTransfertCoeff=heatTransfertCoeff;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
 	}
 
 	/** \fn setVerbose
