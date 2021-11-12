@@ -108,6 +108,8 @@ void TransportEquation::initialize()
 	if(_mpi_rank == 0)//Process 0 reads and distributes initial data
 		for(int i =0; i<_Nmailles;i++)
 			VecSetValue(_Hn,i,_VV(i), INSERT_VALUES);
+	VecAssemblyBegin(_Hn);
+	VecAssemblyEnd(_Hn);
 
 	//creation de la matrice
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
@@ -132,12 +134,22 @@ void TransportEquation::initialize()
 double TransportEquation::computeTimeStep(bool & stop){
 	if(!_transportMatrixSet)
 		_dt_transport=computeTransportMatrix();
+
 	_dt_src=computeRHS();
+
+    if(_verbose or _system)
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
+        VecView(_b,PETSC_VIEWER_STDOUT_WORLD);
+	}
 
 	stop=false;
 	return min(_dt_transport,_dt_src);
 }
 double TransportEquation::computeTransportMatrix(){
+	MatZeroEntries(_A);
+	VecZeroEntries(_b0);
+
 	if(_mpi_rank == 0)
 	{
 		long nbFaces = _mesh.getNumberOfFaces();
@@ -149,8 +161,6 @@ double TransportEquation::computeTransportMatrix(){
 		double un, hk;
 		PetscInt idm, idn;
 		std::vector< int > idCells;
-		MatZeroEntries(_A);
-		VecZeroEntries(_b0);
 		for (int j=0; j<nbFaces;j++){
 			Fj = _mesh.getFace(j);
 	
@@ -251,14 +261,16 @@ double TransportEquation::computeTransportMatrix(){
 				throw CdmathException("TransportEquation::ComputeTimeStep(): incompatible number of cells around a face");
 		}
 	}
-	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-	VecAssemblyBegin(_b0);
-	VecAssemblyEnd(_b0);
+
 	_transportMatrixSet=true;
 
 	MPI_Bcast(&_maxvp, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
 	PetscPrintf(PETSC_COMM_WORLD, "Maximum speed is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
+
+    MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
+	VecAssemblyBegin(_b0);          
+	VecAssemblyEnd(  _b0);
 	
 	if(abs(_maxvp)<_precision)
 		throw CdmathException("TransportEquation::computeTransportMatrix(): maximum eigenvalue for time step is zero");
@@ -268,9 +280,10 @@ double TransportEquation::computeTransportMatrix(){
 double TransportEquation::computeRHS(){
 	double rhomin=INFINITY;
 
+	VecCopy(_b0,_b);
+
 	if(_mpi_rank == 0)
 	{
-		VecCopy(_b0,_b);
 		if(_system)
 			cout<<"Second membre of transport problem"<<endl;
 		for (int i=0; i<_Nmailles;i++){
@@ -283,7 +296,7 @@ double TransportEquation::computeRHS(){
 		}
 	}
 	VecAssemblyBegin(_b);
-	VecAssemblyEnd(_b);
+	VecAssemblyEnd(  _b);
 
     if(_verbose or _system)
 	{
@@ -329,8 +342,6 @@ bool TransportEquation::initTimeStep(double dt){
 		PetscPrintf(PETSC_COMM_WORLD,"Matrix of the linear system\n");
 		MatView(_A,PETSC_VIEWER_STDOUT_WORLD);
 	}
-	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 
     if(_dt>0 and dt>0)
     {
@@ -360,9 +371,6 @@ bool TransportEquation::initTimeStep(double dt){
 void TransportEquation::abortTimeStep(){
     //Remove contribution of dt to the RHS
 	VecAXPY(_b,  -1/_dt, _Hn);
-
-	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 
     //Remove contribution of dt to the matrix
 	if(_timeScheme == Implicit)
@@ -422,8 +430,6 @@ bool TransportEquation::iterateTimeStep(bool &converged)
 	}
 	else
 	{
-		MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 
 #if PETSC_VERSION_GREATER_3_5
 		KSPSetOperators(_ksp, _A, _A);
