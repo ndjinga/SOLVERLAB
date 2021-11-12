@@ -245,8 +245,9 @@ void DiffusionEquation::initialize()
 	VecDuplicate(_Tk, &_b);//RHS of the linear system: _b=Tn/dt + _b0 + puisance volumique + couplage thermique avec le fluide
 	VecDuplicate(_Tk, &_b0);//part of the RHS that comes from the boundary conditions. Computed only once at the first time step
 
-	for(int i =0; i<_VV.getNumberOfElements();i++)
-		VecSetValue(_Tn,i,_VV(i), INSERT_VALUES);
+	if(_mpi_rank == 0)//Process 0 reads and distributes initial data
+		for(int i =0; i<_VV.getNumberOfElements();i++)
+			VecSetValue(_Tn,i,_VV(i), INSERT_VALUES);
 
 	/* Matrix creation */
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
@@ -291,6 +292,8 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
         result=computeDiffusionMatrixFE(stop);
     else
         result=computeDiffusionMatrixFV(stop);
+
+	PetscPrintf(PETSC_COMM_WORLD,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
 
     //Contribution from the solid/fluid heat exchange with assumption of constant heat transfer coefficient
     //update value here if variable  heat transfer coefficient
@@ -410,10 +413,8 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	VecAssemblyEnd(_b);
 
 	_diffusionMatrixSet=true;
-    stop=false ;
 
 	_maxvp=_diffusivity;//To do : optimise value with the mesh while respecting stability
-	PetscPrintf(PETSC_COMM_WORLD,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
 	if(fabs(_maxvp)<_precision)
 		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFE(): Error computing time step ! Maximum diffusivity is zero => division by zero");
 	else
@@ -521,10 +522,9 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 	VecAssemblyEnd(_b0);
 
 	_diffusionMatrixSet=true;
-    stop=false ;
 
 	MPI_Bcast(&_maxvp, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);//The determination of _maxvp is optimal, unlike in the FE case
-	PetscPrintf(PETSC_COMM_WORLD,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
+
 	if(fabs(_maxvp)<_precision)
 		throw CdmathException("DiffusionEquation::computeDiffusionMatrixFV(): Error computing time step ! Maximum diffusivity is zero => division by zero");
 	else
@@ -572,7 +572,7 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
         VecView(_b,PETSC_VIEWER_STDOUT_WORLD);
 	}
-    stop=false ;
+
     if(_heatTransfertCoeff>_precision)
         return _rho*_cp/_heatTransfertCoeff;
     else
@@ -580,20 +580,21 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 }
 
 bool DiffusionEquation::initTimeStep(double dt){
+        MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+        MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
 
-    if(_dt>0 and dt>0)
+	/* tricky because of code coupling */
+    if(_dt>0 and dt>0)//Previous time step was set and used
     {
-        //Remove the contribution from dt to prepare for new initTimeStep. The diffusion matrix is not recomputed
+        //Remove the contribution from dt to prepare for new time step. The diffusion matrix is not recomputed
         if(_timeScheme == Implicit)
             MatShift(_A,-1/_dt+1/dt);
         //No need to remove the contribution to the right hand side since it is recomputed from scratch at each time step
     }
     else if(dt>0)//_dt==0, first time step
     {
-        MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-        MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
         if(_timeScheme == Implicit)
-            MatShift(_A,1/_dt);        
+            MatShift(_A,1/dt);        
     }
     else//dt<=0
     {
@@ -601,7 +602,7 @@ bool DiffusionEquation::initTimeStep(double dt){
         throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
     }
     //At this stage _b contains _b0 + power + heat exchange
-    VecAXPY(_b, 1/_dt, _Tn);        
+    VecAXPY(_b, 1/dt, _Tn);        
 
 	_dt = dt;
 
@@ -615,11 +616,11 @@ bool DiffusionEquation::initTimeStep(double dt){
 }
 
 void DiffusionEquation::abortTimeStep(){
-    //Remove contribution od dt to the RHS
+    //Remove contribution of dt to the RHS
 	VecAXPY(_b,  -1/_dt, _Tn);
 	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
-    //Remove contribution od dt to the matrix
+    //Remove contribution of dt to the matrix
 	if(_timeScheme == Implicit)
 		MatShift(_A,-1/_dt);
 	_dt = 0;
@@ -688,30 +689,19 @@ void DiffusionEquation::validateTimeStep()
 {
 	VecCopy(_Tk, _deltaT);//ici Tk=Tnp1 donc on a deltaT=Tnp1
 	VecAXPY(_deltaT,  -1, _Tn);//On obtient deltaT=Tnp1-Tn
-
-	_erreur_rel= 0;
-	double Ti, dTi;
-
-	for(int i=0; i<_VV.getNumberOfElements(); i++)
-	{
-		VecGetValues(_deltaT, 1, &i, &dTi);
-		VecGetValues(_Tk, 1, &i, &Ti);
-		if(_erreur_rel < fabs(dTi/Ti))
-			_erreur_rel = fabs(dTi/Ti);
-	}
+	VecNorm(_deltaT,NORM_INFINITY,&_erreur_rel);
 
 	_isStationary =(_erreur_rel <_precision);
 
 	VecCopy(_Tk, _Tn);
 	VecCopy(_Tk, _Tkm1);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		PetscPrintf(PETSC_COMM_WORLD,"Valeur propre locale max: %.2f\n", _maxvp);
-
 	_time+=_dt;
 	_nbTimeStep++;
+	
 	if ((_nbTimeStep-1)%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
-        save();
+		if(_mpi_rank == 0)
+			save();
 }
 
 void DiffusionEquation::save(){
@@ -731,7 +721,7 @@ void DiffusionEquation::save(){
     if(_verbose or _system)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Unknown of the linear system :\n");
-        VecView(_Tk,PETSC_VIEWER_STDOUT_WORLD);
+        VecView(_Tn,PETSC_VIEWER_STDOUT_WORLD);
 	}
 
 	if(_mpi_rank==0){
