@@ -558,7 +558,7 @@ bool ProblemCoreFlows::run()
 	bool ok; // Is the time interval successfully solved ?
 	_isStationary=false;//in case of a second run with a different physics or cfl
 
-	PetscPrintf(PETSC_COMM_WORLD,"Running test case %d\n",_fileName);
+	PetscPrintf(PETSC_COMM_WORLD,"Running test case %s\n",_fileName);
 
 	_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
 	*_runLogFile<< "Running test case "<< _fileName<<endl;
