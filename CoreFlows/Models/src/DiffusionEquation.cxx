@@ -257,6 +257,8 @@ void DiffusionEquation::initialize()
 		else
 			for(int i = 0; i<_Nmailles; i++)
 				VecSetValue( _Tn, i, _VV(i), INSERT_VALUES);
+	VecAssemblyBegin(_Tn);
+	VecAssemblyEnd(_Tn);
 		
 	/* Matrix creation */
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
@@ -274,10 +276,8 @@ void DiffusionEquation::initialize()
 	KSPGetPC(_ksp, &_pc);
 	PCSetType(_pc, _pctype);
 
-PetscPrintf(PETSC_COMM_WORLD,"Coucou\n");	
 	_initializedMemory=true;
-	if(_mpi_rank == 0)
-		save();//save initial data
+	save();//save initial data
 }
 
 double DiffusionEquation::computeTimeStep(bool & stop){
@@ -709,8 +709,7 @@ void DiffusionEquation::validateTimeStep()
 	_nbTimeStep++;
 	
 	if ((_nbTimeStep-1)%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
-		if(_mpi_rank == 0)
-			save();
+		save();
 }
 
 void DiffusionEquation::save(){

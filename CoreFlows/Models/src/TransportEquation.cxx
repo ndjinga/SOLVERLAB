@@ -126,8 +126,7 @@ void TransportEquation::initialize()
 	PCSetType(_pc, _pctype);
 
 	_initializedMemory=true;
-	if(_mpi_rank == 0)
-		save();//save initial data
+	save();//save initial data
 }
 
 double TransportEquation::computeTimeStep(bool & stop){
@@ -488,12 +487,11 @@ void TransportEquation::validateTimeStep()
 					alphamin=_Alpha(i);
 			}
 			cout<<"Alpha min = " << alphamin << " Alpha max = " << alphamax<<endl;
-	
-			save();
 		}
 
 	_time+=_dt;
 	_nbTimeStep++;
+	save();
 }
 
 void TransportEquation::terminate(){
