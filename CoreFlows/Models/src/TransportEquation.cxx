@@ -113,10 +113,10 @@ void TransportEquation::initialize()
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
 
 	/* Local sequential vector creation */
-	if(_mpi_size>1 && _mpi_rank == 0){
+	if(_mpi_size>1 && _mpi_rank == 0)
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Hn_seq);//For saving results on proc 0
-		VecScatterCreateToZero(_Hn,&_scat,&_Hn_seq);
-	}
+	VecScatterCreateToZero(_Hn,&_scat,&_Hn_seq);
+
 	//Linear solver
 	KSPCreate(PETSC_COMM_SELF, &_ksp);
 	KSPSetType(_ksp, _ksptype);

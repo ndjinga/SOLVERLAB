@@ -260,13 +260,12 @@ void DiffusionEquation::initialize()
 		
 	/* Matrix creation */
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
-	
+
 	/* Local sequential vector creation */
-	if(_mpi_size>1 && _mpi_rank == 0){
+	if(_mpi_size>1 && _mpi_rank == 0)
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tn_seq);//For saving results on proc 0
-		VecScatterCreateToZero(_Tn,&_scat,&_Tn_seq);
-	}
-	
+	VecScatterCreateToZero(_Tn,&_scat,&_Tn_seq);
+
 	//Linear solver
 	KSPCreate(PETSC_COMM_WORLD, &_ksp);
 	KSPSetType(_ksp, _ksptype);
@@ -275,6 +274,7 @@ void DiffusionEquation::initialize()
 	KSPGetPC(_ksp, &_pc);
 	PCSetType(_pc, _pctype);
 
+PetscPrintf(PETSC_COMM_WORLD,"Coucou\n");	
 	_initializedMemory=true;
 	if(_mpi_rank == 0)
 		save();//save initial data
