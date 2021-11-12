@@ -292,6 +292,12 @@ double DiffusionEquation::computeTimeStep(bool & stop){
 	VecAssemblyBegin(_b);          
 	VecAssemblyEnd(  _b);
 
+    if(_verbose or _system)
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
+        VecView(_b,PETSC_VIEWER_STDOUT_WORLD);
+	}
+
 	stop=false;
 	return min(_dt_diffusion,_dt_src);
 }
@@ -571,12 +577,6 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 	                    }
 	            }
 	        }
-	}
-
-    if(_verbose or _system)
-	{
-		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
-        VecView(_b,PETSC_VIEWER_STDOUT_WORLD);
 	}
 
     if(_heatTransfertCoeff>_precision)
