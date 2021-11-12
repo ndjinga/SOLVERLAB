@@ -208,7 +208,8 @@ void StationaryDiffusionEquation::initialize()
 	/* Local sequential vector creation */
 	if(_mpi_size>1 && _mpi_rank == 0)
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tk_seq);//For saving results on proc 0
-
+	if(_mpi_size==0)
+		_Tk_seq=_Tk;
 	VecScatterCreateToZero(_Tk,&_scat,&_Tk_seq);
 
 	//Linear solver
@@ -863,7 +864,10 @@ void StationaryDiffusionEquation::save(){
 	    if(!_FECalculation)
 	        for(int i=0; i<_Nmailles; i++)
 	            {
-	                VecGetValues(_Tk, 1, &i, &Ti);
+					if(_mpi_size>1)
+						VecGetValues(_Tk_seq, 1, &i, &Ti);
+					else
+						VecGetValues(_Tk    , 1, &i, &Ti);
 	                _VV(i)=Ti;
 	            }
 	    else
@@ -871,7 +875,10 @@ void StationaryDiffusionEquation::save(){
 	        int globalIndex;
 	        for(int i=0; i<_NunknownNodes; i++)
 	        {
-	            VecGetValues(_Tk, 1, &i, &Ti);
+				if(_mpi_size>1)
+					VecGetValues(_Tk_seq, 1, &i, &Ti);
+				else
+					VecGetValues(_Tk    , 1, &i, &Ti);
 	            globalIndex = DiffusionEquation::globalNodeIndex(i, _dirichletNodeIds);
 	            _VV(globalIndex)=Ti;
 	        }

@@ -740,7 +740,11 @@ void DiffusionEquation::save(){
 	    if(!_FECalculation)
 	        for(int i =0; i<_Nmailles;i++)
 	        {
-	            VecGetValues(_Tn, 1, &i, &Ti);
+				if(_mpi_size>1)
+					VecGetValues(_Tn_seq, 1, &i, &Ti);
+				else
+					VecGetValues(_Tn    , 1, &i, &Ti);
+					
 	            _VV(i)=Ti;
 	        }
 	    else
@@ -748,9 +752,12 @@ void DiffusionEquation::save(){
 	        int globalIndex;
 	        for(int i=0; i<_NunknownNodes; i++)
 	        {
-	            VecGetValues(_Tk, 1, &i, &Ti);
+				if(_mpi_size>1)
+					VecGetValues(_Tn_seq, 1, &i, &Ti);
+				else
+					VecGetValues(_Tk    , 1, &i, &Ti);
 	            globalIndex = globalNodeIndex(i, _dirichletNodeIds);
-	            _VV(globalIndex)=Ti;//Assumes node numbering starts with border nodes
+	            _VV(globalIndex)=Ti;
 	        }
 	
 	        Node Ni;
