@@ -71,7 +71,11 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
 	_NEWTON_its=0;
 	int _PetscIts=0;//the number of iterations of the linear solver
 	_ksptype = (char*)&KSPGMRES;
-	_pctype = (char*)&PCLU;
+	if( _mpi_size>1)
+		_pctype = (char*)&PCNONE;
+	else
+		_pctype = (char*)&PCLU;
+
 	_conditionNumber=false;
 	_erreur_rel= 0;
 
@@ -189,9 +193,11 @@ void StationaryDiffusionEquation::initialize()
 	
     if(!_FECalculation)
 		_globalNbUnknowns = _Nmailles*_nVar;
-    else
+    else{
+    	MPI_Bcast(&_NunknownNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 		_globalNbUnknowns = _NunknownNodes*_nVar;
-
+	}
+	
 	/* Vectors creations */
 	VecCreate(PETSC_COMM_WORLD, &_Tk);//main unknown
     VecSetSizes(_Tk,PETSC_DECIDE,_globalNbUnknowns);
@@ -269,10 +275,16 @@ double StationaryDiffusionEquation::computeDiffusionMatrix(bool & stop)
 {
     double result;
     
+	MatZeroEntries(_A);
+	VecZeroEntries(_b);
+
     if(_FECalculation)
         result=computeDiffusionMatrixFE(stop);
     else
         result=computeDiffusionMatrixFV(stop);
+
+    MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
 
     //Contribution from the solid/fluid heat exchange with assumption of constant heat transfer coefficient
     //update value here if variable  heat transfer coefficient
@@ -291,8 +303,6 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 		Cell Cj;
 		string nameOfGroup;
 		double coeff;
-		MatZeroEntries(_A);
-		VecZeroEntries(_b);
 	    
 	    Matrix M(_Ndim+1,_Ndim+1);//cell geometry matrix
 	    std::vector< Vector > GradShapeFuncs(_Ndim+1);//shape functions of cell nodes
@@ -385,10 +395,6 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	        }
 	    }
 	}
-    MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-	VecAssemblyBegin(_b);
-	VecAssemblyEnd(_b);
 
 	if(_onlyNeumannBC)	//Check that the matrix is symmetric
 	{
@@ -420,8 +426,6 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 		double dn;
 		PetscInt idm, idn;
 		std::vector< int > idCells;
-		MatZeroEntries(_A);
-		VecZeroEntries(_b);
 	
 		for (int j=0; j<nbFaces;j++){
 			Fj = _mesh.getFace(j);
@@ -514,10 +518,6 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 	        }
 		}
 	}
-	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-	VecAssemblyBegin(_b);
-	VecAssemblyEnd(_b);
     
 	if(_onlyNeumannBC)	//Check that the matrix is symmetric
 	{
@@ -576,8 +576,6 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
 	bool stop;
 
     //Only implicit scheme considered
-    MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
 
 #if PETSC_VERSION_GREATER_3_5
     KSPSetOperators(_ksp, _A, _A);
@@ -927,6 +925,12 @@ void StationaryDiffusionEquation::terminate()
 	if(_mpi_size>1 && _mpi_rank == 0)
 		VecDestroy(&_Tk_seq);
 
+	PetscBool petscInitialized;
+	PetscInitialized(&petscInitialized);
+	if(petscInitialized)
+		PetscFinalize();
+
+	delete _runLogFile;
 }
 void 
 StationaryDiffusionEquation::setDirichletValues(map< int, double> dirichletBoundaryValues)
