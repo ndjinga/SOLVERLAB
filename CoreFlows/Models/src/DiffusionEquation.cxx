@@ -230,8 +230,10 @@ void DiffusionEquation::initialize()
 
     if(!_FECalculation)
 		_globalNbUnknowns = _Nmailles*_nVar;
-    else
+    else{
+    	MPI_Bcast(&_NunknownNodes, 1, MPI_INT, 0, PETSC_COMM_WORLD);
 		_globalNbUnknowns = _NunknownNodes*_nVar;
+	}
 
 	/* Vectors creations */
 	VecCreate(PETSC_COMM_WORLD, &_Tk);//main unknown
@@ -246,9 +248,16 @@ void DiffusionEquation::initialize()
 	VecDuplicate(_Tk, &_b0);//part of the RHS that comes from the boundary conditions. Computed only once at the first time step
 
 	if(_mpi_rank == 0)//Process 0 reads and distributes initial data
-		for(int i =0; i<_VV.getNumberOfElements();i++)
-			VecSetValue(_Tn,i,_VV(i), INSERT_VALUES);
-
+		if(_FECalculation)
+			for(int i = 0; i<_NunknownNodes; i++)
+	        {
+				int globalIndex = globalNodeIndex(i, _dirichletNodeIds);
+				VecSetValue(_Tn,i,_VV(globalIndex), INSERT_VALUES);
+			}
+		else
+			for(int i = 0; i<_Nmailles; i++)
+				VecSetValue( _Tn, i, _VV(i), INSERT_VALUES);
+		
 	/* Matrix creation */
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
 	
