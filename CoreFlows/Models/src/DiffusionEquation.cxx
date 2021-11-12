@@ -265,7 +265,7 @@ void DiffusionEquation::initialize()
 
 	/* Local sequential vector creation */
 	if(_mpi_size>1 && _mpi_rank == 0)
-		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tn_seq);//For saving results on proc 0
+		VecCreateSeq(PETSC_COMM_SELF, _globalNbUnknowns, &_Tn_seq);//For saving results on proc 0
 	VecScatterCreateToZero(_Tn,&_scat,&_Tn_seq);
 
 	//Linear solver
@@ -289,6 +289,9 @@ double DiffusionEquation::computeTimeStep(bool & stop){
 
 	_dt_src=computeRHS(stop);
 
+	VecAssemblyBegin(_b);          
+	VecAssemblyEnd(  _b);
+
 	stop=false;
 	return min(_dt_diffusion,_dt_src);
 }
@@ -297,12 +300,21 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
 {
     double result;
     
+	MatZeroEntries(_A);
+	VecZeroEntries(_b0);
+
     if(_FECalculation)
         result=computeDiffusionMatrixFE(stop);
     else
         result=computeDiffusionMatrixFV(stop);
 
 	PetscPrintf(PETSC_COMM_WORLD,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
+
+    MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
+	VecAssemblyBegin(_b0);          
+	VecAssemblyEnd(  _b0);
+
 
     //Contribution from the solid/fluid heat exchange with assumption of constant heat transfer coefficient
     //update value here if variable  heat transfer coefficient
@@ -322,8 +334,6 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 		Cell Cj;
 		string nameOfGroup;
 		double coeff;//Diffusion coefficients between nodes i and j
-		MatZeroEntries(_A);
-		VecZeroEntries(_b);
 	    
 	    Matrix M(_Ndim+1,_Ndim+1);//cell geometry matrix
 	    std::vector< Vector > GradShapeFuncs(_Ndim+1);//shape functions of cell nodes
@@ -386,7 +396,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	                        }
 	                        GradShapeFuncBorder=gradientNodal(M,valuesBorder)/fact(_Ndim);
 	                        coeff =-1.*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
-	                        VecSetValue(_b,i_int,coeff, ADD_VALUES);                        
+	                        VecSetValue(_b0,i_int,coeff, ADD_VALUES);                        
 	                    }
 	                }
 	            }
@@ -410,16 +420,12 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	                        coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
 	                    else
 	                        coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
-	                    VecSetValue(_b, j_int, coeff, ADD_VALUES);
+	                    VecSetValue(_b0, j_int, coeff, ADD_VALUES);
 	                }
 	            }
 	        }
 	    }
 	}
-    MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-	VecAssemblyBegin(_b);
-	VecAssemblyEnd(_b);
 
 	_diffusionMatrixSet=true;
 
@@ -443,8 +449,6 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 		double dn;
 		PetscInt idm, idn;
 		std::vector< int > idCells;
-		MatZeroEntries(_A);
-		VecZeroEntries(_b0);
 	    
 		for (int j=0; j<nbFaces;j++){
 			Fj = _mesh.getFace(j);
@@ -481,12 +485,12 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 				nameOfGroup = Fj.getGroupName();
 	
 				if (_limitField[nameOfGroup].bcType==NeumannDiffusion){
-	                VecSetValue(_b,idm,   -dn*inv_dxi*_limitField[nameOfGroup].normalFlux, ADD_VALUES);
+	                VecSetValue(_b0,idm,   -dn*inv_dxi*_limitField[nameOfGroup].normalFlux, ADD_VALUES);
 				}
 				else if(_limitField[nameOfGroup].bcType==DirichletDiffusion){
 					barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
 					MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                           , ADD_VALUES);
-					VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
+					VecSetValue(_b0,idm,    dn*inv_dxi/barycenterDistance*_limitField[nameOfGroup].T, ADD_VALUES);
 				}
 				else {
 	                stop=true ;
@@ -525,10 +529,6 @@ double DiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 				throw CdmathException("DiffusionEquation::computeDiffusionMatrixFV(): incompatible number of cells around a face");
 		}
 	}
-	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-	VecAssemblyBegin(_b0);
-	VecAssemblyEnd(_b0);
 
 	_diffusionMatrixSet=true;
 
@@ -573,9 +573,6 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 	        }
 	}
 
-	VecAssemblyBegin(_b);          
-	VecAssemblyEnd(_b);
-
     if(_verbose or _system)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
@@ -589,8 +586,6 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 }
 
 bool DiffusionEquation::initTimeStep(double dt){
-        MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-        MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
 
 	/* tricky because of code coupling */
     if(_dt>0 and dt>0)//Previous time step was set and used
@@ -627,8 +622,6 @@ bool DiffusionEquation::initTimeStep(double dt){
 void DiffusionEquation::abortTimeStep(){
     //Remove contribution of dt to the RHS
 	VecAXPY(_b,  -1/_dt, _Tn);
-	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
     //Remove contribution of dt to the matrix
 	if(_timeScheme == Implicit)
 		MatShift(_A,-1/_dt);
@@ -658,8 +651,6 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 	}
 	else
 	{
-		MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 
 #if PETSC_VERSION_GREATER_3_5
 		KSPSetOperators(_ksp, _A, _A);
