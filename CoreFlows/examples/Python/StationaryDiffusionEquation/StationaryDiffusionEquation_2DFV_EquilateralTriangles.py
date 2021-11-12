@@ -18,7 +18,7 @@ def StationaryDiffusionEquation_2DFV_EquilateralTriangles():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Loading mesh " );
-	M=cm.Mesh(os.environ['SOLVERLAB_INSTALL']+'/share/meshes/2DEquilateralTriangles/squareWithEquilateralTriangles20.med')#Equilateral triangular mesh
+	M=cm.Mesh('../resources/squareWithEquilateralTriangles20.med')#Equilateral triangular mesh
 	
 	print( "Loaded 2D equilateral triangle mesh with ", M.getNumberOfCells(), " cells")
 
