@@ -58,15 +58,15 @@ TransportEquation::TransportEquation(phase fluid, pressureMagnitude pEstimate,ve
 
 void TransportEquation::initialize()
 {
-	if(!_initialDataSet)
-		throw CdmathException("TransportEquation::initialize() set initial data first");
-	else if (_VV.getTypeOfField() != CELLS)
-		throw CdmathException("TransportEquation::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
-	else
-		PetscPrintf(PETSC_COMM_WORLD,"Initialising the transport of a fluid enthalpy\n");
-
 	if(_mpi_rank==0)
 	{
+		if(!_initialDataSet)
+			throw CdmathException("TransportEquation::initialize() set initial data first");
+		else if (_VV.getTypeOfField() != CELLS)
+			throw CdmathException("TransportEquation::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
+		else
+			PetscPrintf(PETSC_COMM_SELF,"Initialising the transport of a fluid enthalpy\n");
+	
 		/**************** Field creation *********************/
 	
 		//post processing fields used only for saving results
