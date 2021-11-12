@@ -117,30 +117,49 @@ add_test(NAME WaveSystem_2DFV_SphericalExplosion_CDMATH_HEXAGON        COMMAND "
 add_test(NAME WaveSystem_3DFV_SphericalExplosion_CDMATH_CUBE           COMMAND "./WaveSystem_FV_SphericalExplosion_CDMATH.exe" resources/meshCube.med)     
 add_test(NAME WaveSystem_3DFV_SphericalExplosion_CDMATH_TETRAHEDRON    COMMAND "./WaveSystem_FV_SphericalExplosion_CDMATH.exe" resources/meshTetrahedron10.med)     
 
-if( SOLVERLAB_WITH_MPI )
-  add_executable(WaveSystem_FV_SphericalExplosion_MPI.exe WaveSystem_FV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
-  target_link_libraries(WaveSystem_FV_SphericalExplosion_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
-  install(TARGETS WaveSystem_FV_SphericalExplosion_MPI.exe DESTINATION share/examples)
-
-  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_SEQ_SQUARE.exe         COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe")     
-  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_SEQ_HEXAGON.exe        COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshHexagonWithTriangles10.med) 
-  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_SEQ_CUBE.exe           COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshCube.med) 
-  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_SEQ_TETRAHEDRON.exe    COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshTetrahedron10.med) 
-  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_PAR_SQUARE.exe         COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe")
-  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_PAR_HEXAGON.exe        COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshHexagonWithTriangles10.med)
-  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_PAR_CUBE.exe           COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshCube.med) 
-  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_PAR_TETRAHEDRON.exe    COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshTetrahedron10.med) 
-
+if( SOLVERLAB_WITH_MPI )#Tests parallèles
   add_executable(MEDCouplingSendRecvFieldSameMesh_MPI.exe MEDCouplingSendRecvFieldSameMesh_MPI.cxx)
   target_link_libraries(MEDCouplingSendRecvFieldSameMesh_MPI.exe ${MPI_LIBRARY} medcoupling medloader paramedmem)
   install(TARGETS MEDCouplingSendRecvFieldSameMesh_MPI.exe DESTINATION share/examples)
 
-  add_test(NAME MEDCouplingSendRecvFieldSameMesh_MPI.exe                      COMMAND "${MPIEXEC}" "-n" "4" "./MEDCouplingSendRecvFieldSameMesh_MPI.exe" ) 
+  add_test(NAME MEDCouplingSendRecvFieldSameMesh_MPI_4Procs.exe                      COMMAND "${MPIEXEC}" "-n" "4" "./MEDCouplingSendRecvFieldSameMesh_MPI.exe" ) 
 
   add_executable(MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe MEDCouplingSendRecvFieldDifferentMeshes_MPI.cxx)
   target_link_libraries(MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe ${MPI_LIBRARY} medcoupling medloader paramedmem)
   install(TARGETS MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe DESTINATION share/examples)
 
-  add_test(NAME MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe                      COMMAND "${MPIEXEC}" "-n" "4" "./MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe" ) 
+  add_test(NAME MEDCouplingSendRecvFieldDifferentMeshes_MPI_4Procs.exe                      COMMAND "${MPIEXEC}" "-n" "4" "./MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe" ) 
+
+  add_executable(DiffusionEquation_1DHeatedRod_FE_MPI.exe DiffusionEquation_1DHeatedRod_FE_MPI.cxx)                    # compilation of the testxxx.exe 
+  target_link_libraries(DiffusionEquation_1DHeatedRod_FE_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
+  install(TARGETS DiffusionEquation_1DHeatedRod_FE_MPI.exe DESTINATION share/examples)
+
+  add_test(NAME DiffusionEquation_1DHeatedRod_FE_MPI_2Procs.exe         COMMAND "${MPIEXEC}" "-n" "2" "./DiffusionEquation_1DHeatedRod_FE_MPI.exe")     
+
+  add_executable(DiffusionEquation_1DHeatedRod_FV_MPI.exe DiffusionEquation_1DHeatedRod_FV_MPI.cxx)                    # compilation of the testxxx.exe 
+  target_link_libraries(DiffusionEquation_1DHeatedRod_FV_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
+  install(TARGETS DiffusionEquation_1DHeatedRod_FV_MPI.exe DESTINATION share/examples)
+
+  add_test(NAME DiffusionEquation_1DHeatedRod_FV_MPI_2Procs.exe         COMMAND "${MPIEXEC}" "-n" "2" "./DiffusionEquation_1DHeatedRod_FV_MPI.exe")     
+
+  add_executable(TransportEquation_1DHeatedChannel_MPI.exe TransportEquation_1DHeatedChannel_MPI.cxx)                    # compilation of the testxxx.exe 
+  target_link_libraries(TransportEquation_1DHeatedChannel_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
+  install(TARGETS TransportEquation_1DHeatedChannel_MPI.exe DESTINATION share/examples)
+
+  add_test(NAME TransportEquation_1DHeatedChannel_MPI_2Procs.exe         COMMAND "${MPIEXEC}" "-n" "2" "./TransportEquation_1DHeatedChannel_MPI.exe")     
+
+  add_executable(WaveSystem_FV_SphericalExplosion_MPI.exe WaveSystem_FV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
+  target_link_libraries(WaveSystem_FV_SphericalExplosion_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
+  install(TARGETS WaveSystem_FV_SphericalExplosion_MPI.exe DESTINATION share/examples)
+
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_1Proc_SQUARE.exe         COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe")     
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_1Proc_HEXAGON.exe        COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshHexagonWithTriangles10.med) 
+  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_1Proc_CUBE.exe           COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshCube.med) 
+  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_1Proc_TETRAHEDRON.exe    COMMAND "${MPIEXEC}" "-n" "1" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshTetrahedron10.med) 
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_2Procs_SQUARE.exe         COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe")
+  add_test(NAME WaveSystem_2DFV_SphericalExplosion_MPI_2Procs_HEXAGON.exe        COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshHexagonWithTriangles10.med)
+  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_2Procs_CUBE.exe           COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshCube.med) 
+  add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_2Procs_TETRAHEDRON.exe    COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshTetrahedron10.med) 
+
 endif( SOLVERLAB_WITH_MPI )
 
