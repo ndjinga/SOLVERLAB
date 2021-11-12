@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : Tests of using a subcommnicator for sending and receiving a 2D MEDCoupling field on cells (P0) lying on tdifferent meshes between two groups of two processors
+// Name        : Tests of using a subcommnicator for sending and receiving a 2D MEDCoupling field on cells (P0) lying on different meshes between two groups of two processors
 // Author      : Michael NDJINGA
 // Date        : November 2021
 // Description : Use of the parallel Data Exchange Channel InterpKernelDEC of MEDCoupling
