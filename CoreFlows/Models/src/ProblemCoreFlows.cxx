@@ -145,83 +145,82 @@ void ProblemCoreFlows::setPrecision(double precision)
 }
 void ProblemCoreFlows::setInitialField(const Field &VV)
 {
-	if(_mpi_rank==0)
+	if(_Ndim != VV.getSpaceDimension()){
+		*_runLogFile<<"ProblemCoreFlows::setInitialField: mesh has incorrect space dimension"<<endl;
+		_runLogFile->close();
+		throw CdmathException("ProblemCoreFlows::setInitialField: mesh has incorrect space dimension");
+	}
+	if(_nVar!=VV.getNumberOfComponents())
 	{
-		if(_Ndim != VV.getSpaceDimension()){
-			*_runLogFile<<"ProblemCoreFlows::setInitialField: mesh has incorrect space dimension"<<endl;
-			_runLogFile->close();
-			throw CdmathException("ProblemCoreFlows::setInitialField: mesh has incorrect space dimension");
-		}
-		if(_nVar!=VV.getNumberOfComponents())
-		{
-			*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect number of components"<<endl;
-			_runLogFile->close();
-			throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect number of components");
-		}
-		if(_FECalculation && VV.getTypeOfField()!=NODES)
-		{
-			*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Elements method"<<endl;
-			_runLogFile->close();
-			throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Elements method");
-		}
-		else if(!_FECalculation && VV.getTypeOfField()==NODES)
-		{
-			*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on cells or faces for the Finite Volumes method"<<endl;
-			_runLogFile->close();
-			throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on cells or faces for the Finite Volumes method");
-		}
-	
-		_VV=VV;
-		_VV.setName("SOLVERLAB results");
-		_time=_VV.getTime();
-		_mesh=_VV.getMesh();
-	
-		_initialDataSet=true;
-	
-		//Mesh data
-		_Nmailles = _mesh.getNumberOfCells();
-		_Nnodes =   _mesh.getNumberOfNodes();
-		_Nfaces =   _mesh.getNumberOfFaces();
-		_perimeters=Field("Perimeters", CELLS, _mesh,1);
-	
-		// find _minl (delta x) and maximum nb of neibourghs
-		_minl  = INFINITY;
-		int nbNeib,indexFace;
-		Cell Ci;
-		Face Fk;
-	
-		if(_verbose)
-			PetscPrintf(PETSC_COMM_SELF,"Computing cell perimeters and mesh minimal diameter\n");
-	
-		//Compute the maximum number of neighbours for nodes or cells
-	    if(VV.getTypeOfField()==NODES)
-	        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
-	    else
-	    {
-	        _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
-	        
-			//Compute Delta x and the cell perimeters
-			for (int i=0; i<_mesh.getNumberOfCells(); i++){
-				Ci = _mesh.getCell(i);
-				if (_Ndim > 1){
-					_perimeters(i)=0;
-					for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
-						indexFace=Ci.getFacesId()[k];
-						Fk = _mesh.getFace(indexFace);
-						_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
-						_perimeters(i)+=Fk.getMeasure();
-					}
-				}else{
-					_minl = min(_minl,Ci.getMeasure());
-					_perimeters(i)=Ci.getNumberOfFaces();
+		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect number of components"<<endl;
+		_runLogFile->close();
+		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect number of components");
+	}
+	if(_FECalculation && VV.getTypeOfField()!=NODES)
+	{
+		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Elements method"<<endl;
+		_runLogFile->close();
+		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on nodes for the Finite Elements method");
+	}
+	else if(!_FECalculation && VV.getTypeOfField()==NODES)
+	{
+		*_runLogFile<<"ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on cells or faces for the Finite Volumes method"<<endl;
+		_runLogFile->close();
+		throw CdmathException("ProblemCoreFlows::setInitialField: Initial field has incorrect support : should be on cells or faces for the Finite Volumes method");
+	}
+
+	_VV=VV;
+	_VV.setName("SOLVERLAB results");
+	_time=_VV.getTime();
+	_mesh=_VV.getMesh();
+
+	_initialDataSet=true;
+
+	//Mesh data
+	_Nmailles = _mesh.getNumberOfCells();
+	_Nnodes =   _mesh.getNumberOfNodes();
+	_Nfaces =   _mesh.getNumberOfFaces();
+	_perimeters=Field("Perimeters", CELLS, _mesh,1);
+
+	// find _minl (delta x) and maximum nb of neibourghs
+	_minl  = INFINITY;
+	int nbNeib,indexFace;
+	Cell Ci;
+	Face Fk;
+
+	if(_verbose)
+		PetscPrintf(PETSC_COMM_SELF,"Processor %d Computing cell perimeters and mesh minimal diameter\n", _mpi_rank);
+
+	//Compute the maximum number of neighbours for nodes or cells
+    if(VV.getTypeOfField()==NODES)
+        _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
+    else
+    {
+        _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
+        
+		//Compute Delta x and the cell perimeters
+		for (int i=0; i<_mesh.getNumberOfCells(); i++){
+			Ci = _mesh.getCell(i);
+			if (_Ndim > 1){
+				_perimeters(i)=0;
+				for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
+					indexFace=Ci.getFacesId()[k];
+					Fk = _mesh.getFace(indexFace);
+					_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
+					_perimeters(i)+=Fk.getMeasure();
 				}
+			}else{
+				_minl = min(_minl,Ci.getMeasure());
+				_perimeters(i)=Ci.getNumberOfFaces();
 			}
-			if(_verbose)
-				cout<<_perimeters<<endl;
 		}
+		if(_verbose)
+			cout<<_perimeters<<endl;
 	}
 	
-	/* MPI distribution parameters */
+	/*** MPI distribution of parameters ***/
+	MPI_Allreduce(&_initialDataSet, &_initialDataSet, 1, MPI_C_BOOL, MPI_LOR, PETSC_COMM_WORLD);
+	
 	int nbVoisinsMax;//Mettre en attribut ?
 	if(!_FECalculation){
 		MPI_Bcast(&_Nmailles      , 1, MPI_INT, 0, PETSC_COMM_WORLD);
