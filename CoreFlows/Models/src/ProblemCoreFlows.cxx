@@ -719,12 +719,11 @@ bool ProblemCoreFlows::solveTimeStep(){
 
 ProblemCoreFlows::~ProblemCoreFlows()
 {
-	/*
 	PetscBool petscInitialized;
 	PetscInitialized(&petscInitialized);
 	if(petscInitialized)
 		PetscFinalize();
-	 */
+
 	delete _runLogFile;
 }
 
