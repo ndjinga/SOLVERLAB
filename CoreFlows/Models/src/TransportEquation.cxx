@@ -53,6 +53,7 @@ TransportEquation::TransportEquation(phase fluid, pressureMagnitude pEstimate,ve
 	_dt_transport=0;
 	_dt_src=0;
 	_transportMatrixSet=false;
+	_FECalculation=false;//Only finite volumes available
 }
 
 void TransportEquation::initialize()
@@ -62,42 +63,60 @@ void TransportEquation::initialize()
 	else if (_VV.getTypeOfField() != CELLS)
 		throw CdmathException("TransportEquation::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
 	else
-		cout<<"Initialising the transport of a fluid enthalpy"<<endl;
-	/**************** Field creation *********************/
+		PetscPrintf(PETSC_COMM_WORLD,"Initialising the transport of a fluid enthalpy\n");
 
-	//post processing fields used only for saving results
-	_TT=Field ("Temperature", CELLS, _mesh, 1);
-	_Alpha=Field ("Void fraction", CELLS, _mesh, 1);
-	_Rho=Field ("Mixture density", CELLS, _mesh, 1);
-	//Construction des champs de post-traitement
-	VecCreate(PETSC_COMM_SELF, &_Hn);
+	if(_mpi_rank==0)
+	{
+		/**************** Field creation *********************/
+	
+		//post processing fields used only for saving results
+		_TT=Field ("Temperature", CELLS, _mesh, 1);
+		_Alpha=Field ("Void fraction", CELLS, _mesh, 1);
+		_Rho=Field ("Mixture density", CELLS, _mesh, 1);
+		//Construction des champs de post-traitement
+		for(int i =0; i<_Nmailles;i++){
+			_TT(i)=temperature(_VV(i));
+			_Alpha(i)=voidFraction(_VV(i));
+			_Rho(i)=density(_Alpha(i));
+		}
+		if(!_heatPowerFieldSet){
+			_heatPowerField=Field("Heat Power",CELLS,_mesh,1);
+			for(int i =0; i<_Nmailles; i++)
+				_heatPowerField(i) = _heatSource;
+		}
+		if(!_rodTemperatureFieldSet){
+			_rodTemperatureField=Field("Rod temperature",CELLS,_mesh,1);
+			for(int i =0; i<_Nmailles; i++)
+				_rodTemperatureField(i) = _rodTemperature;
+		}
+	}
+	
+	_globalNbUnknowns = _Nmailles;
+	
+	/* Vectors creations */
+	VecCreate(PETSC_COMM_WORLD, &_Hn);
 	VecSetSizes(_Hn,PETSC_DECIDE,_Nmailles);
 	VecSetFromOptions(_Hn);
-	for(int i =0; i<_Nmailles;i++){
-		_TT(i)=temperature(_VV(i));
-		_Alpha(i)=voidFraction(_VV(i));
-		_Rho(i)=density(_Alpha(i));
-		VecSetValue(_Hn,i,_VV(i), INSERT_VALUES);
-	}
-	if(!_heatPowerFieldSet){
-		_heatPowerField=Field("Heat Power",CELLS,_mesh,1);
-		for(int i =0; i<_Nmailles; i++)
-			_heatPowerField(i) = _heatSource;
-	}
-	if(!_rodTemperatureFieldSet){
-		_rodTemperatureField=Field("Rod temperature",CELLS,_mesh,1);
-		for(int i =0; i<_Nmailles; i++)
-			_rodTemperatureField(i) = _rodTemperature;
-	}
+	VecGetLocalSize(_Hn, &_localNbUnknowns);
 
-	//creation de la matrice
-	MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles, _Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
 	VecDuplicate(_Hn, &_Hk);
 	VecDuplicate(_Hn, &_Hkm1);
 	VecDuplicate(_Hn, &_deltaH);
 	VecDuplicate(_Hn, &_b);//RHS of the linear system: _b=Hn/dt + _b0 + puisance
 	VecDuplicate(_Hn, &_b0);//part of the RHS that comes from the boundary conditions
 
+	if(_mpi_rank == 0)//Process 0 reads and distributes initial data
+		for(int i =0; i<_Nmailles;i++)
+			VecSetValue(_Hn,i,_VV(i), INSERT_VALUES);
+
+	//creation de la matrice
+   	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
+
+	/* Local sequential vector creation */
+	if(_mpi_size>1 && _mpi_rank == 0){
+		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Hn_seq);//For saving results on proc 0
+		VecScatterCreateToZero(_Hn,&_scat,&_Hn_seq);
+	}
 	//Linear solver
 	KSPCreate(PETSC_COMM_SELF, &_ksp);
 	KSPSetType(_ksp, _ksptype);
@@ -107,7 +126,8 @@ void TransportEquation::initialize()
 	PCSetType(_pc, _pctype);
 
 	_initializedMemory=true;
-	save();//save initial data
+	if(_mpi_rank == 0)
+		save();//save initial data
 }
 
 double TransportEquation::computeTimeStep(bool & stop){
@@ -119,121 +139,128 @@ double TransportEquation::computeTimeStep(bool & stop){
 	return min(_dt_transport,_dt_src);
 }
 double TransportEquation::computeTransportMatrix(){
-	long nbFaces = _mesh.getNumberOfFaces();
-	Face Fj;
-	Cell Cell1,Cell2;
-	string nameOfGroup;
-	double inv_dxi, inv_dxj;
-	Vector normale(_Ndim);
-	double un, hk;
-	PetscInt idm, idn;
-	std::vector< int > idCells;
-	MatZeroEntries(_A);
-	VecZeroEntries(_b0);
-	for (int j=0; j<nbFaces;j++){
-		Fj = _mesh.getFace(j);
-
-		// compute the normal vector corresponding to face j : from idCells[0] to idCells[1]
-		idCells = Fj.getCellsId();
-		Cell1 = _mesh.getCell(idCells[0]);
-		idm = idCells[0];
-		if (_Ndim >1){
-			for(int l=0; l<Cell1.getNumberOfFaces(); l++){
-				if (j == Cell1.getFacesId()[l]){
-					for (int idim = 0; idim < _Ndim; ++idim)
-						normale[idim] = Cell1.getNormalVector(l,idim);
-					break;
+	if(_mpi_rank == 0)
+	{
+		long nbFaces = _mesh.getNumberOfFaces();
+		Face Fj;
+		Cell Cell1,Cell2;
+		string nameOfGroup;
+		double inv_dxi, inv_dxj;
+		Vector normale(_Ndim);
+		double un, hk;
+		PetscInt idm, idn;
+		std::vector< int > idCells;
+		MatZeroEntries(_A);
+		VecZeroEntries(_b0);
+		for (int j=0; j<nbFaces;j++){
+			Fj = _mesh.getFace(j);
+	
+			// compute the normal vector corresponding to face j : from idCells[0] to idCells[1]
+			idCells = Fj.getCellsId();
+			Cell1 = _mesh.getCell(idCells[0]);
+			idm = idCells[0];
+			if (_Ndim >1){
+				for(int l=0; l<Cell1.getNumberOfFaces(); l++){
+					if (j == Cell1.getFacesId()[l]){
+						for (int idim = 0; idim < _Ndim; ++idim)
+							normale[idim] = Cell1.getNormalVector(l,idim);
+						break;
+					}
+				}
+			}else{ // _Ndim = 1 : assume that this is normal mesh : the face index increases in positive direction
+				if (Fj.getNumberOfCells()<2) {
+					if (j==0)
+						normale[0] = -1;
+					else if (j==nbFaces-1)
+						normale[0] = 1;
+					else
+						throw CdmathException("TransportEquation::ComputeTimeStep(): computation of normal vector failed");
+				} else if(Fj.getNumberOfCells()==2){
+					if (idCells[0] < idCells[1])
+						normale[0] = 1;
+					else
+						normale[0] = -1;
 				}
 			}
-		}else{ // _Ndim = 1 : assume that this is normal mesh : the face index increases in positive direction
-			if (Fj.getNumberOfCells()<2) {
-				if (j==0)
-					normale[0] = -1;
-				else if (j==nbFaces-1)
-					normale[0] = 1;
-				else
-					throw CdmathException("TransportEquation::ComputeTimeStep(): computation of normal vector failed");
-			} else if(Fj.getNumberOfCells()==2){
-				if (idCells[0] < idCells[1])
-					normale[0] = 1;
-				else
-					normale[0] = -1;
-			}
-		}
-		//Compute velocity at the face Fj
-		un=normale*_vitesseTransport;
-		if(abs(un)>_maxvp)
-			_maxvp=abs(un);
-
-		// compute 1/dxi = volume of Ci/area of Fj
-		if (_Ndim > 1)
-			inv_dxi = Fj.getMeasure()/Cell1.getMeasure();
-		else
-			inv_dxi = 1/Cell1.getMeasure();
-
-		// If Fj is on the boundary
-		if (Fj.getNumberOfCells()==1) {
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-			{
-				cout << "face numero " << j << " cellule frontiere " << idCells[0] << " ; vecteur normal=(";
-				for(int p=0; p<_Ndim; p++)
-					cout << normale[p] << ",";
-				cout << ") "<<endl;
-			}
-			nameOfGroup = Fj.getGroupName();
-
-			if     (_limitField[nameOfGroup].bcType==NeumannTransport || _limitField[nameOfGroup].bcType==OutletTransport ){
-				MatSetValue(_A,idm,idm,inv_dxi*un, ADD_VALUES);
-			}
-			else if(_limitField[nameOfGroup].bcType==InletTransport   || _limitField[nameOfGroup].bcType==DirichletTransport){
-				if(un>0){
+			//Compute velocity at the face Fj
+			un=normale*_vitesseTransport;
+			if(abs(un)>_maxvp)
+				_maxvp=abs(un);
+	
+			// compute 1/dxi = volume of Ci/area of Fj
+			if (_Ndim > 1)
+				inv_dxi = Fj.getMeasure()/Cell1.getMeasure();
+			else
+				inv_dxi = 1/Cell1.getMeasure();
+	
+			// If Fj is on the boundary
+			if (Fj.getNumberOfCells()==1) {
+				if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+				{
+					cout << "face numero " << j << " cellule frontiere " << idCells[0] << " ; vecteur normal=(";
+					for(int p=0; p<_Ndim; p++)
+						cout << normale[p] << ",";
+					cout << ") "<<endl;
+				}
+				nameOfGroup = Fj.getGroupName();
+	
+				if     (_limitField[nameOfGroup].bcType==NeumannTransport || _limitField[nameOfGroup].bcType==OutletTransport ){
 					MatSetValue(_A,idm,idm,inv_dxi*un, ADD_VALUES);
 				}
+				else if(_limitField[nameOfGroup].bcType==InletTransport   || _limitField[nameOfGroup].bcType==DirichletTransport){
+					if(un>0){
+						MatSetValue(_A,idm,idm,inv_dxi*un, ADD_VALUES);
+					}
+					else{
+						hk=_limitField[nameOfGroup].h;
+						VecSetValue(_b0,idm,-inv_dxi*un*hk, ADD_VALUES);
+					}
+				}
+				else {//bcType=NoneBCTransport
+					cout<<"!!!!!!!!!!!!!!! Error TransportEquation::computeTransportMatrix() !!!!!!!!!!"<<endl;
+					cout<<"!!!!!!!!! Boundary condition not set for boundary named "<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<" !!!!!!!!!!!!!! "<<endl;
+					cout<<"Accepted boundary conditions are NeumannTransport "<<NeumannTransport<< " and InletTransport "<< InletTransport <<endl;
+					throw CdmathException("Boundary condition not accepted");
+				}
+				// if Fj is inside the domain
+			} else 	if (Fj.getNumberOfCells()==2 ){
+				if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+				{
+					cout << "face numero " << j << " cellule gauche " << idCells[0] << " cellule droite " << idCells[1];
+					cout << " ; vecteur normal=(";
+					for(int p=0; p<_Ndim; p++)
+						cout << normale[p] << ",";
+					cout << "). "<<endl;
+				}
+				Cell2 = _mesh.getCell(idCells[1]);
+				idn = idCells[1];
+				if (_Ndim > 1)
+					inv_dxj = Fj.getMeasure()/Cell2.getMeasure();
+				else
+					inv_dxj = 1/Cell2.getMeasure();
+	
+				if(un>0){
+					MatSetValue(_A,idm,idm,inv_dxi*un, ADD_VALUES);
+					MatSetValue(_A,idn,idm,-inv_dxj*un, ADD_VALUES);
+				}
 				else{
-					hk=_limitField[nameOfGroup].h;
-					VecSetValue(_b0,idm,-inv_dxi*un*hk, ADD_VALUES);
+					MatSetValue(_A,idm,idn,inv_dxi*un, ADD_VALUES);
+					MatSetValue(_A,idn,idn,-inv_dxj*un, ADD_VALUES);
 				}
 			}
-			else {//bcType=NoneBCTransport
-				cout<<"!!!!!!!!!!!!!!! Error TransportEquation::computeTransportMatrix() !!!!!!!!!!"<<endl;
-				cout<<"!!!!!!!!! Boundary condition not set for boundary named "<<nameOfGroup<< ", _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<" !!!!!!!!!!!!!! "<<endl;
-				cout<<"Accepted boundary conditions are NeumannTransport "<<NeumannTransport<< " and InletTransport "<< InletTransport <<endl;
-				throw CdmathException("Boundary condition not accepted");
-			}
-			// if Fj is inside the domain
-		} else 	if (Fj.getNumberOfCells()==2 ){
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-			{
-				cout << "face numero " << j << " cellule gauche " << idCells[0] << " cellule droite " << idCells[1];
-				cout << " ; vecteur normal=(";
-				for(int p=0; p<_Ndim; p++)
-					cout << normale[p] << ",";
-				cout << "). "<<endl;
-			}
-			Cell2 = _mesh.getCell(idCells[1]);
-			idn = idCells[1];
-			if (_Ndim > 1)
-				inv_dxj = Fj.getMeasure()/Cell2.getMeasure();
 			else
-				inv_dxj = 1/Cell2.getMeasure();
-
-			if(un>0){
-				MatSetValue(_A,idm,idm,inv_dxi*un, ADD_VALUES);
-				MatSetValue(_A,idn,idm,-inv_dxj*un, ADD_VALUES);
-			}
-			else{
-				MatSetValue(_A,idm,idn,inv_dxi*un, ADD_VALUES);
-				MatSetValue(_A,idn,idn,-inv_dxj*un, ADD_VALUES);
-			}
+				throw CdmathException("TransportEquation::ComputeTimeStep(): incompatible number of cells around a face");
 		}
-		else
-			throw CdmathException("TransportEquation::ComputeTimeStep(): incompatible number of cells around a face");
 	}
 	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 	VecAssemblyBegin(_b0);
 	VecAssemblyEnd(_b0);
 	_transportMatrixSet=true;
+
+	MPI_Bcast(&_maxvp, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
+	PetscPrintf(PETSC_COMM_WORLD, "Maximum speed is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
+	
 	if(abs(_maxvp)<_precision)
 		throw CdmathException("TransportEquation::computeTransportMatrix(): maximum eigenvalue for time step is zero");
 	else
@@ -241,57 +268,107 @@ double TransportEquation::computeTransportMatrix(){
 }
 double TransportEquation::computeRHS(){
 	double rhomin=INFINITY;
-	VecCopy(_b0,_b);
-	VecAssemblyBegin(_b);
-	if(_system)
-		cout<<"second membre of transport problem"<<endl;
-	for (int i=0; i<_Nmailles;i++){
-		VecSetValue(_b,i,_heatTransfertCoeff*(_rodTemperatureField(i)-_TT(i))/_Rho(i),ADD_VALUES);
-		VecSetValue(_b,i,_heatPowerField(i)/_Rho(i),ADD_VALUES);
+
+	if(_mpi_rank == 0)
+	{
+		VecCopy(_b0,_b);
 		if(_system)
-			cout<<_heatPowerField(i)/_Rho(i)<<endl;
-		if(_Rho(i)<rhomin)
-			rhomin=_Rho(i);
+			cout<<"Second membre of transport problem"<<endl;
+		for (int i=0; i<_Nmailles;i++){
+			VecSetValue(_b,i,_heatTransfertCoeff*(_rodTemperatureField(i)-_TT(i))/_Rho(i),ADD_VALUES);
+			VecSetValue(_b,i,_heatPowerField(i)/_Rho(i),ADD_VALUES);
+			if(_system)
+				cout<<_heatPowerField(i)/_Rho(i)<<endl;
+			if(_Rho(i)<rhomin)
+				rhomin=_Rho(i);
+		}
 	}
+	VecAssemblyBegin(_b);
 	VecAssemblyEnd(_b);
-	if(_system)
-		VecView(_b,  PETSC_VIEWER_STDOUT_WORLD);
+
+    if(_verbose or _system)
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"Right hand side of the linear system\n");
+        VecView(_b,PETSC_VIEWER_STDOUT_WORLD);
+	}
 
 	return rhomin*_cpref/_heatTransfertCoeff;
 }
 void TransportEquation::updatePrimitives()
 {
-	double hi;
-	for(int i=0; i<_Nmailles; i++)
+	if(_mpi_size>1){
+		VecScatterBegin(_scat,_Hn,_Hn_seq,INSERT_VALUES,SCATTER_FORWARD);
+		VecScatterEnd(  _scat,_Hn,_Hn_seq,INSERT_VALUES,SCATTER_FORWARD);
+	}
+	
+    if(_verbose or _system)
 	{
-		VecGetValues(_Hk, 1, &i, &hi);
-		_VV(i)=hi;
-		_TT(i)=temperature(hi);
-		_Alpha(i)=voidFraction(hi);
-		_Rho(i)=density(_Alpha(i));
+		PetscPrintf(PETSC_COMM_WORLD,"Unknown of the linear system :\n");
+        VecView(_Hn,PETSC_VIEWER_STDOUT_WORLD);
+	}
+
+	if(_mpi_rank == 0)
+	{
+		double hi;
+		for(int i=0; i<_Nmailles; i++)
+		{
+			if(_mpi_size>1)
+				VecGetValues(_Hn_seq, 1, &i, &hi);
+			else
+				VecGetValues(_Hn    , 1, &i, &hi);
+			_VV(i)=hi;
+			_TT(i)=temperature(hi);
+			_Alpha(i)=voidFraction(hi);
+			_Rho(i)=density(_Alpha(i));
+		}
 	}
 }
 
 bool TransportEquation::initTimeStep(double dt){
-	_dt = dt;
 	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"Matrix of the linear system\n");
+		MatView(_A,PETSC_VIEWER_STDOUT_WORLD);
+	}
 	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 
-	if(_timeScheme == Implicit)
-		MatShift(_A,1/_dt);
-
+    if(_dt>0 and dt>0)
+    {
+        //Remove the contribution from dt to prepare for new time step. The diffusion matrix is not recomputed
+        if(_timeScheme == Implicit)
+            MatShift(_A,-1/_dt+1/dt);
+        //No need to remove the contribution to the right hand side since it is recomputed from scratch at each time step
+    }
+    else if(dt>0)//_dt==0, first time step
+    {
+		if(_timeScheme == Implicit)
+			MatShift(_A,1/dt);
+	}
+    else//dt<=0
+    {
+        PetscPrintf(PETSC_COMM_WORLD,"TransportEquation::initTimeStep %.2f = \n",dt);
+        throw CdmathException("Error TransportEquation::initTimeStep : cannot set time step to zero");        
+    }
+    //At this stage _b contains _b0 + power + heat exchange
+    VecAXPY(_b, 1/dt, _Hn);        
+	
+	_dt=dt;
+	
 	return _dt>0;
 }
 
 void TransportEquation::abortTimeStep(){
+    //Remove contribution of dt to the RHS
 	VecAXPY(_b,  -1/_dt, _Hn);
+
 	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 
+    //Remove contribution of dt to the matrix
 	if(_timeScheme == Implicit)
 		MatShift(_A,-1/_dt);
+
 	_dt = 0;
 }
 
@@ -310,13 +387,13 @@ bool TransportEquation::iterateTimeStep(bool &converged)
 	VecAXPY(_b, 1/_dt, _Hn);
 	if(_system)
 	{
-		cout << "Vecteur Hn: " << endl;
+		PetscPrintf(PETSC_COMM_WORLD,"Vecteur Hn : \n");
 		VecView(_Hn,  PETSC_VIEWER_STDOUT_WORLD);
 		cout << endl;
-		cout<<"Vecteur _b "<<endl;
-		VecView(_b,  PETSC_VIEWER_STDOUT_SELF);
-		cout << "Matrice A "<<endl;
-		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+		PetscPrintf(PETSC_COMM_WORLD,"Vecteur _b : \n");
+		VecView(_b,  PETSC_VIEWER_STDOUT_WORLD);
+		PetscPrintf(PETSC_COMM_WORLD,"Matrice A : \n");
+		MatView(_A,PETSC_VIEWER_STDOUT_WORLD);
 	}
 
 	if(_timeScheme == Explicit)
@@ -324,21 +401,21 @@ bool TransportEquation::iterateTimeStep(bool &converged)
 		MatMult(_A, _Hn, _Hk);
 		if(_system)
 		{
-			cout << "Nouveau vecteur Hk: " << endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Nouveau vecteur Hk: \n");
 			VecView(_Hk,  PETSC_VIEWER_STDOUT_WORLD);
 			cout << endl;
 		}
 		VecAXPY(_Hk, -1, _b);
 		if(_system)
 		{
-			cout << "Nouveau vecteur Hk-b: " << endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Nouveau vecteur Hk-b: \n");
 			VecView(_Hk,  PETSC_VIEWER_STDOUT_WORLD);
 			cout << endl;
 		}
 		VecScale(_Hk, -_dt);
 		if(_system)
 		{
-			cout << "Nouveau vecteur dt*(Hk-b): " << endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Nouveau vecteur dt*(Hk-b): \n");
 			VecView(_Hk,  PETSC_VIEWER_STDOUT_WORLD);
 			cout << endl;
 		}
@@ -366,7 +443,7 @@ bool TransportEquation::iterateTimeStep(bool &converged)
 			_MaxIterLinearSolver = _PetscIts;
 		if(_PetscIts>=_maxPetscIts)
 		{
-			cout<<"Systeme lineaire : pas de convergence de Petsc. Itérations maximales "<<_maxPetscIts<<" atteintes"<<endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Systeme lineaire : pas de convergence de Petsc. Itérations maximales %d atteintes", _maxPetscIts);
 			converged=false;
 			return false;
 		}
@@ -374,25 +451,12 @@ bool TransportEquation::iterateTimeStep(bool &converged)
 		{
 			VecCopy(_Hk, _deltaH);//ici on a deltaH=Hk
 			VecAXPY(_deltaH,  -1, _Hkm1);//On obtient deltaH=Hk-Hkm1
-			_erreur_rel= 0;
-			double hi, dhi;
-
-			for(int i=0; i<_Nmailles; i++)
-			{
-				VecGetValues(_deltaH, 1, &i, &dhi);
-				VecGetValues(_Hk, 1, &i, &hi);
-				if(_erreur_rel < fabs(dhi/hi))
-					_erreur_rel = fabs(dhi/hi);
-			}
+			VecNorm(_deltaH,NORM_INFINITY,&_erreur_rel);
+			converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
 		}
-
-		converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
 	}
 
-	updatePrimitives();
-
 	VecCopy(_Hk, _Hkm1);
-
 
 	return true;
 }
@@ -400,41 +464,36 @@ void TransportEquation::validateTimeStep()
 {
 	VecCopy(_Hk, _deltaH);//ici Hk=Hnp1 donc on a deltaH=Hnp1
 	VecAXPY(_deltaH,  -1, _Hn);//On obtient deltaH=Hnp1-Hn
+	VecNorm(_deltaH,NORM_INFINITY,&_erreur_rel);
 
-	_erreur_rel= 0;
-	double hi, dhi;
-
-	for(int i=0; i<_Nmailles; i++)
-	{
-		VecGetValues(_deltaH, 1, &i, &dhi);
-		VecGetValues(_Hk, 1, &i, &hi);
-		if(_erreur_rel < fabs(dhi/hi))
-			_erreur_rel = fabs(dhi/hi);
-	}
 	_isStationary =(_erreur_rel <_precision);
 
 	VecCopy(_Hk, _Hn);
 	VecCopy(_Hk, _Hkm1);
 
-	if((_nbTimeStep-1)%_freqSave ==0)
-	{
-		cout <<"Valeur propre locale max: " << _maxvp << endl;
-		//Find minimum and maximum void fractions
-		double alphamin=INFINITY;
-		double alphamax=-INFINITY;
-		for(int i=0; i<_Nmailles; i++)
+	updatePrimitives();
+
+	if(_mpi_rank == 0)
+		if((_nbTimeStep-1)%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
 		{
-			if(_Alpha(i)>alphamax)
-				alphamax=_Alpha(i);
-			if(_Alpha(i)<alphamin)
-				alphamin=_Alpha(i);
+			cout <<"Valeur propre locale max: " << _maxvp << endl;
+			//Find minimum and maximum void fractions
+			double alphamin=INFINITY;
+			double alphamax=-INFINITY;
+			for(int i=0; i<_Nmailles; i++)
+			{
+				if(_Alpha(i)>alphamax)
+					alphamax=_Alpha(i);
+				if(_Alpha(i)<alphamin)
+					alphamin=_Alpha(i);
+			}
+			cout<<"Alpha min = " << alphamin << " Alpha max = " << alphamax<<endl;
+	
+			save();
 		}
-		cout<<"Alpha min = " << alphamin << " Alpha max = " << alphamax<<endl;
-	}
+
 	_time+=_dt;
 	_nbTimeStep++;
-	save();
-
 }
 
 void TransportEquation::terminate(){
@@ -445,68 +504,74 @@ void TransportEquation::terminate(){
 	VecDestroy(&_b0);
 	VecDestroy(&_b);
 	MatDestroy(&_A);
+	if(_mpi_size>1 && _mpi_rank == 0)
+		VecDestroy(&_Hn_seq);
 }
 
 void TransportEquation::save(){
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results\n\n");
+
 	string resultFile(_path+"/TransportEquation_");///Results
 	resultFile+=_fileName;
 
-	_VV.setTime(_time,_nbTimeStep);
-	_TT.setTime(_time,_nbTimeStep);
-	_Alpha.setTime(_time,_nbTimeStep);
-	_Rho.setTime(_time,_nbTimeStep);
-
-	// create mesh and component info
-	if (_nbTimeStep ==0 || _restartWithNewFileName){
-		if (_restartWithNewFileName)
-			_restartWithNewFileName=false;
-		string suppress ="rm -rf "+resultFile+"_*";
-		system(suppress.c_str());//Nettoyage des précédents calculs identiques
-
-		switch(_saveFormat)
-		{
-		case VTK :
-			_VV.writeVTK(resultFile+"Enthalpy");
-			_TT.writeVTK(resultFile+"Temperature");
-			_Alpha.writeVTK(resultFile+"GasFraction");
-			_Rho.writeVTK(resultFile+"MixtureDensity");
-			break;
-		case MED :
-			_VV.writeMED(resultFile+"Enthalpy");
-			_TT.writeMED(resultFile+"Temperature");
-			_Alpha.writeMED(resultFile+"GasFraction");
-			_Rho.writeMED(resultFile+"MixtureDensity");
-			break;
-		case CSV :
-			_VV.writeCSV(resultFile+"Enthalpy");
-			_TT.writeCSV(resultFile+"Temperature");
-			_Alpha.writeCSV(resultFile+"GasFraction");
-			_Rho.writeCSV(resultFile+"MixtureDensity");
-			break;
+	if(_mpi_rank==0){
+		_VV.setTime(_time,_nbTimeStep);
+		_TT.setTime(_time,_nbTimeStep);
+		_Alpha.setTime(_time,_nbTimeStep);
+		_Rho.setTime(_time,_nbTimeStep);
+	
+		// create mesh and component info
+		if (_nbTimeStep ==0 || _restartWithNewFileName){
+			if (_restartWithNewFileName)
+				_restartWithNewFileName=false;
+			string suppress ="rm -rf "+resultFile+"_*";
+			system(suppress.c_str());//Nettoyage des précédents calculs identiques
+	
+			switch(_saveFormat)
+			{
+			case VTK :
+				_VV.writeVTK(resultFile+"Enthalpy");
+				_TT.writeVTK(resultFile+"Temperature");
+				_Alpha.writeVTK(resultFile+"GasFraction");
+				_Rho.writeVTK(resultFile+"MixtureDensity");
+				break;
+			case MED :
+				_VV.writeMED(resultFile+"Enthalpy");
+				_TT.writeMED(resultFile+"Temperature");
+				_Alpha.writeMED(resultFile+"GasFraction");
+				_Rho.writeMED(resultFile+"MixtureDensity");
+				break;
+			case CSV :
+				_VV.writeCSV(resultFile+"Enthalpy");
+				_TT.writeCSV(resultFile+"Temperature");
+				_Alpha.writeCSV(resultFile+"GasFraction");
+				_Rho.writeCSV(resultFile+"MixtureDensity");
+				break;
+			}
 		}
-	}
-	// do not create mesh
-	else{
-		switch(_saveFormat)
-		{
-		case VTK :
-			_VV.writeVTK(resultFile+"Enthalpy",false);
-			_TT.writeVTK(resultFile+"Temperature",false);
-			_Alpha.writeVTK(resultFile+"GasFraction",false);
-			_Rho.writeVTK(resultFile+"MixtureDensity",false);
-			break;
-		case MED :
-			_VV.writeMED(resultFile+"Enthalpy",false);
-			_TT.writeMED(resultFile+"Temperature",false);
-			_Alpha.writeMED(resultFile+"GasFraction",false);
-			_Rho.writeMED(resultFile+"MixtureDensity",false);
-			break;
-		case CSV :
-			_VV.writeCSV(resultFile+"Enthalpy");
-			_TT.writeCSV(resultFile+"Temperature");
-			_Alpha.writeCSV(resultFile+"GasFraction");
-			_Rho.writeCSV(resultFile+"MixtureDensity");
-			break;
+		// do not create mesh
+		else{
+			switch(_saveFormat)
+			{
+			case VTK :
+				_VV.writeVTK(resultFile+"Enthalpy",false);
+				_TT.writeVTK(resultFile+"Temperature",false);
+				_Alpha.writeVTK(resultFile+"GasFraction",false);
+				_Rho.writeVTK(resultFile+"MixtureDensity",false);
+				break;
+			case MED :
+				_VV.writeMED(resultFile+"Enthalpy",false);
+				_TT.writeMED(resultFile+"Temperature",false);
+				_Alpha.writeMED(resultFile+"GasFraction",false);
+				_Rho.writeMED(resultFile+"MixtureDensity",false);
+				break;
+			case CSV :
+				_VV.writeCSV(resultFile+"Enthalpy");
+				_TT.writeCSV(resultFile+"Temperature");
+				_Alpha.writeCSV(resultFile+"GasFraction");
+				_Rho.writeCSV(resultFile+"MixtureDensity");
+				break;
+			}
 		}
 	}
 }

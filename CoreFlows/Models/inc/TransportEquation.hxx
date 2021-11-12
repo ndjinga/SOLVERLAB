@@ -163,6 +163,7 @@ protected :
 	Vector _vitesseTransport, _normale;
 	bool _transportMatrixSet;
 	Vec _Hn, _deltaH, _Hk, _Hkm1, _b0;
+	Vec _Hn_seq; // Local sequential copy of the parallel vector _Hn, used for saving result files
 	double _dt_transport, _dt_src;
 
 	map<string, LimitFieldTransport> _limitField;
