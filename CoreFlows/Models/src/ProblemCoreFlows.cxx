@@ -42,7 +42,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"---- More than one processor detected : running a parallel simulation ----\n");
 		PetscPrintf(PETSC_COMM_WORLD,"---- Limited parallelism : input and output fields remain sequential ----\n");
-		PetscPrintf(PETSC_COMM_WORLD,"---- Only the matrixoperations are done in parallel thanks to PETSc----\n");
+		PetscPrintf(PETSC_COMM_WORLD,"---- Only the matrix operations are done in parallel thanks to PETSc----\n");
 		PetscPrintf(PETSC_COMM_WORLD,"---- Processor %d is in charge of building the mesh, saving the results, filling and then distributing the matrix to other processors.\n\n",_mpi_rank);
 	}
 	
