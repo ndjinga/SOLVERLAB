@@ -222,7 +222,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	}
 	
 	/*** MPI distribution of parameters ***/
-	MPI_Allreduce(&_initialDataSet, &_initialDataSet, 1, MPI_C_BOOL, MPI_LOR, PETSC_COMM_WORLD);
+	MPI_Allreduce(&_initialDataSet, &_initialDataSet, 1, MPIU_BOOL, MPI_LOR, PETSC_COMM_WORLD);
 	
 	int nbVoisinsMax;//Mettre en attribut ?
 	if(!_FECalculation){
