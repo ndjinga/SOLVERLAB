@@ -288,14 +288,14 @@ public :
      * @return the list of scalar names that represent inputs of the code
      * @throws ICoCo::WrongContext exception if called before initialize() or after terminate().
      */
-    virtual std::vector<std::string> getInputValuesNames() const;
+    /* virtual std::vector<std::string> getInputValuesNames() const; */
 
     /*! @brief (Optional) Get the list of output scalars that can be provided by the code.
      *
      * @return the list of scalar names that can be returned by the code
      * @throws ICoCo::WrongContext exception if called before initialize() or after terminate().
      */
-    virtual std::vector<std::string> getOutputValuesNames() const;
+    /* virtual std::vector<std::string> getOutputValuesNames() const; */
 
 	Field getUnknownField() const;
 	

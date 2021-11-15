@@ -794,6 +794,3 @@ ProblemCoreFlows::isMEDCoupling64Bits() const
 	return false;
 #endif
 };
-
-int 
-ProblemCoreFlows::getMEDCouplingMajorVersion() const{ return MEDCOUPLING_VERSION_MAJOR; }
