@@ -188,26 +188,118 @@ public :
 	 *  */
 	virtual double presentTime() const;
 
-	/*
-	//Coupling interface
-	virtual vector<string> getInputFieldsNames()=0 ;//Renvoie les noms des champs dont le problème a besoin (données initiales)
-	virtual  Field& getInputFieldTemplate(const string& name)=0;//Renvoie le format de champs attendu (maillage, composantes etc)
-	virtual void setInputField(const string& name, const Field& afield)=0;//enregistre les valeurs d'une donnée initiale
-	virtual vector<string> getOutputFieldsNames()=0 ;//liste tous les champs que peut fournir le code pour le postraitement
-	virtual Field& getOutputField(const string& nameField )=0;//Renvoie un champs pour le postraitement
-	 */
+	/** \fn setStationaryMode
+	 * \brief Perform the search of a stationary regime
+	 * \details
+	 * \param [in] bool
+	 * \param [out] 
+	 *  */
+	virtual void setStationaryMode(bool stationaryMode){ _stationaryMode=stationaryMode;};
 
-	Field getUnknownField() const;
-	
-	//paramètres du calcul -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+	/** \fn getStationaryMode
+	 * \brief Tells if we are seeking a stationary regime
+	 * \details
+	 * \param [in] 
+	 * \param [out] bool
+	 *  */
+	virtual bool getStationaryMode(){return _stationaryMode;};
 
-	/** \fn setPresentTime
-	 * \brief met à jour _time (le temps courant du calcul)
+	/** \fn resetTime
+	 * \brief sets the current time (typically to start a new calculation)
 	 * \details
 	 * \param [in] double
 	 * \param [out] void
 	 *  */
-	void setPresentTime (double time);
+	void resetTime (double time);
+
+	/*
+	//Coupling interface
+	virtual vector<string> getInputFieldsNames()=0 ;//Renvoie les noms des champs dont le problème a besoin (données initiales)
+	virtual void getInputMEDDoubleFieldTemplate(const std::string& name, MEDDoubleField& afield) const;//Renvoie le format de champs attendu (maillage, composantes etc)
+	virtual void setInputMEDDoubleField(const std::string& name, const MEDDoubleField& afield);//enregistre les valeurs d'une donnée initiale
+	virtual vector<string> getOutputFieldsNames()=0 ;//liste tous les champs que peut fournir le code pour le postraitement
+	virtual void getOutputMEDDoubleField(const std::string& name, MEDDoubleField& afield)//Renvoie un champs pour le postraitement ou le couplage
+	 */
+
+     /*! @brief (Optional) Provide the code with a scalar double data.
+     *
+     * See Problem documentation for more details on the time semantic of a scalar value.
+     *
+     * @param[in] name name of the scalar value that is given to the code.
+     * @param[in] val value passed to the code.
+     * @throws ICoCo::WrongArgument exception if the scalar name ('name' parameter) is invalid.
+     */
+    /* virtual void setInputDoubleValue(const std::string& name, const double& val); */
+
+    /*! @brief (Optional) Retrieve a scalar double value from the code.
+     *
+     * See Problem documentation for more details on the time semantic of a scalar value.
+     *
+     * @param[in] name name of the scalar value to be read from the code.
+     * @return the double value read from the code.
+     * @throws ICoCo::WrongArgument exception if the scalar name ('name' parameter) is invalid.
+     */
+    /* virtual double getOutputDoubleValue(const std::string& name) const; */
+
+    /*! @brief (Optional) Similar to setInputDoubleValue() but for an int value.
+     * @sa setInputDoubleValue()
+     */
+    /* virtual void setInputIntValue(const std::string& name, const int& val); */
+
+    /*! @brief (Optional) Similar to getOutputDoubleValue() but for an int value.
+     * @sa getOutputDoubleValue()
+     */
+    /* virtual int getOutputIntValue(const std::string& name) const; */
+
+    /*! @brief (Optional) Similar to setInputDoubleValue() but for an string value.
+     * @sa setInputDoubleValue()
+     */
+    /* virtual void setInputStringValue(const std::string& name, const std::string& val); */
+
+    /*! @brief (Optional) Similar to getOutputDoubleValue() but for an string value.
+     * @sa getOutputDoubleValue()
+     */
+    /* virtual std::string getOutputStringValue(const std::string& name) const; */
+    
+   /*! @brief Return ICoCo interface major version number.
+     * @return ICoCo interface major version number (2 at present)
+     */
+    static int GetICoCoMajorVersion() { return 2; }
+
+    /*! @brief (Optional) Get MEDCoupling major version, if the code was built with MEDCoupling support.
+     *
+     * This can be used to assess compatibility between codes when coupling them.
+     *
+     * @return the MEDCoupling major version number (typically 7, 8, 9, ...)
+     */
+    virtual int getMEDCouplingMajorVersion() const{ return MEDCOUPLING_VERSION_MAJOR; };
+
+    /*! @brief (Optional) Indicate whether the code was built with a 64-bits version of MEDCoupling.
+     *
+     * Implemented if the code was built with MEDCoupling support.
+     * This can be used to assess compatibility between codes when coupling them.
+     *
+     * @return the MEDCoupling major version number
+     */
+    virtual bool isMEDCoupling64Bits() const;
+
+    /*! @brief (Optional) Get the list of input scalars accepted by the code.
+     *
+     * @return the list of scalar names that represent inputs of the code
+     * @throws ICoCo::WrongContext exception if called before initialize() or after terminate().
+     */
+    virtual std::vector<std::string> getInputValuesNames() const;
+
+    /*! @brief (Optional) Get the list of output scalars that can be provided by the code.
+     *
+     * @return the list of scalar names that can be returned by the code
+     * @throws ICoCo::WrongContext exception if called before initialize() or after terminate().
+     */
+    virtual std::vector<std::string> getOutputValuesNames() const;
+
+	Field getUnknownField() const;
+	
+	//paramètres du calcul -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 	/** \fn setMaxNbOfTimeStep
 	 * \brief met à jour _maxNbOfTimeStep ( le nombre maximum d'itération du calcul )
@@ -741,6 +833,7 @@ protected :
 	bool _isStationary;
 	bool _initialDataSet;
 	bool _initializedMemory;
+	bool _stationaryMode;//ICoCo V2
 	bool _restartWithNewTimeScheme;
 	bool _restartWithNewFileName;
 	double _timeMax,_time;
@@ -771,7 +864,6 @@ protected :
 	VecScatter	   _scat;			/* For the distribution of a local vector */
 	int _globalNbUnknowns, _localNbUnknowns;
 	int _d_nnz, _o_nnz;			/* local and "non local" numbers of non zeros corfficients */
-
 };
 
 #endif /* PROBLEMCOREFLOWS_HXX_ */

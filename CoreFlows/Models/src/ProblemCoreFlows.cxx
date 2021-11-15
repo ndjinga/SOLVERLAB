@@ -57,6 +57,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	_precision_Newton=_precision;
 	_erreur_rel= 0;
 	_isStationary=false;
+	_stationaryMode=false;
 	_timeScheme=Explicit;
 	_wellBalancedCorrection=false;
     _FECalculation=false;
@@ -77,6 +78,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	_Ndim=0;
 	_minl=0;
 	_neibMaxNbCells=0;
+	_neibMaxNbNodes=0;
 
 	/* Memory and restart */
 	_initialDataSet=false;
@@ -94,7 +96,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	else
 		_pctype = (char*)&PCLU;
 
-	/* Physical parameter */
+	/* Physical parameters */
 	_heatPowerFieldSet=false;
 	_heatTransfertCoeff=0;
 	_rodTemperatureFieldSet=false;
@@ -131,7 +133,7 @@ double ProblemCoreFlows::presentTime() const
 void ProblemCoreFlows::setTimeMax(double timeMax){
 	_timeMax = timeMax;
 }
-void ProblemCoreFlows::setPresentTime (double time)
+void ProblemCoreFlows::resetTime (double time)
 {
 	_time=time;
 }
@@ -782,3 +784,16 @@ ProblemCoreFlows::getUnknownField() const
 	}
 	return _VV;
 }
+
+bool 
+ProblemCoreFlows::isMEDCoupling64Bits() const
+{ 
+#ifdef MEDCOUPLING_USE_64BIT_IDS
+	return  true;
+#else
+	return false;
+#endif
+};
+
+int 
+ProblemCoreFlows::getMEDCouplingMajorVersion() const{ return MEDCOUPLING_VERSION_MAJOR; }
