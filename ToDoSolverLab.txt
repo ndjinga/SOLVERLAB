@@ -1,0 +1,29 @@
+extraire la pression autour de l'aile
+
+renomer la librairie medcoupling en medcouplingcpp 
+
+créer une variable SOLVERLAB_WITH_KERNEL/SOLVERLAB_WITH_SALOME, charger le kernel salomé à un seul endroit (actuellement celà est fait dans examples/python/CMakeLists.txt et gui/salome/CMakeLists.txt). Echec fin Avril 2021. Seule la gui a été chargée à un seul endroit. Le kernel et la configuration sont chargés à deux endroits.
+
+Débugguer Euler 2D
+
+En 3D MPI, résoudre le problème d'allocation de la matrice PETSC
+Débugger l'erreur mémoire du test PoissionFE_3DTorus
+
+gestion des fichiers .ipynb depuis le makefile ou depuis chaque test (import nbconvert)
+
+comprendre pourquoi les tests wavesystem avec source ne convergent pas
+
+FInaliser l'élasticité linéaire
+
+Finaliser loi d'état
+
+Finaliser IJKmesh
+
+Débugger GUI->yacine
+
+modéliser L(p) ou L(T)
+
+TranportEquation :  créer un exemple miltiD lisant un maillage med
+
+Dans CoreFlows : ne plus stocker en mémoire le maillage après la première itération, mais seulement les valeurs des champs dans des dataarray
+
