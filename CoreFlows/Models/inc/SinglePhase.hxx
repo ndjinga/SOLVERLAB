@@ -146,7 +146,7 @@ public :
 	double getReferencePressure()    { return _Pref; };
 	double getReferenceTemperature() { return _Tref; };
 	
-	//get output fields for postprocessing or coupling
+	/* get output fields for postprocessing or coupling */
 	vector<string> getOutputFieldsNames() ;//liste tous les champs que peut fournir le code pour le postraitement
 	Field&         getOutputField(const string& nameField );//Renvoie un champs pour le postraitement
 	Field& getPressureField();
