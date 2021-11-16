@@ -54,6 +54,8 @@ TransportEquation::TransportEquation(phase fluid, pressureMagnitude pEstimate,ve
 	_dt_src=0;
 	_transportMatrixSet=false;
 	_FECalculation=false;//Only finite volumes available
+	_rodTemperatureFieldSet=false;
+	_rodTemperature=0;
 }
 
 void TransportEquation::initialize()
@@ -580,26 +582,55 @@ void TransportEquation::save(){
 	}
 }
 
-vector<string> TransportEquation::getOutputFieldsNames()
+vector<string> TransportEquation::getInputFieldsNames()
 {
 	vector<string> result(2);
 	
+	result[0]="HeatPower";
+	result[1]="RodTemperature";
+	
+	return result;
+}
+
+vector<string> TransportEquation::getOutputFieldsNames()
+{
+	vector<string> result(4);
+	
 	result[0]="Enthalpy";
 	result[1]="FluidTemperature";
+	result[2]="VoidFraction";
+	result[3]="Density";
 	
 	return result;
 }
 
 Field& TransportEquation::getOutputField(const string& nameField )
 {
-	if(nameField=="FluidTemperature" || nameField=="FLUIDTEMPERATURE" )
+	if(nameField=="FluidTemperature" || nameField=="FLUIDTEMPERATURE" || nameField=="TemperatureFluide" || nameField=="TEMPERATUREFLUIDE")
 		return getFluidTemperatureField();
-	else if(nameField=="Enthalpy" || nameField=="ENTHALPY" || nameField=="Enthalpie" || nameField=="ENTHALPY" )
+	else if(nameField=="Enthalpy" || nameField=="ENTHALPY" || nameField=="Enthalpie" || nameField=="ENTHALPIE" )
 		return getEnthalpyField();
-    else
+    else 	if(nameField=="VoidFraction" || nameField=="VOIDFRACTION" || nameField=="TauxDeVide" || nameField=="TAUXDEVIDE")
+		return getVoidFractionField();
+	else if(nameField=="Density" || nameField=="DENSITY" || nameField=="Densité" || nameField=="DENSITE" )
+		return getDensityField();
+	else
     {
         cout<<"Error : Field name "<< nameField << " does not exist, call getOutputFieldsNames first" << endl;
         throw CdmathException("TransportEquation::getOutputField error : Unknown Field name");
     }
 }
 
+void
+TransportEquation::setInputField(const string& nameField, Field& inputField )
+{
+	if(nameField=="RodTemperature" || nameField=="RODTEMPERATURE" || nameField=="TemperatureCombustible" || nameField=="TEMPERATURECOMBUSTIBLE")
+		return setRodTemperatureField( inputField) ;
+	else if(nameField=="HeatPower" || nameField=="HEATPOWER" || nameField=="PuissanceThermique" || nameField=="PUISSANCETHERMIQUE" )
+		return setHeatPowerField( inputField );
+	else
+    {
+        cout<<"Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first" << endl;
+        throw CdmathException("TransportEquation::setInputField error : Unknown Field name");
+    }
+}

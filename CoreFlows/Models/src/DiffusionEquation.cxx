@@ -842,21 +842,45 @@ DiffusionEquation::setNeumannValues(map< int, double> neumannBoundaryValues)
 }
 
 
-vector<string> DiffusionEquation::getOutputFieldsNames()
+Field& 
+DiffusionEquation::getOutputTemperatureField()
+{
+    if(!_initializedMemory)
+        throw("Computation not initialized. No temperature field available");
+    else
+        return _VV;
+}
+
+Field& 
+DiffusionEquation::getRodTemperatureField()
+{
+   return getOutputTemperatureField();
+}
+
+vector<string> 
+DiffusionEquation::getInputFieldsNames()
 {
 	vector<string> result(2);
 	
 	result[0]="FluidTemperature";
-	result[1]="RodTemperature";
+	result[1]="HeatPower";
+	
+	return result;
+}
+vector<string> 
+DiffusionEquation::getOutputFieldsNames()
+{
+	vector<string> result(1);
+	
+	result[0]="RodTemperature";
 	
 	return result;
 }
 
-Field& DiffusionEquation::getOutputField(const string& nameField )
+Field& 
+DiffusionEquation::getOutputField(const string& nameField )
 {
-	if(nameField=="FluidTemperature" || nameField=="FLUIDTEMPERATURE" || nameField=="TemperatureFluide" || nameField=="TEMPERATUREFLUIDE" )
-		return getFluidTemperatureField();
-	else if(nameField=="RodTemperature" || nameField=="RODTEMPERATURE" || nameField=="TEMPERATURECOMBUSTIBLE" || nameField=="TemperatureCombustible" )
+	if(nameField=="RodTemperature" || nameField=="RODTEMPERATURE" || nameField=="TEMPERATURECOMBUSTIBLE" || nameField=="TemperatureCombustible" )
 		return getRodTemperatureField();
     else
     {
@@ -865,3 +889,16 @@ Field& DiffusionEquation::getOutputField(const string& nameField )
     }
 }
 
+void
+DiffusionEquation::setInputField(const string& nameField, Field& inputField )
+{
+	if(nameField=="FluidTemperature" || nameField=="FLUIDTEMPERATURE" || nameField=="TemperatureFluide" || nameField=="TEMPERATUREFLUIDE")
+		return setFluidTemperatureField( inputField) ;
+	else if(nameField=="HeatPower" || nameField=="HEATPOWER" || nameField=="PuissanceThermique" || nameField=="PUISSANCETHERMIQUE" )
+		return setHeatPowerField( inputField );
+	else
+    {
+        cout<<"Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first" << endl;
+        throw CdmathException("DiffusionEquation::setInputField error : Unknown Field name");
+    }
+}

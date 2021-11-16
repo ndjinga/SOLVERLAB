@@ -170,7 +170,7 @@ public :
 	 * \param [in] bool, passage par reférence.
 	 * \param [out] bool
 	 *  */
-	virtual bool iterateTimeStep(bool &converged) = 0; //??
+	virtual bool iterateTimeStep(bool &converged) = 0; 
 
 	/** \fn isStationary
 	 * \brief vérifie la stationnairité du problème .
@@ -683,7 +683,7 @@ public :
 	}
 
 	/** \fn setHeatSource
-	 * \brief met à jour la puissance thermique ( _phi )
+	 * \brief sets a constant heat power field
 	 * \details
 	 * \param [in] double
 	 * \param [out] void
@@ -694,46 +694,13 @@ public :
 	}
 
 	/** \fn getHeatPowerField
-	 * \brief renvoie le champs ?? ( _heatPowerField )
+	 * \brief returns the heat power field
 	 * \details
 	 * \param [in] void
 	 * \param [out] Field
 	 *  */
 	Field getHeatPowerField(){
 		return _heatPowerField;
-	}
-
-	/** \fn setRodTemperatureField ??
-	 * \brief
-	 * \details
-	 * \param [in] Field
-	 * \param [out] void
-	 *  */
-	void setRodTemperatureField(Field rodTemperature){
-		_rodTemperatureField=rodTemperature;
-		_rodTemperatureFieldSet=true;
-		_isStationary=false;//Source term may be changed after previously reaching a stationary state
-	}
-
-	/** \fn setRodTemperature ??
-	 * \brief
-	 * \details
-	 * \param [in] double
-	 * \param [out] void
-	 *  */
-	void setRodTemperature(double rodTemp){
-		_rodTemperature=rodTemp;
-		_isStationary=false;//Source term may be changed after previously reaching a stationary state
-	}
-
-	/** \fn getRodTemperatureField
-	 * \brief
-	 * \details
-	 * \param [in] void
-	 * \param [out] Field
-	 *  */
-	virtual Field& getRodTemperatureField(){ // ?? je ne retrouve pas cet attribut dans le file.cxx
-		return _rodTemperatureField;
 	}
 
 	/** \fn setHeatTransfertCoeff
@@ -846,10 +813,10 @@ protected :
 	ofstream * _runLogFile;//for creation of a log file to save the history of the simulation
 
 	//Heat transfert variables
-	Field _heatPowerField, _rodTemperatureField;
-	bool _heatPowerFieldSet, _rodTemperatureFieldSet;
+	Field _heatPowerField;
+	bool _heatPowerFieldSet;
 	double _heatTransfertCoeff;
-	double _heatSource, _rodTemperature;
+	double _heatSource;
 	double _hsatv, _hsatl;//all models appart from DiffusionEquation will need this
 
 	//Display variables

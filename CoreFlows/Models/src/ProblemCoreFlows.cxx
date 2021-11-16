@@ -99,7 +99,6 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	/* Physical parameters */
 	_heatPowerFieldSet=false;
 	_heatTransfertCoeff=0;
-	_rodTemperatureFieldSet=false;
 	_heatSource=0;
 
 	//extracting current directory

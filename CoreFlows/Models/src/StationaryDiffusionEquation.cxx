@@ -906,14 +906,6 @@ void StationaryDiffusionEquation::save(){
 	    }
 	}
 }
-Field 
-StationaryDiffusionEquation::getOutputTemperatureField()
-{
-    if(!_computationCompletedSuccessfully)
-        throw("Computation not performed yet or failed. No temperature field available");
-    else
-        return _VV;
-}
 
 void StationaryDiffusionEquation::terminate()
 {
@@ -998,4 +990,65 @@ StationaryDiffusionEquation::getEigenvectorsField(int nev, EPSWhich which, doubl
   my_eigenfield.setFieldByDataArrayDouble(d);
   
   return my_eigenfield;
+}
+
+Field&
+StationaryDiffusionEquation::getOutputTemperatureField()
+{
+    if(!_computationCompletedSuccessfully)
+        throw("Computation not performed yet or failed. No temperature field available");
+    else
+        return _VV;
+}
+
+Field& 
+StationaryDiffusionEquation::getRodTemperatureField()
+{
+   return getOutputTemperatureField();
+}
+
+vector<string> 
+StationaryDiffusionEquation::getInputFieldsNames()
+{
+	vector<string> result(2);
+	
+	result[0]="FluidTemperature";
+	result[1]="HeatPower";
+	
+	return result;
+}
+vector<string> 
+StationaryDiffusionEquation::getOutputFieldsNames()
+{
+	vector<string> result(1);
+	
+	result[0]="RodTemperature";
+	
+	return result;
+}
+
+Field& 
+StationaryDiffusionEquation::getOutputField(const string& nameField )
+{
+	if(nameField=="RodTemperature" || nameField=="RODTEMPERATURE" || nameField=="TEMPERATURECOMBUSTIBLE" || nameField=="TemperatureCombustible" )
+		return getRodTemperatureField();
+    else
+    {
+        cout<<"Error : Field name "<< nameField << " does not exist, call getOutputFieldsNames first" << endl;
+        throw CdmathException("DiffusionEquation::getOutputField error : Unknown Field name");
+    }
+}
+
+void
+StationaryDiffusionEquation::setInputField(const string& nameField, Field& inputField )
+{
+	if(nameField=="FluidTemperature" || nameField=="FLUIDTEMPERATURE" || nameField=="TemperatureFluide" || nameField=="TEMPERATUREFLUIDE")
+		return setFluidTemperatureField( inputField) ;
+	else if(nameField=="HeatPower" || nameField=="HEATPOWER" || nameField=="PuissanceThermique" || nameField=="PUISSANCETHERMIQUE" )
+		return setHeatPowerField( inputField );
+	else
+    {
+        cout<<"Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first" << endl;
+        throw CdmathException("StationaryDiffusionEquation::setInputField error : Unknown Field name");
+    }
 }

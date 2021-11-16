@@ -57,7 +57,6 @@ public :
 	_fileName = fileName;
     }
     bool solveStationaryProblem();
-    Field getOutputTemperatureField();
     
     //Linear system and spectrum
     void setLinearSolver(linearSolver kspType, preconditioner pcType);
@@ -106,6 +105,15 @@ public :
 	void setConductivity(double conductivite){
 		_conductivity=conductivite;
 	};
+	void setDiffusiontensor(Matrix DiffusionTensor){
+		_DiffusionTensor=DiffusionTensor;
+	};
+
+
+	//get input fields to prepare the simulation or coupling
+	vector<string> getInputFieldsNames();
+	void setInputField(const string& nameField, Field& inputField );//supply of a required input field
+	
 	void setFluidTemperatureField(Field coupledTemperatureField){
 		_fluidTemperatureField=coupledTemperatureField;
 		_fluidTemperatureFieldSet=true;
@@ -113,16 +121,9 @@ public :
 	void setFluidTemperature(double fluidTemperature){
 	_fluidTemperature=fluidTemperature;
 	}
-	Field& getRodTemperatureField(){
-		return _VV;
-	}
 	Field& getFluidTemperatureField(){
 		return _fluidTemperatureField;
 	}
-	void setDiffusiontensor(Matrix DiffusionTensor){
-		_DiffusionTensor=DiffusionTensor;
-	};
-
 	/** \fn setHeatPowerField
 	 * \brief set the heat power field (variable in space)
 	 * \details
@@ -145,6 +146,22 @@ public :
 		_heatPowerField=Field(fileName, CELLS,fieldName);
 		_heatPowerFieldSet=true;
 	}
+
+	/** \fn getHeatPowerField
+	 * \brief returns the heat power field
+	 * \details
+	 * \param [in] void
+	 * \param [out] Field
+	 *  */
+	Field getHeatPowerField(){
+		return _heatPowerField;
+	}
+	//get output fields names for postprocessing or coupling
+	vector<string> getOutputFieldsNames() ;//liste tous les champs que peut fournir le code pour le postraitement
+	Field&         getOutputField(const string& nameField );//Renvoie un champs pour le postraitement
+
+    Field& getOutputTemperatureField();
+	Field& getRodTemperatureField();
 
 	/** \fn setVerbose
 	 * \brief Updates display options

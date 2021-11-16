@@ -126,7 +126,44 @@ public :
 		_vitesseTransport=v;
 	};
 
-	//get output fields for postprocessing or coupling
+	/* get input fields to prepare the simulation */
+	vector<string> getInputFieldsNames();
+	void setInputField(const string& nameField, Field& inputField );//supply of a required input field
+	
+	/** \fn setRodTemperatureField
+	 * \brief Set the rod temperature field
+	 * \details
+	 * \param [in] Field
+	 * \param [out] void
+	 *  */
+	void setRodTemperatureField(Field rodTemperature){
+		_rodTemperatureField=rodTemperature;
+		_rodTemperatureFieldSet=true;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
+	}
+
+	/** \fn setRodTemperature 
+	 * \brief Set a constant rod temperature field
+	 * \details
+	 * \param [in] double
+	 * \param [out] void
+	 *  */
+	void setRodTemperature(double rodTemp){
+		_rodTemperature=rodTemp;
+		_isStationary=false;//Source term may be changed after previously reaching a stationary state
+	}
+
+	/** \fn getRodTemperatureField
+	 * \brief
+	 * \details
+	 * \param [in] void
+	 * \param [out] Field
+	 *  */
+	Field& getRodTemperatureField(){ // ?? je ne retrouve pas cet attribut dans le file.cxx
+		return _rodTemperatureField;
+	}
+
+	/* get output fields for postprocessing or coupling */
 	vector<string> getOutputFieldsNames() ;//liste tous les champs que peut fournir le code pour le postraitement
 	Field&         getOutputField(const string& nameField );//Renvoie un champs pour le postraitement
 
@@ -138,10 +175,24 @@ public :
 		return _VV;
 	}
 
+	Field& getVoidFractionField(){
+		return _Alpha;
+	}
+
+	Field& getDensityField(){
+		return _Rho;
+	}
+
 protected :
 	double computeTransportMatrix();
 	double computeRHS();
 	void updatePrimitives();
+
+	/* Postprocessing fields */
+	Field   _TT, _Alpha, _Rho;//Fields of temperature, void fraction, density. Unknown field is enthalpy (_VV)
+	double _rhosatv, _rhosatl;
+	double _Tref, _href, _cpref;
+
 	double temperature(double h){
 		return _Tref+(h-_href)/_cpref;
 	};
@@ -157,9 +208,6 @@ protected :
 		return alpha*_rhosatv+(1-alpha)*_rhosatl;
 	};
 
-	Field   _TT, _Alpha, _Rho;//Fields of temperature and coupled temperature
-	double _rhosatv, _rhosatl;
-	double _Tref, _href, _cpref;
 	Vector _vitesseTransport, _normale;
 	bool _transportMatrixSet;
 	Vec _Hn, _deltaH, _Hk, _Hkm1, _b0;
@@ -167,6 +215,11 @@ protected :
 	double _dt_transport, _dt_src;
 
 	map<string, LimitFieldTransport> _limitField;
+	
+	/* source terms */
+	bool   _rodTemperatureFieldSet;
+	Field  _rodTemperatureField;
+	double _rodTemperature;
 };
 
 #endif /* TransportEquation_HXX_ */
