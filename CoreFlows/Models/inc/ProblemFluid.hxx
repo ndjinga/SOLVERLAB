@@ -473,15 +473,16 @@ public :
 	 *  */
 	void setNumericalScheme(SpaceScheme scheme, TimeScheme method=Explicit);
 
-	//données initiales
+	/* ICoCo code coupling interface */
 	/*
-	virtual vector<string> getInputFieldsNames()=0 ;//Renvoie les noms des champs dont le problème a besoin (données initiales)
 	virtual  Field& getInputFieldTemplate(const string& name)=0;//Renvoie le format de champs attendu (maillage, composantes etc)
-	virtual void setInputField(const string& name, const Field& afield)=0;//enregistre les valeurs d'une donnée initiale
 	virtual vector<string> getOutputFieldsNames()=0 ;//liste tous les champs que peut fournir le code pour le postraitement
 	virtual Field& getOutputField(const string& nameField )=0;//Renvoie un champs pour le postraitement
 	 */
-
+	/** Set input fields to prepare the simulation or coupling **/
+	vector<string> getInputFieldsNames();
+	void setInputField(const string& nameField, Field& inputField );//supply of a required input field
+	
 	Field getConservativeField() const ;
 	Field getPrimitiveField() const;
 

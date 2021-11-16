@@ -2195,3 +2195,34 @@ void ProblemFluid::terminate(){
 	if(_timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
 		SNESDestroy(&_snes);
 }
+
+vector<string> 
+ProblemFluid::getInputFieldsNames()
+{
+	vector<string> result(1);
+	
+	result[0]="HeatPower";
+	result[1]="Porosity";
+	result[2]="PressureLoss";
+	result[3]="Section";
+	
+	return result;
+}
+
+void
+ProblemFluid::setInputField(const string& nameField, Field& inputField )
+{
+	if(nameField=="Porosity" || nameField=="POROSITY" || nameField=="Porosité" || nameField=="POROSITE")
+		return setPorosityField( inputField) ;
+	else if(nameField=="HeatPower" || nameField=="HEATPOWER" || nameField=="PuissanceThermique" || nameField=="PUISSANCETHERMIQUE" )
+		return setHeatPowerField( inputField );
+	else 	if(nameField=="PressureLoss" || nameField=="PRESSURELOSS" || nameField=="PerteDeCharge" || nameField=="PPERTEDECHARGE")
+		return setPressureLossField( inputField) ;
+	else if(nameField=="Section" || nameField=="SECTION" )
+		return setSectionField( inputField );
+	else
+    {
+        cout<<"Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first" << endl;
+        throw CdmathException("SinglePhase::setInputField error : Unknown Field name");
+    }
+}

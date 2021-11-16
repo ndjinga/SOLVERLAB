@@ -126,7 +126,7 @@ public :
 		_vitesseTransport=v;
 	};
 
-	/* get input fields to prepare the simulation */
+	/* set input fields to prepare the simulation */
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );//supply of a required input field
 	

@@ -214,12 +214,14 @@ public :
 
 	/*
 	//Coupling interface
-	virtual vector<string> getInputFieldsNames()=0 ;//Renvoie les noms des champs dont le problème a besoin (données initiales)
 	virtual void getInputMEDDoubleFieldTemplate(const std::string& name, MEDDoubleField& afield) const;//Renvoie le format de champs attendu (maillage, composantes etc)
-	virtual void setInputMEDDoubleField(const std::string& name, const MEDDoubleField& afield);//enregistre les valeurs d'une donnée initiale
 	virtual vector<string> getOutputFieldsNames()=0 ;//liste tous les champs que peut fournir le code pour le postraitement
 	virtual void getOutputMEDDoubleField(const std::string& name, MEDDoubleField& afield)//Renvoie un champs pour le postraitement ou le couplage
 	 */
+
+	/** Set input fields to prepare the simulation or coupling **/
+	virtual vector<string> getInputFieldsNames()=0;
+	virtual void setInputField(const string& nameField, Field& inputField )=0;//supply of a required input field
 
      /*! @brief (Optional) Provide the code with a scalar double data.
      *
