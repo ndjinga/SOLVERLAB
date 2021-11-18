@@ -61,7 +61,7 @@ def DiffusionEquation_2DSpherical(FECalculation):
 
     # set the numerical method
 	myProblem.setTimeScheme( solverlab.Explicit);
-	myProblem.setLinearSolver(solverlab.GMRES,solverlab.ILU,True);
+	myProblem.setLinearSolver(solverlab.GMRES,solverlab.ILU);
 
     # name of result file
 	if( FECalculation):

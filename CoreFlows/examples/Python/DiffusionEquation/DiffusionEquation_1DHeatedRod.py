@@ -42,7 +42,7 @@ def DiffusionEquation_1DHeatedRod():
 
     # set the numerical method
 	myProblem.setTimeScheme( cf.Explicit);
-	# myProblem.setLinearSolver(GMRES,ILU,True);
+	# myProblem.setLinearSolver(GMRES,ILU);
 
     # name of result file
 	fileName = "1DRodTemperature";
