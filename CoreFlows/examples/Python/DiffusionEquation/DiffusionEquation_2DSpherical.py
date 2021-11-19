@@ -8,35 +8,37 @@ import solverlab
 # Name        : Finite Elements simulation of the 2D heat equation -\triangle T = f with Neumann boundary condition
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2021
-# Description : Test solving the diffusion of the temperature T in a solid (default is Uranium). 
-#		        \rho cp dT/dt-\lambda\Delta T=\Phi(T) + \lambda_{sf} (T_{fluid}-T)
-#		        Heat capacity cp, density \rho, and conductivity \lambda MUST be defined
-#		        The solid may be extra refrigerated by a fluid with transfer coefficient \lambda_{sf} (functions setFluidTemperature and setHeatTransfertCoeff)
-#		        The solid may receive some extra heat power \Phi due to nuclear fissions (function setHeatSource)
 #================================================================================================================================
 
 
 def DiffusionEquation_2DSpherical(FECalculation):
 
-    # Prepare for the mesh
+	""" Description : Test solving the diffusion of the temperature T in a solid (default is Uranium). 
+		Equation : Thermal diffusion equation  \rho cp dT/dt-\lambda\Delta T=\Phi + \lambda_{sf} (T_{fluid}-T)
+		        Heat capacity, density, and conductivity of the solid MUST be defined
+		        The solid may be extra refrigerated by a fluid with transfer coefficient using functions setFluidTemperature and setHeatTransfertCoeff
+		        The solid may receive some extra heat power due to nuclear fissions using function setHeatSource
+	"""
+	
+    # Prepare for the mesh and initial data
 	inputfile="../resources/BoxWithMeshWithTriangularCells";
 	fieldName="Temperature";
 	spaceDim=2
 	
     # Mandatory physical values
-	cp_ur=300# heat capacity
-	rho_ur=10000# density
-	lambda_ur=5# conductivity
+	specific_heat=300# specific heat capacity
+	density=10000# density
+	conductivity=5# conductivity
 
-	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,rho_ur,cp_ur,lambda_ur);
+	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,density,specific_heat,conductivity);
 
-    #Optional physical values
-	fluidTemp=573.;#fluid mean temperature
+    # Optional physical values (default value is zero)
+	fluidTemperature=573.;#fluid mean temperature
 	heatTransfertCoeff=1000.;#fluid/solid exchange coefficient
-	phi=1e5;#heat power ddensity
-	myProblem.setFluidTemperature(fluidTemp);
+	constant_heat=1e5;#heat power ddensity
+	myProblem.setFluidTemperature(fluidTemperature);
 	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
-	myProblem.setHeatSource(phi);
+	myProblem.setHeatSource(constant_heat);
 
     #Initial field load
 	time_iteration=0
