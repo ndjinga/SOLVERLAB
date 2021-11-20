@@ -352,7 +352,7 @@ public :
 	 * \param [in] int : int corresponding to the enum CELLS, NODES or FACES
 	 * \param [out] void
 	 *  */
-	void setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type);
+	void setInitialField(string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
 
 	/** \fn setInitialField
 	 * \brief sets the initial field from a field in a med file
@@ -363,7 +363,7 @@ public :
 	 * \param [in] EntityType : CELLS, NODES or FACES
 	 * \param [out] void
 	 *  */
-	void setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField = CELLS);
+	void setInitialField(string fileName, string fieldName, int timeStepNumber, int order = 0, int meshLevel=0, EntityType typeField = CELLS);
 
 	/** \fn setInitialFieldConstant
 	 * \brief sets a constant initial field on a mesh stored in a med file

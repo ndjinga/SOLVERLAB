@@ -40,7 +40,9 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 	initial_data_fieldName="Temperature";
 	print("Loading unstructured mesh and initial data", " in file ", initial_data_inputfile )
 	initial_data_time_iteration=0# default value is 0
-	myProblem.setInitialField(initial_data_inputfile, initial_data_fieldName, initial_data_time_iteration, supportOfField)
+	initial_data_time_sub_iteration=0# default value is 0
+	initial_data_time_meshLevel=0# default value is 0
+	myProblem.setInitialField(initial_data_inputfile, initial_data_fieldName, initial_data_time_iteration, initial_data_time_sub_iteration, initial_data_time_meshLevel, supportOfField)
 
     #### Optional physical values (default value is zero) : fluid temperature field, heat transfert coefficient, heat power field 
 	# Loading and setting fluid temperature field

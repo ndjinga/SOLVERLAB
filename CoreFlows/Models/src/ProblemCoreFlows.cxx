@@ -241,7 +241,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 }
 
 //Function needed because swig of enum EntityType fails
-void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int field_support_type)
+void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type)
 {
 	if(_FECalculation && field_support_type!= NODES)
 		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
@@ -251,13 +251,13 @@ void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int ti
 	switch(field_support_type)
 	{
 	case CELLS:
-		VV = Field(fileName, CELLS, fieldName, timeStepNumber, 0);
+		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
 		break;
 	case NODES:
-		VV = Field(fileName, NODES, fieldName, timeStepNumber, 0);
+		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
 		break;
 	case FACES:
-		VV = Field(fileName, FACES, fieldName, timeStepNumber, 0);
+		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
 		break;
 	default:
 		std::ostringstream message;
@@ -296,12 +296,12 @@ void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> V
 	
 	setInitialFieldConstant( nDim, Vconstant, xmin, xmax, nx, leftSide, rightSide, ymin, ymax, ny, backSide, frontSide, zmin, zmax, nz, bottomSide, topSide, typeField);
 }
-void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, EntityType typeField)
+void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType typeField)
 {
 	if(_FECalculation && typeField!= NODES)
 		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
 
-	Field VV(fileName, typeField, fieldName, timeStepNumber, 0);
+	Field VV(fileName, typeField, fieldName, timeStepNumber, order, meshLevel);
 	
 	setInitialField(VV);
 }

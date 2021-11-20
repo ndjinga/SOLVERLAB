@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
 	//Initial field creation
 	cout << "Loading unstructured mesh and initial data for test SinglePhase_2DSphericalExplosion_unstructured()" << endl;
-	myProblem.setInitialField(inputfile,fieldName,0);
+	myProblem.setInitialField(inputfile,fieldName,0,0,0,CELLS);
 
 	//set the boundary conditions
 	double wallVelocityX=0;
