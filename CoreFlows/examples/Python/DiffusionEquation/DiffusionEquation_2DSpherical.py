@@ -29,37 +29,41 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 
 	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,solid_density,solid_specific_heat,solid_conductivity);
 
-    # Optional physical values (default value is zero)
-	fluidTemperature=573.;#fluid mean temperature
-	heatTransfertCoeff=1000.;#fluid/solid exchange coefficient
-	myProblem.setFluidTemperature(fluidTemperature);
-	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
-
 	# Definition of field support parameter
 	if( FECalculation):
 		supportOfField=solverlab.NODES
 	else:
-		supportOfField=solverlab.CELLS
-		
+		supportOfField=solverlab.CELLS	
+	
+    # Set the mesh and initial data
+	initial_data_inputfile="../resources/BoxWithMeshWithTriangularCells";
+	initial_data_fieldName="Temperature";
+	print("Loading unstructured mesh and initial data", " in file ", initial_data_inputfile )
+	initial_data_time_iteration=0
+	myProblem.setInitialField(initial_data_inputfile, initial_data_fieldName, initial_data_time_iteration, supportOfField)
+
+    #### Optional physical values (default value is zero) : fluid temperature field, heat transfert coefficient, heat power field 
+	# Loading and setting fluid temperature field
+	fluid_temperature_inputfile="../resources/BoxWithMeshWithTriangularCells";
+	fluid_temperature_fieldName="Fluid temperature field";
+	fluid_temperature_time_iteration=0
+	fluid_temperature_time_sub_iteration=0
+	fluid_temperature_meshLevel=0
+	print("Loading field :", fluid_temperature_fieldName, " in file ", fluid_temperature_inputfile)
+	fluidTemperatureField=solverlab.Field(fluid_temperature_inputfile, supportOfField, fluid_temperature_fieldName, fluid_temperature_time_iteration, fluid_temperature_time_sub_iteration, fluid_temperature_meshLevel)
+	myProblem.setFluidTemperatureField(fluidTemperatureField)
+	# Setting heat transfert coefficient
+	heatTransfertCoeff=1000.;#fluid/solid exchange coefficient
+	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
 	# Loading heat power field
 	heat_power_inputfile="../resources/BoxWithMeshWithTriangularCells";
 	heat_power_fieldName="Heat power field";
 	heat_power_time_iteration=0
 	heat_power_time_sub_iteration=0
 	heat_power_meshLevel=0
-	
 	print("Loading field :", heat_power_fieldName, " in file ", heat_power_inputfile)
 	heatPowerField=solverlab.Field(heat_power_inputfile, supportOfField, heat_power_fieldName, heat_power_time_iteration, heat_power_time_sub_iteration, heat_power_meshLevel)
 	myProblem.setHeatPowerField(heatPowerField)
-	
-    # Prepare for the mesh and initial data
-	initial_data_inputfile="../resources/BoxWithMeshWithTriangularCells";
-	initial_data_fieldName="Temperature";
-
-    #Initial field load
-	print("Loading unstructured mesh and initial data", " in file ", initial_data_inputfile )
-	initial_data_time_iteration=0
-	myProblem.setInitialField(initial_data_inputfile, initial_data_fieldName, initial_data_time_iteration, supportOfField)
 
     # the boundary conditions :
 	if( FECalculation):
