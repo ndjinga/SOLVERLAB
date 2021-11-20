@@ -90,6 +90,7 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 	cfl = 0.95;# default value is 1
 	maxTime = 100000000;# default value is 10
 	precision = 1e-6;# default value is 1e-6
+	result_directory="."# default value = current directory
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -97,6 +98,8 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
+	myProblem.setResultDirectory(result_directory)
+	myProblem.setSaveFileFormat(solverlab.MED)#default value is solverlab.VTK
 
     # evolution
 	myProblem.initialize();
