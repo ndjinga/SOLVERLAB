@@ -11,7 +11,7 @@ import solverlab
 #================================================================================================================================
 
 
-def DiffusionEquation_2DSpherical(FECalculation):
+def DiffusionEquation_2DSpherical(FECalculation, fileName):
 
 	""" Description : Test solving the diffusion of the temperature T in a solid (default is Uranium). 
 		Equation : Thermal diffusion equation  \rho cp dT/dt-\lambda\Delta T=\Phi + \lambda_{sf} (T_{fluid}-T)
@@ -19,34 +19,47 @@ def DiffusionEquation_2DSpherical(FECalculation):
 		        The solid may be extra refrigerated by a fluid with transfer coefficient using functions setFluidTemperature and setHeatTransfertCoeff
 		        The solid may receive some extra heat power due to nuclear fissions using function setHeatSource
 	"""
-	
-    # Prepare for the mesh and initial data
-	inputfile="../resources/BoxWithMeshWithTriangularCells";
-	fieldName="Temperature";
+	#Space dimension of the problem
 	spaceDim=2
 	
     # Mandatory physical values
-	specific_heat=300# specific heat capacity
-	density=10000# density
-	conductivity=5# conductivity
+	solid_specific_heat=300# specific heat capacity
+	solid_density=10000# density
+	solid_conductivity=5# conductivity
 
-	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,density,specific_heat,conductivity);
+	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,solid_density,solid_specific_heat,solid_conductivity);
 
     # Optional physical values (default value is zero)
 	fluidTemperature=573.;#fluid mean temperature
 	heatTransfertCoeff=1000.;#fluid/solid exchange coefficient
-	constant_heat=1e5;#heat power ddensity
 	myProblem.setFluidTemperature(fluidTemperature);
 	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
-	myProblem.setHeatSource(constant_heat);
+
+	# Definition of field support parameter
+	if( FECalculation):
+		supportOfField=solverlab.NODES
+	else:
+		supportOfField=solverlab.CELLS
+		
+	# Loading heat power field
+	heat_power_inputfile="../resources/BoxWithMeshWithTriangularCells";
+	heat_power_fieldName="Heat power field";
+	heat_power_time_iteration=0
+	heat_power_time_sub_iteration=0
+	heat_power_meshLevel=0
+	
+	print("Loading field :", heat_power_fieldName, " in file ", heat_power_inputfile)
+	heatPowerField=solverlab.Field(heat_power_inputfile, supportOfField, heat_power_fieldName, heat_power_time_iteration, heat_power_time_sub_iteration, heat_power_meshLevel)
+	myProblem.setHeatPowerField(heatPowerField)
+	
+    # Prepare for the mesh and initial data
+	initial_data_inputfile="../resources/BoxWithMeshWithTriangularCells";
+	initial_data_fieldName="Temperature";
 
     #Initial field load
-	time_iteration=0
-	print("Loading unstructured mesh and initial data" )
-	if( FECalculation):
-		myProblem.setInitialField(inputfile,fieldName,time_iteration, solverlab.NODES)
-	else:
-		myProblem.setInitialField(inputfile,fieldName,time_iteration, solverlab.CELLS)
+	print("Loading unstructured mesh and initial data", " in file ", initial_data_inputfile )
+	initial_data_time_iteration=0
+	myProblem.setInitialField(initial_data_inputfile, initial_data_fieldName, initial_data_time_iteration, supportOfField)
 
     # the boundary conditions :
 	if( FECalculation):
@@ -64,12 +77,6 @@ def DiffusionEquation_2DSpherical(FECalculation):
     # set the numerical method
 	myProblem.setTimeScheme( solverlab.Explicit);
 	myProblem.setLinearSolver(solverlab.GMRES,solverlab.ILU);
-
-    # name of result file
-	if( FECalculation):
-		fileName = "2DSpherical_FE";
-	else:
-		fileName = "2DSpherical_FV";
 
     # computation parameters
 	MaxNbOfTimeStep = 3 ;
@@ -105,6 +112,11 @@ def DiffusionEquation_2DSpherical(FECalculation):
 if __name__ == """__main__""":
     if len(sys.argv) >1 :
         FECalculation = bool(int(sys.argv[1]))
-        DiffusionEquation_2DSpherical(FECalculation)
+        # name of result file
+        if( FECalculation):
+        	fileName = "2DSpherical_FE";
+        else:
+        	fileName = "2DSpherical_FV";
+        DiffusionEquation_2DSpherical(FECalculation, fileName)
     else :
         raise ValueError("DiffusionEquation_2DSpherical : missing one argument")
