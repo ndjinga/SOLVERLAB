@@ -344,6 +344,10 @@ public: //----------------------------------------------------------------
 	bool isQuadrangular() const ;
 	bool isHexahedral() const ;
     bool isStructured() const ;
+
+	// epsilon used in mesh comparisons
+	double getComparisonEpsilon(){return _epsilon;};
+	void setComparisonEpsilon(double epsilon){ _epsilon=epsilon;};
     // Quick comparison of two meshes to see if they are identical with high probability (three cells are compared)
     void checkFastEquivalWith( Mesh m){ return getMEDCouplingMesh()->checkFastEquivalWith(m.getMEDCouplingMesh(),1e-6);};
     // Deep comparison of two meshes to see if they are identical Except for their names and units
@@ -485,6 +489,8 @@ private: //----------------------------------------------------------------
     std::vector< int > _boundaryNodeIds;
     /* Boundary mesh */
     const MEDCoupling::MEDCouplingUMesh * _boundaryMesh;
+    
+    double _epsilon;
 };
 
 #endif /* MESH_HXX_ */
