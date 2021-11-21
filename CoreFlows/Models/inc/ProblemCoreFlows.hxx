@@ -666,6 +666,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setHeatPowerField(Field heatPower){
+		heatPower.getMesh().checkFastEquivalWith(_mesh);
 		_heatPowerField=heatPower;
 		_heatPowerFieldSet=true;
 		_isStationary=false;//Source term may be changed after previously reaching a stationary state
@@ -680,6 +681,7 @@ public :
 	 *  */
 	void setHeatPowerField(string fileName, string fieldName, int iteration = 0, int order = 0, int meshLevel=0){
 		_heatPowerField=Field(fileName, CELLS,fieldName, iteration, order, meshLevel);
+		_heatPowerField.getMesh().checkFastEquivalWith(_mesh);
 		_heatPowerFieldSet=true;
 		_isStationary=false;//Source term may be changed after previously reaching a stationary state
 	}

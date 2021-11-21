@@ -363,6 +363,7 @@ public :
 	 * @param [in] Field porosity field (field on CELLS)
 	 * */
 	void setPorosityField(Field Porosity){
+		Porosity.getMesh().checkFastEquivalWith(_mesh);
 		_porosityField=Porosity;
 		_porosityFieldSet=true;
 	}
@@ -384,6 +385,7 @@ public :
 	 *  */
 	void setPorosityField(string fileName, string fieldName){
 		_porosityField=Field(fileName, CELLS,fieldName);
+		_porosityField.getMesh().checkFastEquivalWith(_mesh);
 		_porosityFieldSet=true;
 	}
 
@@ -392,6 +394,7 @@ public :
 	 * @param [in] Field pressure loss field (field on FACES)
 	 * */
 	void setPressureLossField(Field PressureLoss){
+		PressureLoss.getMesh().checkFastEquivalWith(_mesh);
 		_pressureLossField=PressureLoss;
 		_pressureLossFieldSet=true;
 	}
@@ -404,6 +407,7 @@ public :
 	 *  */
 	void setPressureLossField(string fileName, string fieldName){
 		_pressureLossField=Field(fileName, FACES,fieldName);
+		_pressureLossField.getMesh().checkFastEquivalWith(_mesh);
 		_pressureLossFieldSet=true;
 	}
 
@@ -412,6 +416,7 @@ public :
 	 * @param [in] Field cross section field (field on CELLS)
 	 * */
 	void setSectionField(Field sectionField){
+		sectionField.getMesh().checkFastEquivalWith(_mesh);
 		_sectionField=sectionField;
 		_sectionFieldSet=true;
 	}
@@ -424,6 +429,7 @@ public :
 	 *  */
 	void setSectionField(string fileName, string fieldName){
 		_sectionField=Field(fileName, CELLS,fieldName);
+		_sectionField.getMesh().checkFastEquivalWith(_mesh);
 		_sectionFieldSet=true;
 	}
 

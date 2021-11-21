@@ -107,6 +107,7 @@ public :
 	void setInputField(const string& nameField, Field& inputField );//supply of a required input field
 
 	void setFluidTemperatureField(Field coupledTemperatureField){
+		coupledTemperatureField.getMesh().checkFastEquivalWith(_mesh);
 		_fluidTemperatureField=coupledTemperatureField;
 		_fluidTemperatureFieldSet=true;
 	};

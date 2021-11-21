@@ -137,6 +137,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setRodTemperatureField(Field rodTemperature){
+		rodTemperature.getMesh().checkFastEquivalWith(_mesh);
 		_rodTemperatureField=rodTemperature;
 		_rodTemperatureFieldSet=true;
 		_isStationary=false;//Source term may be changed after previously reaching a stationary state
