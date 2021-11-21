@@ -349,9 +349,9 @@ public: //----------------------------------------------------------------
 	double getComparisonEpsilon() const {return _epsilon;};
 	void setComparisonEpsilon(double epsilon){ _epsilon=epsilon;};
     // Quick comparison of two meshes to see if they are identical with high probability (three cells are compared)
-    void checkFastEquivalWith( Mesh m){ return getMEDCouplingMesh()->checkFastEquivalWith(m.getMEDCouplingMesh(),1e-6);};
+    void checkFastEquivalWith( Mesh m) const { return getMEDCouplingMesh()->checkFastEquivalWith(m.getMEDCouplingMesh(),1e-6);};
     // Deep comparison of two meshes to see if they are identical Except for their names and units
-    bool isEqualWithoutConsideringStr( Mesh m){ return getMEDCouplingMesh()->isEqualWithoutConsideringStr(m.getMEDCouplingMesh(),1e-6);};
+    bool isEqualWithoutConsideringStr( Mesh m) const { return getMEDCouplingMesh()->isEqualWithoutConsideringStr(m.getMEDCouplingMesh(),1e-6);};
 
     std::vector< std::string > getElementTypesNames() const ;
 	/**
