@@ -346,7 +346,7 @@ public: //----------------------------------------------------------------
     bool isStructured() const ;
 
 	// epsilon used in mesh comparisons
-	double getComparisonEpsilon(){return _epsilon;};
+	double getComparisonEpsilon() const {return _epsilon;};
 	void setComparisonEpsilon(double epsilon){ _epsilon=epsilon;};
     // Quick comparison of two meshes to see if they are identical with high probability (three cells are compared)
     void checkFastEquivalWith( Mesh m){ return getMEDCouplingMesh()->checkFastEquivalWith(m.getMEDCouplingMesh(),1e-6);};
