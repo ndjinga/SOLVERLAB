@@ -571,6 +571,7 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 			cout<<"Boundary face group named "<< groupName << " found"<<endl;
 			MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
             mu->unPolyze();
+			mu->sortCellsInMEDFileFrmt( );
 			_faceGroups.insert(_faceGroups.begin(),m);
 			_faceGroupNames.insert(_faceGroupNames.begin(),groupName);
 			DataArrayDouble *baryCell = m->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
@@ -676,6 +677,7 @@ Mesh::setMesh( void )
 	MEDCouplingUMesh* mu = _mesh->buildUnstructured();
 
 	mu->unPolyze();
+    mu->sortCellsInMEDFileFrmt( );
 	/* Save the boundary mesh for later use*/
 	_boundaryMesh = mu->computeSkin();
 	
