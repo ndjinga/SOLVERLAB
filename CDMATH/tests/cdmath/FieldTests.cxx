@@ -10,6 +10,9 @@
 #include <string>
 
 #include <MEDCouplingFieldDouble.hxx>
+#include <MEDCouplingCMesh.hxx>
+#include <MEDFileField1TS.hxx>
+#include "MEDFileMesh.hxx"
 
 using namespace std;
 using namespace MEDCoupling;
@@ -250,6 +253,13 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 0.0, concF2.getTime() );
 	CPPUNIT_ASSERT_EQUAL( 8, concF2.getNumberOfElements() );
     CPPUNIT_ASSERT(concF2.unstructuredMeshLoaded());
+    concF2.writeMED("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
+//   	concF2.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+    concF2.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
+    for (int j=0;j<concF2.getNumberOfComponents();j++)
+    	for (int i=0;i<concF2.getNumberOfElements();i++)
+    		concF2(i,j)=i*j;
+    concF2.writeMED("FieldConcF2", true);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
 	
 	Mesh M3(0.0,1.0,2,0.,1.,2,0.,1.,2);
 	Field concF3("CONCENTRATION",FACES,M3) ;
@@ -274,7 +284,14 @@ FieldTests::testClassField( void )
     	for (int i=0;i<concF4.getNumberOfElements();i++)
     		CPPUNIT_ASSERT_EQUAL( double(i+j), concF4(i,j) );
     CPPUNIT_ASSERT(concF4.unstructuredMeshLoaded());
-	
+    concF4.writeMED("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
+//   	concF4.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+    concF4.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
+    for (int j=0;j<concF4.getNumberOfComponents();j++)
+    	for (int i=0;i<concF4.getNumberOfElements();i++)
+    		concF4(i,j)=i*j;
+    concF4.writeMED("FieldConcF4", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+		
 	//Create a constant field on the mesh fileNameMEDn
 	Field concF5(fileNameMEDn,NODES,std::vector<double> (3,1),"CONSTANT_Field");
 	CPPUNIT_ASSERT_EQUAL( 3, concF5.getNumberOfComponents() );
@@ -284,4 +301,107 @@ FieldTests::testClassField( void )
     	for (int i=0;i<concF5.getNumberOfElements();i++)
     		CPPUNIT_ASSERT_EQUAL( 1., concF5(i,j) );
     CPPUNIT_ASSERT(concF5.unstructuredMeshLoaded());
+    (concF5.getMesh()).writeMED("FieldConcF5");//This saves only the mesh 
+    cout<<"Mesh name : " << concF5.getMesh().getName()<<endl;
+    cout<<"Field name : " << concF5.getName()<<endl;
+    concF5.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
+    concF5.writeMED("FieldConcF5",false);//This saves the mesh and the values of iteration 0 at time t=0
+  	//concF5.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+    for (int j=0;j<concF5.getNumberOfComponents();j++)
+    	for (int i=0;i<concF5.getNumberOfElements();i++)
+    		concF5(i,j)=i*j;
+    //concF5.writeMED("FieldConcF5", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+	
+
+	/* 2D image mesh */
+	//int _spaceDim=2;
+	//double *originPtr = new double[_spaceDim];
+	//double *dxyzPtr = new double[_spaceDim];
+	//mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
+
+	//originPtr[0]=0;
+	//originPtr[1]=0;
+	//nodeStrctPtr[0]=3;
+	//nodeStrctPtr[1]=3;
+	//dxyzPtr[0]=1;
+	//dxyzPtr[1]=1;
+
+	//MEDCouplingIMesh * _mesh=MEDCouplingIMesh::New("test",
+			//_spaceDim,
+			//nodeStrctPtr,
+			//nodeStrctPtr+_spaceDim,
+			//originPtr,
+			//originPtr+_spaceDim,
+			//dxyzPtr,
+			//dxyzPtr+_spaceDim);
+	//MEDCouplingUMesh * m1 = _mesh->buildUnstructured();
+	//m1->setName("mesh");
+
+	//MEDCouplingFieldDouble * f = MEDCouplingFieldDouble::New(ON_CELLS, ONE_TIME);
+	//f->setMesh(m1);
+	//f->setName("F");
+	//*f=0;
+	//f->setTime(0.0,0,0);
+	
+	//MEDFileField1TS * ff;
+	//ff->setFieldNoProfileSBT(f);	
+
+	/* 1D image mesh */
+	//int _spaceDim=1;
+	//double *originPtr = new double[_spaceDim];
+	//double *dxyzPtr = new double[_spaceDim];
+	//mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
+
+	//originPtr[0]=0;
+	//nodeStrctPtr[0]=3;
+	//dxyzPtr[0]=1;
+
+	//MEDCouplingIMesh * _mesh=MEDCouplingIMesh::New("test",
+			//_spaceDim,
+			//nodeStrctPtr,
+			//nodeStrctPtr+_spaceDim,
+			//originPtr,
+			//originPtr+_spaceDim,
+			//dxyzPtr,
+			//dxyzPtr+_spaceDim);
+	//MEDCouplingUMesh * m1 = _mesh->buildUnstructured();
+	//m1->setName("mesh");
+
+	//MEDCouplingFieldDouble * f = MEDCouplingFieldDouble::New(ON_CELLS, ONE_TIME);
+	//f->setMesh(m1);
+	//f->setName("F");
+	//*f=0;
+	//f->setTime(0.0,0,0);
+	
+	//MEDFileField1TS * ff;
+	//ff->setFieldNoProfileSBT(f);	
+
+	/* 2D cartesian mesh */
+	//Dataarray
+	double XCoords[3]={0.,1.,2.};
+	double YCoords[3]={0.,1.,2.};
+	MEDCoupling::DataArrayDouble *arrX=MEDCoupling::DataArrayDouble::New();
+	arrX->alloc(3,1);
+	std::copy(XCoords,XCoords+3,arrX->getPointer());
+	arrX->setInfoOnComponent(0,"X [m]");
+	MEDCoupling::DataArrayDouble *arrY=MEDCoupling::DataArrayDouble::New();
+	arrY->alloc(3,1);
+	std::copy(YCoords,YCoords+3,arrY->getPointer());
+	arrY->setInfoOnComponent(0,"Y [m]");
+	//Mesh
+	MEDCoupling::MEDCouplingCMesh *mesh=MEDCoupling::MEDCouplingCMesh::New("My2D_CMesh");
+	mesh->setCoords(arrX,arrY);
+	arrX->decrRef();
+	arrY->decrRef();
+	MEDCouplingUMesh * m1 = mesh->buildUnstructured();
+	m1->setName("mesh");
+	//Field
+	MEDCouplingFieldDouble * f = MEDCouplingFieldDouble::New(ON_CELLS, ONE_TIME);
+	f->setMesh(m1);
+	f->setName("F");
+	*f=0;
+	f->setTime(0.0,0,0);
+	//MEDFileField1TS
+	MEDFileField1TS * ff;
+	//ff->setFieldNoProfileSBT(f);	
 }
