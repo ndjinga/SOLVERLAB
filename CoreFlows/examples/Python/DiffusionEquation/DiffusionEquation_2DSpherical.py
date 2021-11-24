@@ -104,17 +104,17 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 
     # evolution
 	myProblem.initialize();
-	print("Running python "+ fileName );
+	print("Running python test "+ fileName );
 
 	ok = myProblem.run();
 	if (ok):
-		print( "Simulation python " + fileName + " is successful !" );
+		print( "Python simulation " + fileName + " is successful !" );
 		pass
 	else:
-		print( "Simulation python " + fileName + "  failed ! " );
+		print( "Python simulation " + fileName + "  failed ! " );
 		pass
 
-	print( "------------ End of calculation !!! -----------" );
+	print( "------------ End of simulation !!! -----------" );
 
 	myProblem.terminate();
 	return ok
