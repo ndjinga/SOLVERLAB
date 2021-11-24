@@ -17,9 +17,16 @@ IF(    ${SOLVERLAB_WITH_MPI} )
     ${CoreFlows_INCLUDES}											    #
     ${PETSC_INCLUDES}
     ${SLEPC_INCLUDES}
-    ${MPI4PY_ROOT_DIR}/include/
   ) 
 ENDIF( ${SOLVERLAB_WITH_MPI} )
+
+if(EXISTS ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py/mpi4py.i)
+  INCLUDE_DIRECTORIES( ${MPI4PY_ROOT_DIR}/mpi4py/include
+                       ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py )
+elseif (EXISTS ${MPI4PY_ROOT_DIR}/include/mpi4py/mpi4py.i )
+  INCLUDE_DIRECTORIES( ${MPI4PY_ROOT_DIR}/include
+                       ${MPI4PY_ROOT_DIR}/include/mpi4py )
+endif()
 
 IF   (${CMAKE_VERSION} VERSION_LESS "3.8.0") 
   SWIG_ADD_MODULE(CoreFlows python CoreFlows.i)

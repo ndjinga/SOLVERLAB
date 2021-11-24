@@ -43,7 +43,7 @@ set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/
      CACHE STRING           "OPENMPI tarball path/url" )
 set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.23.0.zip
      CACHE STRING           "HYPRE tarball path/url" )
-set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.1.tar.gz
+set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.2.tar.gz
      CACHE STRING           "MPY4PY tarball path/url" )
 
 set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
@@ -79,11 +79,11 @@ endif( DEFINED ENV{MPI_HOME} OR MPI_HOME )
 # Definition of MPI4PY_ROOT_DIR
 if(   ${SOLVERLAB_WITH_PYTHON} AND ${SOLVERLAB_WITH_MPI} AND NOT ${MPI4PY_ROOT_DIR})
   message(STATUS "Defining MPI4PY directory" )
-  if(    DEFINED $ENV{MPI4PY_ROOT_DIR})
+  if(    DEFINED ENV{MPI4PY_ROOT_DIR})
     set(MPI4PY_ROOT_DIR $ENV{MPI4PY_ROOT_DIR})
-  else(  DEFINED $ENV{MPI4PY_ROOT_DIR})
+  else(  DEFINED ENV{MPI4PY_ROOT_DIR})
     set(MPI4PY_ROOT_DIR ${PETSC_DIR}/${PETSC_ARCH}/lib/mpi4py)
-  endif( DEFINED $ENV{MPI4PY_ROOT_DIR})
+  endif( DEFINED ENV{MPI4PY_ROOT_DIR})
 endif(${SOLVERLAB_WITH_PYTHON} AND ${SOLVERLAB_WITH_MPI} AND NOT ${MPI4PY_ROOT_DIR})
 
 if(    MPI4PY_ROOT_DIR)

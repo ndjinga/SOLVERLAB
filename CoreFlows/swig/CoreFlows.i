@@ -5,7 +5,7 @@
 %include std_map.i
 
 #ifdef MPI4PY_ROOT_DIR
-%include MPI4PY_ROOT_DIR/include/mpi4py/mpi4py.i
+%include mpi4py.i
 %mpi4py_typemap(Comm, MPI_Comm);
 #endif
 
