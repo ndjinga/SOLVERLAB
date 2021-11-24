@@ -72,7 +72,7 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
     /* Control input value are acceptable */
     if(rho<_precision or cp<_precision)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"rho = %.2f, cp = %.2f, precision = %.2f\n",rho,cp,_precision);
+        PetscPrintf(PETSC_COMM_WORLD,"rho = %.2f, cp = %.2f, precision = %.2e\n",rho,cp,_precision);
         throw CdmathException("Error : parameters rho and cp should be strictly positive");
     }
     if(lambda < 0.)
@@ -86,7 +86,7 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
         throw CdmathException("Error : parameter dim cannot  be negative");
     }
 
-    PetscPrintf(PETSC_COMM_WORLD,"\n Diffusion problem with density %.2f, specific heat %.2f, conductivity %.2f", rho,cp,lambda);
+    PetscPrintf(PETSC_COMM_WORLD,"\n Diffusion problem with density %.2e, specific heat %.2e, conductivity %.2e", rho,cp,lambda);
     if(FECalculation)
         PetscPrintf(PETSC_COMM_WORLD," and finite elements method\n\n");
     else
@@ -312,7 +312,7 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
     else
         result=computeDiffusionMatrixFV(stop);
 
-	PetscPrintf(PETSC_COMM_WORLD,"Maximum diffusivity is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
+	PetscPrintf(PETSC_COMM_WORLD,"Maximum diffusivity is %.2e, CFL = %.2f, Delta x = %.2e\n",_maxvp,_cfl,_minl);
 
     MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
@@ -600,7 +600,7 @@ bool DiffusionEquation::initTimeStep(double dt){
     }
     else//dt<=0
     {
-        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep %.2f = \n",dt);
+        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep %.2e = \n",dt);
         throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
     }
     //At this stage _b contains _b0 + power + heat exchange

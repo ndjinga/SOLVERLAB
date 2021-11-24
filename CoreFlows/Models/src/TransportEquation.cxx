@@ -270,7 +270,7 @@ double TransportEquation::computeTransportMatrix(){
 	_transportMatrixSet=true;
 
 	MPI_Bcast(&_maxvp, 1, MPI_DOUBLE, 0, PETSC_COMM_WORLD);
-	PetscPrintf(PETSC_COMM_WORLD, "Maximum speed is %.2f, CFL = %.2f, Delta x = %.2f\n",_maxvp,_cfl,_minl);
+	PetscPrintf(PETSC_COMM_WORLD, "Maximum conductivity is %.2e, CFL = %.2f, Delta x = %.2e\n",_maxvp,_cfl,_minl);
 
     MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
@@ -362,7 +362,7 @@ bool TransportEquation::initTimeStep(double dt){
 	}
     else//dt<=0
     {
-        PetscPrintf(PETSC_COMM_WORLD,"TransportEquation::initTimeStep %.2f = \n",dt);
+        PetscPrintf(PETSC_COMM_WORLD,"TransportEquation::initTimeStep %.2e = \n",dt);
         throw CdmathException("Error TransportEquation::initTimeStep : cannot set time step to zero");        
     }
     //At this stage _b contains _b0 + power + heat exchange
