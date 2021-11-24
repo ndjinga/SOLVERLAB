@@ -82,7 +82,8 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 
     # set the numerical method
 	myProblem.setTimeScheme( solverlab.Explicit);
-	myProblem.setLinearSolver(solverlab.GMRES,solverlab.ILU);
+	max_nb_its_lin_solver = 50
+	myProblem.setLinearSolver(solverlab.GMRES, solverlab.ILU, max_nb_its_lin_solver );
 
     # computation parameters
 	MaxNbOfTimeStep = 3 ;# default value is 10
