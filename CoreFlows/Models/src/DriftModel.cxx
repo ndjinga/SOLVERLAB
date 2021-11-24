@@ -3478,6 +3478,9 @@ void DriftModel::getDensityDerivatives(double concentration, double pression, do
 }
 
 void DriftModel::save(){
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
+    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
+
 	string prim(_path+"/DriftModelPrim_");
 	string cons(_path+"/DriftModelCons_");
 	string allFields(_path+"/");

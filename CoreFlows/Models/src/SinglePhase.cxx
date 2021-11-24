@@ -2732,6 +2732,9 @@ void SinglePhase::getDensityDerivatives( double pressure, double temperature, do
 	}
 }
 void SinglePhase::save(){
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
+    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
+
 	string prim(_path+"/SinglePhasePrim_");///Results
 	string cons(_path+"/SinglePhaseCons_");
 	string allFields(_path+"/");

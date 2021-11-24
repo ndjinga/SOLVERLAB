@@ -1222,6 +1222,9 @@ void SinglePhaseStaggered::getDensityDerivatives( double pressure, double temper
 	}
 }
 void SinglePhaseStaggered::save(){
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
+    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
+
 	string prim(_path+"/SinglePhaseStaggeredPrim_");///Results
 	string cons(_path+"/SinglePhaseStaggeredCons_");
 	prim+=_fileName;
