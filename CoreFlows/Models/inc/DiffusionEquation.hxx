@@ -148,7 +148,6 @@ protected :
 	Vec _Tn_seq; // Local sequential copy of the parallel vector _Tn, used for saving result files
 
 	double _dt_diffusion, _dt_src;
-	TimeScheme _timeScheme;
 	map<string, LimitFieldDiffusion> _limitField;
 
     
