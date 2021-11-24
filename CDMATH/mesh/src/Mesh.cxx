@@ -568,7 +568,7 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 		vector<mcIdType>::iterator it = find(nonEmptyGrp.begin(), nonEmptyGrp.end(), -1);
 		if (it != nonEmptyGrp.end())
 		{
-			cout<<"Boundary face group named "<< groupName << " found"<<endl;
+			//cout<<"Boundary face group named "<< groupName << " found"<<endl;
 			MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
             mu->unPolyze();
 			mu->sortCellsInMEDFileFrmt( );
@@ -630,7 +630,7 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 
 		if(nodeids!=NULL)
 		{
-			cout<<"Boundary node group named "<< groupName << " found"<<endl;
+			//cout<<"Boundary node group named "<< groupName << " found"<<endl;
 
 			_nodeGroups.insert(_nodeGroups.begin(),nodeGroup);
 			_nodeGroupNames.insert(_nodeGroupNames.begin(),groupName);
