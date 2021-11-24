@@ -49,10 +49,13 @@ SinglePhase::SinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, b
 				_fluides[0]= new StiffenedGas(594.,_Pref,_Tref,1.6e6, 621.,3100.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
 	}
+
+	_fileName = "SolverlabSinglePhase";
+    PetscPrintf(PETSC_COMM_WORLD,"\n Navier-Stokes equations for single phase flow\n");
 }
 void SinglePhase::initialize(){
-	cout<<"Initialising the Navier-Stokes model"<<endl;
-	*_runLogFile<<"Initialising the Navier-Stokes model"<<endl;
+	cout<<"\n Initialising the Navier-Stokes model\n"<<endl;
+	*_runLogFile<<"\n Initialising the Navier-Stokes model\n"<<endl;
 
 	_Uroe = new double[_nVar];
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector

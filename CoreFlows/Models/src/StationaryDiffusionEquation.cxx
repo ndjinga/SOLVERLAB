@@ -24,19 +24,19 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
 	}
 	MPI_Comm_rank(PETSC_COMM_WORLD,&_mpi_rank);
 	MPI_Comm_size(PETSC_COMM_WORLD,&_mpi_size);
-	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_mpi_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
+	PetscPrintf(PETSC_COMM_WORLD,"\n Simulation on %d processors\n",_mpi_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_mpi_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
 	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 
     if(lambda < 0.)
     {
         std::cout<<"Conductivity="<<lambda<<endl;
-        throw CdmathException("Error : conductivity parameter lambda cannot  be negative");
+        throw CdmathException("!!!!!!!!Error : conductivity parameter lambda cannot  be negative");
     }
     if(dim<=0)
     {
         std::cout<<"Space dimension="<<dim<<endl;
-        throw CdmathException("Error : parameter dim cannot  be negative");
+        throw CdmathException("!!!!!!!!Error : parameter dim cannot  be negative");
     }
 
     _FECalculation=FECalculation;
@@ -104,6 +104,12 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
    	_DiffusionTensor=Matrix(_Ndim);
 	for(int idim=0;idim<_Ndim;idim++)
 		_DiffusionTensor(idim,idim)=_conductivity;
+
+    PetscPrintf(PETSC_COMM_WORLD,"\n Stationary diffusion problem with conductivity %.2f", lambda);
+    if(FECalculation)
+        PetscPrintf(PETSC_COMM_WORLD," and finite elements method\n\n");
+    else
+        PetscPrintf(PETSC_COMM_WORLD," and finite volumes method\n\n");
 }
 
 void StationaryDiffusionEquation::initialize()
@@ -113,11 +119,11 @@ void StationaryDiffusionEquation::initialize()
 		_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
 	
 		if(!_meshSet)
-			throw CdmathException("StationaryDiffusionEquation::initialize() set mesh first");
+			throw CdmathException("!!!!!!!!StationaryDiffusionEquation::initialize() set mesh first");
 		else
 	    {
-			cout<<"!!!! Initialisation of the computation of the temperature diffusion in a solid using ";
-	        *_runLogFile<<"!!!!! Initialisation of the computation of the temperature diffusion in a solid using ";
+			cout<<"\n Initialisation of the computation of the temperature diffusion in a solid using ";
+	        *_runLogFile<<"\n Initialisation of the computation of the temperature diffusion in a solid using ";
 	        if(!_FECalculation)
 	        {
 	            cout<< "Finite volumes method"<<endl<<endl;

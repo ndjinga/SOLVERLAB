@@ -71,11 +71,14 @@ DriftModel::DriftModel(pressureEstimate pEstimate, int dim, bool useDellacherieE
 	*_runLogFile<<"Vapour saturation enthalpy "<< _hsatv<<" J/Kg"<<endl;
 	cout<<"Latent heat "<< _latentHeat<<endl;
 	*_runLogFile<<"Latent heat "<< _latentHeat<<endl;
+
+	_fileName = "SolverlabDriftModel";
+    PetscPrintf(PETSC_COMM_WORLD,"\n Drift model problem for two phase flow\n");
 }
 
 void DriftModel::initialize(){
-	cout<<"Initialising the drift model"<<endl;
-	*_runLogFile<<"Initialising the drift model"<<endl;
+	cout<<"\n Initialising the drift model"<<endl;
+	*_runLogFile<<"\n Initialising the drift model"<<endl;
 
 	_Uroe = new double[_nVar];
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector

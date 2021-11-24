@@ -45,15 +45,15 @@ void ProblemFluid::initialize()
 {
 	if(!_initialDataSet)
 	{
-		*_runLogFile<<"ProblemFluid::initialize() set initial data first"<<endl;
+		*_runLogFile<<"!!!!!!!!ProblemFluid::initialize() set initial data first"<<endl;
 		_runLogFile->close();
-		throw CdmathException("ProblemFluid::initialize() set initial data first");
+		throw CdmathException("!!!!!!!!ProblemFluid::initialize() set initial data first");
 	}
 	else if (_VV.getTypeOfField() != CELLS)
 	{
-		*_runLogFile<<"Initial data should be a field on CELLS, not NODES, neither FACES"<<endl;
+		*_runLogFile<<"!!!!!!!!Initial data should be a field on CELLS, not NODES, neither FACES"<<endl;
 		_runLogFile->close();
-		throw CdmathException("ProblemFluid::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
+		throw CdmathException("!!!!!!!!ProblemFluid::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
 	}
 	cout << "Number of Phases = " << _nbPhases << " mesh dimension = "<<_Ndim<<" number of variables = "<<_nVar<<endl;
 	*_runLogFile << "Number of Phases = " << _nbPhases << " spaceDim= "<<_Ndim<<" number of variables= "<<_nVar<<endl;

@@ -37,11 +37,14 @@ IsothermalTwoFluid::IsothermalTwoFluid(pressureEstimate pEstimate, int dim){
 		_fluides[1] = new StiffenedGas(594,1.55e7,_Temperature,_internalEnergy2, 621,3100);  //stiffened gas law for water at pressure 155 bar and temperature 345°C:
 	}
 	_intPressCoeff=1.5;
+
+	_fileName = "SolverlabIsothermalTwoFluid";
+    PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal two-fluid problem for two phase flow\n");
 }
 
 void IsothermalTwoFluid::initialize(){
-	cout<<"Initialising the isothermal two-fluid model"<<endl;
-	*_runLogFile<<"Initialising the isothermal two-fluid model"<<endl;
+	cout<<"\n Initialising the isothermal two-fluid model\n"<<endl;
+	*_runLogFile<<"\n Initialising the isothermal two-fluid model\n"<<endl;
 
 	_Uroe = new double[_nVar+1];
 

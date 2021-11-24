@@ -34,7 +34,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	}
 	MPI_Comm_rank(PETSC_COMM_WORLD,&_mpi_rank);
 	MPI_Comm_size(PETSC_COMM_WORLD,&_mpi_size);
-	PetscPrintf(PETSC_COMM_WORLD,"Simulation on %d processors\n",_mpi_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
+	PetscPrintf(PETSC_COMM_WORLD,"\n Simulation on %d processors\n",_mpi_size);//Prints to standard out, only from the first processor in the communicator. Calls from other processes are ignored. 
 	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Processor [%d] ready for action\n",_mpi_rank);//Prints synchronized output from several processors. Output of the first processor is followed by that of the second, etc. 
 	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
 

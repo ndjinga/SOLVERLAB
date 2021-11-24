@@ -56,6 +56,9 @@ TransportEquation::TransportEquation(phase fluid, pressureMagnitude pEstimate,ve
 	_FECalculation=false;//Only finite volumes available
 	_rodTemperatureFieldSet=false;
 	_rodTemperature=0;
+
+	_fileName = "SolverlabTransportProblem";
+    PetscPrintf(PETSC_COMM_WORLD,"\n Transport problem of fluid enthalpy with constant velocity\n");
 }
 
 void TransportEquation::initialize()
@@ -63,11 +66,11 @@ void TransportEquation::initialize()
 	if(_mpi_rank==0)
 	{
 		if(!_initialDataSet)
-			throw CdmathException("TransportEquation::initialize() set initial data first");
+			throw CdmathException("!!!!!!!!TransportEquation::initialize() set initial data first");
 		else if (_VV.getTypeOfField() != CELLS)
-			throw CdmathException("TransportEquation::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
+			throw CdmathException("!!!!!!!!TransportEquation::initialize() Initial data should be a field on CELLS, not NODES, neither FACES");
 		else
-			PetscPrintf(PETSC_COMM_SELF,"Initialising the transport of a fluid enthalpy\n");
+			PetscPrintf(PETSC_COMM_SELF,"\n Initialising the transport of a fluid enthalpy\n");
 	
 		/**************** Field creation *********************/
 	
@@ -515,7 +518,8 @@ void TransportEquation::terminate(){
 }
 
 void TransportEquation::save(){
-    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results\n\n");
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
+    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
 
 	string resultFile(_path+"/TransportEquation_");///Results
 	resultFile+=_fileName;
