@@ -34,20 +34,19 @@ int main(int argc, char** argv)
 	TransportEquation  myProblem(LiquidPhase,around155bars600KTransport,transportVelocity);
 	Field VV("Enthalpy", CELLS, M, 1);
 
+
+	//Set initial field
+	Vector VV_Constant(1);//initial enthalpy
+	VV_Constant(0) = 1.3e6;
+
+	cout << "Building the initial data " << endl;
+	myProblem.setInitialFieldConstant(M,VV_Constant);
+
 	//Set rod temperature and heat exchamge coefficient
 	double rodTemp=623;//Rod clad temperature
 	double heatTransfertCoeff=1000;//fluid/solid exchange coefficient 
 	myProblem.setRodTemperature(rodTemp);
 	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
-
-	//Initial field creation
-	Vector VV_Constant(1);//initial enthalpy
-	VV_Constant(0) = 1.3e6;
-
-	cout << "Building the initial data " << endl;
-
-	// generate initial condition
-	myProblem.setInitialFieldConstant(M,VV_Constant);
 
 	//set the boundary conditions
 	myProblem.setBoundaryFields(boundaryFields);

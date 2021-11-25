@@ -63,9 +63,20 @@ int main(int argc, char** argv)
 	double lambda_ur=5;
 
 	TransportEquation  myTransportEquation(LiquidPhase, around155bars600KTransport,transportVelocity);
-	Field fluidEnthalpy("Enthalpie", CELLS, transportMesh, 1);
+
 	bool FECalculation=false;
     DiffusionEquation  myDiffusionEquation(spaceDim,FECalculation,rho_ur, cp_ur, lambda_ur);
+
+
+	//Set initial field
+	cout << "Construction de la condition initiale " << endl;
+
+	Vector VV_Constant(1);
+	VV_Constant(0) = 623;//Rod clad temperature nucleaire
+	myDiffusionEquation.setInitialFieldConstant(diffusionMesh,VV_Constant);
+
+	VV_Constant(0) = 1.3e6;
+	myTransportEquation.setInitialFieldConstant(transportMesh,VV_Constant);
 
 	Field solidTemp("Solid temperature", CELLS, diffusionMesh, 1);
 	Field fluidTemp("Fluid temperature", CELLS, transportMesh, 1);
@@ -79,18 +90,6 @@ int main(int argc, char** argv)
 	power_field_CoupledTransportDiffusionTest(Phi);
 	myDiffusionEquation.setHeatPowerField(Phi);
 	Phi.writeVTK("1DheatPowerField");
-
-	//Initial field creation
-	Vector VV_Constant(1);
-	VV_Constant(0) = 623;//Rod clad temperature nucleaire
-
-	cout << "Construction de la condition initiale " << endl;
-	// generate initial condition
-	myDiffusionEquation.setInitialFieldConstant(diffusionMesh,VV_Constant);
-
-
-	VV_Constant(0) = 1.3e6;
-	myTransportEquation.setInitialFieldConstant(transportMesh,VV_Constant);
 
 	//set the boundary conditions
 	myTransportEquation.setBoundaryFields(boundaryFieldsTransport);//Neumann and Inlet BC will be used

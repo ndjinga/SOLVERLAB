@@ -41,7 +41,6 @@ int main(int argc, char** argv)
 	DriftModel  myProblem(around155bars600K,spaceDim);
 	int nbPhase = myProblem.getNumberOfPhases();
 	int nVar = myProblem.getNumberOfVariables();
-	Field VV("Primitive", CELLS, M, nVar);
 
 	// Prepare for the initial condition
 	Vector VV_Constant(nVar);
@@ -52,7 +51,7 @@ int main(int argc, char** argv)
 		VV_Constant(2+idim) = 1;
 	VV_Constant(nVar-1) = 565;
 
-	//Initial field creation
+	//Set initial field creation
 	cout << "Building initial field " << endl;
 	myProblem.setInitialFieldConstant( M, VV_Constant);
 
@@ -96,7 +95,7 @@ int main(int argc, char** argv)
 	else
 		cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
-	cout << "------------ End of calculation -----------" << endl;
+	cout << "------------ End of simulation -----------" << endl;
 	myProblem.terminate();
 
 	return EXIT_SUCCESS;

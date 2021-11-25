@@ -38,7 +38,13 @@ int main(int argc, char** argv)
  
     bool FEcalculation=false;
 	DiffusionEquation  myProblem(spaceDim,FEcalculation,rho_ur,cp_ur,lambda_ur);
-	Field VV("Solid temperature", CELLS, M, 1);
+
+	// Set initial field
+	Vector VV_Constant(1);
+	VV_Constant(0) = 623;//Rod clad temperature
+
+	cout << "Building initial data" << endl;
+	myProblem.setInitialFieldConstant(M,VV_Constant);
 
 	//Set fluid temperature (temperature du fluide)
 	double fluidTemp=573;//fluid mean temperature
@@ -50,13 +56,6 @@ int main(int argc, char** argv)
 	power_field_diffusionTest(Phi);
 	myProblem.setHeatPowerField(Phi);
 	Phi.writeVTK("1DheatPowerField");
-
-	//Initial field creation
-	Vector VV_Constant(1);
-	VV_Constant(0) = 623;//Rod clad temperature
-
-	cout << "Building initial data" << endl;
-	myProblem.setInitialFieldConstant(M,VV_Constant);
 
 	//set the boundary conditions
 	myProblem.setNeumannBoundaryCondition("Neumann");
