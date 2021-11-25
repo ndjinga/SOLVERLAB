@@ -278,7 +278,7 @@ void DiffusionEquation::initialize()
 		if(_pctype != (char*)&PCILU)//Default pc type is ilu
 		{
 			PetscOptionsSetValue(NULL,"-sub_pc_type ",_pctype);
-			PetscOptionsSetValue(NULL,"-sub_ksp_type ",_ksptype);
+			PetscOptionsSetValue(NULL,"-sub_ksp_type ","preonly");
 			//If the above setvalue does not work, try the following
 			/*
 			KSPSetUp(_ksp);//to set the block Jacobi data structures (including creation of an internal KSP context for each block)
@@ -288,7 +288,7 @@ void DiffusionEquation::initialize()
 			PCBJacobiGetSubKSP(_pc,&nlocal,NULL,&subKSP);
 			if(nlocal==1)
 			{
-				KSPSetType(subKSP[0], _ksptype);//local block solver is same as global
+				KSPSetType(subKSP[0], KSPPREONLY);//local block solver is same as global
 				KSPGetPC(subKSP[0],&subpc);
 				PCSetType(subpc,_pctype);
 			}
