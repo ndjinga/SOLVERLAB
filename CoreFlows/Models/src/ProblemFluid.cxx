@@ -2226,3 +2226,63 @@ ProblemFluid::setInputField(const string& nameField, Field& inputField )
         throw CdmathException("SinglePhase::setInputField error : Unknown Field name");
     }
 }
+
+void 
+ProblemFluid::setPorosityField(string fileName, string fieldName){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! ProblemFluid::setPorosityField set initial field first");
+
+	_porosityField=Field(fileName, CELLS,fieldName);
+	_porosityField.getMesh().checkFastEquivalWith(_mesh);
+	_porosityFieldSet=true;
+}
+
+void 
+ProblemFluid::setPressureLossField(Field PressureLoss){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! ProblemFluid::setPressureLossField set initial field first");
+
+	PressureLoss.getMesh().checkFastEquivalWith(_mesh);
+	_pressureLossField=PressureLoss;
+	_pressureLossFieldSet=true;
+}
+
+void 
+ProblemFluid::setPressureLossField(string fileName, string fieldName){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! ProblemFluid::setPressureLossField set initial field first");
+
+	_pressureLossField=Field(fileName, FACES,fieldName);
+	_pressureLossField.getMesh().checkFastEquivalWith(_mesh);
+	_pressureLossFieldSet=true;
+}
+
+void 
+ProblemFluid::setSectionField(Field sectionField){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! ProblemFluid::setSectionField set initial field first");
+
+	sectionField.getMesh().checkFastEquivalWith(_mesh);
+	_sectionField=sectionField;
+	_sectionFieldSet=true;
+}
+
+void 
+ProblemFluid::setSectionField(string fileName, string fieldName){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! ProblemFluid::setSectionField set initial field first");
+
+	_sectionField=Field(fileName, CELLS,fieldName);
+	_sectionField.getMesh().checkFastEquivalWith(_mesh);
+	_sectionFieldSet=true;
+}
+
+void 
+ProblemFluid::setPorosityField(Field Porosity){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! ProblemFluid::setPorosityField set initial field first");
+
+	Porosity.getMesh().checkFastEquivalWith(_mesh);
+	_porosityField=Porosity;
+	_porosityFieldSet=true;
+}

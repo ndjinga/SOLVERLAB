@@ -106,17 +106,9 @@ public :
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );//supply of a required input field
 
-	void setFluidTemperatureField(Field coupledTemperatureField){
-		coupledTemperatureField.getMesh().checkFastEquivalWith(_mesh);
-		_fluidTemperatureField=coupledTemperatureField;
-		_fluidTemperatureFieldSet=true;
-	};
-	void setFluidTemperature(double fluidTemperature){
-	_fluidTemperature=fluidTemperature;
-	}
-	Field& getFluidTemperatureField(){
-		return _fluidTemperatureField;
-	}
+	void setFluidTemperatureField(Field coupledTemperatureField);
+	void setFluidTemperature(double fluidTemperature){	_fluidTemperature=fluidTemperature;	}
+	Field& getFluidTemperatureField(){  return _fluidTemperatureField;	}
 	
 	/*** get output fields names for postprocessing or coupling ***/
 	vector<string> getOutputFieldsNames() ;//liste tous les champs que peut fournir le code pour le postraitement

@@ -638,3 +638,14 @@ TransportEquation::setInputField(const string& nameField, Field& inputField )
         throw CdmathException("TransportEquation::setInputField error : Unknown Field name");
     }
 }
+
+void 
+TransportEquation::setRodTemperatureField(Field rodTemperature){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! TransportEquation::setRodTemperatureField() set initial field first");
+
+	rodTemperature.getMesh().checkFastEquivalWith(_mesh);
+	_rodTemperatureField=rodTemperature;
+	_rodTemperatureFieldSet=true;
+	_isStationary=false;//Source term may be changed after previously reaching a stationary state
+}

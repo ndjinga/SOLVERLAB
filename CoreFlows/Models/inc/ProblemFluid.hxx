@@ -362,11 +362,7 @@ public :
 	 * \brief set the porosity field;
 	 * @param [in] Field porosity field (field on CELLS)
 	 * */
-	void setPorosityField(Field Porosity){
-		Porosity.getMesh().checkFastEquivalWith(_mesh);
-		_porosityField=Porosity;
-		_porosityFieldSet=true;
-	}
+	void setPorosityField(Field Porosity);
 
 	/** \fn getPorosityField
 	 * \brief returns the porosity field;
@@ -383,21 +379,14 @@ public :
 	 * \param [in] string fieldName
 	 * \param [out] void
 	 *  */
-	void setPorosityField(string fileName, string fieldName){
-		_porosityField=Field(fileName, CELLS,fieldName);
-		_porosityField.getMesh().checkFastEquivalWith(_mesh);
-		_porosityFieldSet=true;
-	}
+	void setPorosityField(string fileName, string fieldName);
 
 	/** \fn setPressureLossField
 	 * \brief set the pressure loss coefficients field;
 	 * @param [in] Field pressure loss field (field on FACES)
 	 * */
-	void setPressureLossField(Field PressureLoss){
-		PressureLoss.getMesh().checkFastEquivalWith(_mesh);
-		_pressureLossField=PressureLoss;
-		_pressureLossFieldSet=true;
-	}
+	void setPressureLossField(Field PressureLoss);
+	
 	/** \fn setPressureLossField
 	 * \brief set the pressure loss coefficient field
 	 * \details localised friction force
@@ -405,21 +394,14 @@ public :
 	 * \param [in] string fieldName
 	 * \param [out] void
 	 *  */
-	void setPressureLossField(string fileName, string fieldName){
-		_pressureLossField=Field(fileName, FACES,fieldName);
-		_pressureLossField.getMesh().checkFastEquivalWith(_mesh);
-		_pressureLossFieldSet=true;
-	}
+	void setPressureLossField(string fileName, string fieldName);
 
 	/** \fn setSectionField
 	 * \brief set the cross section field;
 	 * @param [in] Field cross section field (field on CELLS)
 	 * */
-	void setSectionField(Field sectionField){
-		sectionField.getMesh().checkFastEquivalWith(_mesh);
-		_sectionField=sectionField;
-		_sectionFieldSet=true;
-	}
+	void setSectionField(Field sectionField);
+	
 	/** \fn setSectionField
 	 * \brief set the cross section field
 	 * \details for variable cross section pipe network
@@ -427,11 +409,7 @@ public :
 	 * \param [in] string fieldName
 	 * \param [out] void
 	 *  */
-	void setSectionField(string fileName, string fieldName){
-		_sectionField=Field(fileName, CELLS,fieldName);
-		_sectionField.getMesh().checkFastEquivalWith(_mesh);
-		_sectionFieldSet=true;
-	}
+	void setSectionField(string fileName, string fieldName);
 
 	/** \fn setNonLinearFormulation
 	 * \brief sets the formulation used for the computation of non viscous fluxes

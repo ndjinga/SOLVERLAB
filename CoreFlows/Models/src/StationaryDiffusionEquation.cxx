@@ -1048,6 +1048,9 @@ StationaryDiffusionEquation::getOutputField(const string& nameField )
 void
 StationaryDiffusionEquation::setInputField(const string& nameField, Field& inputField )
 {
+	if(!_meshSet)
+		throw CdmathException("!!!!!!!! StationaryDiffusionEquation::setInputField set the mesh first");
+
 	if(nameField=="FluidTemperature" || nameField=="FLUIDTEMPERATURE" || nameField=="TemperatureFluide" || nameField=="TEMPERATUREFLUIDE")
 		return setFluidTemperatureField( inputField) ;
 	else if(nameField=="HeatPower" || nameField=="HEATPOWER" || nameField=="PuissanceThermique" || nameField=="PUISSANCETHERMIQUE" )
@@ -1057,4 +1060,34 @@ StationaryDiffusionEquation::setInputField(const string& nameField, Field& input
         cout<<"Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first" << endl;
         throw CdmathException("StationaryDiffusionEquation::setInputField error : Unknown Field name");
     }
+}
+
+void 
+StationaryDiffusionEquation::setFluidTemperatureField(Field coupledTemperatureField){
+	if(!_meshSet)
+		throw CdmathException("!!!!!!!! StationaryDiffusionEquation::setFluidTemperatureField set initial field first");
+
+	coupledTemperatureField.getMesh().checkFastEquivalWith(_mesh);
+	_fluidTemperatureField=coupledTemperatureField;
+	_fluidTemperatureFieldSet=true;
+};
+
+void 
+StationaryDiffusionEquation::setHeatPowerField(Field heatPower){
+	if(!_meshSet)
+		throw CdmathException("!!!!!!!! StationaryDiffusionEquation::setHeatPowerField set initial field first");
+
+	heatPower.getMesh().checkFastEquivalWith(_mesh);
+	_heatPowerField=heatPower;
+	_heatPowerFieldSet=true;
+}
+
+void 
+StationaryDiffusionEquation::setHeatPowerField(string fileName, string fieldName, int iteration, int order, int meshLevel){
+	if(!_meshSet)
+		throw CdmathException("!!!!!!!! StationaryDiffusionEquation::setHeatPowerField set initial field first");
+
+	_heatPowerField=Field(fileName, CELLS,fieldName, iteration, order, meshLevel);
+	_heatPowerField.getMesh().checkFastEquivalWith(_mesh);
+	_heatPowerFieldSet=true;
 }

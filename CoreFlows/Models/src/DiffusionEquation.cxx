@@ -915,6 +915,9 @@ DiffusionEquation::getOutputField(const string& nameField )
 void
 DiffusionEquation::setInputField(const string& nameField, Field& inputField )
 {
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! DiffusionEquation::setInputField set initial field first");
+
 	if(nameField=="FluidTemperature" || nameField=="FLUIDTEMPERATURE" || nameField=="TemperatureFluide" || nameField=="TEMPERATUREFLUIDE")
 		return setFluidTemperatureField( inputField) ;
 	else if(nameField=="HeatPower" || nameField=="HEATPOWER" || nameField=="PuissanceThermique" || nameField=="PUISSANCETHERMIQUE" )
@@ -925,3 +928,13 @@ DiffusionEquation::setInputField(const string& nameField, Field& inputField )
         throw CdmathException("DiffusionEquation::setInputField error : Unknown Field name");
     }
 }
+
+void 
+DiffusionEquation::setFluidTemperatureField(Field coupledTemperatureField){
+	if(!_initialDataSet)
+		throw CdmathException("!!!!!!!! DiffusionEquation::setFluidTemperatureField set initial field first");
+
+	coupledTemperatureField.getMesh().checkFastEquivalWith(_mesh);
+	_fluidTemperatureField=coupledTemperatureField;
+	_fluidTemperatureFieldSet=true;
+};

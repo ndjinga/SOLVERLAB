@@ -665,12 +665,7 @@ public :
 	 * \param [in] Field
 	 * \param [out] void
 	 *  */
-	void setHeatPowerField(Field heatPower){
-		heatPower.getMesh().checkFastEquivalWith(_mesh);
-		_heatPowerField=heatPower;
-		_heatPowerFieldSet=true;
-		_isStationary=false;//Source term may be changed after previously reaching a stationary state
-	}
+	void setHeatPowerField(Field heatPower);
 
 	/** \fn setHeatPowerField
 	 * \brief set the heat power field (variable in space)
@@ -679,12 +674,7 @@ public :
 	 * \param [in] string fieldName
 	 * \param [out] void
 	 *  */
-	void setHeatPowerField(string fileName, string fieldName, int iteration = 0, int order = 0, int meshLevel=0){
-		_heatPowerField=Field(fileName, CELLS,fieldName, iteration, order, meshLevel);
-		_heatPowerField.getMesh().checkFastEquivalWith(_mesh);
-		_heatPowerFieldSet=true;
-		_isStationary=false;//Source term may be changed after previously reaching a stationary state
-	}
+	void setHeatPowerField(string fileName, string fieldName, int iteration = 0, int order = 0, int meshLevel=0);
 
 	/** \fn setHeatSource
 	 * \brief sets a constant heat power field

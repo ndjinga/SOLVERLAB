@@ -114,27 +114,17 @@ public :
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );//supply of a required input field
 	
-	void setFluidTemperatureField(Field coupledTemperatureField){
-		_fluidTemperatureField=coupledTemperatureField;
-		_fluidTemperatureFieldSet=true;
-	};
-	void setFluidTemperature(double fluidTemperature){
-	_fluidTemperature=fluidTemperature;
-	}
-	Field& getFluidTemperatureField(){
-		return _fluidTemperatureField;
-	}
+	void setFluidTemperatureField(Field coupledTemperatureField);
+	void setFluidTemperature(double fluidTemperature){	_fluidTemperature=fluidTemperature;	}
+	Field& getFluidTemperatureField(){	return _fluidTemperatureField;	}
+	
 	/** \fn setHeatPowerField
 	 * \brief set the heat power field (variable in space)
 	 * \details
 	 * \param [in] Field
 	 * \param [out] void
 	 *  */
-	void setHeatPowerField(Field heatPower){
-		heatPower.getMesh().checkFastEquivalWith(_mesh);
-		_heatPowerField=heatPower;
-		_heatPowerFieldSet=true;
-	}
+	void setHeatPowerField(Field heatPower);
 
 	/** \fn setHeatPowerField
 	 * \brief set the heat power field (variable in space)
@@ -143,11 +133,7 @@ public :
 	 * \param [in] string fieldName
 	 * \param [out] void
 	 *  */
-	void setHeatPowerField(string fileName, string fieldName, int iteration = 0, int order = 0, int meshLevel=0){
-		_heatPowerField=Field(fileName, CELLS,fieldName, iteration, order, meshLevel);
-		_heatPowerField.getMesh().checkFastEquivalWith(_mesh);
-		_heatPowerFieldSet=true;
-	}
+	void setHeatPowerField(string fileName, string fieldName, int iteration = 0, int order = 0, int meshLevel=0);
 
 	/** \fn getHeatPowerField
 	 * \brief returns the heat power field
