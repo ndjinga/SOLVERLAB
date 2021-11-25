@@ -91,10 +91,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	_maxNewtonIts=50;
 	_PetscIts=0;//the number of iterations of the linear solver
 	_ksptype = (char*)&KSPGMRES;
-	if( _mpi_size>1)
-		_pctype = (char*)&PCBJACOBI;
-	else
-		_pctype = (char*)&PCILU;
+	_pctype = (char*)&PCILU;
 
 	/* Physical parameters */
 	_heatPowerFieldSet=false;
