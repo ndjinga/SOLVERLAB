@@ -27,11 +27,11 @@ def SinglePhase_2DWallHeatedChannel_ChangeSect():
 	#taille d'une cellule
 	dx = (xsup-xinf)/nx
 	dy = (ysup-yinf)/ny;
-	for i in range(ny/2):
+	for i in range(ny%2):
 		 M.setGroupAtFaceByCoords((xsup-xinf)/4,(ysup-yinf)/4+(i+0.5)*dy,0,eps,"Wall");#Paroi verticale intérieure gauche
 		 M.setGroupAtFaceByCoords((xsup-xinf)*3/4,(ysup-yinf)/4+(i+0.5)*dy,0,eps,"Wall");#Paroi verticale intérieure droitee
 	
-	for i in range(nx/4):
+	for i in range(nx%4):
 		 M.setGroupAtFaceByCoords((i+0.5)*dx,(ysup-yinf)/4,0,eps,"Wall");#paroi horizontale en bas à gauche
 		 M.setGroupAtFaceByCoords((i+0.5)*dx,(ysup-yinf)*3/4,0,eps,"Wall");#paroi horizontale en haut à gauche
 		 M.setGroupAtFaceByCoords((xsup-xinf)*3/4+(i+0.5)*dx,(ysup-yinf)/4,0,eps,"Wall");#paroi horizontale en bas à droite

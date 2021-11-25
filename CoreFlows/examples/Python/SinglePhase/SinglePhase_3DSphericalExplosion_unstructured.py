@@ -7,7 +7,7 @@ import cdmath
 
 def SinglePhase_3DSphericalExplosion_unstructured():
 
-	inputfile="../../resources/meshCube.med";
+	inputfile="../resources/meshCube.med";
 
 	xinf=0;
 	xsup=1;
@@ -64,7 +64,7 @@ def SinglePhase_3DSphericalExplosion_unstructured():
 
 	# set the numerical method
 	myProblem.setNumericalScheme(cf.upwind, cf.Explicit);
- 	myProblem.setLinearSolver(cf.GMRES,cf.ILU,True);
+	myProblem.setLinearSolver(cf.GMRES,cf.ILU,True);
 	myProblem.setEntropicCorrection(False);
 	myProblem.setWellBalancedCorrection(False);
     
