@@ -37,14 +37,14 @@ cell_connectivity = []
 
 mesh = MC.MEDCouplingUMesh.New()
 mesh.setMeshDimension(mesh_dim)
-mesh.setName("mesh_from_gmsh")
+mesh.setName("mesh_from_msh")
 
-with open(filename, 'rb') as f:
+with open(filename, 'r', encoding="iso-8859-1") as f:
   for line in f:
     # remove end of line character
     line = line[:-1]
     infos = line.split()
-    #print infos
+    #print(infos)
     if infos and infos[0] == "Vertices":
       nb_vertices = int(infos[1])
       read_vertices = True
@@ -136,12 +136,12 @@ for i, coord in enumerate(barycenters):
   elif abs(z-1) < tol:
     ids_front.append(i)
 
-arr_left = MC.DataArrayIdType(ids_left)
-arr_right = MC.DataArrayIdType(ids_right)
-arr_bottom = MC.DataArrayIdType(ids_bottom)
-arr_top = MC.DataArrayIdType(ids_top)
-arr_back = MC.DataArrayIdType(ids_back)
-arr_front = MC.DataArrayIdType(ids_front)
+arr_left = MC.DataArrayInt64(ids_left)
+arr_right = MC.DataArrayInt64(ids_right)
+arr_bottom = MC.DataArrayInt64(ids_bottom)
+arr_top = MC.DataArrayInt64(ids_top)
+arr_back = MC.DataArrayInt64(ids_back)
+arr_front = MC.DataArrayInt64(ids_front)
 
 arr_left.setName("Left")
 arr_right.setName("Right")
