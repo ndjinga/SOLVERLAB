@@ -6,9 +6,6 @@ import sys
 import medcoupling as MC
 import MEDLoader as ML
 
-#filename = "locrafgrid_1_new.msh"
-#filename = "checkerboard_2x2x2_new.msh"
-
 if len(sys.argv) != 2:
   print( "USAGE: convert_gmsh_to_med.py file.msh")
   sys.exit(-1)
@@ -20,6 +17,7 @@ print( "Converting ", filename)
 # type de maille en fonction du nombre de noeuds.
 # cf INTERP_KERNEL/CellModel.cxx
 d_cell_types = {8: MC.NORM_HEXA8,
+                4: MC.NORM_TETRA4,
                 6: MC.NORM_PENTA6}
 
 mesh_dim = 3
@@ -48,7 +46,7 @@ with open(filename, 'r', encoding="iso-8859-1") as f:
     if infos and infos[0] == "Vertices":
       nb_vertices = int(infos[1])
       read_vertices = True
-    elif infos and infos[0] == "Volumes->faces":
+    elif infos and (infos[0] == "Volumes->faces" or infos[0] == "Volumes->Faces"):
       # stop reading node coords
       read_vertices = False
       meshCoords = MC.DataArrayDouble.New()
