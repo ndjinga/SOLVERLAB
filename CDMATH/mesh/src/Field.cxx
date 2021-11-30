@@ -30,6 +30,7 @@ Field::Field( EntityType typeField )
 //----------------------------------------------------------------------
 {
 	_field=NULL;
+	_ff=NULL;
 	_typeField=typeField;
 	_numberOfComponents=0;
 }
@@ -46,6 +47,7 @@ Field::~Field( void )
 Field::Field(const std::string fieldName, EntityType type, const Mesh& mesh, int numberOfComponents, double time)
 {
 	_field = NULL;
+	_ff=NULL;
 	_mesh=Mesh(mesh);
 	_typeField=type;
 	_numberOfComponents=numberOfComponents;
@@ -98,6 +100,7 @@ Field::Field( const std::string filename, EntityType type,
 		int iteration, int order, int meshLevel)
 {
 	_field = NULL;
+	_ff=NULL;
 	_mesh=Mesh(filename + ".med", meshLevel);
 	_typeField=type;
 	_fieldName=fieldName;
@@ -109,6 +112,7 @@ Field::Field(const std::string meshFileName, EntityType type, const std::vector<
 		const std::string & fieldName, int meshLevel, double time )
 {
 	_field = NULL;
+	_ff=NULL;
 	_mesh=Mesh(meshFileName + ".med", meshLevel);
 	_typeField=type;
 	_numberOfComponents=Vconstant.size();
@@ -127,6 +131,7 @@ Field::Field(const std::string meshFileName, EntityType type, const std::vector<
 Field::Field(const Mesh& M, EntityType type, const Vector Vconstant, const std::string & fieldName, double time)
 {
 	_field = NULL;
+	_ff=NULL;
 	_mesh=Mesh(M);
 	_typeField=type;
 	_numberOfComponents=Vconstant.size();
@@ -145,6 +150,7 @@ Field::Field(const Mesh& M, EntityType type, const Vector Vconstant, const std::
 Field::Field(const Mesh& M, EntityType type, const vector<double> Vconstant, const std::string & fieldName, double time) 
 {
 	_field = NULL;
+	_ff=NULL;
 	_mesh=Mesh(M);
 	_typeField=type;
 	_numberOfComponents=Vconstant.size();
@@ -167,6 +173,7 @@ Field::Field( int nDim, const vector<double> Vconstant, EntityType type,
 		const std::string & fieldName, double time,double epsilon)
 {
 	_field = NULL;
+	_ff=NULL;
 	_typeField=type;
 	_numberOfComponents=Vconstant.size();
 	_time=time;
@@ -213,6 +220,7 @@ Field::Field(const Mesh M, const Vector VV_Left, const Vector VV_Right, double d
 		throw CdmathException( "Field::Field: Vectors VV_Left and VV_Right have different sizes");
 
 	_field = NULL;
+	_ff=NULL;
 	_mesh=Mesh(M);
 	_typeField=type;
 	_numberOfComponents=VV_Left.getNumberOfRows();
@@ -290,6 +298,7 @@ Field::Field(const Mesh M, const Vector Vin, const Vector Vout, double radius,
 	}
 
 	_field = NULL;
+	_ff=NULL;
 	_mesh=Mesh(M);
 	_typeField=type;
 	_numberOfComponents=Vout.size();
@@ -342,6 +351,7 @@ Field::readFieldMed( const std::string & fileNameRadical,
 	size_t iField = 0;
 	std::string attributedFieldName;
 	_field = NULL;
+	_ff=NULL;
 
 	// Get the name of the right field that we will attribute to the Field.
 	if (fieldName == "") {
@@ -420,6 +430,8 @@ Field::readFieldMed( const std::string & fileNameRadical,
 	//Read and store the number of components
 	_numberOfComponents = _field->getNumberOfComponents() ;
 	_time = _field->getTime(iteration, order);
+
+	cout<<"Found field " << fieldName << " in file " << completeFileName <<endl;
 }
 
 
@@ -1127,11 +1139,20 @@ Field::writeMED ( const std::string fileName, bool fromScratch) const
 			MEDCoupling::WriteField(fname.c_str(),_field,fromScratch);
 		else
 			MEDCoupling::WriteFieldUsingAlreadyWrittenMesh(fname.c_str(),_field);
-	else
+	else//The mesh has ben deleted, use _ff instead of _field to save the values
 	{
-		MEDFileField1TS *ff ;
-		ff->setFieldNoProfileSBT(  _field );
-		ff->write(fileName, fromScratch);
+		//MEDFileUMesh * meshMEDFile = MEDFileUMesh::New();
+		//meshMEDFile->setMeshAtLevel(0,_field->getMesh()->buildUnstructured());
+		//meshMEDFile->write(fname.c_str(), fromScratch);
+		//MEDCoupling::WriteUMesh(fname.c_str(),_field->getMesh()->buildUnstructured(),fromScratch);
+		//MEDCoupling::WriteMesh(fname.c_str(),_field->getMesh(),fromScratch);
+	    //MEDCoupling::MEDCouplingUMesh* fmesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> (_field->getMesh()->deepCopy());
+		//cout<<" checkConsecutiveCellTypes : "<< fmesh->checkConsecutiveCellTypes() <<endl;
+		//cout<<" advancedRepr() : "<< fmesh->advancedRepr() <<endl;
+		//cout<<" checkConsecutiveCellTypes : "<< _field->getMesh()->buildUnstructured()->checkConsecutiveCellTypes()<<endl;
+		MEDFileField1TS *ff=MEDFileField1TS::New();
+		_ff->setFieldNoProfileSBT(  _field );
+		_ff->write(fname.c_str(), fromScratch);
 	}
 }
 

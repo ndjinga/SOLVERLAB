@@ -12,6 +12,7 @@ namespace MEDCoupling
 {
   class MEDCouplingFieldDouble;
   class DataArrayDouble;
+  class MEDFileField1TS;
 }
 
 #include "DoubleTab.hxx"
@@ -366,6 +367,7 @@ class Field
 	int _numberOfComponents;
 	double _time;
 	std::string _fieldName;
+	MEDCoupling::MEDFileField1TS *_ff ;//To save the field when the mesh has been deleted
 	
     private:
 
