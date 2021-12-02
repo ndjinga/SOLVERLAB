@@ -256,9 +256,14 @@ public: //----------------------------------------------------------------
 	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> getMEDCouplingMesh ( void )  const ;
 
 	/**
-	 * \brief computes the skin surrounding the mesh
+	 * \brief return the skin surrounding the mesh
 	 */
 	Mesh getBoundaryMesh ( void )  const ;
+
+	/**
+	 * \brief return a group surrounding the mesh
+	 */
+	Mesh getBoundaryGroupMesh ( std::string groupName )  const ;
 
 	/**
 	 * \brief return the list of face group names
@@ -303,11 +308,11 @@ public: //----------------------------------------------------------------
      /** 
       * @return list of face group Ids
       */
-    std::vector< int > getGroupFaceIds(std::string groupName) const;
+    std::vector< int > getFaceGroupIds(std::string groupName, bool isBoundaryGroup=true) const;
     /**
      * @return list of node group Ids
      * */
-    std::vector< int > getGroupNodeIds(std::string groupName) const;
+    std::vector< int > getNodeGroupIds(std::string groupName, bool isBoundaryGroup=true) const;
  
 	/**
 	 * \brief write mesh in the VTK format

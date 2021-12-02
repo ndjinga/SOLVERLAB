@@ -273,7 +273,7 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
 	setGroups(m, mu);
 
 	cout<<endl<< "Loaded file "<< filename<<endl;
-    cout<<"Mesh name= "<<m->getName()<<", mesh dim="<< _meshDim<< ", space dim="<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
+    cout<<"Mesh name = "<<m->getName()<<", mesh dim = "<< _meshDim<< ", space dim = "<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
 
 	m->decrRef();
 	mu->decrRef();
@@ -1979,6 +1979,25 @@ Mesh::getBoundaryMesh ( void )  const
 	return Mesh(_boundaryMesh);
 }
 
+Mesh 
+Mesh::getBoundaryGroupMesh ( std::string groupName )  const 
+{
+	//search group name in known group name list
+	const std::vector<std::string>::const_iterator it = std::find(_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
+	
+    if( it == _faceGroupNames.end() )
+    {
+        cout<<"Mesh::getGroupFaceIds Error : face group " << groupName << " does not exist"<<endl;
+        cout<<"Known face group names are " ;
+        for(int i=0; i<_faceGroupNames.size(); i++)
+			cout<< _faceGroupNames[i]<<" ";
+		cout<< endl;
+        throw CdmathException("Required face group does not exist");
+    }
+    else
+		return Mesh(_faceGroups[it - _faceGroupNames.begin()]);	
+}
+
 int 
 Mesh::getMaxNbNeighbours(EntityType type) const
 {
@@ -2049,7 +2068,7 @@ Mesh::writeMED ( const std::string fileName ) const
 }
 
 std::vector< int > 
-Mesh::getGroupFaceIds(std::string groupName) const
+Mesh::getFaceGroupIds(std::string groupName, bool isBoundaryGroup) const
 {
     if( std::find(_faceGroupNames.begin(),_faceGroupNames.end(),groupName) == _faceGroupNames.end() )
     {
@@ -2059,18 +2078,26 @@ Mesh::getGroupFaceIds(std::string groupName) const
     else
     {
         std::vector< int > result(0);
-        for(int i=0; i<_boundaryFaceIds.size(); i++)
-        {
-            vector< std::string > groupNames = getFace(_boundaryFaceIds[i]).getGroupNames();
-            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
-                result.push_back(_boundaryFaceIds[i]);
-        }
+        if(isBoundaryGroup)        
+	        for(int i=0; i<_boundaryFaceIds.size(); i++)
+	        {
+	            vector< std::string > groupNames = getFace(_boundaryFaceIds[i]).getGroupNames();
+	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
+	                result.push_back(_boundaryFaceIds[i]);
+	        }
+		else
+	        for(int i=0; i<_numberOfFaces; i++)
+	        {
+	            vector< std::string > groupNames = getFace(i).getGroupNames();
+	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
+	                result.push_back(i);
+	        }
         return result;
     }
 }
 
 std::vector< int > 
-Mesh::getGroupNodeIds(std::string groupName) const
+Mesh::getNodeGroupIds(std::string groupName, bool isBoundaryGroup) const
 {
     if( std::find(_nodeGroupNames.begin(),_nodeGroupNames.end(),groupName) == _nodeGroupNames.end() )
     {
@@ -2080,12 +2107,20 @@ Mesh::getGroupNodeIds(std::string groupName) const
     else
     {
         std::vector< int > result(0);
-        for(int i=0; i<_boundaryFaceIds.size(); i++)
-        {
-            vector< std::string > groupNames = getNode(_boundaryFaceIds[i]).getGroupNames();
-            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
-                result.push_back(_boundaryFaceIds[i]);
-        }
+        if(isBoundaryGroup)        
+	        for(int i=0; i<_boundaryNodeIds.size(); i++)
+	        {
+	            vector< std::string > groupNames = getNode(_boundaryNodeIds[i]).getGroupNames();
+	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
+	                result.push_back(_boundaryNodeIds[i]);
+	        }
+		else
+	        for(int i=0; i<_numberOfNodes; i++)
+	        {
+	            vector< std::string > groupNames = getNode(i).getGroupNames();
+	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
+	                result.push_back(i);
+	        }
         return result;
     }
 }
