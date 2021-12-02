@@ -381,7 +381,8 @@ public: //----------------------------------------------------------------
     
 private: //----------------------------------------------------------------
 
-	MEDCoupling::MEDCouplingUMesh*  setMesh( void ) ;
+	MEDCoupling::MEDCouplingUMesh*  setMesh( void ) ;//case meshdim >1
+	MEDCoupling::MEDCouplingUMesh*  set1DMesh( void ) ;//case meshdim ==1
 
 	void setGroups( const MEDCoupling::MEDFileUMesh* medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;
 
