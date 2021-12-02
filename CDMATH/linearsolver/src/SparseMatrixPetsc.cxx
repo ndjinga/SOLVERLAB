@@ -709,6 +709,7 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
   
   SVDSetWhichSingularTriplets(svd,which);
   SVDSetDimensions(svd,nsv,PETSC_DEFAULT,PETSC_DEFAULT);
+  SVDSetType(svd, SVDCYCLIC);
   SVDSetTolerances(svd,tol,PETSC_DEFAULT);
 
   /*

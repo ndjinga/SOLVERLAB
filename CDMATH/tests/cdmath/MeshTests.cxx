@@ -404,6 +404,10 @@ MeshTests::testClassMesh( void )
     cout<<"Test mesh M5 normals"<<endl;
     testNormals(M5);
 
+    //Testing deletion of MEDCoupling for unstructured meshes (should not deletethe structured meshes)
+    M2Triangle.deleteMEDCouplingUMesh();
+    M3Tetra.deleteMEDCouplingUMesh();
+
     //Testing Mesh( std::vector<double> points, std::string meshName )
     int nbCellsM7 = 2*11;
     int nbNodes = nbCellsM7+1;
@@ -431,13 +435,4 @@ MeshTests::testClassMesh( void )
     for(int i=0; i<nbCellsM7; i++)
         volM7+=M7.getCell(i).getMeasure();
     CPPUNIT_ASSERT_DOUBLES_EQUAL( 1., volM7, eps );
-    
-    //Testing deletion of MEDCoupling for unstructured meshes
-    M2Triangle.deleteMEDCouplingUMesh();
-    M3Tetra.deleteMEDCouplingUMesh();
-
-    //The following does not work. Bug ?
-    //CPPUNIT_ASSERT(M7.unstructuredMeshLoaded());
-    //M7.deleteMEDCouplingUMesh();
-    
 }
