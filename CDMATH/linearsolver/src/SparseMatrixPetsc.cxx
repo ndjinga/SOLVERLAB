@@ -536,10 +536,9 @@ bool SparseMatrixPetsc::isSymmetric(double tol) const
 }
 
 int 
-SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which, double tol) const
+SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which, double tol, EPSType type) const
 {
   EPS            eps;         /* eigenproblem solver context */
-  EPSType        type;
   PetscReal      error;
   PetscScalar    kr,ki;
   Vec            xr,xi;
@@ -572,7 +571,7 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
   EPSSetWhichEigenpairs(eps,which);
   EPSSetDimensions(eps,nev,PETSC_DEFAULT,PETSC_DEFAULT);
   EPSSetTolerances(eps,tol,PETSC_DEFAULT);
-  
+  EPSSetType(eps,type);
   /*
      Set solver parameters at runtime
   */
@@ -673,10 +672,9 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
 }
 
 int 
-SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich which, double tol) const
+SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich which, double tol, SVDType type) const
 {
   SVD            svd;         /* Singular value decomposition solver context */
-  SVDType        type;
   PetscReal      error;
   PetscScalar    sigma;
   Vec            u,v;
@@ -709,7 +707,7 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
   
   SVDSetWhichSingularTriplets(svd,which);
   SVDSetDimensions(svd,nsv,PETSC_DEFAULT,PETSC_DEFAULT);
-  SVDSetType(svd, SVDCYCLIC);
+  SVDSetType(svd, type);
   SVDSetTolerances(svd,tol,PETSC_DEFAULT);
 
   /*
@@ -805,13 +803,13 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
 }
 
 std::vector< double > 
-SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol) const
+SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type) const
 {
 	int nconv;
 	double * valP;
 	double **vecP;
 
-	nconv=computeSpectrum(nev, &valP, &vecP, which, tol);
+	nconv=computeSpectrum(nev, &valP, &vecP, which, tol,type);
 	
     std::vector< double > result(nconv);
 	
@@ -827,13 +825,13 @@ SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol) const
 }
 
 std::vector< Vector > 
-SparseMatrixPetsc::getEigenvectors(int nev, EPSWhich which, double tol) const
+SparseMatrixPetsc::getEigenvectors(int nev, EPSWhich which, double tol, EPSType type) const
 {
 	int nconv;
 	double * valP;
 	double **vecP;
 
-	nconv=computeSpectrum(nev, &valP, &vecP, which, tol);
+	nconv=computeSpectrum(nev, &valP, &vecP, which, tol,type);
 	
     std::vector< Vector > result(nconv);
 
@@ -854,7 +852,7 @@ SparseMatrixPetsc::getEigenvectors(int nev, EPSWhich which, double tol) const
 }
 
 MEDCoupling::DataArrayDouble *
-SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, double tol) const
+SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, double tol, EPSType type) const
 {
 	int nconv;
 	double * valP;
@@ -928,7 +926,7 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 	    else
 			nsv=1 ;
 	
-		nconv=computeSVD(nsv, &valS, &vecS, SVD_SMALLEST, tol);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_SMALLEST, tol,SVDCYCLIC);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the smallest singular value");
 	    sigma_min=valS[nsv-1];
@@ -936,7 +934,7 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 	    
 	    /*** Largest singular value ***/
 	    nsv=1;
-		nconv=computeSVD(nsv, &valS, &vecS, SVD_LARGEST, tol);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_LARGEST, tol,SVDCYCLIC);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the largest singular value");
 	    sigma_max=valS[nsv-1];
@@ -947,13 +945,13 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 }
 
 std::vector< double > 
-SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol) const
+SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol, SVDType type) const
 {
 	int nconv;
 	double * valS;
 	double **vecS;
 	
-	nconv=computeSVD(nsv, &valS, &vecS, which, tol);
+	nconv=computeSVD(nsv, &valS, &vecS, which, tol, type);
 	
     std::vector< double > result(nconv);
 	
@@ -966,13 +964,13 @@ SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol) const
 }
 
 std::vector< Vector > 
-SparseMatrixPetsc::getSingularVectors(int nsv, SVDWhich which, double tol) const
+SparseMatrixPetsc::getSingularVectors(int nsv, SVDWhich which, double tol, SVDType type) const
 {
 	int nconv;
 	double * valS;
 	double **vecS;
 	
-	nconv=computeSVD(nsv, &valS, &vecS, which, tol);
+	nconv=computeSVD(nsv, &valS, &vecS, which, tol, type);
 	
     std::vector< Vector > result(2*nconv);
 	
