@@ -354,9 +354,9 @@ public: //----------------------------------------------------------------
 	double getComparisonEpsilon() const {return _epsilon;};
 	void setComparisonEpsilon(double epsilon){ _epsilon=epsilon;};
     // Quick comparison of two meshes to see if they are identical with high probability (three cells are compared)
-    void checkFastEquivalWith( Mesh m) const { return getMEDCouplingMesh()->checkFastEquivalWith(m.getMEDCouplingMesh(),1e-6);};
+    void checkFastEquivalWith( Mesh m) const { return getMEDCouplingMesh()->checkFastEquivalWith(m.getMEDCouplingMesh(),_epsilon);};
     // Deep comparison of two meshes to see if they are identical Except for their names and units
-    bool isEqualWithoutConsideringStr( Mesh m) const { return getMEDCouplingMesh()->isEqualWithoutConsideringStr(m.getMEDCouplingMesh(),1e-6);};
+    bool isEqualWithoutConsideringStr( Mesh m) const { return getMEDCouplingMesh()->isEqualWithoutConsideringStr(m.getMEDCouplingMesh(),_epsilon);};
 
     std::vector< std::string > getElementTypesNames() const ;
 	/**
@@ -479,6 +479,10 @@ private: //----------------------------------------------------------------
 	 * The list of node groups.
 	 */
 	std::vector<MEDCoupling::DataArrayIdType *> _nodeGroups;
+	
+	/*
+	 * Elements types (SEG2, TRI3, QUAD4, HEXA6 ...)
+	 */
 	std::vector< INTERP_KERNEL::NormalizedCellType > _eltsTypes;//List of cell types contained in the mesh
 	std::vector< std::string > _eltsTypesNames;//List of cell types contained in the mesh
     std::vector< INTERP_KERNEL::NormalizedCellType > getElementTypes() const;    

@@ -378,8 +378,6 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
     if(_indexFacePeriodicSet)
         return;
         
-    double eps=1.E-10;
-
     for (int indexFace=0;indexFace<_boundaryFaceIds.size() ; indexFace++)
     {
         Face my_face=_faces[_boundaryFaceIds[indexFace]];
@@ -403,13 +401,13 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
                 Face face_i=_faces[_boundaryFaceIds[iface]];
                 double xi=face_i.x();
                 double yi=face_i.y();
-                if (   (abs(y-yi)<eps || abs(x-xi)<eps )// Case of a square geometry
+                if (   (abs(y-yi)<_epsilon || abs(x-xi)<_epsilon )// Case of a square geometry
                     && ( !check_groups || my_face.getGroupName()!=face_i.getGroupName()) //In case groups need to be checked
-                    && ( !use_central_inversion || abs(y+yi) + abs(x+xi)<eps ) // Case of a central inversion
-                    && fabs(my_face.getMeasure() - face_i.getMeasure())<eps
-                    && fabs(my_face.getXN()      + face_i.getXN())<eps
-                    && fabs(my_face.getYN()      + face_i.getYN())<eps
-                    && fabs(my_face.getZN()      + face_i.getZN())<eps )
+                    && ( !use_central_inversion || abs(y+yi) + abs(x+xi)<_epsilon ) // Case of a central inversion
+                    && fabs(my_face.getMeasure() - face_i.getMeasure())<_epsilon
+                    && fabs(my_face.getXN()      + face_i.getXN())<_epsilon
+                    && fabs(my_face.getYN()      + face_i.getYN())<_epsilon
+                    && fabs(my_face.getZN()      + face_i.getZN())<_epsilon )
                 {
                     iface_perio=_boundaryFaceIds[iface];
                     break;
@@ -428,13 +426,13 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
                 double xi=face_i.x();
                 double yi=face_i.y();
                 double zi=face_i.z();
-                if ( ((abs(y-yi)<eps && abs(x-xi)<eps) || (abs(x-xi)<eps && abs(z-zi)<eps) || (abs(y-yi)<eps && abs(z-zi)<eps))// Case of a cube geometry
+                if ( ((abs(y-yi)<_epsilon && abs(x-xi)<_epsilon) || (abs(x-xi)<_epsilon && abs(z-zi)<_epsilon) || (abs(y-yi)<_epsilon && abs(z-zi)<_epsilon))// Case of a cube geometry
                     && ( !check_groups || my_face.getGroupName()!=face_i.getGroupName()) //In case groups need to be checked
-                    && ( !use_central_inversion || abs(y+yi) + abs(x+xi) + abs(z+zi)<eps )// Case of a central inversion
-                    && fabs(my_face.getMeasure() - face_i.getMeasure())<eps
-                    && fabs(my_face.getXN()      + face_i.getXN())<eps
-                    && fabs(my_face.getYN()      + face_i.getYN())<eps
-                    && fabs(my_face.getZN()      + face_i.getZN())<eps )
+                    && ( !use_central_inversion || abs(y+yi) + abs(x+xi) + abs(z+zi)<_epsilon )// Case of a central inversion
+                    && fabs(my_face.getMeasure() - face_i.getMeasure())<_epsilon
+                    && fabs(my_face.getXN()      + face_i.getXN())<_epsilon
+                    && fabs(my_face.getYN()      + face_i.getYN())<_epsilon
+                    && fabs(my_face.getZN()      + face_i.getZN())<_epsilon )
                 {
                     iface_perio=_boundaryFaceIds[iface];
                     break;
@@ -583,8 +581,8 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 		{
 			//cout<<"Boundary face group named "<< groupName << " found"<<endl;
 			MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
-            mu->unPolyze();
-			mu->sortCellsInMEDFileFrmt( );
+            m->unPolyze();
+			m->sortCellsInMEDFileFrmt( );
 			_faceGroups.insert(_faceGroups.begin(),m);
 			_faceGroupNames.insert(_faceGroupNames.begin(),groupName);
 			DataArrayDouble *baryCell = m->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
@@ -611,14 +609,14 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
                         p3=p2;
                         closestFaceNb=iface;
                     }*/
-					if(p1.distance(p2)<1.E-10)
+					if(p1.distance(p2)<_epsilon)
 					{
 						_faces[iface].setGroupName(groupName);
 						flag=1;
 						break;
 					}
 				}
-                /* if(groupName=="Wall" and min>1.E-10)
+                /* if(groupName=="Wall" and min>_epsilon)
                     {
                         cout.precision(15);
                         cout<<"Subcell number "<< ic <<" Min distance to Wall = "<<min <<" p= "<<p1[0]<<" , "<<p1[1]<<" , "<<p1[2]<<endl;
@@ -664,7 +662,7 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 				for (int inode=0;inode<_numberOfNodes;inode++ )
 				{
 					Point p2=_nodes[inode].getPoint();
-					if(p1.distance(p2)<1.E-10)
+					if(p1.distance(p2)<_epsilon)
 					{
 						_nodes[inode].setGroupName(groupName);
 						flag=1;
