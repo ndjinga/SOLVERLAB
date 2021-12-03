@@ -481,6 +481,11 @@ private: //----------------------------------------------------------------
 	std::vector<MEDCoupling::DataArrayIdType *> _nodeGroups;
 	
 	/*
+	 * The list of face id in each face groups.
+	 */
+	std::vector< std::vector<int> > _faceGroupsIds;
+	
+	/*
 	 * Elements types (SEG2, TRI3, QUAD4, HEXA6 ...)
 	 */
 	std::vector< INTERP_KERNEL::NormalizedCellType > _eltsTypes;//List of cell types contained in the mesh

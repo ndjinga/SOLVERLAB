@@ -583,12 +583,13 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 			MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
             m->unPolyze();
 			m->sortCellsInMEDFileFrmt( );
-			_faceGroups.insert(_faceGroups.begin(),m);
-			_faceGroupNames.insert(_faceGroupNames.begin(),groupName);
+			_faceGroups.insert(_faceGroups.begin(),m);//Vector of boundary meshes
+			_faceGroupNames.insert(_faceGroupNames.begin(),groupName);//Vector of boundary names
 			DataArrayDouble *baryCell = m->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
 			const double *coorBary=baryCell->getConstPointer();
 
 			int nbCellsSubMesh=m->getNumberOfCells();
+			_faceGroupsIds.insert(_faceGroupsIds.begin(),std::vector<int>(nbCellsSubMesh));//Vector of boundary faces
 			for (int ic(0), k(0); ic<nbCellsSubMesh; ic++, k+=_spaceDim)
 			{
 				vector<double> coorBaryXyz(3,0);
@@ -612,6 +613,7 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 					if(p1.distance(p2)<_epsilon)
 					{
 						_faces[iface].setGroupName(groupName);
+						_faceGroupsIds[0][ic]=iface;
 						flag=1;
 						break;
 					}
