@@ -161,8 +161,13 @@ Node::getGroupName(int igroup) const
 void
 Node::setGroupName(const std::string groupName)
 {
-	_groupNames.insert(_groupNames.begin(),groupName);
-	_region=0;
+	if(std::find(_groupNames.begin(), _groupNames.end(), groupName) == _groupNames.end())//No group named groupName
+	{
+		_groupNames.insert(_groupNames.begin(),groupName);
+		_region=0;
+	}
+	else
+		cout<<"Warning Node::setGroupName, group name "<< groupName <<" is already present. No duplication"<<endl;
 }
 
 bool

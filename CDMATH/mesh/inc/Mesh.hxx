@@ -324,7 +324,7 @@ public: //----------------------------------------------------------------
 	 */
 	void writeMED ( const std::string fileName ) const ;
 
-	void setGroupAtPlan(double value, int direction, double eps, std::string groupName) ;
+	void setGroupAtPlan(double value, int direction, double eps, std::string groupName, bool isBoundaryGroup=true) ;
 
 	void setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName) ;
 

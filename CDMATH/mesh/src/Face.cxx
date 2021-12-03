@@ -121,8 +121,13 @@ Face::getGroupName(int igroup) const
 void
 Face::setGroupName(const string groupName)
 {
-	_groupNames.insert(_groupNames.begin(),groupName);
-	_region=0;
+	if(std::find(_groupNames.begin(), _groupNames.end(), groupName) == _groupNames.end())//No group named groupName
+	{
+		_groupNames.insert(_groupNames.begin(),groupName);
+		_region=0;
+	}
+	else
+		cout<<"Warning Face::setGroupName, group name "<< groupName <<" is already present. No duplication"<<endl;
 }
 
 bool
