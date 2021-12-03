@@ -8,7 +8,7 @@
 #include "Face.hxx"
 #include "CdmathException.hxx"
 
-#include <cmath>
+#include <algorithm> 
 
 using namespace std;
 

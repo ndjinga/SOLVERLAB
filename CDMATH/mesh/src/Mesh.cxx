@@ -293,31 +293,60 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
 }
 
 void
-Mesh::setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName)
+Mesh::setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup)
 {
-	int nbFace=getNumberOfFaces();
-	bool flag=false;
-	for (int iface=0;iface<nbFace;iface++)
-	{
-		double FX=_faces[iface].x();
-		double FY=_faces[iface].y();
-		double FZ=_faces[iface].z();
-		if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
+	bool flag=false;//No face/node found
+	std::vector< int > faceIds(0);
+	double FX, FY, FZ;
+	Face Fi;
+	
+	if(isBoundaryGroup)        
+        for(int i=0; i<_boundaryFaceIds.size(); i++)
+        {
+			Fi=_faces[_boundaryFaceIds[i]];
+			FX=Fi.x();
+			FY=Fi.y();
+			FZ=Fi.z();
+			if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
+			{
+				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
+				_faces[_boundaryFaceIds[i]].setGroupName(groupName);
+				std::vector< int > nodesID= _faces[_boundaryFaceIds[i]].getNodesId();
+				int nbNodes = _faces[_boundaryFaceIds[i]].getNumberOfNodes();
+				for(int inode=0 ; inode<nbNodes ; inode++)
+					_nodes[nodesID[inode]].setGroupName(groupName);
+	
+				flag=true;
+			}
+        }
+	else
+		for (int iface=0;iface<_numberOfFaces;iface++)
 		{
-			_faces[iface].setGroupName(groupName);
-			std::vector< int > nodesID= _faces[iface].getNodesId();
-			int nbNodes = _faces[iface].getNumberOfNodes();
-			for(int inode=0 ; inode<nbNodes ; inode++)
-				_nodes[nodesID[inode]].setGroupName(groupName);
-
-			flag=true;
+			FX=_faces[iface].x();
+			FY=_faces[iface].y();
+			FZ=_faces[iface].z();
+			if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
+			{
+				faceIds.insert(faceIds.end(),iface);
+				_faces[iface].setGroupName(groupName);
+				std::vector< int > nodesID= _faces[iface].getNodesId();
+				int nbNodes = _faces[iface].getNumberOfNodes();
+				for(int inode=0 ; inode<nbNodes ; inode++)
+					_nodes[nodesID[inode]].setGroupName(groupName);
+	
+				flag=true;
+			}
 		}
+	if (faceIds.size()>0)
+    {
+		_faceGroupNames.insert(_faceGroupNames.end(),groupName);
+    	_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
+	    _faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
 	}
 	if (flag)
     {
-		_faceGroupNames.insert(_faceGroupNames.begin(),groupName);
 		_nodeGroupNames.insert(_nodeGroupNames.begin(),groupName);
-        //To do : update _faceGroups and _nodeGroups
+        //To do : update  _nodeGroups
     }
 }
 
@@ -333,6 +362,7 @@ Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupN
 			double cord=_faces[_boundaryFaceIds[i]].getBarryCenter()[direction];
 			if (abs(cord-value)<eps)
 			{
+				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
 				_faces[_boundaryFaceIds[i]].setGroupName(groupName);
 				std::vector< int > nodesID= _faces[_boundaryFaceIds[i]].getNodesId();
 				int nbNodes = _faces[_boundaryFaceIds[i]].getNumberOfNodes();
@@ -348,6 +378,7 @@ Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupN
 			double cord=_faces[iface].getBarryCenter()[direction];
 			if (abs(cord-value)<eps)
 			{
+				faceIds.insert(faceIds.end(),iface);
 				_faces[iface].setGroupName(groupName);
 				std::vector< int > nodesID= _faces[iface].getNodesId();
 				int nbNodes = _faces[iface].getNumberOfNodes();
@@ -361,12 +392,12 @@ Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupN
     {
 		_faceGroupNames.insert(_faceGroupNames.end(),groupName);
     	_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
-	    _faceGroups.insert(    _faceGroups.end(), NULL);
-
+	    _faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
+	}
 	if (flag)
     {
 		_nodeGroupNames.insert(_nodeGroupNames.begin(),groupName);
-        //To do : update _faceGroups, _nodeGroups
+        //To do : update  _nodeGroups
     }
 }
 

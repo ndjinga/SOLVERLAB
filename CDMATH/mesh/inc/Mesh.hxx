@@ -326,7 +326,7 @@ public: //----------------------------------------------------------------
 
 	void setGroupAtPlan(double value, int direction, double eps, std::string groupName, bool isBoundaryGroup=true) ;
 
-	void setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName) ;
+	void setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup=true) ;
 
 	void setFaceGroupByIds(std::vector< int > faceIds, std::string groupName) ;
 

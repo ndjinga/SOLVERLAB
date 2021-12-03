@@ -167,7 +167,7 @@ Node::setGroupName(const std::string groupName)
 		_region=0;
 	}
 	else
-		cout<<"Warning Node::setGroupName, group name "<< groupName <<" is already present. No duplication"<<endl;
+		std::cout<<"Warning Node::setGroupName, group name "<< groupName <<" is already present. No duplication"<<std::endl;
 }
 
 bool
