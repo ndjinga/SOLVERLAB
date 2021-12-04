@@ -19,17 +19,17 @@ print(len(boundaryNodeGroupNames), " Boundary Node Group detected : ", boundaryN
 assert(len(boundaryFaceGroupNames)==5)
 assert(len(boundaryNodeGroupNames)==5)
 
-assert boundaryFaceGroupNames[0]=="Top"
-assert boundaryFaceGroupNames[1]=="Right"
+assert boundaryFaceGroupNames[4]=="Top"
+assert boundaryFaceGroupNames[3]=="Right"
 assert boundaryFaceGroupNames[2]=="Left"
-assert boundaryFaceGroupNames[3]=="Bottom"
-assert boundaryFaceGroupNames[4]=="Boundary"
+assert boundaryFaceGroupNames[1]=="Bottom"
+assert boundaryFaceGroupNames[0]=="Boundary"
 
-assert boundaryNodeGroupNames[0]=="Top"
-assert boundaryNodeGroupNames[1]=="Right"
+assert boundaryNodeGroupNames[4]=="Top"
+assert boundaryNodeGroupNames[3]=="Right"
 assert boundaryNodeGroupNames[2]=="Left"
-assert boundaryNodeGroupNames[3]=="Bottom"
-assert boundaryNodeGroupNames[4]=="Boundary"
+assert boundaryNodeGroupNames[1]=="Bottom"
+assert boundaryNodeGroupNames[0]=="Boundary"
 
 #Extract domain sizes
 xmin = M.getXMin()
