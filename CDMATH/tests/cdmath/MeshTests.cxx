@@ -105,6 +105,11 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT(M1.getNameOfNodeGroups()[1].compare("LeftEdge")==0);
 	CPPUNIT_ASSERT(M1.getNameOfNodeGroups()[2].compare("RightEdge")==0);
 
+	//Test the duplication of a group
+	M1.setGroupAtPlan(0.,0,1.E-14,"LeftEdge") ;
+	M1.setGroupAtPlan(4.,0,1.E-14,"RightEdge") ;
+    CPPUNIT_ASSERT(M1.getNameOfFaceGroups().size() == 3);//There is a default group named "Boundary" that is created by the mesh class
+
 	std::vector<int> id_nodes=M1.getBoundaryNodeIds();
 	int id_size_nodes = id_nodes.size();
 	CPPUNIT_ASSERT_EQUAL( 2, id_size_nodes );
