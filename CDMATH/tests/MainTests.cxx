@@ -44,14 +44,14 @@ int main( int argc, char* argv[] )
     controller.addListener( &progress );
     // Add the top suite to the test runner
     CppUnit::TextUi::TestRunner runner;
+    runner.addTest( VectorTests::suite() );
     runner.addTest( MatrixTests::suite() );
     runner.addTest( PointTests::suite() );
     runner.addTest( NodeTests::suite() );
     runner.addTest( CellTests::suite() );
     runner.addTest( FaceTests::suite() );
-    runner.addTest( FieldTests::suite() );
     runner.addTest( MeshTests::suite() );
-    runner.addTest( VectorTests::suite() );
+    runner.addTest( FieldTests::suite() );
     #ifdef CDMATH_WITH_PETSC
         runner.addTest( LinearSolverTests::suite() );
         runner.addTest( SparseMatrixPetscTests::suite() );
