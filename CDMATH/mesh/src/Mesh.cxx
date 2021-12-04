@@ -68,6 +68,8 @@ Mesh::~Mesh( void )
 	delete [] _cells;
 	delete [] _nodes;
 	delete [] _faces;
+	
+	_mesh->decrRef();
 	//for(int i=0; i< _faceGroups.size(); i++)
 	//	_faceGroups[i]->decrRef();
 	//	_nodeGroups[i]->decrRef();
@@ -313,7 +315,6 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
     cout<<"Mesh name = "<<m->getName()<<", mesh dim = "<< _meshDim<< ", space dim = "<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
 
 	m->decrRef();
-	mu->decrRef();
 }
 
 void
@@ -1361,6 +1362,8 @@ Mesh::set1DMesh( void )
 	DataArrayDouble *longueur = fieldl->getArray();
 	const double *lon=longueur->getConstPointer();
 
+	double xn, yn=0., zn=0.;//Components of the normal vector at a cell interface
+	double norm;
 	for( int id=0;id<_numberOfCells;id++ )
 	{
 		int nbVertices=mu->getNumberOfNodesInCell(id) ;
@@ -1376,13 +1379,21 @@ Mesh::set1DMesh( void )
 			ci.addNodeId(el,nodeIdsOfCell[el]) ;
 			ci.addFaceId(el,nodeIdsOfCell[el]) ;
 		}
-
-		double xn, yn=0., zn=0.;//Components of the normal vector at a cell interface
+		/* compute the normal to the face */
             xn = cood[nodeIdsOfCell[0]*_spaceDim  ] - cood[nodeIdsOfCell[nbVertices-1]*_spaceDim  ];
         if(_spaceDim>1)        
 			yn = cood[nodeIdsOfCell[0]*_spaceDim+1] - cood[nodeIdsOfCell[nbVertices-1]*_spaceDim+1];
         if(_spaceDim>2)        
 			zn = cood[nodeIdsOfCell[0]*_spaceDim+2] - cood[nodeIdsOfCell[nbVertices-1]*_spaceDim+2];
+		norm = sqrt(xn*xn+yn*yn+zn*zn);
+		if(norm<_epsilon)
+			throw CdmathException("!!! Mesh::set1DMesh Normal vector has norm 0 !!!");
+		else
+		{
+			xn /= norm;
+			yn /= norm;
+			zn /= norm;
+		}
         mcIdType nbFaces=tmpI[id+1]-tmpI[id];
         const mcIdType *work=tmp+tmpI[id];
 		
@@ -1457,7 +1468,6 @@ Mesh::set1DMesh( void )
 	revNode->decrRef();
 	revNodeI->decrRef();
 	mu2->decrRef();
-	mu->decrRef();	
     	
     return mu;
 }
@@ -2195,9 +2205,6 @@ Mesh::writeMED ( const std::string fileName ) const
 	//MEDCoupling::meshMEDFile.write(fname.c_str(),2)	;
 	//else
 	//MEDCoupling::meshMEDFile.write(fname.c_str(),1)	;
-
-
-	mu->decrRef();
 }
 
 std::vector< int > 
