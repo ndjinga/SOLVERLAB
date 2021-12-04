@@ -90,15 +90,37 @@ MeshTests::testClassMesh( void )
 	CPPUNIT_ASSERT_EQUAL( y11, 0.0 );
 	M1.setGroupAtFaceByCoords(0.,0.,0.,1.E-14,"LeftEdge") ;
 	M1.setGroupAtFaceByCoords(4.,0.,0.,1.E-14,"RightEdge") ;
+	M1.setGroupAtNodeByCoords(0.,0.,0.,1.E-14,"LeftEdge") ;
+	M1.setGroupAtNodeByCoords(4.,0.,0.,1.E-14,"RightEdge") ;
 	CPPUNIT_ASSERT(M1.getFace(0).isBorder()==true);
 	CPPUNIT_ASSERT(M1.getFace(1).isBorder()==false);
 	CPPUNIT_ASSERT(M1.getFace(2).isBorder()==false);
 	CPPUNIT_ASSERT(M1.getFace(3).isBorder()==false);
 	CPPUNIT_ASSERT(M1.getFace(4).isBorder()==true);
     CPPUNIT_ASSERT(M1.getNameOfFaceGroups().size() == 3);//There is a default group named "Boundary" that is created by the mesh class
-	CPPUNIT_ASSERT(M1.getNameOfFaceGroups()[0].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M1.getNameOfFaceGroups()[0].compare("Boundary")==0);
 	CPPUNIT_ASSERT(M1.getNameOfFaceGroups()[1].compare("LeftEdge")==0);
-	CPPUNIT_ASSERT(M1.getNameOfFaceGroups()[2].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M1.getNameOfFaceGroups()[2].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M1.getNameOfNodeGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M1.getNameOfNodeGroups()[1].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M1.getNameOfNodeGroups()[2].compare("RightEdge")==0);
+
+	std::vector<int> id_nodes=M1.getBoundaryNodeIds();
+	int id_size_nodes = id_nodes.size();
+	CPPUNIT_ASSERT_EQUAL( 2, id_size_nodes );
+	CPPUNIT_ASSERT_EQUAL( 0, id_nodes[0] );
+	CPPUNIT_ASSERT_EQUAL( 4, id_nodes[1] );
+
+	std::vector<int> id_faces=M1.getBoundaryFaceIds();
+	CPPUNIT_ASSERT_EQUAL( 2, int(id_faces.size()) );
+	CPPUNIT_ASSERT_EQUAL( 0, id_faces[0] );
+	CPPUNIT_ASSERT_EQUAL( 4, id_faces[1] );
+
+	std::vector<int> id_left  = M1.getFaceGroupIds("LeftEdge");
+	std::vector<int> id_right = M1.getFaceGroupIds("RightEdge");
+	CPPUNIT_ASSERT_EQUAL( 0, id_left[0] );
+	CPPUNIT_ASSERT_EQUAL( 4, id_right[0] );
+	
     double dx1=M1.minRatioVolSurf();
     CPPUNIT_ASSERT_DOUBLES_EQUAL( dx1, 1., eps  );
 
@@ -141,9 +163,18 @@ MeshTests::testClassMesh( void )
 	M2.setGroupAtPlan(xmin,0,eps,"LeftEdge");
 	M2.setGroupAtPlan(ymin,1,eps,"BottomEdge");
 	M2.setGroupAtPlan(ymax,1,eps,"TopEdge");
+	std::vector<std::string> nameOfFaceGroups = M2.getNameOfFaceGroups();
 	CPPUNIT_ASSERT_EQUAL( 5, int(M2.getNameOfFaceGroups().size()) );//There is a default group named "Boundary" that is created by the mesh class
-    CPPUNIT_ASSERT(M2.getNameOfFaceGroups().size() == 5);
-	CPPUNIT_ASSERT(M2.getNameOfFaceGroups()[1].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfFaceGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M2.getNameOfFaceGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfFaceGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfFaceGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfFaceGroups()[4].compare("TopEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfNodeGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M2.getNameOfNodeGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfNodeGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfNodeGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M2.getNameOfNodeGroups()[4].compare("TopEdge")==0);
 	int nbFaces=M2.getNumberOfFaces();
     M2.setPeriodicFaces();
 	std::map<int,int> indexFaces=M2.getIndexFacePeriodic();
@@ -192,7 +223,16 @@ MeshTests::testClassMesh( void )
 	M2Triangle.setGroupAtPlan(ymin,1,eps,"BottomEdge");
 	M2Triangle.setGroupAtPlan(ymax,1,eps,"TopEdge");
 	CPPUNIT_ASSERT_EQUAL( 5, int(M2Triangle.getNameOfFaceGroups().size()) );//There is a default group named "Boundary" that is created by the mesh class
-	CPPUNIT_ASSERT(M2Triangle.getNameOfFaceGroups()[1].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfFaceGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfFaceGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfFaceGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfFaceGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfFaceGroups()[4].compare("TopEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfNodeGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfNodeGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfNodeGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfNodeGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M2Triangle.getNameOfNodeGroups()[4].compare("TopEdge")==0);
 	std::map<int,int> indexFacesTriangle=M2Triangle.getIndexFacePeriodic();
 
     double dx2Triangle=M2Triangle.minRatioVolSurf();
@@ -235,7 +275,20 @@ MeshTests::testClassMesh( void )
 	M3.setGroupAtPlan(zmin,2,eps,"DownEdge");
 	M3.setGroupAtPlan(zmax,2,eps,"UpEdge");
 	CPPUNIT_ASSERT_EQUAL( 7, int(M3.getNameOfFaceGroups().size()) );//There is a default group named "Boundary" that is created by the mesh class
-	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[1].compare("DownEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[4].compare("TopEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[5].compare("DownEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfFaceGroups()[6].compare("UpEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfNodeGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M3.getNameOfNodeGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfNodeGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfNodeGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfNodeGroups()[4].compare("TopEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfNodeGroups()[5].compare("DownEdge")==0);
+	CPPUNIT_ASSERT(M3.getNameOfNodeGroups()[6].compare("UpEdge")==0);
 	nbFaces=M3.getNumberOfFaces();
     M3.setPeriodicFaces();
 	indexFaces=M3.getIndexFacePeriodic();
@@ -336,7 +389,20 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT(M3Tetra.unstructuredMeshLoaded());
     CPPUNIT_ASSERT(!M3Tetra.isStructured());
 	CPPUNIT_ASSERT_EQUAL( 7, int(M3Tetra.getNameOfFaceGroups().size()) );//There is a default group named "Boundary" that is created by the mesh class
-	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[1].compare("DownEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[4].compare("TopEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[5].compare("DownEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfFaceGroups()[6].compare("UpEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfNodeGroups()[0].compare("Boundary")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfNodeGroups()[1].compare("RightEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfNodeGroups()[2].compare("LeftEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfNodeGroups()[3].compare("BottomEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfNodeGroups()[4].compare("TopEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfNodeGroups()[5].compare("DownEdge")==0);
+	CPPUNIT_ASSERT(M3Tetra.getNameOfNodeGroups()[6].compare("UpEdge")==0);
 	indexFaces=M3Tetra.getIndexFacePeriodic();
 
     cout<<"Test mesh M3Tetra normals"<<endl;
@@ -345,10 +411,16 @@ MeshTests::testClassMesh( void )
     //Testing a 2D unstructured mesh (triangles)
     Mesh M23("./meshSquare.med");
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups().size() == 5);//There is a default group named "Boundary" that is created by the mesh class;
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[3].compare("Bottom")==0);
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[2].compare("Left")==0);
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[1].compare("Right")==0);
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[0].compare("Top")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[4].compare("Boundary")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[0].compare("Bottom")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[1].compare("Left")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[2].compare("Right")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[3].compare("Top")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[4].compare("Boundary")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[0].compare("Bottom")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[1].compare("Left")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[2].compare("Right")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[3].compare("Top")==0);
     CPPUNIT_ASSERT(M23.isTriangular());
     CPPUNIT_ASSERT(M23.unstructuredMeshLoaded());
     CPPUNIT_ASSERT(!M23.isStructured());
