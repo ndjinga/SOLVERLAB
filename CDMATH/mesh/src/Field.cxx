@@ -92,7 +92,6 @@ void Field::buildFieldMemoryStructure()
 	_field->setArray(array);
 	_field->setTime(_time,0,0);
 	array->decrRef();
-	mu->decrRef();
 }
 
 Field::Field( const std::string filename, EntityType type,
@@ -993,7 +992,7 @@ void
 Field::writeVTK (std::string fileName, bool fromScratch) const
 //----------------------------------------------------------------------
 {
-	if( !_mesh.isStructured() && !_mesh.unstructuredMeshLoaded() )
+	if( !_mesh.isStructured() && !_mesh.meshNotDeleted() )
 		throw CdmathException("Field::writeVTK : Cannot save field in VTK format : unstructured mesh with no MEDCouplingUMesh loaded. Use med format.");
 
 	string fname=fileName+".pvd";
@@ -1134,7 +1133,7 @@ Field::writeMED ( const std::string fileName, bool fromScratch) const
 {
 	string fname=fileName+".med";
 	
-	if(_mesh.isStructured() || _mesh.unstructuredMeshLoaded())
+	if(_mesh.isStructured() || _mesh.meshNotDeleted())
 		if (fromScratch)
 			MEDCoupling::WriteField(fname.c_str(),_field,fromScratch);
 		else

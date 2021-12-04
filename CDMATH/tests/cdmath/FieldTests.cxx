@@ -252,7 +252,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 1, concF2.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 0.0, concF2.getTime() );
 	CPPUNIT_ASSERT_EQUAL( 8, concF2.getNumberOfElements() );
-    CPPUNIT_ASSERT(concF2.unstructuredMeshLoaded());
+    CPPUNIT_ASSERT(concF2.meshNotDeleted());
     concF2.writeMED("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
 //   	concF2.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     concF2.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
@@ -273,7 +273,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 1, concF3.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 0.0, concF3.getTime() );
 	CPPUNIT_ASSERT_EQUAL( 36, concF3.getNumberOfElements() );
-    CPPUNIT_ASSERT(!concF3.unstructuredMeshLoaded());
+    CPPUNIT_ASSERT(concF3.meshNotDeleted());
 	
 	//Load the Field CONCENTRATION in the file fileNameMED
 	Field concF4(fileNameMED,CELLS,"CONCENTRATION",0,0);
@@ -283,7 +283,7 @@ FieldTests::testClassField( void )
     for (int j=0;j<concF4.getNumberOfComponents();j++)
     	for (int i=0;i<concF4.getNumberOfElements();i++)
     		CPPUNIT_ASSERT_EQUAL( double(i+j), concF4(i,j) );
-    CPPUNIT_ASSERT(concF4.unstructuredMeshLoaded());
+    CPPUNIT_ASSERT(concF4.meshNotDeleted());
     concF4.writeMED("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
 //   	concF4.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     concF4.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
@@ -300,7 +300,7 @@ FieldTests::testClassField( void )
     for (int j=0;j<concF5.getNumberOfComponents();j++)
     	for (int i=0;i<concF5.getNumberOfElements();i++)
     		CPPUNIT_ASSERT_EQUAL( 1., concF5(i,j) );
-    CPPUNIT_ASSERT(concF5.unstructuredMeshLoaded());
+    CPPUNIT_ASSERT(concF5.meshNotDeleted());
     (concF5.getMesh()).writeMED("FieldConcF5");//This saves only the mesh 
     cout<<"Mesh name : " << concF5.getMesh().getName()<<endl;
     cout<<"Field name : " << concF5.getName()<<endl;

@@ -379,7 +379,7 @@ public: //----------------------------------------------------------------
     /** 
      * \brief Returns true iff an unstructured mesh has been loaded
      */
-     bool unstructuredMeshLoaded() const {return _unstructuredMeshLoaded;}
+     bool meshNotDeleted() const {return _meshNotDeleted;}
     
 private: //----------------------------------------------------------------
 
@@ -394,7 +394,7 @@ private: //----------------------------------------------------------------
 	 */
 	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> _mesh;
 
-	bool _unstructuredMeshLoaded;
+	bool _meshNotDeleted;
 	
     std::string _name;
     

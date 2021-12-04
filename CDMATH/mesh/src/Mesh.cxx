@@ -29,7 +29,7 @@ Mesh::Mesh( void )
 //----------------------------------------------------------------------
 {
 	_mesh=NULL;
-    _unstructuredMeshLoaded=false;
+    _meshNotDeleted=false;
 	_cells=NULL;
 	_nodes=NULL;
 	_faces=NULL;
@@ -69,7 +69,10 @@ Mesh::~Mesh( void )
 	delete [] _nodes;
 	delete [] _faces;
 	
-	_mesh->decrRef();
+    //Not sure why but this is needed to avoid memory errors
+    //dynamic_cast<MEDCoupling::MEDCouplingIMesh*> (_mesh.retn());
+	if( _meshNotDeleted)
+		(_mesh.retn())->decrRef();
 	//for(int i=0; i< _faceGroups.size(); i++)
 	//	_faceGroups[i]->decrRef();
 	//	_nodeGroups[i]->decrRef();
@@ -124,7 +127,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _unstructuredMeshLoaded=false;
+    _meshNotDeleted=true;
     _isStructured=true;
 
 	delete [] originPtr;
@@ -173,7 +176,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 
 	_mesh=mesh->deepCopy();
 	_mesh=mesh->buildUnstructured();
-    _unstructuredMeshLoaded=true;
+    _meshNotDeleted=true;
     _isStructured=false;
 	delete [] Box0 ;
 
@@ -258,7 +261,7 @@ Mesh::Mesh( const Mesh& mesh )
     
 	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->deepCopy();
 	_mesh=m1;
-    _unstructuredMeshLoaded=mesh.unstructuredMeshLoaded();
+    _meshNotDeleted=mesh.meshNotDeleted();
 }
 
 //----------------------------------------------------------------------
@@ -279,7 +282,7 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
     if(structuredMesh)
     {
         _isStructured=true;
-		_unstructuredMeshLoaded=false;
+		_meshNotDeleted=false;
         _dxyz=structuredMesh->getDXYZ();
         _nxyz=structuredMesh->getCellGridStructure();
         double* Box0=new double[2*_spaceDim];
@@ -301,7 +304,7 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
     else
     {
         _isStructured=false;
-		_unstructuredMeshLoaded=true;
+		_meshNotDeleted=true;
     }
     
 	MEDCouplingUMesh*  mu;
@@ -1525,7 +1528,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     coords_arr->decrRef();
 
     _mesh=mesh1d->buildUnstructured();//To enable writeMED. Because we declared the mesh as unstructured, we decide to build the unstructured data (not mandatory)
-    _unstructuredMeshLoaded=true;
+    _meshNotDeleted=true;
 
 	set1DMesh();
 }
@@ -1576,7 +1579,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
+    _meshNotDeleted=true;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
 
 	delete [] originPtr;
 	delete [] dxyzPtr;
@@ -1639,14 +1642,14 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
+    _meshNotDeleted=true;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
     _isStructured = true;
 
     if(split_to_triangles_policy==0 || split_to_triangles_policy==1)
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(split_to_triangles_policy);
-            _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
+            _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
         }
     else if (split_to_triangles_policy != -1)
@@ -1731,21 +1734,21 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _unstructuredMeshLoaded=false;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
+    _meshNotDeleted=true;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
     _isStructured = true;
 
     if( split_to_tetrahedra_policy == 0 )
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
-            _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
+            _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
             _mesh=_mesh->buildUnstructured();
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
-            _unstructuredMeshLoaded=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
+            _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
         }
     else if ( split_to_tetrahedra_policy != -1 )
@@ -2016,7 +2019,7 @@ Mesh::operator= ( const Mesh& mesh )
 	_numberOfEdges = mesh.getNumberOfEdges();
     
     _isStructured = mesh.isStructured();
-    _unstructuredMeshLoaded = mesh.unstructuredMeshLoaded();
+    _meshNotDeleted = mesh.meshNotDeleted();
     
     if(_isStructured)
     {
@@ -2169,7 +2172,7 @@ void
 Mesh::writeVTK ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
-	if( !_isStructured && !_unstructuredMeshLoaded )
+	if( !_isStructured && !_meshNotDeleted )
 		throw CdmathException("Mesh::writeVTK : Cannot save mesh : no MEDCouplingUMesh loaded");
 		
 	string fname=fileName+".vtu";
@@ -2181,7 +2184,7 @@ void
 Mesh::writeMED ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
-	if( !_isStructured && !_unstructuredMeshLoaded )
+	if( !_meshNotDeleted )
 		throw CdmathException("Mesh::writeMED : Cannot save mesh : no MEDCouplingUMesh loaded");
 		
 	string fname=fileName+".med";
@@ -2247,10 +2250,10 @@ Mesh::setNodeGroupByIds(std::vector< int > nodeIds, std::string groupName)
 
 void Mesh::deleteMEDCouplingUMesh()
 { 
-	if(_unstructuredMeshLoaded) 
+	if(_meshNotDeleted) 
 	{
-		_mesh->decrRef(); 
-		_unstructuredMeshLoaded=false;
+		(_mesh.retn())->decrRef(); 
+		_meshNotDeleted=false;
 	} 
 	else 
 		throw CdmathException("Mesh::deleteMEDCouplingMesh() : mesh is not loaded");

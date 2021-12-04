@@ -259,7 +259,7 @@ class Field
     /** 
      * \brief Returns true iff an unstructured mesh has been loaded
      */
-     bool unstructuredMeshLoaded() const {return _mesh.unstructuredMeshLoaded();}
+     bool meshNotDeleted() const {return _mesh.meshNotDeleted();}
     
     Vector getNormEuclidean( void ) const ;
 
