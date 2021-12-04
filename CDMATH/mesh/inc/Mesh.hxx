@@ -328,6 +328,8 @@ public: //----------------------------------------------------------------
 
 	void setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup=true) ;
 
+	void setGroupAtNodeByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup=true) ;
+
 	void setFaceGroupByIds(std::vector< int > faceIds, std::string groupName) ;
 
 	void setNodeGroupByIds(std::vector< int > nodeIds, std::string groupName) ;
@@ -384,8 +386,9 @@ private: //----------------------------------------------------------------
 	MEDCoupling::MEDCouplingUMesh*  setMesh( void ) ;//case meshdim >1
 	MEDCoupling::MEDCouplingUMesh*  set1DMesh( void ) ;//case meshdim ==1
 
-	void setGroups( const MEDCoupling::MEDFileUMesh* medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;
-
+	void setGroups( const MEDCoupling::MEDFileUMesh* medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;//Read all face and node group
+	void addNewFaceGroup( const MEDCoupling::MEDCouplingUMesh *m);//adds one face group in the vectors _faceGroups, _faceGroupNames and _faceGroupIds
+	
 	/*
 	 * The MEDCoupling mesh
 	 */
@@ -486,6 +489,11 @@ private: //----------------------------------------------------------------
 	std::vector< std::vector<int> > _faceGroupsIds;
 	
 	/*
+	 * The list of node id in each node groups.
+	 */
+	std::vector< std::vector<int> > _nodeGroupsIds;
+	
+	/*
 	 * Elements types (SEG2, TRI3, QUAD4, HEXA6 ...)
 	 */
 	std::vector< INTERP_KERNEL::NormalizedCellType > _eltsTypes;//List of cell types contained in the mesh
@@ -503,7 +511,7 @@ private: //----------------------------------------------------------------
     /* List of boundary nodes*/
     std::vector< int > _boundaryNodeIds;
     /* Boundary mesh */
-    const MEDCoupling::MEDCouplingUMesh * _boundaryMesh;
+    MEDCoupling::MEDCouplingUMesh * _boundaryMesh;
     
     double _epsilon;
 };

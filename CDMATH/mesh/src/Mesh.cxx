@@ -48,10 +48,14 @@ Mesh::Mesh( void )
 	_zMax=0.;
     _nxyz.resize(0);
     _dxyz.resize(0.);
+    _boundaryFaceIds.resize(0);
+    _boundaryNodeIds.resize(0);
 	_faceGroupNames.resize(0);
 	_faceGroups.resize(0);
+	_faceGroupsIds.resize(0);
 	_nodeGroupNames.resize(0);
 	_nodeGroups.resize(0);
+	_nodeGroupsIds.resize(0);
     _indexFacePeriodicSet=false;
     _name="";
     _epsilon=1e-6;
@@ -126,10 +130,20 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 	delete [] nodeStrctPtr;
 	delete [] Box0 ;
 
+	MEDCouplingUMesh * mu;
 	if(_meshDim>1)
-		setMesh();
+		mu = setMesh();
 	else
-		set1DMesh();
+		mu = set1DMesh();
+
+	/* Save the boundary data */
+	_boundaryMesh = mu->computeSkin();
+	_faceGroupNames.push_back("Boundary");
+	_faceGroupsIds.push_back( _boundaryFaceIds);
+    _faceGroups.push_back(_boundaryMesh);
+    _nodeGroupNames.push_back("Boundary");
+	_nodeGroupsIds.push_back( _boundaryNodeIds);
+    _nodeGroups.push_back(NULL);
 }
 
 Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
@@ -161,10 +175,20 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
     _isStructured=false;
 	delete [] Box0 ;
 
+	MEDCouplingUMesh * mu;
 	if(_meshDim>1)
-		setMesh();
+		mu = setMesh();
 	else
-		set1DMesh();
+		mu = set1DMesh();
+
+	/* Save the boundary data */
+	_boundaryMesh = mu->computeSkin();
+	_faceGroupNames.push_back("Boundary");
+	_faceGroupsIds.push_back( _boundaryFaceIds);
+    _faceGroups.push_back(_boundaryMesh);
+    _nodeGroupNames.push_back("Boundary");
+	_nodeGroupsIds.push_back( _boundaryNodeIds);
+    _nodeGroups.push_back(NULL);
 }
 
 //----------------------------------------------------------------------
@@ -295,11 +319,11 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
 void
 Mesh::setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup)
 {
-	bool flag=false;//No face/node found
 	std::vector< int > faceIds(0);
 	double FX, FY, FZ;
 	Face Fi;
 	
+	/* Construction of the face group */
 	if(isBoundaryGroup)        
         for(int i=0; i<_boundaryFaceIds.size(); i++)
         {
@@ -311,93 +335,185 @@ Mesh::setGroupAtFaceByCoords(double x, double y, double z, double eps, std::stri
 			{
 				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
 				_faces[_boundaryFaceIds[i]].setGroupName(groupName);
-				std::vector< int > nodesID= _faces[_boundaryFaceIds[i]].getNodesId();
-				int nbNodes = _faces[_boundaryFaceIds[i]].getNumberOfNodes();
-				for(int inode=0 ; inode<nbNodes ; inode++)
-					_nodes[nodesID[inode]].setGroupName(groupName);
-	
-				flag=true;
 			}
         }
 	else
 		for (int iface=0;iface<_numberOfFaces;iface++)
 		{
-			FX=_faces[iface].x();
-			FY=_faces[iface].y();
-			FZ=_faces[iface].z();
+			Fi=_faces[iface];
+			FX=Fi.x();
+			FY=Fi.y();
+			FZ=Fi.z();
 			if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
 			{
 				faceIds.insert(faceIds.end(),iface);
 				_faces[iface].setGroupName(groupName);
-				std::vector< int > nodesID= _faces[iface].getNodesId();
-				int nbNodes = _faces[iface].getNumberOfNodes();
-				for(int inode=0 ; inode<nbNodes ; inode++)
-					_nodes[nodesID[inode]].setGroupName(groupName);
-	
-				flag=true;
 			}
 		}
+
 	if (faceIds.size()>0)
     {
-		_faceGroupNames.insert(_faceGroupNames.end(),groupName);
-    	_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
-	    _faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
+		std::vector< std::string >::iterator it = std::find(_faceGroupNames.begin(), _faceGroupNames.end(), groupName);
+		if(it == _faceGroupNames.end())//No group named groupName
+		{
+			_faceGroupNames.insert(_faceGroupNames.end(),groupName);
+			_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
+			_faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
+		}
+		else
+		{
+			std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
+			faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
+			/* Detect and erase duplicates face ids */
+			sort( faceGroupIds.begin(), faceGroupIds.end() );
+			faceGroupIds.erase( unique( faceGroupIds.begin(), faceGroupIds.end() ), faceGroupIds.end() );
+			_faceGroupsIds[it-_faceGroupNames.begin()] = faceGroupIds;
+		}
 	}
-	if (flag)
+}
+
+void
+Mesh::setGroupAtNodeByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup)
+{
+	std::vector< int > nodeIds(0);
+	double NX, NY, NZ;
+	Node Ni;
+	
+	/* Construction of the node group */
+	if(isBoundaryGroup)        
+        for(int i=0; i<_boundaryNodeIds.size(); i++)
+        {
+			Ni=_nodes[_boundaryNodeIds[i]];
+			NX=Ni.x();
+			NY=Ni.y();
+			NZ=Ni.z();
+			if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
+			{
+				nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
+				_nodes[_boundaryNodeIds[i]].setGroupName(groupName);
+			}
+        }
+	else
+		for (int inode=0;inode<_numberOfNodes;inode++)
+		{
+			NX=_nodes[inode].x();
+			NY=_nodes[inode].y();
+			NZ=_nodes[inode].z();
+			if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
+			{
+				nodeIds.insert(nodeIds.end(),inode);
+				_nodes[inode].setGroupName(groupName);
+			}
+		}
+
+	if (nodeIds.size()>0)
     {
-		_nodeGroupNames.insert(_nodeGroupNames.begin(),groupName);
-        //To do : update  _nodeGroups
+		std::vector< std::string >::iterator it = std::find(_nodeGroupNames.begin(), _nodeGroupNames.end(), groupName);
+		if(it == _nodeGroupNames.end())//No group named groupName
+		{
+			_nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
+			_nodeGroupsIds.insert(  _nodeGroupsIds.end(),nodeIds);
+			_nodeGroups.insert(    _nodeGroups.end(), NULL);//No mesh created. Create one ?
+		}
+		else
+		{
+			std::vector< int > nodeGroupIds = _nodeGroupsIds[it-_nodeGroupNames.begin()];
+			nodeGroupIds.insert( nodeGroupIds.end(), nodeIds.begin(), nodeIds.end());
+			/* Detect and erase duplicates node ids */
+			sort( nodeGroupIds.begin(), nodeGroupIds.end() );
+			nodeGroupIds.erase( unique( nodeGroupIds.begin(), nodeGroupIds.end() ), nodeGroupIds.end() );
+			_nodeGroupsIds[it-_nodeGroupNames.begin()] = nodeGroupIds;
+		}
     }
 }
 
 void
 Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupName, bool isBoundaryGroup)
 {
-	bool flag=false;//No face/node found
-	std::vector< int > faceIds(0);
+	std::vector< int > faceIds(0), nodeIds(0);
+	double cord;
 	
+	/* Construction of the face group */	
 	if(isBoundaryGroup)        
         for(int i=0; i<_boundaryFaceIds.size(); i++)
         {
-			double cord=_faces[_boundaryFaceIds[i]].getBarryCenter()[direction];
+			cord=_faces[_boundaryFaceIds[i]].getBarryCenter()[direction];
 			if (abs(cord-value)<eps)
 			{
 				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
 				_faces[_boundaryFaceIds[i]].setGroupName(groupName);
-				std::vector< int > nodesID= _faces[_boundaryFaceIds[i]].getNodesId();
-				int nbNodes = _faces[_boundaryFaceIds[i]].getNumberOfNodes();
-				for(int inode=0 ; inode<nbNodes ; inode++)
-					_nodes[nodesID[inode]].setGroupName(groupName);
-	
-				flag=true;
 			}
         }
 	else
 		for (int iface=0;iface<_numberOfFaces;iface++)
 		{
-			double cord=_faces[iface].getBarryCenter()[direction];
+			cord=_faces[iface].getBarryCenter()[direction];
 			if (abs(cord-value)<eps)
 			{
 				faceIds.insert(faceIds.end(),iface);
 				_faces[iface].setGroupName(groupName);
-				std::vector< int > nodesID= _faces[iface].getNodesId();
-				int nbNodes = _faces[iface].getNumberOfNodes();
-				for(int inode=0 ; inode<nbNodes ; inode++)
-					_nodes[nodesID[inode]].setGroupName(groupName);
-	
-				flag=true;
 			}
 		}
+
+	/* Construction of the node group */
+	if(isBoundaryGroup)        
+        for(int i=0; i<_boundaryNodeIds.size(); i++)
+        {
+			cord=_nodes[_boundaryNodeIds[i]].getPoint()[direction];
+			if (abs(cord-value)<eps)
+			{
+				nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
+				_nodes[_boundaryNodeIds[i]].setGroupName(groupName);
+			}
+        }
+	else
+		for (int inode=0;inode<_numberOfNodes;inode++)
+		{
+			cord=_nodes[inode].getPoint()[direction];
+			if (abs(cord-value)<eps)
+			{
+				nodeIds.insert(nodeIds.end(),inode);
+				_nodes[inode].setGroupName(groupName);
+			}
+		}
+
 	if (faceIds.size()>0)
     {
-		_faceGroupNames.insert(_faceGroupNames.end(),groupName);
-    	_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
-	    _faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
+		std::vector< std::string >::iterator it = std::find(_faceGroupNames.begin(), _faceGroupNames.end(), groupName);
+		if(it == _faceGroupNames.end())//No group named groupName
+		{
+			_faceGroupNames.insert(_faceGroupNames.end(),groupName);
+			_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
+			_faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
+		}
+		else
+		{
+			std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
+			faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
+			/* Detect and erase duplicates face ids */
+			sort( faceGroupIds.begin(), faceGroupIds.end() );
+			faceGroupIds.erase( unique( faceGroupIds.begin(), faceGroupIds.end() ), faceGroupIds.end() );
+			_faceGroupsIds[it-_faceGroupNames.begin()] = faceGroupIds;
+		}
 	}
-	if (flag)
+	if (nodeIds.size()>0)
     {
-		_nodeGroupNames.insert(_nodeGroupNames.begin(),groupName);
-        //To do : update  _nodeGroups
+		std::vector< std::string >::iterator it = std::find(_nodeGroupNames.begin(), _nodeGroupNames.end(), groupName);
+		if(it == _nodeGroupNames.end())//No group named groupName
+		{
+			_nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
+			_nodeGroupsIds.insert(  _nodeGroupsIds.end(),nodeIds);
+			_nodeGroups.insert(    _nodeGroups.end(), NULL);//No mesh created. Create one ?
+		}
+		else
+		{
+			std::vector< int > nodeGroupIds = _nodeGroupsIds[it-_nodeGroupNames.begin()];
+			nodeGroupIds.insert( nodeGroupIds.end(), nodeIds.begin(), nodeIds.end());
+			/* Detect and erase duplicates node ids */
+			sort( nodeGroupIds.begin(), nodeGroupIds.end() );
+			nodeGroupIds.erase( unique( nodeGroupIds.begin(), nodeGroupIds.end() ), nodeGroupIds.end() );
+			_nodeGroupsIds[it-_nodeGroupNames.begin()] = nodeGroupIds;
+		}
     }
 }
 
@@ -618,7 +734,10 @@ Mesh::getElementTypesNames() const
 void
 Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 {
-	//Searching for face groups
+	int nbCellsSubMesh, nbNodesSubMesh;
+	bool foundFace, foundNode;
+	
+	/* Searching for face groups */
 	vector<string> faceGroups=medmesh->getGroupsNames() ;
 
 	for (unsigned int i=0;i<faceGroups.size();i++ )
@@ -630,17 +749,18 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 		vector<mcIdType>::iterator it = find(nonEmptyGrp.begin(), nonEmptyGrp.end(), -1);
 		if (it != nonEmptyGrp.end())
 		{
-			//cout<<"Boundary face group named "<< groupName << " found"<<endl;
 			MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
             m->unPolyze();
 			m->sortCellsInMEDFileFrmt( );
-			_faceGroups.insert(_faceGroups.begin(),m);//Vector of boundary meshes
-			_faceGroupNames.insert(_faceGroupNames.begin(),groupName);//Vector of boundary names
+			nbCellsSubMesh=m->getNumberOfCells();
+			
+			_faceGroups.insert(_faceGroups.end(),m);//Vector of group meshes
+			_faceGroupNames.insert(_faceGroupNames.end(),groupName);//Vector of group names
+			_faceGroupsIds.insert(_faceGroupsIds.end(),std::vector<int>(nbCellsSubMesh));//Vector of group face Ids. The filling of the face ids takes place below.
+			
 			DataArrayDouble *baryCell = m->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
 			const double *coorBary=baryCell->getConstPointer();
-
-			int nbCellsSubMesh=m->getNumberOfCells();
-			_faceGroupsIds.insert(_faceGroupsIds.begin(),std::vector<int>(nbCellsSubMesh));//Vector of boundary faces
+			/* Face identification */
 			for (int ic(0), k(0); ic<nbCellsSubMesh; ic++, k+=_spaceDim)
 			{
 				vector<double> coorBaryXyz(3,0);
@@ -648,42 +768,27 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 					coorBaryXyz[d] = coorBary[k+d];
 				Point p1(coorBaryXyz[0],coorBaryXyz[1],coorBaryXyz[2]) ;
 
-				int flag=0;
-                /* double min=INFINITY;
-                Point p3;
-                int closestFaceNb;*/
+				foundFace=false;
 				for (int iface=0;iface<_numberOfFaces;iface++ )
 				{
 					Point p2=_faces[iface].getBarryCenter();
-                    /*if(groupName=="Wall" and p1.distance(p2)<min)
-                    {
-                        min=p1.distance(p2);
-                        p3=p2;
-                        closestFaceNb=iface;
-                    }*/
 					if(p1.distance(p2)<_epsilon)
 					{
 						_faces[iface].setGroupName(groupName);
-						_faceGroupsIds[0][ic]=iface;
-						flag=1;
+						_faceGroupsIds[_faceGroupsIds.size()-1][ic]=iface;
+						foundFace=true;
 						break;
 					}
 				}
-                /* if(groupName=="Wall" and min>_epsilon)
-                    {
-                        cout.precision(15);
-                        cout<<"Subcell number "<< ic <<" Min distance to Wall = "<<min <<" p= "<<p1[0]<<" , "<<p1[1]<<" , "<<p1[2]<<endl;
-                        cout<<" attained at face "<< closestFaceNb << " p_min= "<<p3[0]<<" , "<<p3[1]<<" , "<<p3[2]<<endl;
-                    }*/
-				if (flag==0)
-					throw CdmathException("No face belonging to group " + groupName + " found");
+				if (not foundFace)
+					throw CdmathException("No face found for group " + groupName );
 			}
 			baryCell->decrRef();
 			//m->decrRef();
 		}
 	}
 
-	//Searching for node groups
+	/* Searching for node groups */
 	vector<string> nodeGroups=medmesh->getGroupsOnSpecifiedLev(1) ;
 
 	for (unsigned int i=0;i<nodeGroups.size();i++ )
@@ -694,16 +799,16 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 
 		if(nodeids!=NULL)
 		{
-			//cout<<"Boundary node group named "<< groupName << " found"<<endl;
+			_nodeGroups.insert(_nodeGroups.end(),nodeGroup);
+			_nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
 
-			_nodeGroups.insert(_nodeGroups.begin(),nodeGroup);
-			_nodeGroupNames.insert(_nodeGroupNames.begin(),groupName);
-
-			int nbNodesSubMesh=nodeGroup->getNumberOfTuples();//nodeGroup->getNbOfElems();
+			nbNodesSubMesh=nodeGroup->getNumberOfTuples();//nodeGroup->getNbOfElems();
 
 			DataArrayDouble *coo = mu->getCoords() ;
 			const double *cood=coo->getConstPointer();
 
+			_nodeGroupsIds.insert(_nodeGroupsIds.end(),std::vector<int>(nbNodesSubMesh));//Vector of boundary faces
+			/* Node identification */
 			for (int ic(0); ic<nbNodesSubMesh; ic++)
 			{
 				vector<double> coorP(3,0);
@@ -711,21 +816,40 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 					coorP[d] = cood[nodeids[ic]*_spaceDim+d];
 				Point p1(coorP[0],coorP[1],coorP[2]) ;
 
-				int flag=0;
+				foundNode=false;
 				for (int inode=0;inode<_numberOfNodes;inode++ )
 				{
 					Point p2=_nodes[inode].getPoint();
 					if(p1.distance(p2)<_epsilon)
 					{
 						_nodes[inode].setGroupName(groupName);
-						flag=1;
+						_nodeGroupsIds[_nodeGroupsIds.size()-1][ic]=inode;
+						foundNode=true;
 						break;
 					}
 				}
-				if (flag==0)
-					throw CdmathException("No node belonging to group " + groupName + " found");
+				if (not foundNode)
+					throw CdmathException("No node found for group " + groupName );
 			}
 		}
+	}
+	
+	/* Save the boundary data */
+	std::vector<std::string>::iterator it_faces = std::find(_faceGroupNames.begin(),_faceGroupNames.end(),"Boundary");
+	std::vector<std::string>::iterator it_nodes = std::find(_nodeGroupNames.begin(),_nodeGroupNames.end(),"Boundary");
+	
+    if( it_faces == _faceGroupNames.end() )
+    {    //Set face boundary group
+		_boundaryMesh = mu->computeSkin();
+		_faceGroupNames.push_back("Boundary");
+		_faceGroupsIds.push_back( _boundaryFaceIds);
+	    _faceGroups.push_back(_boundaryMesh);
+	}
+    if( it_nodes == _nodeGroupNames.end() )
+    {    //Set node boundary group
+	    _nodeGroupNames.push_back("Boundary");
+		_nodeGroupsIds.push_back( _boundaryNodeIds);
+	    _nodeGroups.push_back(NULL);
 	}
 }
 
@@ -745,8 +869,6 @@ Mesh::setMesh( void )
 
 	mu->unPolyze();
     mu->sortCellsInMEDFileFrmt( );
-	/* Save the boundary mesh for later use*/
-	_boundaryMesh = mu->computeSkin();
 	
 	MEDCouplingUMesh* mu2=mu->buildDescendingConnectivity2(desc,descI,revDesc,revDescI);//mesh of dimension N-1 containing the cell interfaces
     
@@ -1169,10 +1291,6 @@ Mesh::setMesh( void )
         }
     }
 
-    //Set boundary groups
-	_faceGroupNames.push_back("Boundary");
-    _nodeGroupNames.push_back("Boundary");
-    
     desc->decrRef();
 	descI->decrRef();
 	revDesc->decrRef();
@@ -1323,8 +1441,12 @@ Mesh::set1DMesh( void )
     _nodeGroupNames.push_back("Boundary");
     _boundaryFaceIds.push_back(0);
     _boundaryFaceIds.push_back(_numberOfFaces-1);
+    _faceGroupsIds.push_back(_boundaryFaceIds);
     _boundaryNodeIds.push_back(0);
     _boundaryNodeIds.push_back(_numberOfNodes-1);
+    _nodeGroupsIds.push_back(_boundaryNodeIds);
+    _faceGroups.push_back(NULL);
+    _nodeGroups.push_back(NULL);
 
 	fieldl->decrRef();
 	baryCell->decrRef();
@@ -1527,7 +1649,20 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	delete [] dxyzPtr;
 	delete [] nodeStrctPtr;
     
-	setMesh();
+	MEDCouplingUMesh * mu;
+	if(_meshDim>1)
+		mu = setMesh();
+	else
+		mu = set1DMesh();
+
+	/* Save the boundary data */
+	_boundaryMesh = mu->computeSkin();
+	_faceGroupNames.push_back("Boundary");
+	_faceGroupsIds.push_back( _boundaryFaceIds);
+    _faceGroups.push_back(_boundaryMesh);
+    _nodeGroupNames.push_back("Boundary");
+	_nodeGroupsIds.push_back( _boundaryNodeIds);
+    _nodeGroups.push_back(NULL);
 }
 
 //----------------------------------------------------------------------
@@ -1617,7 +1752,20 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	delete [] dxyzPtr;
 	delete [] nodeStrctPtr;
     
-	setMesh();
+	MEDCouplingUMesh * mu;
+	if(_meshDim>1)
+		mu = setMesh();
+	else
+		mu = set1DMesh();
+
+	/* Save the boundary data */
+	_boundaryMesh = mu->computeSkin();
+	_faceGroupNames.push_back("Boundary");
+	_faceGroupsIds.push_back( _boundaryFaceIds);
+    _faceGroups.push_back(_boundaryMesh);
+    _nodeGroupNames.push_back("Boundary");
+	_nodeGroupsIds.push_back( _boundaryNodeIds);
+    _nodeGroups.push_back(NULL);
 }
 
 //----------------------------------------------------------------------
@@ -1972,7 +2120,7 @@ Mesh::getBoundaryGroupMesh ( std::string groupName )  const
 	
     if( it == _faceGroupNames.end() )
     {
-        cout<<"Mesh::getGroupFaceIds Error : face group " << groupName << " does not exist"<<endl;
+        cout<<"Mesh::getBoundaryGroupMesh Error : face group " << groupName << " does not exist"<<endl;
         cout<<"Known face group names are " ;
         for(int i=0; i<_faceGroupNames.size(); i++)
 			cout<< _faceGroupNames[i]<<" ";
@@ -2055,59 +2203,29 @@ Mesh::writeMED ( const std::string fileName ) const
 std::vector< int > 
 Mesh::getFaceGroupIds(std::string groupName, bool isBoundaryGroup) const
 {
-    if( std::find(_faceGroupNames.begin(),_faceGroupNames.end(),groupName) == _faceGroupNames.end() )
+	std::vector<std::string>::const_iterator  it = std::find(_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
+    if( it == _faceGroupNames.end() )
     {
         cout<<"Mesh::getGroupFaceIds Error : face group " << groupName << " does not exist"<<endl;
         throw CdmathException("Required face group does not exist");
     }
     else
-    {
-        std::vector< int > result(0);
-        if(isBoundaryGroup)        
-	        for(int i=0; i<_boundaryFaceIds.size(); i++)
-	        {
-	            vector< std::string > groupNames = getFace(_boundaryFaceIds[i]).getGroupNames();
-	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
-	                result.push_back(_boundaryFaceIds[i]);
-	        }
-		else
-	        for(int i=0; i<_numberOfFaces; i++)
-	        {
-	            vector< std::string > groupNames = getFace(i).getGroupNames();
-	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
-	                result.push_back(i);
-	        }
-        return result;
-    }
+    {   
+		return _faceGroupsIds[it-_faceGroupNames.begin()];
+	}
 }
 
 std::vector< int > 
 Mesh::getNodeGroupIds(std::string groupName, bool isBoundaryGroup) const
 {
-    if( std::find(_nodeGroupNames.begin(),_nodeGroupNames.end(),groupName) == _nodeGroupNames.end() )
+	std::vector<std::string>::const_iterator  it = std::find(_nodeGroupNames.begin(),_nodeGroupNames.end(),groupName);
+    if( it == _nodeGroupNames.end() )
     {
         cout<<"Mesh::getGroupNodeIds Error : node group " << groupName << " does not exist"<<endl;
         throw CdmathException("Required node group does not exist");
     }
     else
-    {
-        std::vector< int > result(0);
-        if(isBoundaryGroup)        
-	        for(int i=0; i<_boundaryNodeIds.size(); i++)
-	        {
-	            vector< std::string > groupNames = getNode(_boundaryNodeIds[i]).getGroupNames();
-	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
-	                result.push_back(_boundaryNodeIds[i]);
-	        }
-		else
-	        for(int i=0; i<_numberOfNodes; i++)
-	        {
-	            vector< std::string > groupNames = getNode(i).getGroupNames();
-	            if( std::find(groupNames.begin(), groupNames.end(),groupName) != groupNames.end() )
-	                result.push_back(i);
-	        }
-        return result;
-    }
+        return _nodeGroupsIds[it-_nodeGroupNames.begin()];
 }
 
 void 
