@@ -1659,11 +1659,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	delete [] dxyzPtr;
 	delete [] nodeStrctPtr;
     
-	MEDCouplingUMesh * mu;
-	if(_meshDim>1)
-		mu = setMesh();
-	else
-		mu = set1DMesh();
+	MEDCouplingUMesh * mu = setMesh();
 
 	/* Save the boundary data */
 	_boundaryMesh = mu->computeSkin();
@@ -1762,11 +1758,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	delete [] dxyzPtr;
 	delete [] nodeStrctPtr;
     
-	MEDCouplingUMesh * mu;
-	if(_meshDim>1)
-		mu = setMesh();
-	else
-		mu = set1DMesh();
+	MEDCouplingUMesh * mu = setMesh();
 
 	/* Save the boundary data */
 	_boundaryMesh = mu->computeSkin();
