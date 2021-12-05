@@ -934,11 +934,6 @@ Mesh::setMesh( void )
 	const mcIdType *tmpC =revCell->getConstPointer();//Used to know which faces surround a given node
 	const mcIdType *tmpCI=revCellI->getConstPointer();
 
-	const DataArrayIdType *nodalmu  = mu->getNodalConnectivity() ;
-	const DataArrayIdType *nodalImu = mu->getNodalConnectivityIndex() ;
-	const mcIdType *tmpNEmu =nodalmu->getConstPointer();//Used to detect isolated nodes in medcouplingmesh
-	const mcIdType *tmpNEImu=nodalImu->getConstPointer();
-
 	const DataArrayIdType *nodal  = mu2->getNodalConnectivity() ;
 	const DataArrayIdType *nodalI = mu2->getNodalConnectivityIndex() ;
 	const mcIdType *tmpNE =nodal->getConstPointer();//Used to know which nodes surround a given face
@@ -1357,11 +1352,6 @@ Mesh::set1DMesh( void )
 	const mcIdType *tmpA =revDesc->getConstPointer();//Lists the cells surrounding each face
 	const mcIdType *tmpAI=revDescI->getConstPointer();
 
-	const DataArrayIdType *nodalmu  = mu->getNodalConnectivity() ;
-	const DataArrayIdType *nodalImu = mu->getNodalConnectivityIndex() ;
-	const mcIdType *tmpNEmu =nodalmu->getConstPointer();//Used to detect isolated nodes in medcouplingmesh
-	const mcIdType *tmpNEImu=nodalImu->getConstPointer();
-
 	const DataArrayIdType *nodal  = mu2->getNodalConnectivity() ;
 	const DataArrayIdType *nodalI = mu2->getNodalConnectivityIndex() ;
 	const mcIdType *tmpNE =nodal->getConstPointer();//Used to know which nodes surround a given face
@@ -1532,6 +1522,8 @@ Mesh::set1DMesh( void )
 	descI->decrRef();
 	revDesc->decrRef();
 	revDescI->decrRef();
+	revCell->decrRef();
+	revCellI->decrRef();
 	revNode->decrRef();
 	revNodeI->decrRef();
 	mu2->decrRef();
