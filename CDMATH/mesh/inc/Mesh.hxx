@@ -263,7 +263,7 @@ public: //----------------------------------------------------------------
 	/**
 	 * \brief return a group surrounding the mesh
 	 */
-	Mesh getBoundaryGroupMesh ( std::string groupName )  const ;
+	Mesh getBoundaryGroupMesh ( std::string groupName, int nth_group_match = 0 )  const ;
 
 	/**
 	 * \brief return the list of face group names

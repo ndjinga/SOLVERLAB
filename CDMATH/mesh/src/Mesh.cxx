@@ -1967,12 +1967,12 @@ Mesh::getBoundaryMesh ( void )  const
 }
 
 Mesh 
-Mesh::getBoundaryGroupMesh ( std::string groupName )  const 
+Mesh::getBoundaryGroupMesh ( std::string groupName, int nth_occurence )  const 
 {
-	//search group name in known group name list
-	const std::vector<std::string>::const_iterator it = std::find(_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
+	//count occurences of groupName in known group name list
+	int count_occurences = std::count (_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
 	
-    if( it == _faceGroupNames.end() )
+    if( count_occurences ==0 )//No group found
     {
         cout<<"Mesh::getBoundaryGroupMesh Error : face group " << groupName << " does not exist"<<endl;
         cout<<"Known face group names are " ;
@@ -1981,8 +1981,21 @@ Mesh::getBoundaryGroupMesh ( std::string groupName )  const
 		cout<< endl;
         throw CdmathException("Required face group does not exist");
     }
-    else
-		return Mesh(_faceGroups[it - _faceGroupNames.begin()]);	
+    else if ( count_occurences <= nth_occurence)//Too many groups found
+    {
+        cout<<"Mesh::getBoundaryGroupMesh Error : "<<count_occurences<<" groups have name " << groupName<<", but you asked fo occurencer number "<<nth_occurence<<"which is too large"<<endl;
+        cout<<"Call function getBoundaryGroupMesh ( string groupName, int nth_group_match ) with nth_group_match between 0 and "<<count_occurences-1<<" to discriminate them "<<endl ;
+        throw CdmathException("Several face groups have the same name but you asked for an occurence that does not exsit");
+    }
+    else if( count_occurences >1 )//Wrning several groups found
+		cout<<"Warning : "<<count_occurences<<" groups have name " << groupName<<". Searching occurence number "<<nth_occurence<<endl;
+		
+	//search occurence of group name in known group name list
+	std::vector<std::string>::const_iterator it = _faceGroupNames.begin();
+	for (int i = 0; i<nth_occurence+1; i++)
+		it = std::find(it,_faceGroupNames.end(),groupName);
+		
+	return Mesh(_faceGroups[it - _faceGroupNames.begin()]);	
 }
 
 int 
