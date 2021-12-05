@@ -862,6 +862,13 @@ MEDCouplingUMesh*
 Mesh::setMesh( void )
 //----------------------------------------------------------------------
 {
+	/* This is the main function translating medcouplingumesh info into Mesh class to be used when designing numerical methods
+	 * We need the level 0 mesh to extract the cell-node connectvity
+	 * We need the level -1 mesh to extract the cell-face and face-node connectivities (use o build descending connectivity)
+	 * Be careful : the nodes in the medcoupling mesh are not necessarily all conected to a cell/face. 
+	 * Mesh class discard isolated nodes, hence the number of nodes in Mesh class can be lower than the number of nodes in medcouplingumesh.
+	 */
+	 
 	if(_meshDim<2)
 		throw CdmathException("Mesh::setMesh should be called for meshes with dimension greater than 1 (ie with meshDim>1)");
 
@@ -870,19 +877,21 @@ Mesh::setMesh( void )
 	DataArrayIdType *revDesc  = DataArrayIdType::New();
 	DataArrayIdType *revDescI = DataArrayIdType::New();
 	MEDCouplingUMesh* mu = _mesh->buildUnstructured();
-
+	MEDCouplingUMesh* mu2;//mesh of dimension N-1 containing the cell interfaces->cell/face connectivity
+	
 	mu->unPolyze();
     mu->sortCellsInMEDFileFrmt( );
 	
-	MEDCouplingUMesh* mu2=mu->buildDescendingConnectivity2(desc,descI,revDesc,revDescI);//mesh of dimension N-1 containing the cell interfaces
-    
-    const mcIdType *tmp = desc->getConstPointer();
+	if(_meshDim<2)
+		mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
+	else
+		mu2=mu->buildDescendingConnectivity2(desc,descI,revDesc,revDescI);
+	
+    const mcIdType *tmp = desc->getConstPointer();//Lists the faces surrounding each cell
     const mcIdType *tmpI=descI->getConstPointer();
 
-	const mcIdType *tmpA =revDesc->getConstPointer();
+	const mcIdType *tmpA =revDesc->getConstPointer();//Lists the cells surrounding each face
 	const mcIdType *tmpAI=revDescI->getConstPointer();
-
-    //const int *work=tmp+tmpI[id];//corresponds to buildDescendingConnectivity
 
 	//Test du type d'éléments contenus dans le maillage afin d'éviter les éléments contenant des points de gauss
 	_eltsTypes=mu->getAllGeoTypesSorted();
@@ -903,37 +912,42 @@ Mesh::setMesh( void )
 	}
 
 	DataArrayDouble *baryCell = mu->computeCellCenterOfMass() ;
-	const double *coorBary=baryCell->getConstPointer();
+	const double *coorBary=baryCell->getConstPointer();//Used for cell center coordinates
 
 	MEDCouplingFieldDouble* fields=mu->getMeasureField(true);
 	DataArrayDouble *surface = fields->getArray();
-	const double *surf=surface->getConstPointer();
+	const double *surf=surface->getConstPointer();//Used for cell lendght/surface/volume
 
 	DataArrayDouble *coo = mu->getCoords() ;
-	const double    *cood=coo->getConstPointer();
+	const double    *cood=coo->getConstPointer();//Used for nodes coordinates
 
 	DataArrayIdType *revNode =DataArrayIdType::New();
 	DataArrayIdType *revNodeI=DataArrayIdType::New();
 	mu->getReverseNodalConnectivity(revNode,revNodeI) ;
-	const mcIdType *tmpN =revNode->getConstPointer();
+	const mcIdType *tmpN =revNode->getConstPointer();//Used to know which cells surround a given node
 	const mcIdType *tmpNI=revNodeI->getConstPointer();
 
 	DataArrayIdType *revCell =DataArrayIdType::New();
 	DataArrayIdType *revCellI=DataArrayIdType::New();
-	mu2->getReverseNodalConnectivity(revCell,revCellI) ;
-	const mcIdType *tmpC =revCell->getConstPointer();
+	mu2->getReverseNodalConnectivity(revCell,revCellI);
+	const mcIdType *tmpC =revCell->getConstPointer();//Used to know which faces surround a given node
 	const mcIdType *tmpCI=revCellI->getConstPointer();
+
+	const DataArrayIdType *nodalmu  = mu->getNodalConnectivity() ;
+	const DataArrayIdType *nodalImu = mu->getNodalConnectivityIndex() ;
+	const mcIdType *tmpNEmu =nodalmu->getConstPointer();//Used to detect isolated nodes in medcouplingmesh
+	const mcIdType *tmpNEImu=nodalImu->getConstPointer();
 
 	const DataArrayIdType *nodal  = mu2->getNodalConnectivity() ;
 	const DataArrayIdType *nodalI = mu2->getNodalConnectivityIndex() ;
-	const mcIdType *tmpNE =nodal->getConstPointer();
+	const mcIdType *tmpNE =nodal->getConstPointer();//Used to know which nodes surround a given face
 	const mcIdType *tmpNEI=nodalI->getConstPointer();
 
 	_numberOfCells = mu->getNumberOfCells() ;
 	_cells      = new Cell[_numberOfCells] ;
 
-	_numberOfNodes = mu->getNumberOfNodes() ;
-	_nodes      = new Node[_numberOfNodes] ;
+	_numberOfNodes = mu->getNumberOfNodes() ;//This number may include isolated nodes that will not be loaded. The number will be updated during nodes constructions
+	_nodes      = new Node[_numberOfNodes] ;//This array may be resized if isolated nodes are found
 
 	_numberOfFaces = mu2->getNumberOfCells();
 	_faces       = new Face[_numberOfFaces] ;
@@ -1018,8 +1032,6 @@ Mesh::setMesh( void )
 				vi.addNeighbourNodeId(el,workn[el]) ;
 			_nodes[id] = vi ;
 		}
-        _boundaryNodeIds.push_back(0);
-        _boundaryNodeIds.push_back(_numberOfNodes-1);
 
 		for(int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim)
 		{
@@ -1036,15 +1048,27 @@ Mesh::setMesh( void )
 
 			_faces[id] = fi ;
 		}
+		_faceGroupNames.push_back("Boundary");
         _boundaryFaceIds.push_back(0);
         _boundaryFaceIds.push_back(_numberOfFaces-1);
+		_faceGroupsIds.push_back(_boundaryFaceIds);
+		_faceGroups.push_back(NULL);
+		_nodeGroupNames.push_back("Boundary");
+        _boundaryNodeIds.push_back(0);
+        _boundaryNodeIds.push_back(_numberOfNodes-1);
+		_nodeGroupsIds.push_back(_boundaryNodeIds);
+		_nodeGroups.push_back(NULL);
 	}
 	else if(_spaceDim==2  || _spaceDim==3)
 	{
-		DataArrayDouble *barySeg = mu2->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
+		DataArrayDouble *barySeg = mu2->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;//Used as face center
 		const double *coorBarySeg=barySeg->getConstPointer();
 
-		MEDCouplingFieldDouble* fieldn;
+		MEDCouplingFieldDouble* fieldl=mu2->getMeasureField(true);
+		DataArrayDouble *longueur = fieldl->getArray();
+		const double *lon=longueur->getConstPointer();//The lenght/area of each face
+
+		MEDCouplingFieldDouble* fieldn;//The normal to each face
 		DataArrayDouble *normal;
 		const double *tmpNormal;
 
@@ -1157,10 +1181,6 @@ Mesh::setMesh( void )
 			_cells[id] = ci ;
 		}
 
-		MEDCouplingFieldDouble* fieldl=mu2->getMeasureField(true);
-		DataArrayDouble *longueur = fieldl->getArray();
-		const double *lon=longueur->getConstPointer();
-
 		if(_spaceDim!=_meshDim)
 		{
 			/* Since spaceDim!=meshDim, don't build normal to faces */
@@ -1172,7 +1192,7 @@ Mesh::setMesh( void )
 		/*Building mesh faces */
 		for(int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim)
 		{
-			vector<double> coorBarySegXyz(3,0);
+			vector<double> coorBarySegXyz(3);
 			for (int d=0; d<_spaceDim; d++)
 				coorBarySegXyz[d] = coorBarySeg[k+d];
 			Point p(coorBarySegXyz[0],coorBarySegXyz[1],coorBarySegXyz[2]) ;
@@ -1331,63 +1351,71 @@ Mesh::set1DMesh( void )
 	DataArrayIdType *descI=DataArrayIdType::New();
 	DataArrayIdType *revDesc=DataArrayIdType::New();
 	DataArrayIdType *revDescI=DataArrayIdType::New();
-	MEDCouplingUMesh* mu=_mesh->buildUnstructured();
+	MEDCouplingUMesh *mu=_mesh->buildUnstructured();
 	MEDCouplingUMesh *mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
 
-	const mcIdType *tmp=desc->getConstPointer();
+	const mcIdType *tmp=desc->getConstPointer();//Lists the faces surrounding each cell
 	const mcIdType *tmpI=descI->getConstPointer();
 
-	const mcIdType *tmpA =revDesc->getConstPointer();
+	const mcIdType *tmpA =revDesc->getConstPointer();//Lists the cells surrounding each face
 	const mcIdType *tmpAI=revDescI->getConstPointer();
+
+	const DataArrayIdType *nodalmu  = mu->getNodalConnectivity() ;
+	const DataArrayIdType *nodalImu = mu->getNodalConnectivityIndex() ;
+	const mcIdType *tmpNEmu =nodalmu->getConstPointer();//Used to detect isolated nodes in medcouplingmesh
+	const mcIdType *tmpNEImu=nodalImu->getConstPointer();
+
+	const DataArrayIdType *nodal  = mu2->getNodalConnectivity() ;
+	const DataArrayIdType *nodalI = mu2->getNodalConnectivityIndex() ;
+	const mcIdType *tmpNE =nodal->getConstPointer();//Used to know which nodes surround a given face
+	const mcIdType *tmpNEI=nodalI->getConstPointer();
 
 	_eltsTypes=mu->getAllGeoTypesSorted();
 
-	_numberOfCells = _mesh->getNumberOfCells() ;
+	_numberOfCells = mu->getNumberOfCells() ;
 	_cells    = new Cell[_numberOfCells] ;
 
-	_numberOfNodes = mu->getNumberOfNodes() ;
+	_numberOfNodes = mu->getNumberOfNodes() ;//This may include nodes that are not used in the mesh
 	_nodes    = new Node[_numberOfNodes] ;
 
-	_numberOfFaces = _numberOfNodes;
+	_numberOfFaces = mu2->getNumberOfCells();
 	_faces    = new Face[_numberOfFaces] ;
 
 	_numberOfEdges = _numberOfCells;
-    
-	_eltsTypes=mu->getAllGeoTypesSorted();
 
 	DataArrayDouble *baryCell = mu->computeCellCenterOfMass() ;
-	const double *coorBary=baryCell->getConstPointer();
+	const double *coorBary=baryCell->getConstPointer();//Used for cell center coordinates
+
+	DataArrayDouble *barySeg = mu2->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;//Used as face center
+	const double *coorBarySeg=barySeg->getConstPointer();
 
 	DataArrayDouble *coo = mu->getCoords() ;
-	const double *cood=coo->getConstPointer();
+	const double *cood=coo->getConstPointer();//Used for nodes coordinates
 
 	MEDCouplingFieldDouble* fieldl=mu->getMeasureField(true);
 	DataArrayDouble *longueur = fieldl->getArray();
-	const double *lon=longueur->getConstPointer();
+	const double *lon=longueur->getConstPointer();//Used for cell lendght/surface/volume
 
 	double xn, yn=0., zn=0.;//Components of the normal vector at a cell interface
 	double norm;
 	for( int id=0;id<_numberOfCells;id++ )
 	{
-		int nbVertices=mu->getNumberOfNodesInCell(id) ;
-		Point p(0,0.0,0.0) ;
+		Point p(0.0,0.0,0.0) ;
 		for(int idim=0; idim<_spaceDim; idim++)
 			p[idim]=coorBary[id*_spaceDim+idim];
-		Cell ci( nbVertices, nbVertices, lon[id], p ) ;
 
 		std::vector<mcIdType> nodeIdsOfCell ;
 		mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
-		for( int el=0;el<nbVertices;el++ )
-		{
-			ci.addNodeId(el,nodeIdsOfCell[el]) ;
-			ci.addFaceId(el,nodeIdsOfCell[el]) ;
-		}
+
+        mcIdType nbFaces=tmpI[id+1]-tmpI[id];
+        const mcIdType *work=tmp+tmpI[id];
+
 		/* compute the normal to the face */
-            xn = cood[nodeIdsOfCell[0]*_spaceDim  ] - cood[nodeIdsOfCell[nbVertices-1]*_spaceDim  ];
+            xn = cood[nodeIdsOfCell[0]*_spaceDim  ] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim  ];
         if(_spaceDim>1)        
-			yn = cood[nodeIdsOfCell[0]*_spaceDim+1] - cood[nodeIdsOfCell[nbVertices-1]*_spaceDim+1];
+			yn = cood[nodeIdsOfCell[0]*_spaceDim+1] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+1];
         if(_spaceDim>2)        
-			zn = cood[nodeIdsOfCell[0]*_spaceDim+2] - cood[nodeIdsOfCell[nbVertices-1]*_spaceDim+2];
+			zn = cood[nodeIdsOfCell[0]*_spaceDim+2] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+2];
 		norm = sqrt(xn*xn+yn*yn+zn*zn);
 		if(norm<_epsilon)
 			throw CdmathException("!!! Mesh::set1DMesh Normal vector has norm 0 !!!");
@@ -1397,11 +1425,11 @@ Mesh::set1DMesh( void )
 			yn /= norm;
 			zn /= norm;
 		}
-        mcIdType nbFaces=tmpI[id+1]-tmpI[id];
-        const mcIdType *work=tmp+tmpI[id];
-		
+        
+		Cell ci( nbFaces, nbFaces, lon[id], p ) ;//nbCells=nbFaces
         for( int el=0;el<nbFaces;el++ )
 		{
+			ci.addNodeId(el,nodeIdsOfCell[el]) ;
 			ci.addNormalVector(el,xn,yn,zn) ;
 			ci.addFaceId(el,work[el]) ;
 			xn = - xn; yn=-yn; zn=-zn;
@@ -1430,7 +1458,7 @@ Mesh::set1DMesh( void )
 	    const mcIdType *workn=tmpA+tmpAI[id];
 	    mcIdType nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
         
-		//cout<<"nbCells= "<<nbCells<<" nbNeighbourNodes "<<nbNeighbourNodes<<endl;
+		cout<<"Nodes : nbCells= "<<nbCells<<" nbNeighbourNodes "<<nbNeighbourNodes<<endl;
 		Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
         for( int el=0;el<nbCells;el++ )
 			vi.addCellId(el,workc[el]) ;
@@ -1439,19 +1467,41 @@ Mesh::set1DMesh( void )
         for( int el=0;el<nbNeighbourNodes;el++ )
 			vi.addNeighbourNodeId(el,workn[el]) ;
 		_nodes[id] = vi ;
+	}
+
+	for( int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim )
+	{
+		vector<double> coorBarySegXyz(3);
+		for (int d=0; d<_spaceDim; d++)
+			coorBarySegXyz[d] = coorBarySeg[k+d];
+		Point p(coorBarySegXyz[0],coorBarySegXyz[1],coorBarySegXyz[2]) ;
 
 		int nbVertices=1;
-		Face fi( nbVertices, nbCells, 1.0, p, 1., 0., 0. ) ;
-	    for( int el=0;el<nbVertices;el++ )
-			fi.addNodeId(el,id) ;
+	    const mcIdType *workc=tmpA+tmpAI[id];
+	    mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
+	    
+		const mcIdType *workv=tmpNE+tmpNEI[id]+1;
+		mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;//Normally equal to 1.
 
-		for( int el=0;el<nbCells;el++ )
-			fi.addCellId(el,workc[el]) ;
+		Face fi( nbNodes, nbCells, 1.0, p, 1., 0., 0. ) ;
+		for(int node_id=0; node_id<nbNodes;node_id++)
+			fi.addNodeId(node_id,workv[node_id]) ;
+
+		fi.addCellId(0,workc[0]) ;
+		for(int cell_id=1; cell_id<nbCells;cell_id++)
+		{
+			int cell_idx=0;
+			if (workc[cell_id]!=workc[cell_id-1])//For some meshes (bad ones) the same cell can appear several times
+				{
+				fi.addCellId(cell_idx+1,workc[cell_id]) ;
+				cell_idx++;
+				}                
+		}
 		_faces[id] = fi ;
 	}
 
     //Set boundary groups
-	_faceGroupNames.push_back("Boundary");
+    _faceGroupNames.push_back("Boundary");
     _nodeGroupNames.push_back("Boundary");
     _boundaryFaceIds.push_back(0);
     _boundaryFaceIds.push_back(_numberOfFaces-1);
