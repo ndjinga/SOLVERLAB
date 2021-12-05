@@ -1481,37 +1481,42 @@ Mesh::set1DMesh( void )
 		_faces[id] = fi ;
 	}
 
+	int correctNbNodes=0;
 	for( int id=0;id<_numberOfNodes;id++ )
 	{
-		std::vector<double> coo(0) ;
-		mu->getCoordinatesOfNode(id,coo);
-		Point p(0,0.0,0.0) ;
-		for(int idim=0; idim<_spaceDim; idim++)
-			p[idim]=coo[idim];
-
 		const mcIdType *workc=tmpN+tmpNI[id];
 		mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
-		assert( nbCells>0);//To make sure this is not an isolated node
-
-		const mcIdType *workf=tmpC+tmpCI[id];
-		mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
-		assert( nbFaces==1);
-
-	    const mcIdType *workn=tmpA+tmpAI[id];
-	    mcIdType nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
-        
-		Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
-        for( int el=0;el<nbCells;el++ )
-			vi.addCellId(el,workc[el]) ;
-        for( int el=0;el<nbNeighbourNodes;el++ )
-			vi.addNeighbourNodeId(el,workn[el]) ;//global node number
-        //Detection of border nodes    
-		for( int el=0;el<nbFaces;el++ )
-			vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
- 		if(vi.isBorder())
-			_boundaryNodeIds.push_back(id);
-		_nodes[id] = vi ;
+		
+		if( nbCells>0)//To make sure this is not an isolated node
+		{
+			correctNbNodes++;
+			std::vector<double> coo(0) ;
+			mu->getCoordinatesOfNode(id,coo);
+			Point p(0,0.0,0.0) ;
+			for(int idim=0; idim<_spaceDim; idim++)
+				p[idim]=coo[idim];
+	
+			const mcIdType *workf=tmpC+tmpCI[id];
+			mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+			assert( nbFaces==1);
+	
+		    const mcIdType *workn=tmpN+tmpNI[id];
+		    mcIdType nbNeighbourNodes=tmpNI[id+1]-tmpNI[id];
+	        
+			Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
+	        for( int el=0;el<nbCells;el++ )
+				vi.addCellId(el,workc[el]) ;
+	        for( int el=0;el<nbNeighbourNodes;el++ )
+				vi.addNeighbourNodeId(el,workn[el]) ;//global node number
+			for( int el=0;el<nbFaces;el++ )
+				vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
+	 		if(vi.isBorder())
+				_boundaryNodeIds.push_back(id);
+			_nodes[id] = vi ;
+		}
 	}
+	if( _numberOfNodes!=correctNbNodes)
+		cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
 
     //Set boundary groups
     _faceGroupNames.push_back("Boundary");
