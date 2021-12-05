@@ -49,6 +49,7 @@ Mesh::Mesh( void )
 	_zMax=0.;
     _nxyz.resize(0);
     _dxyz.resize(0.);
+	_boundaryMesh=NULL;
     _boundaryFaceIds.resize(0);
     _boundaryNodeIds.resize(0);
 	_faceGroupNames.resize(0);
@@ -70,13 +71,11 @@ Mesh::~Mesh( void )
 	delete [] _nodes;
 	delete [] _faces;
 	
-    //Not sure why but this is needed to avoid memory errors
-    //dynamic_cast<MEDCoupling::MEDCouplingIMesh*> (_mesh.retn());
-	if( _meshNotDeleted)
-		(_mesh.retn())->decrRef();
 	//for(int i=0; i< _faceGroups.size(); i++)
 	//	_faceGroups[i]->decrRef();
 	//	_nodeGroups[i]->decrRef();
+	if( _meshNotDeleted)
+		(_mesh.retn())->decrRef();
 }
 
 std::string 
@@ -917,7 +916,7 @@ Mesh::setMesh( void )
 
 	MEDCouplingFieldDouble* fields=mu->getMeasureField(true);
 	DataArrayDouble *surface = fields->getArray();
-	const double *surf=surface->getConstPointer();//Used for cell lendght/surface/volume
+	const double *surf=surface->getConstPointer();//Used for cell lenght/surface/volume
 
 	DataArrayDouble *coo = mu->getCoords() ;
 	const double    *cood=coo->getConstPointer();//Used for nodes coordinates
@@ -977,83 +976,129 @@ Mesh::setMesh( void )
 	// _cells, _nodes and _faces initialization:
 	if (_spaceDim == 1)
 	{
+		double xn, yn=0., zn=0.;//Components of the normal vector at a cell interface
+		double norm;
 		for( int id=0;id<_numberOfCells;id++ )
 		{
-			const mcIdType *work=tmp+tmpI[id];
-            int nbFaces=tmpI[id+1]-tmpI[id];
-			
-			int nbVertices=mu->getNumberOfNodesInCell(id) ;
-            
-			Cell ci( nbVertices, nbFaces, surf[id], Point(coorBary[id], 0.0, 0.0) ) ;
-
+			Point p(0.0,0.0,0.0) ;
+			for(int idim=0; idim<_spaceDim; idim++)
+				p[idim]=coorBary[id*_spaceDim+idim];
+	
+			mcIdType nbVertices=mu->getNumberOfNodesInCell(id) ;//should be equal to 2
+			assert( nbVertices==2);
 			std::vector<mcIdType> nodeIdsOfCell ;
 			mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
-			for( int el=0;el<nbVertices;el++ )
-            {
-				ci.addNodeId(el,nodeIdsOfCell[el]) ;
-                ci.addFaceId(el,nodeIdsOfCell[el]) ;
-            }
-            
-            //This assumes that in a 1D mesh the cell numbers form a consecutive sequence 
-            //going either from left to right (xn=-1) or right to left (xn=1)
-			double xn = (cood[nodeIdsOfCell[nbVertices-1]] - cood[nodeIdsOfCell[0]] > 0.0) ? -1.0 : 1.0;
-
-			for( int el=0;el<nbFaces;el++ )
+	
+	        mcIdType nbFaces=tmpI[id+1]-tmpI[id];//should be equal to 2
+			assert( nbFaces==2);
+	        const mcIdType *work=tmp+tmpI[id];
+	
+			/* compute the normal to the face */
+	            xn = cood[nodeIdsOfCell[0]*_spaceDim  ] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim  ];
+	        if(_spaceDim>1)        
+				yn = cood[nodeIdsOfCell[0]*_spaceDim+1] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+1];
+	        if(_spaceDim>2)        
+				zn = cood[nodeIdsOfCell[0]*_spaceDim+2] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+2];
+			norm = sqrt(xn*xn+yn*yn+zn*zn);
+			if(norm<_epsilon)
+				throw CdmathException("!!! Mesh::setMesh Normal vector has norm 0 !!!");
+			else
 			{
-				ci.addNormalVector(el,xn,0.0,0.0) ;
-				int indexFace=abs(work[el])-1;
-                ci.addFaceId(el,indexFace) ;
-				xn = - xn;
+				xn /= norm;
+				yn /= norm;
+				zn /= norm;
+			}
+	        
+			Cell ci( nbVertices, nbFaces, surf[id], p ) ;//nbCells=nbFaces=2
+	        for( int el=0;el<nbFaces;el++ )
+			{
+				ci.addNodeId(el,nodeIdsOfCell[el]) ;//global node number
+				ci.addNormalVector(el,xn,yn,zn) ;
+				ci.addFaceId(el,work[el]) ;
+				xn = - xn; yn=-yn; zn=-zn;
 			}
 			_cells[id] = ci ;
 		}
-
-		for( int id(0), k(0); id<_numberOfNodes; id++, k+=_spaceDim)
+	
+		for( int id(0); id<_numberOfFaces; id++ )
 		{
-			Point p(cood[k], 0.0, 0.0) ;
-			const mcIdType *workc=tmpN+tmpNI[id];
-			mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
-
-			const mcIdType *workf=tmpC+tmpCI[id];
-			mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
-            const mcIdType *workn=tmpA+tmpAI[id];
-            mcIdType nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
-			Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
-
-			for( int el=0;el<nbCells;el++ )
-				vi.addCellId(el,workc[el]) ;
-			for( int el=0;el<nbFaces;el++ )
-				vi.addFaceId(el,workf[el]) ;
-			for( int el=0;el<nbNeighbourNodes;el++ )
-				vi.addNeighbourNodeId(el,workn[el]) ;
-			_nodes[id] = vi ;
-		}
-
-		for(int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim)
-		{
-			Point p(cood[k], 0.0, 0.0) ;
-			const mcIdType *workc=tmpA+tmpAI[id];
-			mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
-
 			const mcIdType *workv=tmpNE+tmpNEI[id]+1;
-			Face fi( 1, nbCells, 1.0, p, 1.0, 0.0, 0.0) ;
-			fi.addNodeId(0,workv[0]) ;
-
-			for(int idCell=0; idCell<nbCells; idCell++)
-				fi.addCellId(idCell,workc[idCell]) ;
-
+			mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;//Normally equal to 1.
+			assert( nbNodes==1);
+	
+			std::vector<double> coo(0) ;
+			mu2->getCoordinatesOfNode(workv[0],coo);
+			Point p(0,0.0,0.0) ;
+			for(int idim=0; idim<_spaceDim; idim++)
+				p[idim]=coo[idim];
+	
+		    const mcIdType *workc=tmpA+tmpAI[id];
+		    mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
+			assert( nbCells>0);//To make sure our face is not located on an isolated node
+		    
+			Face fi( nbNodes, nbCells, 1.0, p, 1., 0., 0. ) ;
+			for(int node_id=0; node_id<nbNodes;node_id++)//This loop could b deleted since nbNodes=1. Trying to merge with setMesh
+				fi.addNodeId(node_id,workv[node_id]) ;//global node number
+	
+			fi.addCellId(0,workc[0]) ;
+			for(int cell_id=1; cell_id<nbCells;cell_id++)
+			{
+				int cell_idx=0;
+				if (workc[cell_id]!=workc[cell_id-1])//For some meshes (bad ones) the same cell can appear several times
+					{
+					fi.addCellId(cell_idx+1,workc[cell_id]) ;
+					cell_idx++;
+					}                
+			}
+			if(nbCells==1)
+				_boundaryFaceIds.push_back(id);
 			_faces[id] = fi ;
 		}
-		_faceGroupNames.push_back("Boundary");
-        _boundaryFaceIds.push_back(0);
-        _boundaryFaceIds.push_back(_numberOfFaces-1);
-		_faceGroupsIds.push_back(_boundaryFaceIds);
-		_faceGroups.push_back(NULL);
-		_nodeGroupNames.push_back("Boundary");
-        _boundaryNodeIds.push_back(0);
-        _boundaryNodeIds.push_back(_numberOfNodes-1);
-		_nodeGroupsIds.push_back(_boundaryNodeIds);
-		_nodeGroups.push_back(NULL);
+	
+		int correctNbNodes=0;
+		for( int id=0;id<_numberOfNodes;id++ )
+		{
+			const mcIdType *workc=tmpN+tmpNI[id];
+			mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
+			
+			if( nbCells>0)//To make sure this is not an isolated node
+			{
+				correctNbNodes++;
+				std::vector<double> coo(0) ;
+				mu->getCoordinatesOfNode(id,coo);
+				Point p(0,0.0,0.0) ;
+				for(int idim=0; idim<_spaceDim; idim++)
+					p[idim]=coo[idim];
+		
+				const mcIdType *workf=tmpC+tmpCI[id];
+				mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+				assert( nbFaces==1);
+		
+			    const mcIdType *workn=tmpN+tmpNI[id];
+			    mcIdType nbNeighbourNodes=tmpNI[id+1]-tmpNI[id];
+		        
+				Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
+		        for( int el=0;el<nbCells;el++ )
+					vi.addCellId(el,workc[el]) ;
+		        for( int el=0;el<nbNeighbourNodes;el++ )
+					vi.addNeighbourNodeId(el,workn[el]) ;//global node number
+				for( int el=0;el<nbFaces;el++ )
+					vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
+		 		if(vi.isBorder())
+					_boundaryNodeIds.push_back(id);
+				_nodes[id] = vi ;
+			}
+		}
+		if( _numberOfNodes!=correctNbNodes)
+			cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
+	
+	    //Set boundary groups
+	    _faceGroupNames.push_back("Boundary");
+	    _nodeGroupNames.push_back("Boundary");
+	    _faceGroupsIds.push_back(_boundaryFaceIds);
+	    _nodeGroupsIds.push_back(_boundaryNodeIds);
+	    _faceGroups.push_back(NULL);
+	    _nodeGroups.push_back(NULL);
 	}
 	else if(_spaceDim==2  || _spaceDim==3)
 	{
@@ -1237,47 +1282,55 @@ Mesh::setMesh( void )
 		}
 
 		/*Building mesh nodes, should be done after building mesh faces in order to detect boundary nodes*/
+		int correctNbNodes=0;
 		for(int id(0), k(0); id<_numberOfNodes; id++, k+=_spaceDim)
 		{
-			vector<double> coorP(3,0);
-			for (int d=0; d<_spaceDim; d++)
-				coorP[d] = cood[k+d];
-			Point p(coorP[0],coorP[1],coorP[2]) ;
-
 			const mcIdType *workc=tmpN+tmpNI[id];
 			mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
-			const mcIdType *workf=tmpC+tmpCI[id];
-			mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
-			const mcIdType *workn;
-			mcIdType nbNeighbourNodes;
-            if (_meshDim == 1)
-            {
-                workn=tmpA+tmpAI[id];
-                nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
-            }
-            else if (_meshDim == 2)
-            {
-                workn=tmpC+tmpCI[id];
-                nbNeighbourNodes=tmpCI[id+1]-tmpCI[id];
-            }
-            else//_meshDim == 3
-            {
-                workn=tmpN2+tmpNI2[id];
-                nbNeighbourNodes=tmpNI2[id+1]-tmpNI2[id];
-            }    
-			Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
 
-			for( int el=0;el<nbCells;el++ )
-				vi.addCellId(el,workc[el]) ;
-			for( int el=0;el<nbNeighbourNodes;el++ )
-				vi.addNeighbourNodeId(el,workn[el]) ;
-            //Detection of border nodes    
-            for( int el=0;el<nbFaces;el++ )
-		vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
-            if(vi.isBorder())
-                _boundaryNodeIds.push_back(id);
-            _nodes[id] = vi ;
+			if( nbCells>0)//To make sure this is not an isolated node
+			{
+				correctNbNodes++;
+				vector<double> coorP(3);
+				for (int d=0; d<_spaceDim; d++)
+					coorP[d] = cood[k+d];
+				Point p(coorP[0],coorP[1],coorP[2]) ;
+		
+				const mcIdType *workf=tmpC+tmpCI[id];
+				mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+				const mcIdType *workn;
+				mcIdType nbNeighbourNodes;
+				if (_meshDim == 1)
+				{
+					workn=tmpA+tmpAI[id];
+					nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
+				}
+				else if (_meshDim == 2)
+				{
+					workn=tmpC+tmpCI[id];
+					nbNeighbourNodes=tmpCI[id+1]-tmpCI[id];
+				}
+				else//_meshDim == 3
+				{
+					workn=tmpN2+tmpNI2[id];
+					nbNeighbourNodes=tmpNI2[id+1]-tmpNI2[id];
+				}    
+				Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
+		
+				for( int el=0;el<nbCells;el++ )
+					vi.addCellId(el,workc[el]) ;
+				for( int el=0;el<nbNeighbourNodes;el++ )
+					vi.addNeighbourNodeId(el,workn[el]) ;
+				//Detection of border nodes    
+				for( int el=0;el<nbFaces;el++ )
+					vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
+				if(vi.isBorder())
+					_boundaryNodeIds.push_back(id);
+				_nodes[id] = vi ;
+			}
 		}
+		if( _numberOfNodes!=correctNbNodes)
+			cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
 
 		if(_spaceDim==_meshDim)
 			fieldn->decrRef();
@@ -1390,7 +1443,7 @@ Mesh::set1DMesh( void )
 
 	MEDCouplingFieldDouble* fieldl=mu->getMeasureField(true);
 	DataArrayDouble *longueur = fieldl->getArray();
-	const double *lon=longueur->getConstPointer();//Used for cell lendght/surface/volume
+	const double *lon=longueur->getConstPointer();//Used for cell lenght/surface/volume
 
 	double xn, yn=0., zn=0.;//Components of the normal vector at a cell interface
 	double norm;

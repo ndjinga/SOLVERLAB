@@ -526,9 +526,9 @@ MeshTests::testClassMesh( void )
     Mesh M5Boundary = M5.getBoundaryMesh (  );
     Mesh M3Boundary = M3.getBoundaryMesh (  );
     Mesh M3TetraBoundary = M3Tetra.getBoundaryMesh (  );
-    //cout<<"Mesh M2 spaceDim "<< M2.getSpaceDimension() << " meshDim " <<M2.getMeshDimension()<<endl;
-    //Mesh M2Boundary = M2.getBoundaryMesh (  );
-    //cout<<"Mesh M23 spaceDim "<< M23.getSpaceDimension() << " meshDim " <<M23.getMeshDimension()<<endl;
-    //Mesh M23Boundary = M23.getBoundaryMesh (  );
-    //Mesh M23Bottom = M23.getBoundaryGroupMesh ( "Bottom" );
+    cout<<"Mesh M2 spaceDim "<< M2.getSpaceDimension() << " meshDim " <<M2.getMeshDimension()<<endl;
+    Mesh M2Boundary = M2.getBoundaryMesh (  );
+    cout<<"Mesh M23 spaceDim "<< M23.getSpaceDimension() << " meshDim " <<M23.getMeshDimension()<<endl;
+    Mesh M23Boundary = M23.getBoundaryMesh (  );
+    Mesh M23Bottom = M23.getBoundaryGroupMesh ( "Bottom" );
 }
