@@ -416,16 +416,16 @@ MeshTests::testClassMesh( void )
     //Testing a 2D unstructured mesh (triangles)
     Mesh M23("./meshSquare.med");
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups().size() == 5);//There is a default group named "Boundary" that is created by the mesh class;
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[4].compare("Boundary")==0);
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[0].compare("Bottom")==0);
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[1].compare("Left")==0);
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[2].compare("Right")==0);
-    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[3].compare("Top")==0);
-    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[4].compare("Boundary")==0);
-    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[0].compare("Bottom")==0);
-    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[1].compare("Left")==0);
-    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[2].compare("Right")==0);
-    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[3].compare("Top")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[0].compare("Boundary")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[1].compare("Bottom")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[2].compare("Left")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[3].compare("Right")==0);
+    CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[4].compare("Top")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[0].compare("Boundary")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[1].compare("Bottom")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[2].compare("Left")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[3].compare("Right")==0);
+    CPPUNIT_ASSERT(M23.getNameOfNodeGroups()[4].compare("Top")==0);
     CPPUNIT_ASSERT(M23.isTriangular());
     CPPUNIT_ASSERT(M23.meshNotDeleted());
     CPPUNIT_ASSERT(!M23.isStructured());
