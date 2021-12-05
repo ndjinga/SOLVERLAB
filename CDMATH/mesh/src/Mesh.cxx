@@ -20,6 +20,7 @@
 #include <iterator>
 #include <algorithm> 
 #include <string.h>
+#include <assert.h>
 
 using namespace MEDCoupling;
 using namespace std;
@@ -1276,15 +1277,11 @@ Mesh::setMesh( void )
 			for( int el=0;el<nbNeighbourNodes;el++ )
 				vi.addNeighbourNodeId(el,workn[el]) ;
             //Detection of border nodes    
-            bool isBorder=false;
-			for( int el=0;el<nbFaces;el++ )
-            {
-				vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
-                isBorder= isBorder || _faces[workf[el]].isBorder();
-            }
-            if(isBorder)
+            for( int el=0;el<nbFaces;el++ )
+		vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
+            if(vi.isBorder())
                 _boundaryNodeIds.push_back(id);
-			_nodes[id] = vi ;
+            _nodes[id] = vi ;
 		}
 
 		if(_spaceDim==_meshDim)
@@ -1370,13 +1367,25 @@ Mesh::set1DMesh( void )
 	const mcIdType *tmpNE =nodal->getConstPointer();//Used to know which nodes surround a given face
 	const mcIdType *tmpNEI=nodalI->getConstPointer();
 
+	DataArrayIdType *revNode=DataArrayIdType::New();
+	DataArrayIdType *revNodeI=DataArrayIdType::New();
+	mu->getReverseNodalConnectivity(revNode,revNodeI) ;
+	const mcIdType *tmpN=revNode->getConstPointer();//Used to know which cells surround a given node
+	const mcIdType *tmpNI=revNodeI->getConstPointer();
+
+	DataArrayIdType *revCell =DataArrayIdType::New();
+	DataArrayIdType *revCellI=DataArrayIdType::New();
+	mu2->getReverseNodalConnectivity(revCell,revCellI);
+	const mcIdType *tmpC =revCell->getConstPointer();//Used to know which faces surround a given node
+	const mcIdType *tmpCI=revCellI->getConstPointer();
+
 	_eltsTypes=mu->getAllGeoTypesSorted();
 
 	_numberOfCells = mu->getNumberOfCells() ;
 	_cells    = new Cell[_numberOfCells] ;
 
-	_numberOfNodes = mu->getNumberOfNodes() ;//This may include nodes that are not used in the mesh
-	_nodes    = new Node[_numberOfNodes] ;
+	_numberOfNodes = mu->getNumberOfNodes() ;;//This number may include isolated nodes that will not be loaded. The number will be updated during nodes constructions
+	_nodes    = new Node[_numberOfNodes] ;//This array may be resized if isolated nodes are found
 
 	_numberOfFaces = mu2->getNumberOfCells();
 	_faces    = new Face[_numberOfFaces] ;
@@ -1385,9 +1394,6 @@ Mesh::set1DMesh( void )
 
 	DataArrayDouble *baryCell = mu->computeCellCenterOfMass() ;
 	const double *coorBary=baryCell->getConstPointer();//Used for cell center coordinates
-
-	DataArrayDouble *barySeg = mu2->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;//Used as face center
-	const double *coorBarySeg=barySeg->getConstPointer();
 
 	DataArrayDouble *coo = mu->getCoords() ;
 	const double *cood=coo->getConstPointer();//Used for nodes coordinates
@@ -1404,10 +1410,13 @@ Mesh::set1DMesh( void )
 		for(int idim=0; idim<_spaceDim; idim++)
 			p[idim]=coorBary[id*_spaceDim+idim];
 
+		mcIdType nbVertices=mu->getNumberOfNodesInCell(id) ;//should be equal to 2
+		assert( nbVertices==2);
 		std::vector<mcIdType> nodeIdsOfCell ;
 		mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
 
-        mcIdType nbFaces=tmpI[id+1]-tmpI[id];
+        mcIdType nbFaces=tmpI[id+1]-tmpI[id];//should be equal to 2
+		assert( nbFaces==2);
         const mcIdType *work=tmp+tmpI[id];
 
 		/* compute the normal to the face */
@@ -1426,10 +1435,10 @@ Mesh::set1DMesh( void )
 			zn /= norm;
 		}
         
-		Cell ci( nbFaces, nbFaces, lon[id], p ) ;//nbCells=nbFaces
+		Cell ci( nbVertices, nbFaces, lon[id], p ) ;//nbCells=nbFaces=2
         for( int el=0;el<nbFaces;el++ )
 		{
-			ci.addNodeId(el,nodeIdsOfCell[el]) ;
+			ci.addNodeId(el,nodeIdsOfCell[el]) ;//global node number
 			ci.addNormalVector(el,xn,yn,zn) ;
 			ci.addFaceId(el,work[el]) ;
 			xn = - xn; yn=-yn; zn=-zn;
@@ -1437,55 +1446,25 @@ Mesh::set1DMesh( void )
 		_cells[id] = ci ;
 	}
 
-    //Suppress the following since tmpN=tmpA
-	DataArrayIdType *revNode=DataArrayIdType::New();
-	DataArrayIdType *revNodeI=DataArrayIdType::New();
-	mu->getReverseNodalConnectivity(revNode,revNodeI) ;
-	const mcIdType *tmpN=revNode->getConstPointer();
-	const mcIdType *tmpNI=revNodeI->getConstPointer();
-
-	for( int id=0;id<_numberOfNodes;id++ )
+	for( int id(0); id<_numberOfFaces; id++ )
 	{
+		const mcIdType *workv=tmpNE+tmpNEI[id]+1;
+		mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;//Normally equal to 1.
+		assert( nbNodes==1);
+
 		std::vector<double> coo(0) ;
-		mu->getCoordinatesOfNode(id,coo);
+		mu2->getCoordinatesOfNode(workv[0],coo);
 		Point p(0,0.0,0.0) ;
 		for(int idim=0; idim<_spaceDim; idim++)
 			p[idim]=coo[idim];
-		const mcIdType *workc=tmpN+tmpNI[id];
-		mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
 
-		mcIdType nbFaces=1;
-	    const mcIdType *workn=tmpA+tmpAI[id];
-	    mcIdType nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
-        
-		cout<<"Nodes : nbCells= "<<nbCells<<" nbNeighbourNodes "<<nbNeighbourNodes<<endl;
-		Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
-        for( int el=0;el<nbCells;el++ )
-			vi.addCellId(el,workc[el]) ;
-		for( int el=0;el<nbFaces;el++ )
-			vi.addFaceId(el,id) ;
-        for( int el=0;el<nbNeighbourNodes;el++ )
-			vi.addNeighbourNodeId(el,workn[el]) ;
-		_nodes[id] = vi ;
-	}
-
-	for( int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim )
-	{
-		vector<double> coorBarySegXyz(3);
-		for (int d=0; d<_spaceDim; d++)
-			coorBarySegXyz[d] = coorBarySeg[k+d];
-		Point p(coorBarySegXyz[0],coorBarySegXyz[1],coorBarySegXyz[2]) ;
-
-		int nbVertices=1;
 	    const mcIdType *workc=tmpA+tmpAI[id];
 	    mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
+		assert( nbCells>0);//To make sure our face is not located on an isolated node
 	    
-		const mcIdType *workv=tmpNE+tmpNEI[id]+1;
-		mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;//Normally equal to 1.
-
 		Face fi( nbNodes, nbCells, 1.0, p, 1., 0., 0. ) ;
-		for(int node_id=0; node_id<nbNodes;node_id++)
-			fi.addNodeId(node_id,workv[node_id]) ;
+		for(int node_id=0; node_id<nbNodes;node_id++)//This loop could b deleted since nbNodes=1. Trying to merge with setMesh
+			fi.addNodeId(node_id,workv[node_id]) ;//global node number
 
 		fi.addCellId(0,workc[0]) ;
 		for(int cell_id=1; cell_id<nbCells;cell_id++)
@@ -1497,17 +1476,47 @@ Mesh::set1DMesh( void )
 				cell_idx++;
 				}                
 		}
+		if(nbCells==1)
+			_boundaryFaceIds.push_back(id);
 		_faces[id] = fi ;
+	}
+
+	for( int id=0;id<_numberOfNodes;id++ )
+	{
+		std::vector<double> coo(0) ;
+		mu->getCoordinatesOfNode(id,coo);
+		Point p(0,0.0,0.0) ;
+		for(int idim=0; idim<_spaceDim; idim++)
+			p[idim]=coo[idim];
+
+		const mcIdType *workc=tmpN+tmpNI[id];
+		mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
+		assert( nbCells>0);//To make sure this is not an isolated node
+
+		const mcIdType *workf=tmpC+tmpCI[id];
+		mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+		assert( nbFaces==1);
+
+	    const mcIdType *workn=tmpA+tmpAI[id];
+	    mcIdType nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
+        
+		Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
+        for( int el=0;el<nbCells;el++ )
+			vi.addCellId(el,workc[el]) ;
+        for( int el=0;el<nbNeighbourNodes;el++ )
+			vi.addNeighbourNodeId(el,workn[el]) ;//global node number
+        //Detection of border nodes    
+		for( int el=0;el<nbFaces;el++ )
+			vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
+ 		if(vi.isBorder())
+			_boundaryNodeIds.push_back(id);
+		_nodes[id] = vi ;
 	}
 
     //Set boundary groups
     _faceGroupNames.push_back("Boundary");
     _nodeGroupNames.push_back("Boundary");
-    _boundaryFaceIds.push_back(0);
-    _boundaryFaceIds.push_back(_numberOfFaces-1);
     _faceGroupsIds.push_back(_boundaryFaceIds);
-    _boundaryNodeIds.push_back(0);
-    _boundaryNodeIds.push_back(_numberOfNodes-1);
     _nodeGroupsIds.push_back(_boundaryNodeIds);
     _faceGroups.push_back(NULL);
     _nodeGroups.push_back(NULL);
