@@ -15,7 +15,6 @@ namespace MEDCoupling
   class MEDFileField1TS;
 }
 
-#include "DoubleTab.hxx"
 #include "Vector.hxx"
 #include "Mesh.hxx"
 
@@ -347,7 +346,7 @@ class Field
 
     void writeVTK ( const std::string fileName, bool fromScratch=true ) const ;
 
-    void writeMED ( const std::string fileName, bool fromScratch=true ) const ;
+    void writeMED ( const std::string fileName, bool fromScratch=true ) ;
 
     void writeCSV ( const std::string fileName ) const ;
 
@@ -367,7 +366,6 @@ class Field
 	int _numberOfComponents;
 	double _time;
 	std::string _fieldName;
-	MEDCoupling::MEDFileField1TS *_ff ;//To save the field when the mesh has been deleted
 	
     private:
 
