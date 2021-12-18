@@ -44,11 +44,11 @@ ycentre = (ymax+ymin)/2
 nbCells = M.getNumberOfCells()
 nbNodes = M.getNumberOfNodes()
 
-# Create scalar fields
-temperature_field_cells = cdmath.Field("Temperature", cdmath.CELLS, M, 1)
-temperature_field_nodes = cdmath.Field("Temperature", cdmath.NODES, M, 1)
-Tin  = 300
-Tout = 400
+# Create solid temperature fields
+temperature_field_cells = cdmath.Field("Solid temperature", cdmath.CELLS, M, 1)
+temperature_field_nodes = cdmath.Field("Solid temperature", cdmath.NODES, M, 1)
+Tin  = 330.
+Tout = 300.
 
 for i in range(nbCells):
     x = M.getCell(i).x()
@@ -71,6 +71,98 @@ for i in range(nbNodes):
         temperature_field_nodes[i] = Tout
 
 temperature_field_nodes.writeMED(filename, False)
+
+# Create fluid temperature fields
+temperature_field_cells = cdmath.Field("Fluid temperature", cdmath.CELLS, M, 1)
+temperature_field_nodes = cdmath.Field("Fluid temperature", cdmath.NODES, M, 1)
+Tfluid  = 300.
+
+for i in range(nbCells):
+    x = M.getCell(i).x()
+    y = M.getCell(i).y()
+    temperature_field_cells[i] = Tfluid
+
+temperature_field_cells.writeMED(filename, False)
+
+for i in range(nbNodes):
+    x = M.getNode(i).x()
+    y = M.getNode(i).y()
+    temperature_field_nodes[i] = Tfluid
+
+temperature_field_nodes.writeMED(filename, False)
+
+# Create fluid enthalpy fields
+enthalpy_field_cells = cdmath.Field("Fluid enthalpy", cdmath.CELLS, M, 1)
+enthalpy_field_nodes = cdmath.Field("Fluid enthalpy", cdmath.NODES, M, 1)
+Hin  = 1.6e6
+Hout = 2.e6
+
+for i in range(nbCells):
+    x = M.getCell(i).x()
+    y = M.getCell(i).y()
+    distance = sqrt( (x - xcentre) * (x - xcentre) + (y - ycentre) * (y - ycentre) )
+    if distance < radius:
+        enthalpy_field_cells[i] = Hin
+    else:
+        enthalpy_field_cells[i] = Hout
+
+enthalpy_field_cells.writeMED(filename, False)
+
+for i in range(nbNodes):
+    x = M.getNode(i).x()
+    y = M.getNode(i).y()
+    distance = sqrt( (x - xcentre) * (x - xcentre) + (y - ycentre) * (y - ycentre) )
+    if distance < radius:
+        enthalpy_field_nodes[i] = Hin
+    else:
+        enthalpy_field_nodes[i] = Hout
+
+enthalpy_field_nodes.writeMED(filename, False)
+
+# Create heat power fields
+heat_field_cells = cdmath.Field("Heat power", cdmath.CELLS, M, 1)
+heat_field_nodes = cdmath.Field("Heat power", cdmath.NODES, M, 1)
+phi = 1.e7
+
+for i in range(nbCells):
+    x = M.getCell(i).x()
+    y = M.getCell(i).y()
+    heat_field_cells[i] = phi
+
+heat_field_cells.writeMED(filename, False)
+
+for i in range(nbNodes):
+    x = M.getNode(i).x()
+    y = M.getNode(i).y()
+    heat_field_nodes[i] = phi
+
+heat_field_nodes.writeMED(filename, False)
+
+# Create pressure and velocity fields for the wave equation on CELLS
+p0=155e5#reference pressure in a pressurised nuclear vessel
+
+pressure_field = cdmath.Field("Pressure",            cdmath.CELLS, M, 1)
+velocity_field = cdmath.Field("Velocity",            cdmath.CELLS, M, 3)
+
+for i in range(nbCells):
+    x = M.getCell(i).x()
+    y = M.getCell(i).y()
+    distance = sqrt( (x - xcentre) * (x - xcentre) + (y - ycentre) * (y - ycentre) )
+
+    velocity_field[i,0] = 0
+    velocity_field[i,1] = 0
+    velocity_field[i,2] = 0
+
+    if distance < radius:
+        pressure_field[i] = p0
+        pass
+    else:
+        pressure_field[i] = p0/2
+        pass
+    pass
+
+pressure_field.writeMED(filename, False)
+velocity_field.writeMED(filename, False)
 
 #### Delete mesh and still save field in a med file
 m = mc.MEDCouplingCMesh()
