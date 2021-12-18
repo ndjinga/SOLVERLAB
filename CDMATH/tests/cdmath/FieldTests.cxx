@@ -255,12 +255,16 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 8, concF2.getNumberOfElements() );
     CPPUNIT_ASSERT(concF2.meshNotDeleted());
     concF2.writeMED("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
-//   	concF2.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+    concF2.writeVTK("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
+    concF2.writeCSV("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
+   	concF2.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     concF2.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
     for (int j=0;j<concF2.getNumberOfComponents();j++)
     	for (int i=0;i<concF2.getNumberOfElements();i++)
-    		concF2(i,j)=i*j;
-    concF2.writeMED("FieldConcF2", true);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+    		concF2(i,j)=i*(j+2);
+    concF2.writeMED("FieldConcF2", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+    concF2.writeVTK("FieldConcF2", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+    concF2.writeCSV("FieldConcF2");//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
 	
 	Mesh M3(0.0,1.0,2,0.,1.,2,0.,1.,2);
 	Field concF3("CONCENTRATION",FACES,M3) ;
@@ -286,13 +290,17 @@ FieldTests::testClassField( void )
     		CPPUNIT_ASSERT_EQUAL( double(i+j), concF4(i,j) );
     CPPUNIT_ASSERT(concF4.meshNotDeleted());
     concF4.writeMED("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
-//   	concF4.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+    concF4.writeVTK("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
+    concF4.writeCSV("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
+   	concF4.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     concF4.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
     for (int j=0;j<concF4.getNumberOfComponents();j++)
     	for (int i=0;i<concF4.getNumberOfElements();i++)
-    		concF4(i,j)=i*j;
+    		concF4(i,j)=i*(j+2);
     concF4.writeMED("FieldConcF4", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
-		
+    concF4.writeVTK("FieldConcF4", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+    concF4.writeCSV("FieldConcF4");//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+			
 	//Create a constant field on the mesh fileNameMEDn
 	Field concF5(fileNameMEDn,NODES,std::vector<double> (3,1),"CONSTANT_Field");
 	CPPUNIT_ASSERT_EQUAL( 3, concF5.getNumberOfComponents() );
@@ -306,12 +314,16 @@ FieldTests::testClassField( void )
     cout<<"Mesh name : " << concF5.getMesh().getName()<<endl;
     cout<<"Field name : " << concF5.getName()<<endl;
     concF5.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
-    concF5.writeMED("FieldConcF5",false);//This saves the mesh and the values of iteration 0 at time t=0
-  	//concF5.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+    concF5.writeMED("FieldConcF5");//This saves the mesh and the values of iteration 0 at time t=0
+    concF5.writeVTK("FieldConcF5");//This saves the mesh and the values of iteration 0 at time t=0
+    concF5.writeCSV("FieldConcF5");//This saves the mesh and the values of iteration 0 at time t=0
+  	concF5.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     for (int j=0;j<concF5.getNumberOfComponents();j++)
     	for (int i=0;i<concF5.getNumberOfElements();i++)
     		concF5(i,j)=i*j;
-    //concF5.writeMED("FieldConcF5", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+    concF5.writeMED("FieldConcF5", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+    concF5.writeVTK("FieldConcF5", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
+    concF5.writeCSV("FieldConcF5");//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
 	
 	/* 2D cartesian mesh */
 	//Dataarray
