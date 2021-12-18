@@ -36,8 +36,8 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 		supportOfField=solverlab.CELLS	
 	
     # Set the mesh and initial data
-	initial_data_inputfile="../resources/BoxWithMeshWithTriangularCells";
-	initial_data_fieldName="Temperature";
+	initial_data_inputfile="../resources/meshSquare";
+	initial_data_fieldName="Solid temperature";
 	print("Loading unstructured mesh and initial data", " in file ", initial_data_inputfile )
 	initial_data_time_iteration=0# default value is 0
 	initial_data_time_sub_iteration=0# default value is 0
@@ -46,8 +46,8 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 
     #### Optional physical values (default value is zero) : fluid temperature field, heat transfert coefficient, heat power field 
 	# Loading and setting fluid temperature field
-	fluid_temperature_inputfile="../resources/BoxWithMeshWithTriangularCells";
-	fluid_temperature_fieldName="Fluid temperature field";
+	fluid_temperature_inputfile="../resources/meshSquare";
+	fluid_temperature_fieldName="Fluid temperature";
 	fluid_temperature_time_iteration=0# default value is 0
 	fluid_temperature_time_sub_iteration=0# default value is 0
 	fluid_temperature_meshLevel=0# default value is 0
@@ -58,8 +58,8 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 	heatTransfertCoeff=1000.;#fluid/solid exchange coefficient, default value is 0
 	myProblem.setHeatTransfertCoeff(heatTransfertCoeff);
 	# Loading heat power field
-	heat_power_inputfile="../resources/BoxWithMeshWithTriangularCells";
-	heat_power_fieldName="Heat power field";
+	heat_power_inputfile="../resources/meshSquare";
+	heat_power_fieldName="Heat power";
 	heat_power_time_iteration=0# default value is 0
 	heat_power_time_sub_iteration=0# default value is 0
 	heat_power_meshLevel=0# default value is 0
@@ -69,19 +69,66 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 
     # the boundary conditions :
 	if( FECalculation):
-		boundaryNodeGroupNames=myProblem.getMesh().getNameOfNodeGroups()
-		print(len(boundaryNodeGroupNames), " Boundary Node Group detected : ", boundaryNodeGroupNames)
+		boundaryGroupNames=myProblem.getMesh().getNameOfNodeGroups()
+		print(len(boundaryGroupNames), " Boundary Node Group detected : ", boundaryGroupNames)
 	else:
-		boundaryFaceGroupNames=myProblem.getMesh().getNameOfFaceGroups()
-		print(len(boundaryFaceGroupNames), " Boundary Face Group detected : ", boundaryFaceGroupNames)
+		boundaryGroupNames=myProblem.getMesh().getNameOfFaceGroups()
+		print(len(boundaryGroupNames), " Boundary Face Group detected : ", boundaryGroupNames)
 
-	myProblem.setNeumannBoundaryCondition("GAUCHE");
-	myProblem.setNeumannBoundaryCondition("DROITE");
-	myProblem.setNeumannBoundaryCondition("HAUT");
-	myProblem.setNeumannBoundaryCondition("BAS");
+	# for each boundary we load the boundary field (replace by a loop over the boundaries)
+	boundary1_type=solverlab.NeumannDiffusion
+	boundary1_inputfile="../resources/meshSquare";
+	boundary1_fieldName="left_field";
+	boundary1_time_iteration=0# default value is 0
+	boundary1_time_sub_iteration=0# default value is 0
+	boundary1_meshLevel=0# default value is 0
+	print("Boundary ", boundaryGroupNames[3], ", loading field :", boundary1_fieldName, " in file ", boundary1_inputfile)
+	#boundary1Field=solverlab.Field(boundary1_inputfile, supportOfField, boundary1_fieldName, boundary1_time_iteration, boundary1_time_sub_iteration, boundary1_meshLevel)
+	boundary2_type=solverlab.DirichletDiffusion
+	boundary2_inputfile="../resources/meshSquare";
+	boundary2_fieldName="right_field";
+	boundary2_time_iteration=0# default value is 0
+	boundary2_time_sub_iteration=0# default value is 0
+	boundary2_meshLevel=0# default value is 0
+	print("Boundary ", boundaryGroupNames[2], ", loading field :", boundary2_fieldName, " in file ", boundary2_inputfile)
+	#boundary2Field=solverlab.Field(boundary2_inputfile, supportOfField, boundary2_fieldName, boundary2_time_iteration, boundary2_time_sub_iteration, boundary2_meshLevel)
+	boundary3_type=solverlab.NeumannDiffusion
+	boundary3_inputfile="../resources/meshSquare";
+	boundary3_fieldName="top_field";
+	boundary3_time_iteration=0# default value is 0
+	boundary3_time_sub_iteration=0# default value is 0
+	boundary3_meshLevel=0# default value is 0
+	print("Boundary ", boundaryGroupNames[4], ", loading field :", boundary3_fieldName, " in file ", boundary3_inputfile)
+	#boundary3Field=solverlab.Field(boundary3_inputfile, supportOfField, boundary3_fieldName, boundary3_time_iteration, boundary3_time_sub_iteration, boundary3_meshLevel)
+	boundary4_type=solverlab.DirichletDiffusion
+	boundary4_inputfile="../resources/meshSquare";
+	boundary4_fieldName="bottom_field";
+	boundary4_time_iteration=0# default value is 0
+	boundary4_time_sub_iteration=0# default value is 0
+	boundary4_meshLevel=0# default value is 0
+	print("Boundary ", boundaryGroupNames[1], ", loading field :", boundary4_fieldName, " in file ", boundary4_inputfile)
+	#boundary4Field=solverlab.Field(boundary4_inputfile, supportOfField, boundary4_fieldName, boundary4_time_iteration, boundary4_time_sub_iteration, boundary4_meshLevel)
+
+	# for each boundary we need to know if we want a Neumann or a Dirichlet boundary condition
+	if boundary1_type==solverlab.NeumannDiffusion :
+		myProblem.setNeumannBoundaryCondition("Left")
+	elif boundary1_type==solverlab.DirichletDiffusion :
+		myProblem.setDirichletBoundaryCondition("Left")
+	if boundary2_type==solverlab.NeumannDiffusion :
+		myProblem.setNeumannBoundaryCondition("Right")
+	elif boundary2_type==solverlab.DirichletDiffusion :
+		myProblem.setDirichletBoundaryCondition("Right")
+	if boundary3_type==solverlab.NeumannDiffusion :
+		myProblem.setNeumannBoundaryCondition("Top")
+	elif boundary3_type==solverlab.DirichletDiffusion :
+		myProblem.setDirichletBoundaryCondition("Top");
+	if boundary4_type==solverlab.NeumannDiffusion :
+		myProblem.setNeumannBoundaryCondition("Bottom")
+	elif boundary4_type==solverlab.DirichletDiffusion :
+		myProblem.setDirichletBoundaryCondition("Bottom");
 
     # set the numerical method
-	myProblem.setTimeScheme( solverlab.Explicit);
+	myProblem.setTimeScheme( solverlab.Explicit)# Otherwise solverlab.Implicit
 	max_nb_its_lin_solver = 50
 	myProblem.setLinearSolver(solverlab.GMRES, solverlab.ILU, max_nb_its_lin_solver );
 
