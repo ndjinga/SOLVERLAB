@@ -77,26 +77,69 @@ public :
 	virtual void validateTimeStep();
 
 	/* Boundary conditions */
-	/** \fn setIntletBoundaryCondition
+	/** \fn setIntletBoundaryCondition 
 			 * \brief adds a new boundary condition of type Inlet
-			 * \details
+			 * \details same as setDirichletBoundaryCondition
 			 * \param [in] string : the name of the boundary
-			 * \param [in] double : the value of the temperature at the boundary
+			 * \param [in] double : the value of the enthalpy at the boundary
 			 * \param [out] void
 			 *  */
 	void setInletBoundaryCondition(string groupName,double enthalpy){
 		_limitField[groupName]=LimitFieldTransport(InletTransport,-1,enthalpy,-1);
 	};
+	/** \fn setDirichletBoundaryCondition 
+			 * \brief adds a new boundary condition of type Dirichlet
+			 * \details same as setInletBoundaryCondition
+			 * \param [in] string : the name of the boundary
+			 * \param [in] double : the value of the enthalpy at the boundary
+			 * \param [out] void
+			 *  */
+	void setDirichletBoundaryCondition(string groupName,double enthalpy){
+		_limitField[groupName]=LimitFieldTransport(DirichletTransport,-1,enthalpy,-1);
+	};
+	/** \fn setDirichletBoundaryCondition
+			 * \brief adds a new boundary condition of type Inlet
+			 * \details Reads the boundary field in a med file
+			 * \param [in] string : the name of the boundary
+			 * \param [in] string : the file name
+			 * \param [in] string : the field name
+			 * \param [in] int : the time step number
+			 * \param [in] int : int corresponding to the enum CELLS or NODES
+			 * \param [out] void
+			 *  */
+	void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
 
-	/** \fn setNeumannBoundaryCondition
+	/** \fn setNeumannBoundaryCondition 
 	 * \brief adds a new boundary condition of type Neumann
-	 * \details
+	 * \details same as setOutletBoundaryCondition
 	 * \param [in] string the name of the boundary
+	 * \param [in] double : the value of the enthalpy flux at the boundary
 	 * \param [out] void
 	 *  */
 	void setNeumannBoundaryCondition(string groupName, double flux=0){
 		_limitField[groupName]=LimitFieldTransport(NeumannTransport,-1,flux,-1);
 	};
+	/** \fn setOutletBoundaryCondition 
+	 * \brief adds a new boundary condition of type Outlet
+	 * \details same as setNeumannBoundaryCondition
+	 * \param [in] string the name of the boundary
+	 * \param [in] double : the value of the enthalpy flux at the boundary
+	 * \param [out] void
+	 *  */
+	void setOutletBoundaryCondition(string groupName, double flux=0){
+		_limitField[groupName]=LimitFieldTransport(OutletTransport,-1,flux,-1);
+	};
+	/** \fn setNeumannBoundaryCondition
+			 * \brief adds a new boundary condition of type Neumann
+			 * \details Reads the boundary field in a med file
+			 * \param [in] string : the name of the boundary
+			 * \param [in] string : the file name
+			 * \param [in] string : the field name
+			 * \param [in] int : the time step number
+			 * \param [in] int : int corresponding to the enum CELLS or NODES 
+			 * \param [out] void
+			 *  */
+	void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
 
 	/** \fn setBoundaryFields
 	 * \brief met à jour  _limitField  ( le type de condition limite )

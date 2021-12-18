@@ -649,3 +649,61 @@ TransportEquation::setRodTemperatureField(Field rodTemperature){
 	_rodTemperatureFieldSet=true;
 	_isStationary=false;//Source term may be changed after previously reaching a stationary state
 }
+
+void 
+TransportEquation::setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type){
+	if(_FECalculation && field_support_type != NODES)
+		cout<<"Warning : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+	else if(!_FECalculation && field_support_type == NODES)
+		cout<<"Warning : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+
+	Field VV;
+	
+	switch(field_support_type)
+	{
+	case CELLS:
+		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
+		break;
+	case NODES:
+		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
+		break;
+	case FACES:
+		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
+		break;
+	default:
+		std::ostringstream message;
+		message << "Error TransportEquation::setDirichletBoundaryCondition \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
+		throw CdmathException(message.str().c_str());
+	}	
+	/* For the moment the boundary value is taken constant equal to zero */
+	_limitField[groupName]=LimitFieldTransport(DirichletTransport,-1, 0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
+}
+
+void 
+TransportEquation::setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type){
+	if(_FECalculation && field_support_type != NODES)
+		cout<<"Warning : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+	else if(!_FECalculation && field_support_type == NODES)
+		cout<<"Warning : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+
+	Field VV;
+	
+	switch(field_support_type)
+	{
+	case CELLS:
+		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
+		break;
+	case NODES:
+		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
+		break;
+	case FACES:
+		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
+		break;
+	default:
+		std::ostringstream message;
+		message << "Error TransportEquation::setNeumannBoundaryCondition \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
+		throw CdmathException(message.str().c_str());
+	}	
+	/* For the moment the boundary value is taken constant equal to zero */
+	_limitField[groupName]=LimitFieldTransport(NeumannTransport,-1, 0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
+}
