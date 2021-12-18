@@ -180,14 +180,16 @@ da = mc.DataArrayDouble([1,2,3,4])
 f.setArray(da)
 f.setTime(0.0,0,0)
 
+
 # Maillage d'abord:
-fName = "./michael.med"
+fName = "/tmp/michael.med"
 mc.WriteUMesh(fName, m, True)
+
 
 # Maintenant juste les champs:
 ff = mc.MEDFileField1TS()
 ff.setFieldNoProfileSBT(f)
-ff.write(fName, 0)  
+ff.write(fName, 0) 
 
 # Tue le maillage
 m = 0
@@ -198,11 +200,10 @@ gc.collect()  # Make sure Python interp has called mesh destructor ...
 # Ecrit encore du champ:
 da2 = da.deepCopy()
 f.setTime(1.0,1,0)
-da2 += 1
+da2 *= -1
 print(da2.getValues())
 f.setArray(da2)
 
 ff = mc.MEDFileField1TS()
 ff.setFieldNoProfileSBT(f)  # le maillage n'existe plus, tant pis :-)
-ff.write(fName, 0)  
-ff.write(fName, 0)  # 1 append
+ff.write(fName, 0)    # yes 0
