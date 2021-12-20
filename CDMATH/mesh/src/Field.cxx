@@ -66,7 +66,7 @@ void Field::buildFieldMemoryStructure()
 	}else if(_typeField==NODES)
 	{
 		_field=MEDCouplingFieldDouble::New(ON_NODES);
-		array->alloc(_mesh.getNumberOfNodes(),_numberOfComponents);
+		array->alloc(mu->getNumberOfNodes(),_numberOfComponents);
 		_field->setMesh(mu);
 	}else if(_typeField==FACES)
 	{
