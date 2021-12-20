@@ -78,54 +78,54 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 	# for each boundary we load the boundary field (replace by a loop over the boundaries)
 	boundary1_type=solverlab.NeumannDiffusion
 	boundary1_inputfile="../resources/meshSquare";
-	boundary1_fieldName="left_field";
+	boundary1_fieldName="Left temperature";
 	boundary1_time_iteration=0# default value is 0
 	boundary1_time_sub_iteration=0# default value is 0
 	boundary1_meshLevel=0# default value is 0
 	print("Boundary ", boundaryGroupNames[3], ", loading field :", boundary1_fieldName, " in file ", boundary1_inputfile)
-	#boundary1Field=solverlab.Field(boundary1_inputfile, supportOfField, boundary1_fieldName, boundary1_time_iteration, boundary1_time_sub_iteration, boundary1_meshLevel)
+	boundary1Field=solverlab.Field(boundary1_inputfile, supportOfField, boundary1_fieldName, boundary1_time_iteration, boundary1_time_sub_iteration, boundary1_meshLevel)
 	boundary2_type=solverlab.DirichletDiffusion
 	boundary2_inputfile="../resources/meshSquare";
-	boundary2_fieldName="right_field";
+	boundary2_fieldName="Right temperature";
 	boundary2_time_iteration=0# default value is 0
 	boundary2_time_sub_iteration=0# default value is 0
 	boundary2_meshLevel=0# default value is 0
 	print("Boundary ", boundaryGroupNames[2], ", loading field :", boundary2_fieldName, " in file ", boundary2_inputfile)
-	#boundary2Field=solverlab.Field(boundary2_inputfile, supportOfField, boundary2_fieldName, boundary2_time_iteration, boundary2_time_sub_iteration, boundary2_meshLevel)
+	boundary2Field=solverlab.Field(boundary2_inputfile, supportOfField, boundary2_fieldName, boundary2_time_iteration, boundary2_time_sub_iteration, boundary2_meshLevel)
 	boundary3_type=solverlab.NeumannDiffusion
 	boundary3_inputfile="../resources/meshSquare";
-	boundary3_fieldName="top_field";
+	boundary3_fieldName="Top temperature";
 	boundary3_time_iteration=0# default value is 0
 	boundary3_time_sub_iteration=0# default value is 0
 	boundary3_meshLevel=0# default value is 0
 	print("Boundary ", boundaryGroupNames[4], ", loading field :", boundary3_fieldName, " in file ", boundary3_inputfile)
-	#boundary3Field=solverlab.Field(boundary3_inputfile, supportOfField, boundary3_fieldName, boundary3_time_iteration, boundary3_time_sub_iteration, boundary3_meshLevel)
+	boundary3Field=solverlab.Field(boundary3_inputfile, supportOfField, boundary3_fieldName, boundary3_time_iteration, boundary3_time_sub_iteration, boundary3_meshLevel)
 	boundary4_type=solverlab.DirichletDiffusion
 	boundary4_inputfile="../resources/meshSquare";
-	boundary4_fieldName="bottom_field";
+	boundary4_fieldName="Bottom temperature";
 	boundary4_time_iteration=0# default value is 0
 	boundary4_time_sub_iteration=0# default value is 0
 	boundary4_meshLevel=0# default value is 0
 	print("Boundary ", boundaryGroupNames[1], ", loading field :", boundary4_fieldName, " in file ", boundary4_inputfile)
-	#boundary4Field=solverlab.Field(boundary4_inputfile, supportOfField, boundary4_fieldName, boundary4_time_iteration, boundary4_time_sub_iteration, boundary4_meshLevel)
+	boundary4Field=solverlab.Field(boundary4_inputfile, supportOfField, boundary4_fieldName, boundary4_time_iteration, boundary4_time_sub_iteration, boundary4_meshLevel)
 
 	# for each boundary we need to know if we want a Neumann or a Dirichlet boundary condition
 	if boundary1_type==solverlab.NeumannDiffusion :
-		myProblem.setNeumannBoundaryCondition("Left")
+		myProblem.setNeumannBoundaryCondition("Left", boundary1Field)
 	elif boundary1_type==solverlab.DirichletDiffusion :
-		myProblem.setDirichletBoundaryCondition("Left")
+		myProblem.setDirichletBoundaryCondition("Left", boundary1Field)
 	if boundary2_type==solverlab.NeumannDiffusion :
-		myProblem.setNeumannBoundaryCondition("Right")
+		myProblem.setNeumannBoundaryCondition("Right", boundary2Field)
 	elif boundary2_type==solverlab.DirichletDiffusion :
-		myProblem.setDirichletBoundaryCondition("Right")
+		myProblem.setDirichletBoundaryCondition("Right", boundary2Field)
 	if boundary3_type==solverlab.NeumannDiffusion :
-		myProblem.setNeumannBoundaryCondition("Top")
+		myProblem.setNeumannBoundaryCondition("Top", boundary3Field)
 	elif boundary3_type==solverlab.DirichletDiffusion :
-		myProblem.setDirichletBoundaryCondition("Top");
+		myProblem.setDirichletBoundaryCondition("Top", boundary3Field);
 	if boundary4_type==solverlab.NeumannDiffusion :
-		myProblem.setNeumannBoundaryCondition("Bottom")
+		myProblem.setNeumannBoundaryCondition("Bottom", boundary4Field)
 	elif boundary4_type==solverlab.DirichletDiffusion :
-		myProblem.setDirichletBoundaryCondition("Bottom");
+		myProblem.setDirichletBoundaryCondition("Bottom", boundary4Field);
 
     # set the numerical method
 	myProblem.setTimeScheme( solverlab.Explicit)# Otherwise solverlab.Implicit

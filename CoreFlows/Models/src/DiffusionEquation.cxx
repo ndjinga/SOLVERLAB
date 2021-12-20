@@ -994,5 +994,5 @@ DiffusionEquation::setNeumannBoundaryCondition(string groupName, string fileName
 		throw CdmathException(message.str().c_str());
 	}	
 	/* For the moment the boundary value is taken constant equal to zero */
-	_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
+	_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1,0);//This line will be deleted when variable BC are properly treated in solverlab 
 }

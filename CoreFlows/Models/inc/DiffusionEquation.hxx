@@ -89,6 +89,9 @@ public :
 			 * \param [out] void
 			 *  */
 	void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
+	void setDirichletBoundaryCondition(string groupName, Field bc_field){
+		_limitField[groupName]=LimitFieldDiffusion(DirichletDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
+	}
 	/** \fn setNeumannBoundaryCondition
 			 * \brief adds a new boundary condition of type Neumann
 			 * \details
@@ -109,7 +112,9 @@ public :
 			 * \param [out] void
 			 *  */
 	void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
-
+	void setNeumannBoundaryCondition(string groupName, Field BC_Field){
+		_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1, 0);//This line will be deleted when variable BC are properly treated in solverlab 
+	};
 	void setDirichletValues(map< int, double> dirichletBoundaryValues);
 	void setNeumannValues(map< int, double> neumannBoundaryValues);
 
