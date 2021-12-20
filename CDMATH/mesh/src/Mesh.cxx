@@ -171,10 +171,10 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 }
 
 //----------------------------------------------------------------------
-Mesh::Mesh( const std::string filename, int meshLevel )
+Mesh::Mesh( const std::string filename, const std::string & meshName, int meshLevel )
 //----------------------------------------------------------------------
 {
-	readMeshMed(filename, meshLevel);
+	readMeshMed(filename, meshName, meshLevel);
 }
 
 //----------------------------------------------------------------------
@@ -240,7 +240,7 @@ Mesh::Mesh( const Mesh& mesh )
 
 //----------------------------------------------------------------------
 void
-Mesh::readMeshMed( const std::string filename, const int meshLevel)
+Mesh::readMeshMed( const std::string filename, const std::string & meshName, const int meshLevel)
 //----------------------------------------------------------------------
 {
 	MEDFileUMesh *m=MEDFileUMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)

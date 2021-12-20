@@ -67,7 +67,7 @@ public: //----------------------------------------------------------------
 	 * @param filename name of mesh file
 	 * @param meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
 	 */
-	Mesh ( const std::string filename, int meshLevel=0 ) ;
+	Mesh ( const std::string filename, const std::string & meshName="" , int meshLevel=0) ;
 
 	/**
 	 * \brief constructor with data for a regular 1D grid 
@@ -118,7 +118,7 @@ public: //----------------------------------------------------------------
 	 * @param filename : file name of mesh med file
 	 * @param meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
 	 */
-	void readMeshMed( const std::string filename, int meshLevel=0 ) ;
+	void readMeshMed( const std::string filename, const std::string & meshName="" , int meshLevel=0 ) ;
 
 	/**
 	 * \brief constructor by copy

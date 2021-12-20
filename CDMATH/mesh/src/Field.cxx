@@ -97,7 +97,7 @@ Field::Field( const std::string filename, EntityType type,
 		int iteration, int order, int meshLevel)
 {
 	_field = NULL;
-	_mesh=Mesh(filename + ".med", meshLevel);
+	_mesh=Mesh(filename + ".med", "", meshLevel);
 	_typeField=type;
 	_fieldName=fieldName;
 
@@ -108,7 +108,7 @@ Field::Field(const std::string meshFileName, EntityType type, const std::vector<
 		const std::string & fieldName, int meshLevel, double time )
 {
 	_field = NULL;
-	_mesh=Mesh(meshFileName + ".med", meshLevel);
+	_mesh=Mesh(meshFileName + ".med", "", meshLevel);
 	_typeField=type;
 	_numberOfComponents=Vconstant.size();
 	_time=time;
