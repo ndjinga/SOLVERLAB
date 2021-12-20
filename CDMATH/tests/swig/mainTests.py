@@ -550,7 +550,7 @@ class TestsCDMATHSwig(unittest.TestCase):
         self.assertTrue(16 == M22.getNumberOfCells())
         self.assertTrue(40 == M22.getNumberOfFaces())
 
-        M23 = Mesh("meshSquare.med")
+        M23 = Mesh("meshSquare.med", "Mesh_1")
         self.assertTrue(len(M23.getNameOfFaceGroups()) == 5)
         print( M23.getNameOfFaceGroups() )
         self.assertTrue(M23.getNameOfFaceGroups()[1] == "Bottom")
