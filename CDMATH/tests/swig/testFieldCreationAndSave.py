@@ -72,6 +72,72 @@ for i in range(nbNodes):
 
 temperature_field_nodes.writeMED(filename, False)
 
+# Create boundary fields
+## bottom
+Mbottom=M.getBoundaryGroupMesh ( "Bottom" )
+Mbottom.writeMED(filename, False)
+Mbottom.writeVTK(filename)
+temperature_bottom_cells=cdmath.Field("Bottom temperature",cdmath.CELLS,Mbottom)
+for i in range(temperature_bottom_cells.getNumberOfElements()):
+	temperature_bottom_cells[i]=Tout
+temperature_bottom_cells.writeMED(filename,False)
+temperature_bottom_cells.writeVTK(filename,True)
+temperature_bottom_cells.writeCSV(filename)
+temperature_bottom_nodes=cdmath.Field("Bottom temperature",cdmath.NODES,Mbottom)
+for i in range(temperature_bottom_nodes.getNumberOfElements()):
+	temperature_bottom_nodes[i]=Tout
+temperature_bottom_nodes.writeMED(filename,False)
+temperature_bottom_nodes.writeVTK(filename,True)
+temperature_bottom_nodes.writeCSV(filename)
+##top
+Mtop=M.getBoundaryGroupMesh ( "Top" )
+Mtop.writeMED(filename, False)
+Mtop.writeVTK(filename)
+temperature_top_cells=cdmath.Field("Top temperature",cdmath.CELLS,Mtop)
+for i in range(temperature_top_cells.getNumberOfElements()):
+	temperature_top_cells[i]=Tout
+temperature_top_cells.writeMED(filename,False)
+temperature_top_cells.writeVTK(filename,True)
+temperature_top_cells.writeCSV(filename)
+temperature_top_nodes=cdmath.Field("Top temperature",cdmath.NODES,Mtop)
+for i in range(temperature_top_nodes.getNumberOfElements()):
+	temperature_top_nodes[i]=Tout
+temperature_top_nodes.writeMED(filename,False)
+temperature_top_nodes.writeVTK(filename,True)
+temperature_top_nodes.writeCSV(filename)
+##Left
+Mleft=M.getBoundaryGroupMesh ( "Left" )
+Mleft.writeMED(filename, False)
+Mleft.writeVTK(filename)
+temperature_left_cells=cdmath.Field("Left temperature",cdmath.CELLS,Mleft)
+for i in range(temperature_left_cells.getNumberOfElements()):
+	temperature_left_cells[i]=Tout
+temperature_left_cells.writeMED(filename,False)
+temperature_left_cells.writeVTK(filename,True)
+temperature_left_cells.writeCSV(filename)
+temperature_left_nodes=cdmath.Field("Left temperature",cdmath.NODES,Mleft)
+for i in range(temperature_left_nodes.getNumberOfElements()):
+	temperature_left_nodes[i]=Tout
+temperature_left_nodes.writeMED(filename,False)
+temperature_left_nodes.writeVTK(filename,True)
+temperature_left_nodes.writeCSV(filename)
+##Right
+Mright=M.getBoundaryGroupMesh ( "Right" )
+Mright.writeMED(filename, False)
+Mright.writeVTK(filename)
+temperature_right_cells=cdmath.Field("Right temperature",cdmath.CELLS,Mright)
+for i in range(temperature_right_cells.getNumberOfElements()):
+	temperature_right_cells[i]=Tout
+temperature_right_cells.writeMED(filename,False)
+temperature_right_cells.writeVTK(filename,True)
+temperature_right_cells.writeCSV(filename)
+temperature_right_nodes=cdmath.Field("Right temperature",cdmath.NODES,Mright)
+for i in range(temperature_right_nodes.getNumberOfElements()):
+	temperature_right_nodes[i]=Tout
+temperature_right_nodes.writeMED(filename,False)
+temperature_right_nodes.writeVTK(filename,True)
+temperature_right_nodes.writeCSV(filename)
+
 # Create fluid temperature fields
 temperature_field_cells = cdmath.Field("Fluid temperature", cdmath.CELLS, M, 1)
 temperature_field_nodes = cdmath.Field("Fluid temperature", cdmath.NODES, M, 1)

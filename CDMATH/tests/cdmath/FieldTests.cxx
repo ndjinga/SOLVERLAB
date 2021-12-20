@@ -325,8 +325,8 @@ FieldTests::testClassField( void )
     concF5.writeVTK("FieldConcF5", false);//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
     concF5.writeCSV("FieldConcF5");//This saves only the values of iteration 1 at time t=0.5. The previous values are not deleted
 	
-	/* 2D cartesian mesh */
-	//Dataarray
+	/* Delete the mesh then save the field */
+	// Build a 2D cartesian mesh
 	double XCoords[3]={0.,1.,2.};
 	double YCoords[3]={0.,1.,2.};
 	MCAuto<DataArrayDouble> arrX=DataArrayDouble::New();
@@ -354,7 +354,7 @@ FieldTests::testClassField( void )
 	f->setArray(da);
 		
 	// Sauvegarde Maillage d'abord:
-	auto fName = "/tmp/michael.med";
+	auto fName = "./test.med";
 	MEDCoupling::WriteUMesh(fName, m1, true);
 	
 	// Maintenant juste les champs:
@@ -375,4 +375,22 @@ FieldTests::testClassField( void )
 	
 	ff2->setFieldNoProfileSBT(f);  // le maillage n'existe plus, tant pis :-)
 	ff2->write(fName, 0); // 0 oui oui on veut bien 0 ici.
+	
+	/* Create a field on a boundary */
+    Mesh Msquare("./meshSquare.med");
+    Mesh Mbottom = Msquare.getBoundaryGroupMesh ( "Bottom" );
+	Mbottom.writeMED("./meshSquare", false);
+    Mbottom.writeVTK("./meshSquare");
+	Field Fbottom_cells("Bottom_BC",CELLS,Mbottom);
+	for(int i=0; i<Fbottom_cells.getNumberOfElements(); i++)
+		Fbottom_cells[i]=300;
+	Fbottom_cells.writeMED("./meshSquare",false);
+	Fbottom_cells.writeVTK("./meshSquare",true);
+	Fbottom_cells.writeCSV("./meshSquare");
+	Field Fbottom_nodes("Bottom_BC",NODES,Mbottom);
+	for(int i=0; i<Fbottom_nodes.getNumberOfElements(); i++)
+		Fbottom_nodes[i]=300;
+	Fbottom_nodes.writeMED("./meshSquare",false);
+	Fbottom_cells.writeVTK("./meshSquare",true);
+	Fbottom_cells.writeCSV("./meshSquare");	
 }
