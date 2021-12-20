@@ -97,7 +97,6 @@ Field::Field( const std::string filename, EntityType type,
 		int iteration, int order, int meshLevel)
 {
 	_field = NULL;
-	_mesh=Mesh(filename + ".med", "", meshLevel);
 	_typeField=type;
 	_fieldName=fieldName;
 
@@ -105,10 +104,10 @@ Field::Field( const std::string filename, EntityType type,
 }
 
 Field::Field(const std::string meshFileName, EntityType type, const std::vector<double> Vconstant, 
-		const std::string & fieldName, int meshLevel, double time )
+		const std::string & fieldName, int meshLevel, double time, std::string meshName )
 {
 	_field = NULL;
-	_mesh=Mesh(meshFileName + ".med", "", meshLevel);
+	_mesh=Mesh(meshFileName + ".med", meshName, meshLevel);
 	_typeField=type;
 	_numberOfComponents=Vconstant.size();
 	_time=time;
@@ -420,7 +419,8 @@ Field::readFieldMed( const std::string & fileNameRadical,
 	_numberOfComponents = _field->getNumberOfComponents() ;
 	_time = _field->getTime(iteration, order);
 
-	cout<<"Found field " << fieldName << " in file " << completeFileName <<endl;
+	cout<<"Found field " << fieldName << " in file " << completeFileName << " on mesh named "<< _field->getMesh()->getName()<< endl;
+	_mesh=Mesh( completeFileName, _field->getMesh()->getName());
 }
 
 

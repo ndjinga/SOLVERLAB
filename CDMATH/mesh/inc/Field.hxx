@@ -86,7 +86,7 @@ class Field
 	 *  */
 	Field(const std::string meshfileName, EntityType fieldType, 
 		  const std::vector<double> Vconstant,const std::string & fieldName = "",
-		   int meshLevel=0, double time=0.0);
+		   int meshLevel=0, double time=0.0, std::string meshName="");
 
     /**
      * constructor with data
