@@ -30,22 +30,6 @@ enum SpaceScheme
 	staggered,/**<  scheme inspired by staggered discretisations */
 };
 
-//! enumeration pressureEstimate
-/*! the pressure estimate needed to fit physical parameters  */
-enum pressureEstimate
-{
-	around1bar300K,/**< pressure is around 1 bar and temperature around 300K (for TransportEquation, SinglePhase and IsothermalTwoFluid) or 373 K (saturation for DriftModel and FiveEqsTwoFluid) */
-	around155bars600K/**< pressure is around 155 bars  and temperature around 618 K (saturation) */
-};
-
-//! enumeration phaseType
-/*! The fluid type can be Gas or water  */
-enum phaseType
-{
-	Liquid,/**< Fluid considered is water */
-	Gas/**< Fluid considered is Gas */
-};
-
 //! enumeration NonLinearFormulation
 /*! the formulation used to compute the non viscous fluxes */
 enum NonLinearFormulation
@@ -54,6 +38,14 @@ enum NonLinearFormulation
 	VFRoe,/**< Masella, Faille and Gallouet non linear formulation is used */
 	VFFC,/**< Ghidaglia, Kumbaro and Le Coq non linear formulation is used */
 	reducedRoe,/**< compacted formulation of Roe scheme without computation of the fluxes */
+};
+
+//! enumeration phaseType
+/*! The material phase can be Gas or liquid  */
+enum phaseType
+{
+	Liquid,/**< Material considered is Liquid */
+	Gas/**< Material considered is Gas */
 };
 
 //! enumeration BoundaryType
