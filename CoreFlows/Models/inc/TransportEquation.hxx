@@ -20,25 +20,17 @@
 using namespace std;
 
 
-//! enumeration phase
-/*! The fluid type can be LiquidPhase or water  */
-enum phase
-{
-	LiquidPhase,/**< Fluid considered is GasPhase */
-	GasPhase/**< Fluid considered is Gas */
-};
-
-//! enumeration pressureEstimate
-/*! the pressure estimate needed to fit physical parameters  */
-enum pressureMagnitude
-{
-	around1bar300KTransport,/**< pressure is around 1 bar and temperature around 300K (for TransportEquation, SinglePhase and IsothermalTwoFluid) or 373 K (saturation for DriftModel and FiveEqsTwoFluid) */
-	around155bars600KTransport/**< pressure is around 155 bars  and temperature around 618 K (saturation) */
-};
-
 //! enumeration BoundaryType
 /*! Boundary condition type  */
 enum BoundaryTypeTransport	{InletTransport,  OutletTransport, NeumannTransport, DirichletTransport, NoneBCTransport};//Actually Inlet=Dirichlet and Outlet=Neumann
+
+//! enumeration phaseType
+/*! The material phase can be Solid, Gas or liquid  */
+enum FluidMaterial
+{
+	Air,/**< Material considered is air */
+	Water/**< Material considered is water */
+};
 
 /** \struct LimitField
  * \brief value of some fields on the boundary  */
@@ -61,10 +53,10 @@ public :
 	/** \fn TransportEquation
 			 * \brief Constructor for the enthalpy transport in a fluid
 			 * \param [in] phase : \ref Liquid or \ref Gas
-			 * \param [in] pressureMagnitude : \ref around1bar or \ref around155bars
+			 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 			 * \param [in] vector<double> : fluid velocity (assumed constant)
 			 *  */
-	TransportEquation(phase fluid, pressureMagnitude pEstimate,vector<double> vitesseTransport, MPI_Comm comm = MPI_COMM_WORLD);
+	TransportEquation(FluidMaterial fluid, pressureEstimate pEstimate,vector<double> vitesseTransport, MPI_Comm comm = MPI_COMM_WORLD);
 
 	//Gestion du calcul
 	virtual void initialize();
