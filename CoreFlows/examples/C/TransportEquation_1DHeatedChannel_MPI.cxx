@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	//Set the fluid transport velocity
 	vector<double> transportVelocity(1,5);//fluid velocity vector
 
-	TransportEquation  myProblem(LiquidPhase,around155bars600KTransport,transportVelocity);
+	TransportEquation  myProblem(Water,around155bars600K,transportVelocity);
 	Field VV("Enthalpy", CELLS, M, 1);
 
 

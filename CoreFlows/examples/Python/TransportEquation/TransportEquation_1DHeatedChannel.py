@@ -17,7 +17,7 @@ def TransportEquation_1DHeatedChannel():
     # Set the transport velocity
 	transportVelocity=[5];
 
-	myProblem = cf.TransportEquation(cf.LiquidPhase,cf.around155bars600KTransport,transportVelocity);
+	myProblem = cf.TransportEquation(cf.Water,cf.around155bars600K,transportVelocity);
 	nVar = myProblem.getNumberOfVariables();
 
     # Prepare for the initial condition

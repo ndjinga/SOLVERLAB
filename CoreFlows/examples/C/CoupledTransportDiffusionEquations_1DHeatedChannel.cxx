@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 	double rho_ur=10000;//Uranium density
 	double lambda_ur=5;
 
-	TransportEquation  myTransportEquation(LiquidPhase, around155bars600KTransport,transportVelocity);
+	TransportEquation  myTransportEquation(Water, around155bars600K,transportVelocity);
 
 	bool FECalculation=false;
     DiffusionEquation  myDiffusionEquation(spaceDim,FECalculation,rho_ur, cp_ur, lambda_ur);

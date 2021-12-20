@@ -27,8 +27,8 @@ def TransportEquation_2DSpherical(  fileName):
 	
     # Mandatory physical values
 	transport_velocity=[5,5]# Constant velocity vector of dimension spaceDim
-	fluid_phase=solverlab.LiquidPhase# ou bien solverlab.GasPhase
-	pressure_regime=solverlab.around155bars600KTransport# ou bien solverlab.around1bar300KTransport
+	fluid_phase=solverlab.Water# ou bien solverlab.Air
+	pressure_regime=solverlab.around155bars600K# ou bien solverlab.around1bar300KTransport
 	myProblem = solverlab.TransportEquation(fluid_phase,pressure_regime,transport_velocity);
 
     # Set the mesh and initial data
