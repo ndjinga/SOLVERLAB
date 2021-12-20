@@ -5,7 +5,11 @@ import sys
 import solverlab
 
 #===============================================================================================================================
-# Name        : Finite Elements simulation of the 2D heat equation -\triangle T = f with Neumann boundary condition
+# Name        : Simulation of a 2D heat equation 
+# Description : Test solving the diffusion of the temperature T in a solid
+#               \rho cp dT/dt-\lambda\Delta T=\Phi + \lambda_{sf} (T_{fluid}-T_{solid}) 
+#               Neumann or Dirichlet boundary conditions
+#               Finite elements or finite volumes
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2021
 #================================================================================================================================
@@ -14,9 +18,9 @@ import solverlab
 def DiffusionEquation_2DSpherical(FECalculation, fileName):
 
 	""" Description : Test solving the diffusion of the temperature T in a solid (default is Uranium). 
-		Equation : Thermal diffusion equation  \rho cp dT/dt-\lambda\Delta T=\Phi + \lambda_{sf} (T_{fluid}-T)
-		        Heat capacity, density, and conductivity of the solid MUST be defined
-		        The solid may be extra refrigerated by a fluid with transfer coefficient using functions setFluidTemperature and setHeatTransfertCoeff
+		Equation : Thermal diffusion equation  \rho cp dT/dt-\lambda\Delta T=\Phi + \lambda_{sf} (T_{fluid}-T_{solid})
+		        Heat capacity cp, density \rho, and conductivity \lambda of the solid MUST be defined
+		        The solid may be refrigerated by a fluid with temperature T_{solid} transfer coefficient \lambda_{sf} using functions setFluidTemperature and setHeatTransfertCoeff
 		        The solid may receive some extra heat power due to nuclear fissions using function setHeatSource
 	"""
 	#Space dimension of the problem
