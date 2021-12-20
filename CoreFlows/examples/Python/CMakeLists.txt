@@ -121,6 +121,7 @@ CreatePythonTest(SinglePhase/SinglePhase_3DVortexTube_NoCone_NoViscosity.py)
 CreatePythonTest(SinglePhase/SinglePhase_3DVortexTube_WithCone_NoViscosity.py)
 
 CreatePythonTest(TransportEquation/TransportEquation_1DHeatedChannel.py)
+add_test(TransportEquation/TransportEquation_2DSpherical ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/TransportEquation/TransportEquation_2DSpherical.py )
 
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF.py)
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_Neumann.py)
