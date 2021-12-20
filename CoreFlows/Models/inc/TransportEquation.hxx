@@ -108,6 +108,9 @@ public :
 			 * \param [out] void
 			 *  */
 	void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
+	void setDirichletBoundaryCondition(string groupName, Field bc_field){
+		_limitField[groupName]=LimitFieldTransport(DirichletTransport, -1, 0, -1);
+	};
 
 	/** \fn setNeumannBoundaryCondition 
 	 * \brief adds a new boundary condition of type Neumann
@@ -117,7 +120,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setNeumannBoundaryCondition(string groupName, double flux=0){
-		_limitField[groupName]=LimitFieldTransport(NeumannTransport,-1,flux,-1);
+		_limitField[groupName]=LimitFieldTransport(NeumannTransport,-1,-1,flux);
 	};
 	/** \fn setOutletBoundaryCondition 
 	 * \brief adds a new boundary condition of type Outlet
@@ -127,7 +130,7 @@ public :
 	 * \param [out] void
 	 *  */
 	void setOutletBoundaryCondition(string groupName, double flux=0){
-		_limitField[groupName]=LimitFieldTransport(OutletTransport,-1,flux,-1);
+		_limitField[groupName]=LimitFieldTransport(OutletTransport,-1,-1,flux);
 	};
 	/** \fn setNeumannBoundaryCondition
 			 * \brief adds a new boundary condition of type Neumann
@@ -140,6 +143,9 @@ public :
 			 * \param [out] void
 			 *  */
 	void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
+	void setNeumannBoundaryCondition(string groupName, Field bc_field){
+		_limitField[groupName]=LimitFieldTransport(NeumannTransport,-1,-1, 0);
+	};
 
 	/** \fn setBoundaryFields
 	 * \brief met à jour  _limitField  ( le type de condition limite )

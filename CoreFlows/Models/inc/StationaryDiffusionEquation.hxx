@@ -98,6 +98,9 @@ public :
 			 * \param [out] void
 			 *  */
 	void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
+	void setDirichletBoundaryCondition(string groupName, Field bc_field){
+		_limitField[groupName]=LimitFieldStationaryDiffusion(DirichletStationaryDiffusion, 0, -1);
+	};
 
 	/** \fn setNeumannBoundaryCondition
 			 * \brief adds a new boundary condition of type Neumann
@@ -120,6 +123,9 @@ public :
 			 * \param [out] void
 			 *  */
 	void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
+	void setNeumannBoundaryCondition(string groupName, Field bc_field){
+		_limitField[groupName]=LimitFieldStationaryDiffusion(NeumannStationaryDiffusion,-1, 0);
+	};
 
 	void setDirichletValues(map< int, double> dirichletBoundaryValues);
 	void setNeumannValues  (map< int, double>   neumannBoundaryValues);
