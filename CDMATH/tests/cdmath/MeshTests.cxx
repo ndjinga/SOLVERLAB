@@ -414,7 +414,7 @@ MeshTests::testClassMesh( void )
     testNormals(M3Tetra);
 
     //Testing a 2D unstructured mesh (triangles)
-    Mesh M23("./meshSquare.med");
+    Mesh M23("./meshSquare.med", "Mesh_1", 0);
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups().size() == 5);//There is a default group named "Boundary" that is created by the mesh class;
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[0].compare("Boundary")==0);
     CPPUNIT_ASSERT(M23.getNameOfFaceGroups()[1].compare("Bottom")==0);

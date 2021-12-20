@@ -243,7 +243,13 @@ void
 Mesh::readMeshMed( const std::string filename, const std::string & meshName, const int meshLevel)
 //----------------------------------------------------------------------
 {
-	MEDFileUMesh *m=MEDFileUMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
+	MEDFileUMesh *m;
+	
+	if( meshName == "" )
+		m=MEDFileUMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
+	else
+		m=MEDFileUMesh::New(filename.c_str(), meshName.c_str());//seeks the mesh named meshName in the file
+		
 	_mesh=m->getMeshAtLevel(meshLevel);
     _mesh->checkConsistencyLight();
 	_mesh->setName(_mesh->getName());

@@ -377,7 +377,7 @@ FieldTests::testClassField( void )
 	ff2->write(fName, 0); // 0 oui oui on veut bien 0 ici.
 	
 	/* Create a field on a boundary */
-    Mesh Msquare("./meshSquare.med");
+    Mesh Msquare("./meshSquare.med", "Mesh_1", 0);
     Mesh Mbottom = Msquare.getBoundaryGroupMesh ( "Bottom" );
 	Mbottom.writeMED("./meshSquare", false);
     Mbottom.writeVTK("./meshSquare");

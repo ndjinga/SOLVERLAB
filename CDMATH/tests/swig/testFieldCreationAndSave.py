@@ -7,7 +7,7 @@ import medcoupling as mc
 
 print("Loading a triangular mesh of a 2D square")
 filename = "./meshSquare"
-M=cdmath.Mesh(filename+".med")
+M=cdmath.Mesh(filename+".med", "Mesh_1", 0)
 
 #Extract groups in the mesh
 print("Checking boundary group names")
