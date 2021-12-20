@@ -991,7 +991,7 @@ Mesh::setMesh( void )
 			assert( nbCells>0);//To make sure our face is not located on an isolated node
 		    
 			Face fi( nbNodes, nbCells, 1.0, p, 1., 0., 0. ) ;
-			for(int node_id=0; node_id<nbNodes;node_id++)//This loop could b deleted since nbNodes=1. Trying to merge with setMesh
+			for(int node_id=0; node_id<nbNodes;node_id++)//This loop could be deleted since nbNodes=1. Trying to merge with setMesh
 				fi.addNodeId(node_id,workv[node_id]) ;//global node number
 	
 			fi.addCellId(0,workc[0]) ;
@@ -1047,6 +1047,7 @@ Mesh::setMesh( void )
 		{
 			cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
 			_numberOfNodes = correctNbNodes;
+			//memcpy(_nodes,mesh.getNodes(),correctNbNodes*sizeof(*mesh.getNodes())) ;
 		}
 	}
 	else if(_meshDim==2  || _meshDim==3)
