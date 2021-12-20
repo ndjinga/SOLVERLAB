@@ -725,7 +725,6 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 		{
 			MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
             m->unPolyze();
-			m->sortCellsInMEDFileFrmt( );
 			nbCellsSubMesh=m->getNumberOfCells();
 			
 			_faceGroups.insert(_faceGroups.end(),m);//Vector of group meshes
@@ -1038,8 +1037,11 @@ Mesh::setMesh( void )
 				_nodes[id] = vi ;
 			}
 		}
-		if( _numberOfNodes!=correctNbNodes)
+		if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
+		{
 			cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
+			_numberOfNodes = correctNbNodes;
+		}
 	}
 	else if(_meshDim==2  || _meshDim==3)
 	{
@@ -1270,9 +1272,12 @@ Mesh::setMesh( void )
 				_nodes[id] = vi ;
 			}
 		}
-		if( _numberOfNodes!=correctNbNodes)
+		if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
+		{
 			cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
-
+			_numberOfNodes = correctNbNodes;
+		}
+		
 		if(_spaceDim==_meshDim)
 			fieldn->decrRef();
 		fieldl->decrRef();
@@ -2043,7 +2048,7 @@ Mesh::writeVTK ( const std::string fileName ) const
 
 //----------------------------------------------------------------------
 void
-Mesh::writeMED ( const std::string fileName ) const
+Mesh::writeMED ( const std::string fileName, bool fromScratch ) const
 //----------------------------------------------------------------------
 {
 	if( !_meshNotDeleted )
@@ -2051,7 +2056,7 @@ Mesh::writeMED ( const std::string fileName ) const
 		
 	string fname=fileName+".med";
 	MEDCouplingUMesh* mu=_mesh->buildUnstructured();
-	MEDCoupling::WriteUMesh(fname.c_str(),mu,true);
+	MEDCoupling::WriteUMesh(fname.c_str(),mu, fromScratch);
 
 	/* Try to save mesh groups */
 	//MEDFileUMesh meshMEDFile;

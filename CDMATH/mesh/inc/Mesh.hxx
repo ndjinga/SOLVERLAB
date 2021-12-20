@@ -322,7 +322,7 @@ public: //----------------------------------------------------------------
 	/**
 	 * \brief write mesh in the MED format
 	 */
-	void writeMED ( const std::string fileName ) const ;
+	void writeMED ( const std::string fileName, bool fromScratch = true ) const ;
 
 	void setGroupAtPlan(double value, int direction, double eps, std::string groupName, bool isBoundaryGroup=true) ;
 
