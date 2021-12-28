@@ -119,7 +119,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 		nodeStrctPtr[i]=_nxyz[i]+1;
 		dxyzPtr[i]=_dxyz[i];
 	}
-	_mesh=mesh->deepCopy();
+	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
     _meshNotDeleted=true;
     _isStructured=true;
 
@@ -149,8 +149,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 		_zMax=Box0[5];
 	}
 
-	_mesh=mesh->deepCopy();
-	_mesh=mesh->buildUnstructured();
+	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
     _meshNotDeleted=true;
     _isStructured=false;
 
@@ -220,7 +219,8 @@ Mesh::Mesh( const Mesh& mesh )
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
     
-	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->deepCopy();
+	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
+
 	_mesh=m1;
     _meshNotDeleted=mesh.meshNotDeleted();
 }
@@ -1893,7 +1893,8 @@ Mesh::operator= ( const Mesh& mesh )
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
 
-	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->deepCopy();
+	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
+
 	_mesh=m1;
 	return *this;
 }
