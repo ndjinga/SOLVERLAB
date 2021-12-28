@@ -1355,7 +1355,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     MEDCouplingUMesh * mesh1d = MEDCouplingUMesh::New(meshName, 1);
     mesh1d->allocateCells(nx - 1);
     double * coords = new double[nx];
-    mcIdType * nodal_con = new mcIdType[2];
+    mcIdType nodal_con[2];
     coords[0]=points[0];
     for(int i=0; i<nx- 1 ; i++)
     {
@@ -1371,7 +1371,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     std::copy(coords,coords+nx,coords_arr->getPointer());
     mesh1d->setCoords(coords_arr);
 
-    delete [] coords, nodal_con;
+    delete [] coords;
     coords_arr->decrRef();
 
     _mesh=mesh1d->buildUnstructured();//To enable writeMED. Because we declared the mesh as unstructured, we decide to build the unstructured data (not mandatory)
