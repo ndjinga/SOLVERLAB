@@ -90,7 +90,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 	_meshDim=mesh->getMeshDimension();
 	_dxyz=mesh->getDXYZ();
 	_nxyz=mesh->getCellGridStructure();
-	double* Box0=new double[2*_spaceDim];
+	double Box0[2*_spaceDim];
 	mesh->getBoundingBox(Box0);
     _name=mesh->getName();
     _epsilon=1e-6;
@@ -109,9 +109,9 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 		_zMax=Box0[5];
 	}
 
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr = new double[_spaceDim];
-	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
+	double originPtr[_spaceDim];
+	double dxyzPtr[_spaceDim];
+	mcIdType nodeStrctPtr[_spaceDim];
 
 	for(int i=0;i<_spaceDim;i++)
 	{
@@ -119,21 +119,9 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
 		nodeStrctPtr[i]=_nxyz[i]+1;
 		dxyzPtr[i]=_dxyz[i];
 	}
-	_mesh=MEDCouplingIMesh::New(_name,
-			_spaceDim,
-			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
-			originPtr,
-			originPtr+_spaceDim,
-			dxyzPtr,
-			dxyzPtr+_spaceDim);
+	_mesh=mesh->deepCopy();
     _meshNotDeleted=true;
     _isStructured=true;
-
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
-	delete [] Box0 ;
 
 	setMesh();
 }
@@ -142,7 +130,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 {
 	_spaceDim=mesh->getSpaceDimension();
 	_meshDim=mesh->getMeshDimension();
-	double* Box0=new double[2*_spaceDim];
+	double Box0[2*_spaceDim];
 	mesh->getBoundingBox(Box0);
     _name=mesh->getName();
     _epsilon=1e-6;
@@ -165,7 +153,6 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
 	_mesh=mesh->buildUnstructured();
     _meshNotDeleted=true;
     _isStructured=false;
-	delete [] Box0 ;
 
 	setMesh();
 }
@@ -258,6 +245,9 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, con
     _name=_mesh->getName();
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
     MEDCoupling::MEDCouplingIMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingIMesh*> (_mesh.retn());
     if(structuredMesh)
     {
@@ -265,8 +255,6 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, con
 		_meshNotDeleted=false;
         _dxyz=structuredMesh->getDXYZ();
         _nxyz=structuredMesh->getCellGridStructure();
-        double* Box0=new double[2*_spaceDim];
-        structuredMesh->getBoundingBox(Box0);
     
         _xMin=Box0[0];
         _xMax=Box0[1];
@@ -1293,26 +1281,6 @@ Mesh::setMesh( void )
 	else
 		throw CdmathException("Mesh::setMesh space dimension should be 1, 2 or 3");
 
-    //definition of the bounding box for unstructured meshes
-    if(!_isStructured)//Structured case is treated in function readMeshMed
-    {
-        double Box0[2*_spaceDim];
-        coo->getMinMaxPerComponent(Box0);
-
-        _xMin=Box0[0];
-        _xMax=Box0[1];
-        if (_spaceDim>=2)
-        {
-            _yMin=Box0[2];
-            _yMax=Box0[3];
-        }
-        if (_spaceDim>=3)
-        {
-            _zMin=Box0[4];
-            _zMax=Box0[5];
-        }
-    }
-	
     //Set boundary groups
     _faceGroupNames.push_back("Boundary");
     _nodeGroupNames.push_back("Boundary");
@@ -1442,9 +1410,9 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 	_nxyz.resize(_spaceDim);
 	_nxyz[0]=nx;
 
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr = new double[_spaceDim];
-	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
+	double originPtr[_spaceDim];
+	double dxyzPtr[_spaceDim];
+	mcIdType nodeStrctPtr[_spaceDim];
 
 	originPtr[0]=xmin;
 	nodeStrctPtr[0]=nx+1;
@@ -1459,10 +1427,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
     _meshNotDeleted=true;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
-
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
 
 	setMesh();
 }
@@ -1502,9 +1466,9 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	_dxyz[0]=dx;
 	_dxyz[1]=dy;
 
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr   = new double[_spaceDim];
-	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
+	double originPtr[_spaceDim];
+	double dxyzPtr[_spaceDim];
+	mcIdType nodeStrctPtr[_spaceDim];
 
 	originPtr[0]=xmin;
 	originPtr[1]=ymin;
@@ -1536,10 +1500,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             cout<< "split_to_triangles_policy = "<< split_to_triangles_policy << endl;
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : Unknown splitting policy");
         }
-        
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
     
 	setMesh();
 }
@@ -1582,9 +1542,9 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	_nxyz[1]=ny;
 	_nxyz[2]=nz;
 
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr = new double[_spaceDim];
-	mcIdType *nodeStrctPtr = new mcIdType[_spaceDim];
+	double originPtr[_spaceDim];
+	double dxyzPtr[_spaceDim];
+	mcIdType nodeStrctPtr[_spaceDim];
 
 	originPtr[0]=xmin;
 	originPtr[1]=ymin;
@@ -1626,10 +1586,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             cout<< "split_to_tetrahedra_policy = "<< split_to_tetrahedra_policy << endl;
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : splitting policy value should be 0 or 1");
         }
-
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
     
 	setMesh();
 }
