@@ -144,7 +144,7 @@ public: //----------------------------------------------------------------
 	int getSpaceDimension( void ) const ;
 
 	/**
-	 * \brief Mesh dimension
+	 * \brief return Mesh dimension
 	 * @return _meshDim
 	 */
 	int getMeshDimension( void ) const ;
@@ -244,7 +244,7 @@ public: //----------------------------------------------------------------
 	std::vector<mcIdType> getCellGridStructure() const;// for structured meshes
 
 	/**
-	 * \brief surcharge operator =
+	 * \brief overload operator =
 	 * @param mesh : The Mesh object to be copied
 	 */
 	const Mesh& operator= ( const Mesh& mesh ) ;
@@ -267,13 +267,13 @@ public: //----------------------------------------------------------------
 
 	/**
 	 * \brief return the list of face group names
-	 * return _faceGroupNames
+	 * @return _faceGroupNames
 	 */
 	std::vector<std::string> getNameOfFaceGroups( void )  const ;
 
 	/**
 	 * \brief return the list of node group names
-	 * return _nodeGroupNames
+	 * @return _nodeGroupNames
 	 */
 	std::vector<std::string> getNameOfNodeGroups( void )  const ;
 
@@ -362,7 +362,7 @@ public: //----------------------------------------------------------------
 
     std::vector< std::string > getElementTypesNames() const ;
 	/**
-	 * \brief Compute the minimum value over all cells of the ratio cell perimeter/cell vaolume
+	 * \brief Compute the minimum value over all cells of the ratio cell perimeter/cell volume
 	 */
     double minRatioVolSurf() const;
     
@@ -426,7 +426,8 @@ private: //----------------------------------------------------------------
 
 	std::vector<mcIdType> _nxyz;
 
-	std::vector<double> _dxyz;
+	std::vector<double> _dxyz;//lenght depth and height of each cell
+
 	/*
 	 * The nodes in this mesh.
 	 */
@@ -460,7 +461,7 @@ private: //----------------------------------------------------------------
 	/*
 	 * The number of edges in this mesh.
 	 */
-	int _numberOfEdges;//Useful to deduce the number of non zero coefficients in the finite element matrix 
+	int _numberOfEdges;//Useful to deduce the number of non zero coefficients in a finite element matrix 
 
 	/*
 	 * The names of face groups.
