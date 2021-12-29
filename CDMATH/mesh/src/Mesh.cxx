@@ -67,10 +67,6 @@ Mesh::Mesh( void )
 Mesh::~Mesh( void )
 //----------------------------------------------------------------------
 {
-	cout<< "sharepointer count = "<< _cells.use_count()<<endl;
-	//_cells.reset();
-	//cout<< "sharepointer count = "<< _cells.use_count()<<endl;
-	
 	//for(int i=0; i< _faceGroups.size(); i++)
 	//	_faceGroups[i]->decrRef();
 	//	_nodeGroups[i]->decrRef();
@@ -446,7 +442,7 @@ Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupN
 			_faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
 		}
 		else
-		{
+		{cout<<"_faceGroupNames.size()="<<_faceGroupNames.size()<<", _faceGroupsIds.size()="<<_faceGroupsIds.size()<<endl;
 			std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
 			faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
 			/* Detect and erase duplicates face ids */
