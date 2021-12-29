@@ -67,9 +67,9 @@ Mesh::Mesh( void )
 Mesh::~Mesh( void )
 //----------------------------------------------------------------------
 {
-	delete [] _cells;
-	delete [] _nodes;
-	delete [] _faces;
+	cout<< "sharepointer count = "<< _cells.use_count()<<endl;
+	//_cells.reset();
+	//cout<< "sharepointer count = "<< _cells.use_count()<<endl;
 	
 	//for(int i=0; i< _faceGroups.size(); i++)
 	//	_faceGroups[i]->decrRef();
@@ -192,22 +192,13 @@ Mesh::Mesh( const Mesh& mesh )
 	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
 	_nodeGroups = mesh.getNodeGroups() ;
 
-	_nodes   = new Node[_numberOfNodes] ;
-	_faces   = new Face[_numberOfFaces] ;
-	_cells   = new Cell[_numberOfCells] ;
+	_nodes   = mesh.getNodes() ;
+	_faces   = mesh.getFaces() ;
+	_cells   = mesh.getCells() ;
     
     //memcpy(_nodes,mesh.getNodes(),sizeof(*mesh.getNodes())) ;
     //memcpy(_cells,mesh.getCells(),sizeof(*mesh.getCells())) ;
     //memcpy(_faces,mesh.getFaces(),sizeof(*mesh.getFaces())) ;
-
-	for (int i=0;i<_numberOfNodes;i++)
-		_nodes[i]=mesh.getNode(i);
-
-	for (int i=0;i<_numberOfFaces;i++)
-		_faces[i]=mesh.getFace(i);
-
-	for (int i=0;i<_numberOfCells;i++)
-		_cells[i]=mesh.getCell(i);
 
     _indexFacePeriodicSet= mesh.isIndexFacePeriodicSet();
     if(_indexFacePeriodicSet)
@@ -295,27 +286,27 @@ Mesh::setGroupAtFaceByCoords(double x, double y, double z, double eps, std::stri
 	if(isBoundaryGroup)        
         for(int i=0; i<_boundaryFaceIds.size(); i++)
         {
-			Fi=_faces[_boundaryFaceIds[i]];
+			Fi=_faces.get()[_boundaryFaceIds[i]];
 			FX=Fi.x();
 			FY=Fi.y();
 			FZ=Fi.z();
 			if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
 			{
 				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
-				_faces[_boundaryFaceIds[i]].setGroupName(groupName);
+				_faces.get()[_boundaryFaceIds[i]].setGroupName(groupName);
 			}
         }
 	else
 		for (int iface=0;iface<_numberOfFaces;iface++)
 		{
-			Fi=_faces[iface];
+			Fi=_faces.get()[iface];
 			FX=Fi.x();
 			FY=Fi.y();
 			FZ=Fi.z();
 			if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
 			{
 				faceIds.insert(faceIds.end(),iface);
-				_faces[iface].setGroupName(groupName);
+				_faces.get()[iface].setGroupName(groupName);
 			}
 		}
 
@@ -351,26 +342,26 @@ Mesh::setGroupAtNodeByCoords(double x, double y, double z, double eps, std::stri
 	if(isBoundaryGroup)        
         for(int i=0; i<_boundaryNodeIds.size(); i++)
         {
-			Ni=_nodes[_boundaryNodeIds[i]];
+			Ni=_nodes.get()[_boundaryNodeIds[i]];
 			NX=Ni.x();
 			NY=Ni.y();
 			NZ=Ni.z();
 			if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
 			{
 				nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
-				_nodes[_boundaryNodeIds[i]].setGroupName(groupName);
+				_nodes.get()[_boundaryNodeIds[i]].setGroupName(groupName);
 			}
         }
 	else
 		for (int inode=0;inode<_numberOfNodes;inode++)
 		{
-			NX=_nodes[inode].x();
-			NY=_nodes[inode].y();
-			NZ=_nodes[inode].z();
+			NX=_nodes.get()[inode].x();
+			NY=_nodes.get()[inode].y();
+			NZ=_nodes.get()[inode].z();
 			if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
 			{
 				nodeIds.insert(nodeIds.end(),inode);
-				_nodes[inode].setGroupName(groupName);
+				_nodes.get()[inode].setGroupName(groupName);
 			}
 		}
 
@@ -405,21 +396,21 @@ Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupN
 	if(isBoundaryGroup)        
         for(int i=0; i<_boundaryFaceIds.size(); i++)
         {
-			cord=_faces[_boundaryFaceIds[i]].getBarryCenter()[direction];
+			cord=_faces.get()[_boundaryFaceIds[i]].getBarryCenter()[direction];
 			if (abs(cord-value)<eps)
 			{
 				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
-				_faces[_boundaryFaceIds[i]].setGroupName(groupName);
+				_faces.get()[_boundaryFaceIds[i]].setGroupName(groupName);
 			}
         }
 	else
 		for (int iface=0;iface<_numberOfFaces;iface++)
 		{
-			cord=_faces[iface].getBarryCenter()[direction];
+			cord=_faces.get()[iface].getBarryCenter()[direction];
 			if (abs(cord-value)<eps)
 			{
 				faceIds.insert(faceIds.end(),iface);
-				_faces[iface].setGroupName(groupName);
+				_faces.get()[iface].setGroupName(groupName);
 			}
 		}
 
@@ -427,21 +418,21 @@ Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupN
 	if(isBoundaryGroup)        
         for(int i=0; i<_boundaryNodeIds.size(); i++)
         {
-			cord=_nodes[_boundaryNodeIds[i]].getPoint()[direction];
+			cord=_nodes.get()[_boundaryNodeIds[i]].getPoint()[direction];
 			if (abs(cord-value)<eps)
 			{
 				nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
-				_nodes[_boundaryNodeIds[i]].setGroupName(groupName);
+				_nodes.get()[_boundaryNodeIds[i]].setGroupName(groupName);
 			}
         }
 	else
 		for (int inode=0;inode<_numberOfNodes;inode++)
 		{
-			cord=_nodes[inode].getPoint()[direction];
+			cord=_nodes.get()[inode].getPoint()[direction];
 			if (abs(cord-value)<eps)
 			{
 				nodeIds.insert(nodeIds.end(),inode);
-				_nodes[inode].setGroupName(groupName);
+				_nodes.get()[inode].setGroupName(groupName);
 			}
 		}
 
@@ -490,8 +481,8 @@ Mesh::setBoundaryNodesFromFaces()
 {
     for (int iface=0;iface<_boundaryFaceIds.size();iface++)
     {
-        std::vector< int > nodesID= _faces[_boundaryFaceIds[iface]].getNodesId();
-        int nbNodes = _faces[_boundaryFaceIds[iface]].getNumberOfNodes();
+        std::vector< int > nodesID= _faces.get()[_boundaryFaceIds[iface]].getNodesId();
+        int nbNodes = _faces.get()[_boundaryFaceIds[iface]].getNumberOfNodes();
         for(int inode=0 ; inode<nbNodes ; inode++)
         {
             std::vector<int>::const_iterator  it = std::find(_boundaryNodeIds.begin(),_boundaryNodeIds.end(),nodesID[inode]);
@@ -515,7 +506,7 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
         
     for (int indexFace=0;indexFace<_boundaryFaceIds.size() ; indexFace++)
     {
-        Face my_face=_faces[_boundaryFaceIds[indexFace]];
+        Face my_face=_faces.get()[_boundaryFaceIds[indexFace]];
         int iface_perio=-1;
         if(_meshDim==1)
         {
@@ -533,7 +524,7 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
             
             for (int iface=0;iface<_boundaryFaceIds.size() ; iface++)
             {
-                Face face_i=_faces[_boundaryFaceIds[iface]];
+                Face face_i=_faces.get()[_boundaryFaceIds[iface]];
                 double xi=face_i.x();
                 double yi=face_i.y();
                 if (   (abs(y-yi)<_epsilon || abs(x-xi)<_epsilon )// Case of a square geometry
@@ -557,7 +548,7 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
         
             for (int iface=0;iface<_boundaryFaceIds.size() ; iface++)
             {
-                Face face_i=_faces[_boundaryFaceIds[iface]];
+                Face face_i=_faces.get()[_boundaryFaceIds[iface]];
                 double xi=face_i.x();
                 double yi=face_i.y();
                 double zi=face_i.z();
@@ -588,7 +579,7 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
 int
 Mesh::getIndexFacePeriodic(int indexFace, bool check_groups, bool use_central_inversion)
 {
-	if (!_faces[indexFace].isBorder())
+	if (!_faces.get()[indexFace].isBorder())
         {
             cout<<"Pb with indexFace= "<<indexFace<<endl;
             throw CdmathException("Mesh::getIndexFacePeriodic: not a border face" );
@@ -610,13 +601,13 @@ Mesh::getIndexFacePeriodic(int indexFace, bool check_groups, bool use_central_in
 bool
 Mesh::isBorderNode(int nodeid) const
 {
-	return _nodes[nodeid].isBorder();
+	return _nodes.get()[nodeid].isBorder();
 }
 
 bool
 Mesh::isBorderFace(int faceid) const
 {
-	return _faces[faceid].isBorder();
+	return _faces.get()[faceid].isBorder();
 }
 
 std::vector< int > 
@@ -738,10 +729,10 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 				foundFace=false;
 				for (int iface=0;iface<_numberOfFaces;iface++ )
 				{
-					Point p2=_faces[iface].getBarryCenter();
+					Point p2=_faces.get()[iface].getBarryCenter();
 					if(p1.distance(p2)<_epsilon)
 					{
-						_faces[iface].setGroupName(groupName);
+						_faces.get()[iface].setGroupName(groupName);
 						_faceGroupsIds[_faceGroupsIds.size()-1][ic]=iface;
 						foundFace=true;
 						break;
@@ -786,10 +777,10 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 				foundNode=false;
 				for (int inode=0;inode<_numberOfNodes;inode++ )
 				{
-					Point p2=_nodes[inode].getPoint();
+					Point p2=_nodes.get()[inode].getPoint();
 					if(p1.distance(p2)<_epsilon)
 					{
-						_nodes[inode].setGroupName(groupName);
+						_nodes.get()[inode].setGroupName(groupName);
 						_nodeGroupsIds[_nodeGroupsIds.size()-1][ic]=inode;
 						foundNode=true;
 						break;
@@ -881,13 +872,13 @@ Mesh::setMesh( void )
 	const mcIdType *tmpNEI=nodalI->getConstPointer();
 
 	_numberOfCells = mu->getNumberOfCells() ;
-	_cells      = new Cell[_numberOfCells] ;
+	_cells      = std::shared_ptr<Cell>(new Cell[_numberOfCells], std::default_delete<Cell[]>()) ;
 
 	_numberOfNodes = mu->getNumberOfNodes() ;//This number may include isolated nodes that will not be loaded. The number will be updated during nodes constructions
-	_nodes      = new Node[_numberOfNodes] ;//This array may be resized if isolated nodes are found
+	_nodes      = std::shared_ptr<Node>(new Node[_numberOfNodes], std::default_delete<Node[]>())  ;//This array may be resized if isolated nodes are found
 
 	_numberOfFaces = mu2->getNumberOfCells();
-	_faces       = new Face[_numberOfFaces] ;
+	_faces       = std::shared_ptr<Face>(new Face[_numberOfFaces], std::default_delete<Face[]>()) ;
 
     _indexFacePeriodicSet=false;
 
@@ -959,7 +950,7 @@ Mesh::setMesh( void )
 				ci.addFaceId(el,work[el]) ;
 				xn = - xn; yn=-yn; zn=-zn;
 			}
-			_cells[id] = ci ;
+			_cells.get()[id] = ci ;
 		}
 	
 		for( int id(0); id<_numberOfFaces; id++ )
@@ -994,7 +985,7 @@ Mesh::setMesh( void )
 			}
 			if(nbCells==1)
 				_boundaryFaceIds.push_back(id);
-			_faces[id] = fi ;
+			_faces.get()[id] = fi ;
 		}
 	
 		int correctNbNodes=0;
@@ -1025,10 +1016,10 @@ Mesh::setMesh( void )
 		        for( int el=0;el<nbNeighbourNodes;el++ )
 					vi.addNeighbourNodeId(el,workn[el]) ;//global node number
 				for( int el=0;el<nbFaces;el++ )
-					vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
+					vi.addFaceId(el,workf[el],_faces.get()[workf[el]].isBorder()) ;
 		 		if(vi.isBorder())
 					_boundaryNodeIds.push_back(id);
-				_nodes[id] = vi ;
+				_nodes.get()[id] = vi ;
 			}
 		}
 		if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
@@ -1157,7 +1148,7 @@ Mesh::setMesh( void )
 					}
 				}
 			}
-			_cells[id] = ci ;
+			_cells.get()[id] = ci ;
 		}
 
 		if(_spaceDim!=_meshDim)
@@ -1216,7 +1207,7 @@ Mesh::setMesh( void )
                     }                
             }
             
-			_faces[id] = fi ;
+			_faces.get()[id] = fi ;
 		}
 
 		/*Building mesh nodes, should be done after building mesh faces in order to detect boundary nodes*/
@@ -1261,10 +1252,10 @@ Mesh::setMesh( void )
 					vi.addNeighbourNodeId(el,workn[el]) ;
 				//Detection of border nodes    
 				for( int el=0;el<nbFaces;el++ )
-					vi.addFaceId(el,workf[el],_faces[workf[el]].isBorder()) ;
+					vi.addFaceId(el,workf[el],_faces.get()[workf[el]].isBorder()) ;
 				if(vi.isBorder())
 					_boundaryNodeIds.push_back(id);
-				_nodes[id] = vi ;
+				_nodes.get()[id] = vi ;
 			}
 		}
 		if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
@@ -1750,7 +1741,7 @@ Mesh::getNumberOfEdges ( void ) const
 }
 
 //----------------------------------------------------------------------
-Face*
+std::shared_ptr<Face>
 Mesh::getFaces ( void )  const
 //----------------------------------------------------------------------
 {
@@ -1758,7 +1749,7 @@ Mesh::getFaces ( void )  const
 }
 
 //----------------------------------------------------------------------
-Cell*
+std::shared_ptr<Cell>
 Mesh::getCells ( void ) const
 //----------------------------------------------------------------------
 {
@@ -1770,7 +1761,7 @@ Cell&
 Mesh::getCell ( int i ) const
 //----------------------------------------------------------------------
 {
-	return _cells[i] ;
+	return _cells.get()[i] ;
 }
 
 //----------------------------------------------------------------------
@@ -1778,7 +1769,7 @@ Face&
 Mesh::getFace ( int i ) const
 //----------------------------------------------------------------------
 {
-	return _faces[i] ;
+	return _faces.get()[i] ;
 }
 
 //----------------------------------------------------------------------
@@ -1786,11 +1777,11 @@ Node&
 Mesh::getNode ( int i ) const
 //----------------------------------------------------------------------
 {
-	return _nodes[i] ;
+	return _nodes.get()[i] ;
 }
 
 //----------------------------------------------------------------------
-Node*
+std::shared_ptr<Node>
 Mesh::getNodes ( void )  const
 //----------------------------------------------------------------------
 {
@@ -1854,34 +1845,9 @@ Mesh::operator= ( const Mesh& mesh )
 	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
 	_nodeGroups = mesh.getNodeGroups() ;
 
-	if (_nodes)
-	{
-		delete [] _nodes ;
-		_nodes=NULL;
-	}
-	if (_faces)
-	{
-		delete [] _faces ;
-		_faces=NULL;
-	}
-	if (_cells)
-	{
-		delete [] _cells ;
-		_cells=NULL;
-	}
-
-	_nodes   = new Node[_numberOfNodes] ;
-	_faces   = new Face[_numberOfFaces] ;
-	_cells   = new Cell[_numberOfCells] ;
-
-	for (int i=0;i<_numberOfNodes;i++)
-		_nodes[i]=mesh.getNode(i);
-
-	for (int i=0;i<_numberOfFaces;i++)
-		_faces[i]=mesh.getFace(i);
-
-	for (int i=0;i<_numberOfCells;i++)
-		_cells[i]=mesh.getCell(i);
+	_nodes   = mesh.getNodes() ;
+	_faces   = mesh.getFaces() ;
+	_cells   = mesh.getCells() ;
 
     _indexFacePeriodicSet= mesh.isIndexFacePeriodicSet();
     if(_indexFacePeriodicSet)
@@ -1977,11 +1943,11 @@ Mesh::getMaxNbNeighbours(EntityType type) const
 		int nbNeib;//local number of neighbours
         for(int i=0; i<_numberOfCells; i++)
         {
-            Cell Ci = _cells[i];
+            Cell Ci = _cells.get()[i];
             //Careful with mesh with junctions : do not just take Ci.getNumberOfFaces()
             nbNeib=0;
             for(int j=0; j<Ci.getNumberOfFaces(); j++)
-                nbNeib+=_faces[Ci.getFacesId()[j]].getNumberOfCells()-1;//Without junction this would be +=1
+                nbNeib+=_faces.get()[Ci.getFacesId()[j]].getNumberOfCells()-1;//Without junction this would be +=1
             
             if(result < nbNeib)
                 result=nbNeib;
@@ -1990,8 +1956,8 @@ Mesh::getMaxNbNeighbours(EntityType type) const
     else if(type==NODES)
 	{
         for(int i=0; i<_numberOfNodes; i++)
-            if(result < _nodes[i].getNumberOfEdges())
-                result=_nodes[i].getNumberOfEdges();
+            if(result < _nodes.get()[i].getNumberOfEdges())
+                result=_nodes.get()[i].getNumberOfEdges();
 	}
     else
 		throw CdmathException("Mesh::getMaxNbNeighbours : entity type is not accepted. Should be CELLS or NODES");

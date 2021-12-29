@@ -8,6 +8,8 @@
 #ifndef MESH_HXX_
 #define MESH_HXX_
 
+#include <memory>
+
 #include "MEDCouplingUMesh.hxx"
 #include "MEDCouplingIMesh.hxx"
 #include "MEDCouplingFieldDouble.hxx"
@@ -153,19 +155,19 @@ public: //----------------------------------------------------------------
 	 * \brief return The nodes in this mesh
 	 * @return _nodes
 	 */
-	Node* getNodes ( void ) const ;
+	std::shared_ptr<Node> getNodes ( void ) const ;
 
 	/**
 	 * \brief return The cells in this mesh
 	 * @return _vertices
 	 */
-	Cell* getCells ( void ) const ;
+	std::shared_ptr<Cell> getCells ( void ) const ;
 
 	/**
 	 * \brief return the faces in this mesh
 	 * @return _vertices
 	 */
-	Face* getFaces ( void ) const ;
+	std::shared_ptr<Face> getFaces ( void ) const ;
 
 	/**
 	 * \brief return the number of nodes in this mesh
@@ -431,7 +433,7 @@ private: //----------------------------------------------------------------
 	/*
 	 * The nodes in this mesh.
 	 */
-	Node *_nodes;
+	std::shared_ptr<Node> _nodes;
 
 	/*
 	 * The number of nodes in this mesh.
@@ -441,7 +443,7 @@ private: //----------------------------------------------------------------
 	/*
 	 * The faces in this mesh.
 	 */
-	Face *_faces;
+	std::shared_ptr<Face> _faces;
 
 	/*
 	 * The numbers of faces in this mesh.
@@ -451,7 +453,7 @@ private: //----------------------------------------------------------------
 	/*
 	 * The cells in this mesh.
 	 */
-	Cell *_cells;
+	std::shared_ptr<Cell> _cells;
 
 	/*
 	 * The number of cells in this mesh.
