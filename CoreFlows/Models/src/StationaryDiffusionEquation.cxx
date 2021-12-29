@@ -290,7 +290,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrix(bool & stop)
         result=computeDiffusionMatrixFV(stop);
 
     MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
 
     //Contribution from the solid/fluid heat exchange with assumption of constant heat transfer coefficient
     //update value here if variable  heat transfer coefficient
@@ -405,6 +405,8 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	if(_onlyNeumannBC)	//Check that the matrix is symmetric
 	{
 		PetscBool isSymetric;
+        MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+	    MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
 		MatIsSymmetric(_A,_precision,&isSymetric);
 		if(!isSymetric)
 		{
@@ -528,6 +530,8 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 	if(_onlyNeumannBC)	//Check that the matrix is symmetric
 	{
 		PetscBool isSymetric;
+        MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+	    MatAssemblyEnd(  _A, MAT_FINAL_ASSEMBLY);
 		MatIsSymmetric(_A,_precision,&isSymetric);
 		if(!isSymetric)
 		{
