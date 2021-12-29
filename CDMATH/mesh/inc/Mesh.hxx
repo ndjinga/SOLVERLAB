@@ -152,24 +152,6 @@ public: //----------------------------------------------------------------
 	int getMeshDimension( void ) const ;
 
 	/**
-	 * \brief return The nodes in this mesh
-	 * @return _nodes
-	 */
-	std::shared_ptr<Node> getNodes ( void ) const ;
-
-	/**
-	 * \brief return The cells in this mesh
-	 * @return _vertices
-	 */
-	std::shared_ptr<Cell> getCells ( void ) const ;
-
-	/**
-	 * \brief return the faces in this mesh
-	 * @return _vertices
-	 */
-	std::shared_ptr<Face> getFaces ( void ) const ;
-
-	/**
 	 * \brief return the number of nodes in this mesh
 	 * @return _numberOfNodes
 	 */
@@ -459,6 +441,24 @@ private: //----------------------------------------------------------------
 	 * The number of cells in this mesh.
 	 */
 	int _numberOfCells;
+
+	/**
+	 * \brief return The nodes in this mesh
+	 * @return _nodes
+	 */
+	std::shared_ptr<Node> getNodes ( void ) const ;
+
+	/**
+	 * \brief return The cells in this mesh
+	 * @return _vertices
+	 */
+	std::shared_ptr<Cell> getCells ( void ) const ;
+
+	/**
+	 * \brief return the faces in this mesh
+	 * @return _vertices
+	 */
+	std::shared_ptr<Face> getFaces ( void ) const ;
 
 	/*
 	 * The number of edges in this mesh.
