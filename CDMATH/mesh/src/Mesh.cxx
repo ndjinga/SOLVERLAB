@@ -41,14 +41,7 @@ Mesh::Mesh( void )
 	_numberOfCells = 0;
 	_numberOfEdges = 0;
     _isStructured=false;
-	_xMin=0.;
-	_xMax=0.;
-	_yMin=0.;
-	_yMax=0.;
-	_zMin=0.;
-	_zMax=0.;
     _nxyz.resize(0);
-    _dxyz.resize(0.);
 	_boundaryMesh=NULL;
     _boundaryFaceIds.resize(0);
     _boundaryNodeIds.resize(0);
@@ -80,74 +73,28 @@ Mesh::getName( void ) const
     return _name;
 }
 
-Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
+Mesh::Mesh( const MEDCoupling::MEDCouplingMesh* mesh )
 {
 	_spaceDim=mesh->getSpaceDimension();
 	_meshDim=mesh->getMeshDimension();
-	_dxyz=mesh->getDXYZ();
-	_nxyz=mesh->getCellGridStructure();
-	double Box0[2*_spaceDim];
-	mesh->getBoundingBox(Box0);
     _name=mesh->getName();
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
     
-	_xMin=Box0[0];
-	_xMax=Box0[1];
-	if (_spaceDim>=2)
-	{
-		_yMin=Box0[2];
-		_yMax=Box0[3];
-	}
-	if (_spaceDim>=3)
-	{
-		_zMin=Box0[4];
-		_zMax=Box0[5];
-	}
-
-	double originPtr[_spaceDim];
-	double dxyzPtr[_spaceDim];
-	mcIdType nodeStrctPtr[_spaceDim];
-
-	for(int i=0;i<_spaceDim;i++)
-	{
-		originPtr[i]=Box0[2*i];
-		nodeStrctPtr[i]=_nxyz[i]+1;
-		dxyzPtr[i]=_dxyz[i];
-	}
 	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
-    _meshNotDeleted=true;
-    _isStructured=true;
 
-	setMesh();
-}
-
-Mesh::Mesh( const MEDCoupling::MEDCouplingUMesh* mesh )
-{
-	_spaceDim=mesh->getSpaceDimension();
-	_meshDim=mesh->getMeshDimension();
-	double Box0[2*_spaceDim];
-	mesh->getBoundingBox(Box0);
-    _name=mesh->getName();
-    _epsilon=1e-6;
-    _indexFacePeriodicSet=false;
-    
-	_xMin=Box0[0];
-	_xMax=Box0[1];
-	if (_spaceDim>=2)
-	{
-		_yMin=Box0[2];
-		_yMax=Box0[3];
-	}
-	if (_spaceDim>=3)
-	{
-		_zMin=Box0[4];
-		_zMax=Box0[5];
-	}
-
-	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
-    _meshNotDeleted=true;
-    _isStructured=false;
+    MEDCoupling::MEDCouplingStructuredMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingStructuredMesh*> (_mesh.retn());
+    if(structuredMesh)
+    {
+        _isStructured=true;
+		_meshNotDeleted=false;
+        _nxyz=structuredMesh->getCellGridStructure();
+    }
+    else
+    {
+        _isStructured=false;
+		_meshNotDeleted=true;
+    }
 
 	setMesh();
 }
@@ -167,17 +114,9 @@ Mesh::Mesh( const Mesh& mesh )
 	_meshDim = mesh.getMeshDimension() ;
     _name=mesh.getName();
     _epsilon=mesh.getComparisonEpsilon();
-    _xMax=mesh.getXMax();
-    _yMin=mesh.getYMin();
-    _yMax=mesh.getYMax();
-    _zMin=mesh.getZMin();
-    _zMax=mesh.getZMax();
     _isStructured=mesh.isStructured();
     if(_isStructured)
-    {
         _nxyz = mesh.getCellGridStructure() ;
-        _dxyz=mesh.getDXYZ();
-    }
 	_numberOfNodes = mesh.getNumberOfNodes();
 	_numberOfFaces = mesh.getNumberOfFaces();
 	_numberOfCells = mesh.getNumberOfCells();
@@ -192,10 +131,6 @@ Mesh::Mesh( const Mesh& mesh )
 	_faces   = mesh.getFaces() ;
 	_cells   = mesh.getCells() ;
     
-    //memcpy(_nodes,mesh.getNodes(),sizeof(*mesh.getNodes())) ;
-    //memcpy(_cells,mesh.getCells(),sizeof(*mesh.getCells())) ;
-    //memcpy(_faces,mesh.getFaces(),sizeof(*mesh.getFaces())) ;
-
     _indexFacePeriodicSet= mesh.isIndexFacePeriodicSet();
     if(_indexFacePeriodicSet)
         _indexFacePeriodicMap=mesh.getIndexFacePeriodic();
@@ -232,29 +167,13 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, con
     _name=_mesh->getName();
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
-	double Box0[2*_spaceDim];
-    _mesh->getBoundingBox(Box0);
 
-    MEDCoupling::MEDCouplingIMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingIMesh*> (_mesh.retn());
+    MEDCoupling::MEDCouplingStructuredMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingStructuredMesh*> (_mesh.retn());
     if(structuredMesh)
     {
         _isStructured=true;
 		_meshNotDeleted=false;
-        _dxyz=structuredMesh->getDXYZ();
         _nxyz=structuredMesh->getCellGridStructure();
-    
-        _xMin=Box0[0];
-        _xMax=Box0[1];
-        if (_spaceDim>=2)
-        {
-            _yMin=Box0[2];
-            _yMax=Box0[3];
-        }
-        if (_spaceDim>=3)
-        {
-            _zMin=Box0[4];
-            _zMax=Box0[5];
-        }
     }
     else
     {
@@ -1329,12 +1248,6 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 	_meshDim  = 1 ;
     _name=meshName;
     _epsilon=1e-6;
-	_xMin=points[0];
-	_xMax=points[nx-1];
-	_yMin=0.;
-	_yMax=0.;
-	_zMin=0.;
-	_zMax=0.;
 
     _isStructured = false;
     _indexFacePeriodicSet=false;
@@ -1385,15 +1298,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
     _isStructured = true;
     _indexFacePeriodicSet=false;
 
-	_xMin=xmin;
-	_xMax=xmax;
-	_yMin=0.;
-	_yMax=0.;
-	_zMin=0.;
-	_zMax=0.;
-
-	_dxyz.resize(_spaceDim);
-	_dxyz[0]=dx;
 	_nxyz.resize(_spaceDim);
 	_nxyz[0]=nx;
 
@@ -1429,14 +1333,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	if(ymin>=ymax)
 		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : ymin >= ymax");
 
-	_xMin=xmin;
-	_xMax=xmax;
-	_yMin=ymin;
-	_yMax=ymax;
-	_zMin=0.;
-	_zMax=0.;
-
-
 	double dx = (xmax - xmin)/nx ;
 	double dy = (ymax - ymin)/ny ;
 
@@ -1448,10 +1344,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	_nxyz.resize(_spaceDim);
 	_nxyz[0]=nx;
 	_nxyz[1]=ny;
-
-	_dxyz.resize(_spaceDim);
-	_dxyz[0]=dx;
-	_dxyz[1]=dy;
 
 	double originPtr[_spaceDim];
 	double dxyzPtr[_spaceDim];
@@ -1477,7 +1369,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 
     if(split_to_triangles_policy==0 || split_to_triangles_policy==1)
         {
-            _mesh=_mesh->buildUnstructured();
+            _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             _mesh->simplexize(split_to_triangles_policy);
             _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
@@ -1508,21 +1400,10 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	_meshDim  = 3;
     _name=meshName;
     _epsilon=1e-6;
-	_xMin=xmin;
-	_xMax=xmax;
-	_yMin=ymin;
-	_yMax=ymax;
-	_zMin=zmin;
-	_zMax=zmax;
 
 	double dx = (xmax - xmin)/nx ;
 	double dy = (ymax - ymin)/ny ;
 	double dz = (zmax - zmin)/nz ;
-
-	_dxyz.resize(_spaceDim);
-	_dxyz[0]=dx;
-	_dxyz[1]=dy;
-	_dxyz[2]=dz;
 
 	_nxyz.resize(_spaceDim);
 	_nxyz[0]=nx;
@@ -1556,14 +1437,14 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 
     if( split_to_tetrahedra_policy == 0 )
         {
-            _mesh=_mesh->buildUnstructured();
+            _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
             _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
-            _mesh=_mesh->buildUnstructured();
+            _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
             _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
@@ -1591,15 +1472,6 @@ Mesh::getMeshDimension( void )  const
 //----------------------------------------------------------------------
 {
 	return _meshDim ;
-}
-
-std::vector<double>
-Mesh::getDXYZ() const
-{
-    if(!_isStructured)
-		throw CdmathException("std::vector<double> Mesh::getDXYZ() : dx,dy and dz are defined only for structured meshes !");
-
-	return _dxyz;
 }
 
 std::vector<mcIdType>
@@ -1630,7 +1502,7 @@ Mesh::getNy( void )  const
     if(!_isStructured)
 		throw CdmathException("int Mesh::getNy( void ) : Ny is defined only for structured meshes !");
 	if(_spaceDim < 2)
-		throw CdmathException("int double& Field::operator[ielem] : Ny is not defined in dimension < 2!");
+		throw CdmathException("iint Mesh::getNy( void ) : Ny is not defined in dimension < 2!");
 
 	return _nxyz[1];
 }
@@ -1652,8 +1524,11 @@ Mesh::getNz( void )  const
 double
 Mesh::getXMin( void )  const
 //----------------------------------------------------------------------
-{        
-	return _xMin ;
+{
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[0] ;
 }
 
 //----------------------------------------------------------------------
@@ -1661,7 +1536,10 @@ double
 Mesh::getXMax( void )  const
 //----------------------------------------------------------------------
 {
-	return _xMax ;
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[1] ;
 }
 
 //----------------------------------------------------------------------
@@ -1669,7 +1547,13 @@ double
 Mesh::getYMin( void )  const
 //----------------------------------------------------------------------
 {
-	return _yMin ;
+	if(_spaceDim<2)
+		throw CdmathException("Mesh::getYMin : dimension should be >=2");
+		
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[2] ;
 }
 
 //----------------------------------------------------------------------
@@ -1677,7 +1561,13 @@ double
 Mesh::getYMax( void )  const
 //----------------------------------------------------------------------
 {
-	return _yMax ;
+	if(_spaceDim<2)
+		throw CdmathException("Mesh::getYMax : dimension should be >=2");
+		
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[3] ;
 }
 
 //----------------------------------------------------------------------
@@ -1685,7 +1575,13 @@ double
 Mesh::getZMin( void )  const
 //----------------------------------------------------------------------
 {
-	return _zMin ;
+	if(_spaceDim<3)
+		throw CdmathException("Mesh::getZMin : dimension should be 3");
+		
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[4] ;
 }
 
 //----------------------------------------------------------------------
@@ -1693,7 +1589,13 @@ double
 Mesh::getZMax( void )  const
 //----------------------------------------------------------------------
 {
-	return _zMax ;
+	if(_spaceDim<3)
+		throw CdmathException("Mesh::getZMax : dimension should be 3");
+
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[5] ;
 }
 
 //----------------------------------------------------------------------
@@ -1826,16 +1728,8 @@ Mesh::operator= ( const Mesh& mesh )
     _meshNotDeleted = mesh.meshNotDeleted();
     
     if(_isStructured)
-    {
         _nxyz = mesh.getCellGridStructure() ;
-        _dxyz=mesh.getDXYZ();
-        _xMin=mesh.getXMin();
-        _xMax=mesh.getXMax();
-        _yMin=mesh.getYMin();
-        _yMax=mesh.getYMax();
-        _zMin=mesh.getZMin();
-        _zMax=mesh.getZMax();
-    }
+
 	_faceGroupNames = mesh.getNameOfFaceGroups() ;
 	_faceGroups = mesh.getFaceGroups() ;
 	_nodeGroupNames = mesh.getNameOfNodeGroups() ;

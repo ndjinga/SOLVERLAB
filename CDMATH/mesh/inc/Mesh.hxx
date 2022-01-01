@@ -65,6 +65,12 @@ public: //----------------------------------------------------------------
 	Mesh ( void ) ;
 
 	/**
+	 * \brief constructor with data from a medcoupling mesh
+	 * @param medcoupling mesh 
+	 */
+	Mesh( const MEDCoupling::MEDCouplingMesh* mesh ) ;
+
+	/**
 	 * \brief constructor with data to load a general unstructured mesh
 	 * @param filename name of mesh file
 	 * @param meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
@@ -111,9 +117,6 @@ public: //----------------------------------------------------------------
      * @param split_to_tetrahedra_policy : each cuboid will be split into 5 tetrahedra if value is 0 or 6 tetrahedra if the value is 1
 	 */
 	Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz, int split_to_tetrahedra_policy=-1, std::string meshName="MESH3D_Regular_Cuboid_Grid") ;
-
-	Mesh( const MEDCoupling::MEDCouplingIMesh* mesh ) ;
-	Mesh( const MEDCoupling::MEDCouplingUMesh* mesh ) ;
 
 	/**
 	 * \brief constructor with data
@@ -223,8 +226,6 @@ public: //----------------------------------------------------------------
 
 	double getZMax( void )  const ;
 
-	std::vector<double> getDXYZ() const ;// for structured meshes
-
 	std::vector<mcIdType> getCellGridStructure() const;// for structured meshes
 
 	/**
@@ -273,8 +274,8 @@ public: //----------------------------------------------------------------
 	 */
 	std::vector<MEDCoupling::DataArrayIdType *> getNodeGroups( void )  const ;
 
-    /*
-     * Functions to extract boundary nodes and faces Ids
+    /**
+     * \brief Functions to extract boundary nodes and faces Ids
      */
      /**
       *  \brief return the list of boundary faces Ids
@@ -286,8 +287,8 @@ public: //----------------------------------------------------------------
      * @return _boundaryNodeIds
      */
     std::vector< int > getBoundaryNodeIds() const;
-    /*
-     * Functions to extract group nodes and faces ids
+    /**
+     * \brief Functions to extract group nodes and faces ids
      */
      /** 
       * @return list of face group Ids
@@ -371,10 +372,10 @@ private: //----------------------------------------------------------------
 	void setGroups( const MEDCoupling::MEDFileUMesh* medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;//Read all face and node group
 	void addNewFaceGroup( const MEDCoupling::MEDCouplingUMesh *m);//adds one face group in the vectors _faceGroups, _faceGroupNames and _faceGroupIds
 	
-	/*
-	 * The MEDCoupling mesh
+	/**
+	 * \brief The MEDCoupling mesh
 	 */
-	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> _mesh;
+	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> _mesh;// This is either a MEDCouplingUMesh or a MEDCouplingStructuredMesh
 
 	bool _meshNotDeleted;
 	
@@ -390,55 +391,42 @@ private: //----------------------------------------------------------------
 	 */
 	int _meshDim ;
     
-    /*
-     * Structured mesh parameters
+    /**
+     * \brief Signal a structured mesh
      */
-
-    bool _isStructured;
-    
-	double _xMin;
-
-	double _xMax;
-
-	double _yMin;
-
-	double _yMax;
-
-	double _zMin;
-
-	double _zMax;
-
+	bool _isStructured;
+    /**
+     * \brief Number of cells in each direction (Structured meshes)
+     */
 	std::vector<mcIdType> _nxyz;
 
-	std::vector<double> _dxyz;//lenght depth and height of each cell
-
-	/*
-	 * The nodes in this mesh.
+	/**
+	 * \brief The nodes in this mesh.
 	 */
 	std::shared_ptr<Node> _nodes;
 
-	/*
-	 * The number of nodes in this mesh.
+	/**
+	 * \brief The number of nodes in this mesh.
 	 */
 	int _numberOfNodes;
 
-	/*
-	 * The faces in this mesh.
+	/**
+	 * \brief The faces in this mesh.
 	 */
 	std::shared_ptr<Face> _faces;
 
-	/*
-	 * The numbers of faces in this mesh.
+	/**
+	 * \brief The numbers of faces in this mesh.
 	 */
 	int _numberOfFaces;
 
-	/*
-	 * The cells in this mesh.
+	/**
+	 * \brief The cells in this mesh.
 	 */
 	std::shared_ptr<Cell> _cells;
 
-	/*
-	 * The number of cells in this mesh.
+	/**
+	 * \brief The number of cells in this mesh.
 	 */
 	int _numberOfCells;
 
@@ -460,49 +448,49 @@ private: //----------------------------------------------------------------
 	 */
 	std::shared_ptr<Face> getFaces ( void ) const ;
 
-	/*
-	 * The number of edges in this mesh.
+	/**
+	 * \brief The number of edges in this mesh.
 	 */
 	int _numberOfEdges;//Useful to deduce the number of non zero coefficients in a finite element matrix 
 
-	/*
-	 * The names of face groups.
+	/**
+	 * \brief The names of face groups.
 	 */
 	std::vector<std::string> _faceGroupNames;
 
-	/*
-	 * The names of node groups.
+	/**
+	 * \brief The names of node groups.
 	 */
 	std::vector<std::string> _nodeGroupNames;
 
-	/*
-	 * The list of face groups.
+	/**
+	 * \brief The list of face groups.
 	 */
 	std::vector<MEDCoupling::MEDCouplingUMesh *> _faceGroups;
-	/*
-	 * The list of node groups.
+	/**
+	 * \brief The list of node groups.
 	 */
 	std::vector<MEDCoupling::DataArrayIdType *> _nodeGroups;
 	
-	/*
-	 * The list of face id in each face groups.
+	/**
+	 * \brief The list of face id in each face groups.
 	 */
 	std::vector< std::vector<int> > _faceGroupsIds;
 	
-	/*
-	 * The list of node id in each node groups.
+	/**
+	 * \brief The list of node id in each node groups.
 	 */
 	std::vector< std::vector<int> > _nodeGroupsIds;
 	
-	/*
-	 * Elements types (SEG2, TRI3, QUAD4, HEXA6 ...)
+	/**
+	 * \brief Elements types (SEG2, TRI3, QUAD4, HEXA6 ...)
 	 */
 	std::vector< INTERP_KERNEL::NormalizedCellType > _eltsTypes;//List of cell types contained in the mesh
 	std::vector< std::string > _eltsTypesNames;//List of cell types contained in the mesh
     std::vector< INTERP_KERNEL::NormalizedCellType > getElementTypes() const;    
     
-    /*
-     * Tools to manage periodic boundary conditions in square/cube geometries
+    /**
+     * \brief Tools to manage periodic boundary conditions in square/cube geometries
      */
      bool _indexFacePeriodicSet;
      std::map<int,int> _indexFacePeriodicMap;
