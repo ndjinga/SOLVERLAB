@@ -10,9 +10,10 @@
 
 #include <memory>
 
+#include <MCAuto.hxx>
+#include "NormalizedGeometricTypes"
+
 #include "MEDCouplingUMesh.hxx"
-#include "MEDCouplingIMesh.hxx"
-#include "MEDCouplingFieldDouble.hxx"
 
 /**
  * Mesh class is defined by
@@ -29,7 +30,6 @@ namespace MEDCoupling
 {
 class MEDFileUMesh;
 class MEDCouplingMesh;
-class MEDCouplingIMesh;
 class MEDCouplingUMesh;
 class DataArrayIdType;
 }
@@ -37,9 +37,6 @@ namespace ParaMEDMEM
 {
 class DataArrayIdType;
 }
-#include <MCAuto.hxx>
-#include "NormalizedGeometricTypes"
-
 class Node;
 class Cell;
 class Face;

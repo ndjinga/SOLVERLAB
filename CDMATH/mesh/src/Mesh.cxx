@@ -5,22 +5,26 @@
  *      Authors: CDMATH
  */
 
-#include "Mesh.hxx"
-#include "Node.hxx"
-#include "Cell.hxx"
-#include "Face.hxx"
-
-#include "CdmathException.hxx"
-#include "MEDFileMesh.hxx"
-#include "MEDLoader.hxx"
-
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iterator>
 #include <algorithm> 
-#include <string.h>
-#include <assert.h>
+#include <cassert> 
+
+#include "Mesh.hxx"
+#include "Node.hxx"
+#include "Cell.hxx"
+#include "Face.hxx"
+
+#include "MEDCouplingIMesh.hxx"
+#include "MEDCouplingUMesh.hxx"
+#include "MEDCouplingFieldDouble.hxx"
+
+#include "MEDFileMesh.hxx"
+#include "MEDLoader.hxx"
+
+#include "CdmathException.hxx"
 
 using namespace MEDCoupling;
 using namespace std;
@@ -1502,7 +1506,7 @@ Mesh::getNy( void )  const
     if(!_isStructured)
 		throw CdmathException("int Mesh::getNy( void ) : Ny is defined only for structured meshes !");
 	if(_spaceDim < 2)
-		throw CdmathException("iint Mesh::getNy( void ) : Ny is not defined in dimension < 2!");
+		throw CdmathException("int Mesh::getNy( void ) : Ny is not defined in dimension < 2!");
 
 	return _nxyz[1];
 }
