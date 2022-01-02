@@ -5,130 +5,69 @@
  *      Authors: CDMATH
  */
 
-#include "IJKMesh.hxx"
-#include "IJKNode.hxx"
-#include "IJKCell.hxx"
-#include "IJKFace.hxx"
-
-#include "MEDFileCMesh.hxx"
-#include "MEDLoader.hxx"
-#include "MEDCouplingIMesh.hxx"
-
-#include "CdmathException.hxx"
-
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iterator>
 #include <algorithm> 
 
+#include "IJKMesh.hxx"
+#include "IJKNode.hxx"
+#include "IJKCell.hxx"
+#include "IJKFace.hxx"
+
+#include "MEDCouplingIMesh.hxx"
+#include "MEDCouplingUMesh.hxx"
+#include "MEDFileCMesh.hxx"
+#include "MEDLoader.hxx"
+
+#include "CdmathException.hxx"
+
 using namespace MEDCoupling;
 using namespace std;
 
 //----------------------------------------------------------------------
-Mesh::Mesh( void )
+IJKMesh::IJKMesh( void )
 //----------------------------------------------------------------------
 {
 	_mesh=NULL;
-	_spaceDim = 0 ;
-	_meshDim  = 0 ;
-	_numberOfNodes = 0;
-	_numberOfFaces = 0;
-	_numberOfCells = 0;
-	_xMin=0.;
-	_xMax=0.;
-	_yMin=0.;
-	_yMax=0.;
-	_zMin=0.;
-	_zMax=0.;
-    _nxyz.resize(0);
-    _dxyz.resize(0.);
+	_measureField=NULL;
 	_faceGroupNames.resize(0);
 	_faceGroups.resize(0);
 	_nodeGroupNames.resize(0);
 	_nodeGroups.resize(0);
     _indexFacePeriodicSet=false;
     _name="";
+    _epsilon=1e-6;
 }
 
 //----------------------------------------------------------------------
-Mesh::~Mesh( void )
+IJKMesh::~IJKMesh( void )
 //----------------------------------------------------------------------
 {
+	_measureField->decrRef();
 }
 
 std::string 
-Mesh::getName( void ) const
+IJKMesh::getName( void ) const
 {
     return _name;
 }
 
-Mesh::Mesh( const MEDCoupling::MEDCouplingIMesh* mesh )
+IJKMesh::IJKMesh( const MEDCoupling::MEDCouplingStructuredMesh* mesh )
 {
-	_spaceDim=mesh->getSpaceDimension();
-	_meshDim=mesh->getMeshDimension();
-	_dxyz=mesh->getDXYZ();
-	_nxyz=mesh->getCellGridStructure();
-	double* Box0=new double[2*_spaceDim];
-	mesh->getBoundingBox(Box0);
-    _name=mesh->getName();
+    _epsilon=1e-6;
     _indexFacePeriodicSet=false;
-    
-	_xMin=Box0[0];
-	_xMax=Box0[1];
-	if (_spaceDim>=2)
-	{
-		_yMin=Box0[2];
-		_yMax=Box0[3];
-	}
-	if (_spaceDim>=3)
-	{
-		_zMin=Box0[4];
-		_zMax=Box0[5];
-	}
-
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
-
-	for(int i=0;i<_spaceDim;i++)
-	{
-		originPtr[i]=Box0[2*i];
-		nodeStrctPtr[i]=_nxyz[i]+1;
-		dxyzPtr[i]=_dxyz[i];
-	}
-	_mesh=MEDCouplingIMesh::New(_name,
-			_spaceDim,
-			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
-			originPtr,
-			originPtr+_spaceDim,
-			dxyzPtr,
-			dxyzPtr+_spaceDim);
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
-	delete [] Box0 ;
+	_measureField = mesh->getMeasureField(true);    
+	
+	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
 }
 
 //----------------------------------------------------------------------
-Mesh::Mesh( const IJKMesh& m )
+IJKMesh::IJKMesh( const IJKMesh& m )
 //----------------------------------------------------------------------
 {
-	_spaceDim = m.getSpaceDimension() ;
-	_meshDim = m.getMeshDimension() ;
-    _name=m.getName();
-    _xMax=m.getXMax();
-    _yMin=m.getYMin();
-    _yMax=m.getYMax();
-    _zMin=m.getZMin();
-    _zMax=m.getZMax();
-    _nxyz = m.getCellGridStructure() ;
-    _dxyz=m.getDXYZ();
-
-	_numberOfNodes = m.getNumberOfNodes();
-	_numberOfFaces = m.getNumberOfFaces();
-	_numberOfCells = m.getNumberOfCells();
+	_measureField = m->getMeasureField(true);    
 	_faceGroupNames = m.getNameOfFaceGroups() ;
 	_faceGroups = m.getFaceGroups() ;
 	_nodeGroupNames = m.getNameOfNodeGroups() ;
@@ -142,51 +81,30 @@ Mesh::Mesh( const IJKMesh& m )
 }
 
 //----------------------------------------------------------------------
-Mesh::Mesh( const std::string filename, int meshLevel )
+IJKMesh::IJKMesh( const std::string filename, const std::string & meshName, int meshLevel )
 //----------------------------------------------------------------------
 {
-	readMeshMed(filename, meshLevel);
+	readMeshMed(filename, meshName, meshLevel);
 }
 
 //----------------------------------------------------------------------
 void
-Mesh::readMeshMed( const std::string filename, const int meshLevel)
+IJKMesh::readMeshMed( const std::string filename, const std::string & meshName , int meshLevel )
 //----------------------------------------------------------------------
 {
-	MEDFileCMesh *m=MEDFileCMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
+	MEDFileCMesh *m;//Here we would like a MEDFileStructuredMesh but that class does not exist
+	
+	if( meshName == "" )
+		m=MEDFileCMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
+	else
+		m=MEDFileCMesh::New(filename.c_str(), meshName.c_str());//seeks the mesh named meshName in the file
+		
 	_mesh=m->getMeshAtLevel(meshLevel);
     _mesh->checkConsistencyLight();
 	_mesh->setName(_mesh->getName());
-	_meshDim=_mesh->getMeshDimension();
-	_spaceDim=_mesh->getSpaceDimension();
-    _name=_mesh->getName();
+    _epsilon=1e-6;
     _indexFacePeriodicSet=false;
-    MEDCoupling::MEDCouplingIMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingIMesh*> (_mesh.retn());
-    if(structuredMesh)
-    {
-        _dxyz=structuredMesh->getDXYZ();
-        _nxyz=structuredMesh->getCellGridStructure();
-        double* Box0=new double[2*_spaceDim];
-        structuredMesh->getBoundingBox(Box0);
-    
-        _xMin=Box0[0];
-        _xMax=Box0[1];
-        std::cout<<"nx= "<<_nxyz[0];
-        if (_spaceDim>=2)
-        {
-            _yMin=Box0[2];
-            _yMax=Box0[3];
-            std::cout<<", "<<"ny= "<<_nxyz[1];
-        }
-        if (_spaceDim>=3)
-        {
-            _zMin=Box0[4];
-            _zMax=Box0[5];
-            std::cout<<", "<<"nz= "<<_nxyz[2];
-        }
-    }
-    else
-        throw CdmathException("Mesh::readMeshMed med file does not contain a structured MedcouplingIMesh mesh");
+	_measureField = mesh->getMeasureField(true);    
     
 	cout<<endl<< "Loaded file "<< filename<<endl;
     cout<<"Structured Mesh name= "<<m->getName()<<", mesh dim="<< _meshDim<< ", space dim="<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
@@ -195,41 +113,41 @@ Mesh::readMeshMed( const std::string filename, const int meshLevel)
 }
 
 void
-Mesh::setPeriodicFaces()
+IJKMesh::setPeriodicFaces()
 {
     _indexFacePeriodicSet=true;    
 }
 
 bool
-Mesh::isBorderNode(int nodeid) const
+IJKMesh::isBorderNode(int nodeid) const
 {
 	return getNode(nodeid).isBorder();
 }
 
 bool
-Mesh::isTriangular() const
+IJKMesh::isTriangular() const
 {
 	return false;
 }
 
 bool
-Mesh::isQuadrangular() const
+IJKMesh::isQuadrangular() const
 {
 	return _meshDim==2;
 }
 bool
-Mesh::isHexahedral() const
+IJKMesh::isHexahedral() const
 {
 	return _meshDim==3;
 }
 bool
-Mesh::isStructured() const
+IJKMesh::isStructured() const
 {
 	return true;
 }
 
 std::string 
-Mesh::getElementTypes() const
+IJKMesh::getElementTypes() const
 {
 	if( _meshDim==1 )
 		return "Segments ";
@@ -240,103 +158,69 @@ Mesh::getElementTypes() const
 	else
 	{
 		cout<< "Mesh " + _name + " does not have acceptable dimension. Dimension is " << _meshDim<<endl;
-		throw CdmathException("Mesh::getElementTypes : wrong dimension");
+		throw CdmathException("IJKMesh::getElementTypes : wrong dimension");
 	}
 }
 
 //----------------------------------------------------------------------
-Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
+IJKMesh::IJKMesh( double xmin, double xmax, int nx, std::string meshName )
 //----------------------------------------------------------------------
 {
 	if(nx<=0)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx) : nx <= 0");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx) : nx <= 0");
 	if(xmin>=xmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx) : xmin >= xmax");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx) : xmin >= xmax");
 
 	double dx = (xmax - xmin)/nx ;
 
-	_spaceDim = 1 ;
-	_meshDim  = 1 ;
-    _name=meshName;
+	double spaceDim = 1 ;
+    _epsilon=1e-6;
+    _isStructured = true;
     _indexFacePeriodicSet=false;
 
-	_xMin=xmin;
-	_xMax=xmax;
-	_yMin=0.;
-	_yMax=0.;
-	_zMin=0.;
-	_zMax=0.;
-
-	_dxyz.resize(_spaceDim);
-	_dxyz[0]=dx;
 	_nxyz.resize(_spaceDim);
 	_nxyz[0]=nx;
 
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
+	double originPtr[_spaceDim];
+	double dxyzPtr[_spaceDim];
+	mcIdType nodeStrctPtr[_spaceDim];
 
 	originPtr[0]=xmin;
 	nodeStrctPtr[0]=nx+1;
 	dxyzPtr[0]=dx;
 
-	_mesh=MEDCouplingIMesh::New(meshName,
-			_spaceDim,
+	_mesh=MEDCouplingIIJKMesh::New(meshName,
+			spaceDim,
 			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
+			nodeStrctPtr+spaceDim,
 			originPtr,
-			originPtr+_spaceDim,
+			originPtr+spaceDim,
 			dxyzPtr,
-			dxyzPtr+_spaceDim);
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
-
-	_numberOfCells = _mesh->getNumberOfCells() ;
-
-	_numberOfNodes = _mesh->getNumberOfNodes() ;
-
-	_numberOfFaces = _numberOfNodes;
-    
+			dxyzPtr+spaceDim);
+	_measureField = _mesh->getMeasureField(true);    
 }
 
 //----------------------------------------------------------------------
-Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, std::string meshName)
+IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, std::string meshName)
 //----------------------------------------------------------------------
 {
 	if(nx<=0 || ny<=0)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : nx <= 0 or ny <= 0");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : nx <= 0 or ny <= 0");
 	if(xmin>=xmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : xmin >= xmax");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : xmin >= xmax");
 	if(ymin>=ymax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : ymin >= ymax");
-
-	_xMin=xmin;
-	_xMax=xmax;
-	_yMin=ymin;
-	_yMax=ymax;
-	_zMin=0.;
-	_zMax=0.;
-
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : ymin >= ymax");
 
 	double dx = (xmax - xmin)/nx ;
 	double dy = (ymax - ymin)/ny ;
 
-	_spaceDim = 2 ;
-	_meshDim  = 2 ;
-    _name=meshName;
+	double spaceDim = 2 ;
+    _epsilon=1e-6;
     _indexFacePeriodicSet=false;
-	_nxyz.resize(_spaceDim);
-	_nxyz[0]=nx;
-	_nxyz[1]=ny;
 
-	_dxyz.resize(_spaceDim);
-	_dxyz[0]=dx;
-	_dxyz[1]=dy;
-
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
+	double originPtr[_spaceDim];
+	double dxyzPtr[_spaceDim];
+	mcIdType nodeStrctPtr[_spaceDim];
 
 	originPtr[0]=xmin;
 	originPtr[1]=ymin;
@@ -346,67 +230,44 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	dxyzPtr[1]=dy;
 
 	_mesh=MEDCouplingIMesh::New(meshName,
-			_spaceDim,
+			spaceDim,
 			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
+			nodeStrctPtr+spaceDim,
 			originPtr,
-			originPtr+_spaceDim,
+			originPtr+spaceDim,
 			dxyzPtr,
-			dxyzPtr+_spaceDim);
-
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
-
-	_numberOfCells = _mesh->getNumberOfCells() ;
-
-	_numberOfNodes = _mesh->getNumberOfNodes() ;
-
-	_numberOfFaces = nx*(ny+1)+ny*(nx+1);
-    
+			dxyzPtr+spaceDim);
+	_measureField = _mesh->getMeasureField(true);    
 }
 
 //----------------------------------------------------------------------
-Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz, std::string meshName)
+IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz, std::string meshName)
 //----------------------------------------------------------------------
 {
 	if(nx<=0 || ny<=0 || nz<=0)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : nx <= 0 or ny <= 0 or nz <= 0");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : nx <= 0 or ny <= 0 or nz <= 0");
 	if(xmin>=xmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : xmin >= xmax");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : xmin >= xmax");
 	if(ymin>=ymax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : ymin >= ymax");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : ymin >= ymax");
 	if(zmin>=zmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : zmin >= zmax");
+		throw CdmathException("IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : zmin >= zmax");
 
-	_spaceDim = 3;
-	_meshDim  = 3;
-    _name=meshName;
-    _indexFacePeriodicSet=false;
-	_xMin=xmin;
-	_xMax=xmax;
-	_yMin=ymin;
-	_yMax=ymax;
-	_zMin=zmin;
-	_zMax=zmax;
+	double spaceDim = 3;
+    _epsilon=1e-6;
 
 	double dx = (xmax - xmin)/nx ;
 	double dy = (ymax - ymin)/ny ;
 	double dz = (zmax - zmin)/nz ;
-
-	_dxyz.resize(_spaceDim);
-	_dxyz[0]=dx;
-	_dxyz[1]=dy;
-	_dxyz[2]=dz;
 
 	_nxyz.resize(_spaceDim);
 	_nxyz[0]=nx;
 	_nxyz[1]=ny;
 	_nxyz[2]=nz;
 
-	double *originPtr = new double[_spaceDim];
-	double *dxyzPtr = new double[_spaceDim];
-	int *nodeStrctPtr = new int[_spaceDim];
+	double originPtr[_spaceDim];
+	double dxyzPtr[_spaceDim];
+	mcIdType nodeStrctPtr[_spaceDim];
 
 	originPtr[0]=xmin;
 	originPtr[1]=ymin;
@@ -419,135 +280,97 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 	dxyzPtr[2]=dz;
 
 	_mesh=MEDCouplingIMesh::New(meshName,
-			_spaceDim,
+			spaceDim,
 			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
+			nodeStrctPtr+spaceDim,
 			originPtr,
-			originPtr+_spaceDim,
+			originPtr+spaceDim,
 			dxyzPtr,
-			dxyzPtr+_spaceDim);
-
-	delete [] originPtr;
-	delete [] dxyzPtr;
-	delete [] nodeStrctPtr;
-
-	_numberOfCells = _mesh->getNumberOfCells() ;
-
-	_numberOfNodes = _mesh->getNumberOfNodes() ;
-
-	_numberOfFaces = nx*ny*(nz+1)+nx*nz*(ny+1)+ny*nz*(nx+1);
-	
-}
-
-//----------------------------------------------------------------------
-int
-Mesh::getSpaceDimension( void )  const
-//----------------------------------------------------------------------
-{
-	return _spaceDim ;
-}
-
-//----------------------------------------------------------------------
-int
-Mesh::getMeshDimension( void )  const
-//----------------------------------------------------------------------
-{
-	return _meshDim ;
-}
-
-std::vector<double>
-Mesh::getDXYZ() const
-{
-	return _dxyz;
-}
-
-std::vector<int>
-Mesh::getCellGridStructure() const
-{
-	return _nxyz;
-}
-
-//----------------------------------------------------------------------
-int
-Mesh::getNx( void )  const
-//----------------------------------------------------------------------
-{
-	return _nxyz[0];
-}
-
-//----------------------------------------------------------------------
-int
-Mesh::getNy( void )  const
-//----------------------------------------------------------------------
-{
-	if(_spaceDim < 2)
-		throw CdmathException("int double& Field::operator[ielem] : Ny is not defined in dimension < 2!");
-
-	return _nxyz[1];
-}
-
-//----------------------------------------------------------------------
-int
-Mesh::getNz( void )  const
-//----------------------------------------------------------------------
-{
-	if(_spaceDim < 3)
-		throw CdmathException("int Mesh::getNz( void ) : Nz is not defined in dimension < 3!");
-
-	return _nxyz[2];
+			dxyzPtr+spaceDim);
+	_measureField = _mesh->getMeasureField(true);    
 }
 
 //----------------------------------------------------------------------
 double
-Mesh::getXMin( void )  const
+IJKMesh::getXMin( void )  const
 //----------------------------------------------------------------------
-{        
-	return _xMin ;
+{
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[0] ;
 }
 
 //----------------------------------------------------------------------
 double
-Mesh::getXMax( void )  const
+IJKMesh::getXMax( void )  const
 //----------------------------------------------------------------------
 {
-	return _xMax ;
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[1] ;
 }
 
 //----------------------------------------------------------------------
 double
-Mesh::getYMin( void )  const
+IJKMesh::getYMin( void )  const
 //----------------------------------------------------------------------
 {
-	return _yMin ;
+	if(_spaceDim<2)
+		throw CdmathException("IJKMesh::getYMin : dimension should be >=2");
+		
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[2] ;
 }
 
 //----------------------------------------------------------------------
 double
-Mesh::getYMax( void )  const
+IJKMesh::getYMax( void )  const
 //----------------------------------------------------------------------
 {
-	return _yMax ;
+	if(_spaceDim<2)
+		throw CdmathException("IJKMesh::getYMax : dimension should be >=2");
+		
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[3] ;
 }
 
 //----------------------------------------------------------------------
 double
-Mesh::getZMin( void )  const
+IJKMesh::getZMin( void )  const
 //----------------------------------------------------------------------
 {
-	return _zMin ;
+	if(_spaceDim<3)
+		throw CdmathException("IJKMesh::getZMin : dimension should be 3");
+		
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[4] ;
 }
 
 //----------------------------------------------------------------------
 double
-Mesh::getZMax( void )  const
+IJKMesh::getZMax( void )  const
 //----------------------------------------------------------------------
 {
-	return _zMax ;
+	if(_spaceDim<3)
+		throw CdmathException("IJKMesh::getZMax : dimension should be 3");
+
+	double Box0[2*_spaceDim];
+    _mesh->getBoundingBox(Box0);
+
+	return Box0[5] ;
 }
 
 //----------------------------------------------------------------------
-MCAuto<MEDCouplingIMesh>
-Mesh::getMEDCouplingIMesh( void )  const
+MCAuto<MEDCouplingStructuredMesh>
+IJKMesh::getMEDCouplingStructuredMesh( void )  const
 //----------------------------------------------------------------------
 {
 	return _mesh ;
@@ -555,99 +378,93 @@ Mesh::getMEDCouplingIMesh( void )  const
 
 //----------------------------------------------------------------------
 int
-Mesh::getNumberOfNodes ( void ) const
+IJKMesh::getNumberOfNodes ( void ) const
 //----------------------------------------------------------------------
 {
-	return _numberOfNodes ;
+	return _mesh->getNumberOfNodes ();
 }
 
 //----------------------------------------------------------------------
 int
-Mesh::getNumberOfCells ( void ) const
+IJKMesh::getNumberOfCells ( void ) const
 //----------------------------------------------------------------------
 {
-	return _numberOfCells ;
+	return _mesh->getNumberOfCells (); 
 }
 
 //----------------------------------------------------------------------
 int
-Mesh::getNumberOfFaces ( void ) const
+IJKMesh::getNumberOfFaces ( void ) const
 //----------------------------------------------------------------------
 {
-	return _numberOfFaces ;
+	std::vector<int> NxNyNz = _mesh->getCellGridStructure();
+	
+	switch( _mesh->getMeshDimension () )
+	{
+		case 1:
+			return NxNyNz[0]+1;
+		case 2:
+			return NxNyNz[0]*(1+NxNyNz[1]) + NxNyNz[1]*(1 + NxNyNz[0]);
+		case 2:
+			return NxNyNz[0]*NxNyNz[1]*(1+NxNyNz[2]) + NxNyNz[0]*NxNyNz[2]*(1+NxNyNz[1]) + NxNyNz[1]*NxNyNz[2]*(1+NxNyNz[0]);
+		default
+			throw CdmathException("IJKMesh::getNumberOfFaces space dimension must be between 1 and 3");
+	}
 }
 
-//----------------------------------------------------------------------
-Cell&
-Mesh::getCell ( int i ) const
-//----------------------------------------------------------------------
+int 
+IJKMesh::getNumberOfEdges ( void )  const 
 {
-	return _cells[i] ;
-}
-
-//----------------------------------------------------------------------
-Face&
-Mesh::getFace ( int i ) const
-//----------------------------------------------------------------------
-{
-	return _faces[i] ;
-}
-
-//----------------------------------------------------------------------
-Node&
-Mesh::getNode ( int i ) const
-//----------------------------------------------------------------------
-{
-	return _nodes[i] ;
-}
+	std::vector<int> NxNyNz = _mesh->getCellGridStructure();
+	
+	switch( _mesh->getMeshDimension () )
+	{
+		case 1:
+			return NxNyNz[0];
+		case 2:
+			return NxNyNz[0]*(1+NxNyNz[1]) + NxNyNz[1]*(1 + NxNyNz[0]);
+		case 2:
+			return NxNyNz[0]*(1+NxNyNz[1])*(1+NxNyNz[2]) + NxNyNz[1]*(1 + NxNyNz[0])*(1+NxNyNz[2]) + NxNyNz[2]*(1 + NxNyNz[0])*(1+NxNyNz[1]);
+		default
+			throw CdmathException("IJKMesh::getNumberOfEdges space dimension must be between 1 and 3");
+	}
+};
 
 vector<string>
-Mesh::getNameOfFaceGroups( void )  const
+IJKMesh::getNameOfFaceGroups( void )  const
 {
 	return _faceGroupNames;
 }
 
 vector<MEDCoupling::MEDCouplingIMesh *>
-Mesh::getFaceGroups( void )  const
+IJKMesh::getFaceGroups( void )  const
 {
 	return _faceGroups;
 }
 
 vector<string>
-Mesh::getNameOfNodeGroups( void )  const
+IJKMesh::getNameOfNodeGroups( void )  const
 {
 	return _nodeGroupNames;
 }
 
 vector<MEDCoupling::DataArrayIdType *>
-Mesh::getNodeGroups( void )  const
+IJKMesh::getNodeGroups( void )  const
 {
 	return _nodeGroups;
 }
 
 //----------------------------------------------------------------------
 const IJKMesh&
-Mesh::operator= ( const IJKMesh& mesh )
+IJKMesh::operator= ( const IJKMesh& mesh )
 //----------------------------------------------------------------------
 {
-	_spaceDim = mesh.getSpaceDimension() ;
-	_meshDim  = mesh.getMeshDimension() ;
-    _name = mesh.getName();
-	_numberOfNodes = mesh.getNumberOfNodes();
-	_numberOfFaces = mesh.getNumberOfFaces();
-	_numberOfCells = mesh.getNumberOfCells();
+    _epsilon=mesh.getComparisonEpsilon();
     _indexFacePeriodicSet= mesh.isIndexFacePeriodicSet();
     if(_indexFacePeriodicSet)
         _indexFacePeriodicMap=mesh.getIndexFacePeriodic();
     
-        _nxyz = mesh.getCellGridStructure() ;
-        _dxyz=mesh.getDXYZ();
-        _xMin=mesh.getXMin();
-        _xMax=mesh.getXMax();
-        _yMin=mesh.getYMin();
-        _yMax=mesh.getYMax();
-        _zMin=mesh.getZMin();
-        _zMax=mesh.getZMax();
+    _nxyz = mesh.getCellGridStructure() ;
 
 	_faceGroupNames = mesh.getNameOfFaceGroups() ;
 	_faceGroups = mesh.getFaceGroups() ;
@@ -658,25 +475,25 @@ Mesh::operator= ( const IJKMesh& mesh )
 	_mesh=m1;
 	return *this;
 }
-
-bool Mesh::isIndexFacePeriodicSet() const
+ 
+bool IJKMesh::isIndexFacePeriodicSet() const
 {
  return    _indexFacePeriodicSet;
 }
 //----------------------------------------------------------------------
 double 
-Mesh::minRatioVolSurf()
+IJKMesh::minRatioVolSurf()
 {
     return dx_min;
 }
 int 
-Mesh::getMaxNbNeighbours(EntityType type) const
+IJKMesh::getMaxNbNeighbours(EntityType type) const
 {
     return 2*_meshDim;
 }
 //----------------------------------------------------------------------
 void
-Mesh::writeVTK ( const std::string fileName ) const
+IJKMesh::writeVTK ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
 	string fname=fileName+".vtu";
@@ -685,11 +502,59 @@ Mesh::writeVTK ( const std::string fileName ) const
 
 //----------------------------------------------------------------------
 void
-Mesh::writeMED ( const std::string fileName ) const
+IJKMesh::writeMED ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
 	string fname=fileName+".med";
 	MEDCoupling::WriteCMesh(fname.c_str(),_mesh,true);
 
 	mu->decrRef();
+}
+
+std::vector< double >   
+IJKMesh::getCellCenterCoordinates (mcIdType cellId) const 
+{ 
+	std::vector< double > result(_spaceDim,0), coo_node; 
+	std::vector< mcIdType > conn=getNodeIdsOfCell(mcIdType cellId); 
+	int nbNodes=conn.size();
+
+	for (int i = 0; i< nbNodes; i++)
+	{
+		coo_node = getNodeCoordinates (conn[i]);
+		for(int j=0; j< _spaceDim; j++)
+			result[j]+=coo_node[j];
+	}
+	for(int j=0; j< _spaceDim; j++)
+		result[j]/=nbNodes;
+	return result; 
+};
+
+//----------------------------------------------------------------------
+int
+IJKMesh::getNx( void )  const
+//----------------------------------------------------------------------
+{
+	return _mesh->getCellGridStructure()[0];
+}
+
+//----------------------------------------------------------------------
+int
+IJKMesh::getNy( void )  const
+//----------------------------------------------------------------------
+{
+	if(_mesh->getMeshDimension () < 2)
+		throw CdmathException("int IJKMesh::getNy( void ) : Ny is not defined in dimension < 2!");
+	else
+		return _mesh->getCellGridStructure()[1];
+}
+
+//----------------------------------------------------------------------
+int
+IJKMesh::getNz( void )  const
+//----------------------------------------------------------------------
+{
+	if(_mesh->getMeshDimension () < 3)
+		throw CdmathException("int IJKMesh::getNz( void ) : Nz is not defined in dimension < 3!");
+	else
+		return _mesh->getCellGridStructure()[2];
 }

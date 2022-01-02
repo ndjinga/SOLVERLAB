@@ -128,7 +128,7 @@ class IJKCell
    private: //----------------------------------------------------------------
 
 	/*
-	 * The (i,j,k) coordinate of this cell.
+	 * The (i,j,k) coordinates of this cell.
 	 */
     std::vector< int > _IJKCoords;
 	/*
@@ -137,14 +137,14 @@ class IJKCell
     int _cellIndex;// necessaire ???
     
 	/*
-	 * The coordinate of barycenter the cell.
+	 * The coordinate of the barycenter the cell.
 	 */
 	Point _point ;// necessaire ??? se déduit des cordonnées IJK
 
     /*
      * The number of cells surrounding this cell.
      */
-    int _numberOfCells ;
+    int _numberOfCells ;//Dépend si on est une cellule frontière
 
     /*
      * The indices of cells surrounding this Node.
