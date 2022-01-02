@@ -10,19 +10,23 @@
 
 /**
  * IJKMesh class is defined by
- * - case 1: file name of mesh med file (MEDCouplingIMesh)
- * - case 2: 1D cartesian, xmin and xmax and number of cells
- * - case 3: 2D cartesian, xmin, xmax, ymin and ymax and numbers of cells in x direction and y direction
- * - case 4: 3D cartesian, xmin, xmax, ymin, ymax, zmin and zmax and numbers of cells in x direction, y direction and z direction
+ * - case 1: file name of mesh med file (MEDCouplingCMesh)
+ * - case 2: 1D cartesian, xmin and xmax and number of cells (MEDCouplingIMesh)
+ * - case 3: 2D cartesian, xmin, xmax, ymin and ymax and numbers of cells in x direction and y direction (MEDCouplingIMesh)
+ * - case 4: 3D cartesian, xmin, xmax, ymin, ymax, zmin and zmax and numbers of cells in x direction, y direction and z direction (MEDCouplingIMesh)
  * 
- *  Mesh structure
- * nx  , ny  , nz   cell structure
- * nx+1, ny+1, nz+1 node structure
+ *  Mesh cell and node structures are stored in a single MEDCouplingStructuredMesh _mesh
+ *  nx    x  ny    x  nz    cell structure
+ * (nx+1) x (ny+1) x (nz+1) node structure
  * 
- * The face structure is more tricky because it depends on the dimension
+ * The face structures is more tricky because it depends on the dimension
  * if dim=1, a single grid : nx+1 
  * if dim=2, union of two grids : nx,ny+1  and nx,ny+1
  * if dim=3, union of three grids : nx,ny,nz+1, nx,ny+1,nz  and nx+1,ny,nz
+ * 
+ * Mesh face structures are stored in a vector of meshes _faceMeshes of size meshDim
+ * The face centers are located on the nodes of the meshes in _faceMeshes
+ * The origins of the meshes in _faceMeshes are shifted from the origin of _mesh by dx on x-axis, dy on y-axis and dz on z-axis
  * 
  * - number  of nodes surounding each cell : known constant : 2*_Ndim
  * - number  of faces surounding each cell : known constant : 2 _Ndim
@@ -236,9 +240,11 @@ public: //----------------------------------------------------------------
 	 */
 	int getNz( void )  const ;
 
-	std::vector<mcIdType> getCellGridStructure() const;
+	std::vector<int> getCellGridStructure() const;
 
 	std::vector<int> getNodeGridStructure() const;
+
+	std::vector< vector< int > > getFaceGridStructures() const;
 
 	/**
 	 * \brief overload operator =
@@ -247,10 +253,16 @@ public: //----------------------------------------------------------------
 	const Mesh& operator= ( const Mesh& mesh ) ;
 
 	/**
-	 * \brief return the mesh MEDCoupling
+	 * \brief return the MEDCouplingStructuredMesh
 	 * @return _mesh
 	 */
 	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> getMEDCouplingStructuredMesh ( void )  const ;
+
+	/**
+	 * \brief return the MEDCouplingStructuredMesh
+	 * @return _faceMesh
+	 */
+	std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> > getFaceMeshes const;	
 
 	/**
 	 * \brief return the list of face group names
@@ -346,6 +358,7 @@ private: //----------------------------------------------------------------
      * \brief The MEDCouplingStructuredMesh mesh
 	 */
 	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> _mesh;//This is either a MEDCouplingIMesh or a MEDCouplingCMesh
+	std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> > _faceMeshes;//These are either MEDCouplingIMesh or MEDCouplingCMesh
 	std::vector< INTERP_KERNEL::NormalizedCellType > _eltsTypes;//List of cell types contained in the mesh
     
     /**

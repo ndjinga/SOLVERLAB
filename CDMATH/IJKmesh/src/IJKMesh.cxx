@@ -31,6 +31,7 @@ IJKMesh::IJKMesh( void )
 //----------------------------------------------------------------------
 {
 	_mesh=NULL;
+	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >(0)
 	_measureField=NULL;
 	_faceGroupNames.resize(0);
 	_faceGroups.resize(0);
@@ -68,6 +69,7 @@ IJKMesh::IJKMesh( const IJKMesh& m )
 //----------------------------------------------------------------------
 {
 	_measureField = m->getMeasureField(true);    
+	_faceMeshes=m.getFaceMeshes();
 	_faceGroupNames = m.getNameOfFaceGroups() ;
 	_faceGroups = m.getFaceGroups() ;
 	_nodeGroupNames = m.getNameOfNodeGroups() ;
@@ -105,61 +107,12 @@ IJKMesh::readMeshMed( const std::string filename, const std::string & meshName ,
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
 	_measureField = mesh->getMeasureField(true);    
+	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >(_mesh->getMeshDimension())
     
 	cout<<endl<< "Loaded file "<< filename<<endl;
     cout<<"Structured Mesh name= "<<m->getName()<<", mesh dim="<< _meshDim<< ", space dim="<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
 
 	m->decrRef();
-}
-
-void
-IJKMesh::setPeriodicFaces()
-{
-    _indexFacePeriodicSet=true;    
-}
-
-bool
-IJKMesh::isBorderNode(int nodeid) const
-{
-	return getNode(nodeid).isBorder();
-}
-
-bool
-IJKMesh::isTriangular() const
-{
-	return false;
-}
-
-bool
-IJKMesh::isQuadrangular() const
-{
-	return _meshDim==2;
-}
-bool
-IJKMesh::isHexahedral() const
-{
-	return _meshDim==3;
-}
-bool
-IJKMesh::isStructured() const
-{
-	return true;
-}
-
-std::string 
-IJKMesh::getElementTypes() const
-{
-	if( _meshDim==1 )
-		return "Segments ";
-	else if( _meshDim==2 )
-		return "Quadrangles ";
-	else if( _meshDim==3 )
-		return "Hexahedra ";
-	else
-	{
-		cout<< "Mesh " + _name + " does not have acceptable dimension. Dimension is " << _meshDim<<endl;
-		throw CdmathException("IJKMesh::getElementTypes : wrong dimension");
-	}
 }
 
 //----------------------------------------------------------------------
@@ -198,6 +151,7 @@ IJKMesh::IJKMesh( double xmin, double xmax, int nx, std::string meshName )
 			dxyzPtr,
 			dxyzPtr+spaceDim);
 	_measureField = _mesh->getMeasureField(true);    
+	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >(spaceDim)
 }
 
 //----------------------------------------------------------------------
@@ -238,6 +192,7 @@ IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, in
 			dxyzPtr,
 			dxyzPtr+spaceDim);
 	_measureField = _mesh->getMeasureField(true);    
+	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >(spaceDim)
 }
 
 //----------------------------------------------------------------------
@@ -288,6 +243,57 @@ IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, in
 			dxyzPtr,
 			dxyzPtr+spaceDim);
 	_measureField = _mesh->getMeasureField(true);    
+	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >(spaceDim)
+}
+
+void
+IJKMesh::setPeriodicFaces()
+{
+    _indexFacePeriodicSet=true;    
+}
+
+bool
+IJKMesh::isBorderNode(int nodeid) const
+{
+	return getNode(nodeid).isBorder();
+}
+
+bool
+IJKMesh::isTriangular() const
+{
+	return false;
+}
+
+bool
+IJKMesh::isQuadrangular() const
+{
+	return _meshDim==2;
+}
+bool
+IJKMesh::isHexahedral() const
+{
+	return _meshDim==3;
+}
+bool
+IJKMesh::isStructured() const
+{
+	return true;
+}
+
+std::string 
+IJKMesh::getElementTypes() const
+{
+	if( _meshDim==1 )
+		return "Segments ";
+	else if( _meshDim==2 )
+		return "Quadrangles ";
+	else if( _meshDim==3 )
+		return "Hexahedra ";
+	else
+	{
+		cout<< "Mesh " + _name + " does not have acceptable dimension. Dimension is " << _meshDim<<endl;
+		throw CdmathException("IJKMesh::getElementTypes : wrong dimension");
+	}
 }
 
 //----------------------------------------------------------------------
@@ -376,6 +382,11 @@ IJKMesh::getMEDCouplingStructuredMesh( void )  const
 	return _mesh ;
 }
 
+std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> > 
+IJKMesh::getFaceMeshes() const
+{
+	return _faceMeshes;
+}	
 //----------------------------------------------------------------------
 int
 IJKMesh::getNumberOfNodes ( void ) const
@@ -390,6 +401,28 @@ IJKMesh::getNumberOfCells ( void ) const
 //----------------------------------------------------------------------
 {
 	return _mesh->getNumberOfCells (); 
+}
+
+std::vector<int> 
+IJKMesh::getCellGridStructure() const
+{
+	return _mesh->getCellGridStructure();
+}
+
+std::vector<int> 
+IJKMesh::getNodeGridStructure() const
+{
+	return _mesh->getNodeGridStructure();
+}
+
+std::vector< vector<int> >
+IJKMesh::getFaceGridStructures() const
+{
+	std::vector< vector<int> > result(_mesh->getSpaceDimension());
+	for(int i = 0; i<_mesh->getSpaceDimension(); i++)
+		result[i] = _faceMeshes[i]->getNodeGridStructure();
+		
+	return result;
 }
 
 //----------------------------------------------------------------------
@@ -471,8 +504,9 @@ IJKMesh::operator= ( const IJKMesh& mesh )
 	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
 	_nodeGroups = mesh.getNodeGroups() ;
 
-	MCAuto<MEDCouplingIMesh> m1=mesh.getMEDCouplingIMesh()->deepCopy();
-	_mesh=m1;
+	_mesh=mesh.getMEDCouplingStructuredMesh()->clone(false);
+	
+	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >(_mesh->getMeshDimension());
 	return *this;
 }
  
