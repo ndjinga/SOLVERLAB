@@ -62,6 +62,34 @@ IJKMesh::IJKMesh( const MEDCoupling::MEDCouplingStructuredMesh* mesh )
 	_measureField = mesh->getMeasureField(true);    
 	
 	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
+
+	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >(_mesh->getMeshDimension())
+	vector< int > dxdydz = _mesh->getCellGridStructure();
+
+	int spaceDim = _mesh->getMeshDimension();
+	std:vector< int > nodeStr = _mesh->getNodeGridStructure();
+
+	std:vector< double > origin = _mesh->getOrigin();
+	std:vector< int > dxyz = _mesh->getDXYZ();
+
+	double originPtr[spaceDim];
+	double dxyzPtr[spaceDim];
+	mcIdType nodeStrctPtr[spaceDim];
+
+	for(int i=0; i<spaceDim; i++)
+	{
+		originPtr[i]=origin[i];
+		nodeStrctPtr[i]=nodeStr[i];
+		dxyzPtr[i]=dxyz[i];
+	}
+	_mesh=MEDCouplingIMesh::New(_mesh->getName(),
+			_mesh->getMeshDimension(),
+			nodeStrctPtr,
+			nodeStrctPtr+spaceDim,
+			originPtr,
+			originPtr+spaceDim,
+			dxyzPtr,
+			dxyzPtr+spaceDim);
 }
 
 //----------------------------------------------------------------------
@@ -78,8 +106,7 @@ IJKMesh::IJKMesh( const IJKMesh& m )
     if(_indexFacePeriodicSet)
         _indexFacePeriodicMap=m.getIndexFacePeriodic();
     
-	MCAuto<MEDCouplingIMesh> m1=m.getMEDCouplingIMesh()->deepCopy();
-	_mesh=m1;
+	_mesh=m.getMEDCouplingIMesh()->clone(false);
 }
 
 //----------------------------------------------------------------------
@@ -130,9 +157,6 @@ IJKMesh::IJKMesh( double xmin, double xmax, int nx, std::string meshName )
     _epsilon=1e-6;
     _isStructured = true;
     _indexFacePeriodicSet=false;
-
-	_nxyz.resize(_spaceDim);
-	_nxyz[0]=nx;
 
 	double originPtr[_spaceDim];
 	double dxyzPtr[_spaceDim];
@@ -214,11 +238,6 @@ IJKMesh::IJKMesh( double xmin, double xmax, int nx, double ymin, double ymax, in
 	double dx = (xmax - xmin)/nx ;
 	double dy = (ymax - ymin)/ny ;
 	double dz = (zmax - zmin)/nz ;
-
-	_nxyz.resize(_spaceDim);
-	_nxyz[0]=nx;
-	_nxyz[1]=ny;
-	_nxyz[2]=nz;
 
 	double originPtr[_spaceDim];
 	double dxyzPtr[_spaceDim];
