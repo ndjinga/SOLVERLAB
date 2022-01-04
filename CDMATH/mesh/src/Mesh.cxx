@@ -104,7 +104,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingMesh* mesh )
 }
 
 //----------------------------------------------------------------------
-Mesh::Mesh( const std::string filename, const std::string & meshName, int meshLevel )
+Mesh::Mesh( const std::string filename, const std::string & meshName, int meshLevel)
 //----------------------------------------------------------------------
 {
 	readMeshMed(filename, meshName, meshLevel);
@@ -153,16 +153,15 @@ Mesh::Mesh( const Mesh& mesh )
 
 //----------------------------------------------------------------------
 void
-Mesh::readMeshMed( const std::string filename, const std::string & meshName, const int meshLevel)
+Mesh::readMeshMed( const std::string filename, const std::string & meshName, int meshLevel)
 //----------------------------------------------------------------------
 {
-	MEDFileUMesh *m;
-	
+	MEDFileMesh *m;
 	if( meshName == "" )
-		m=MEDFileUMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
+		m=MEDFileMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
 	else
-		m=MEDFileUMesh::New(filename.c_str(), meshName.c_str());//seeks the mesh named meshName in the file
-		
+		m=MEDFileMesh::New(filename.c_str(), meshName.c_str());//seeks the mesh named meshName in the file
+
 	_mesh=m->getMeshAtLevel(meshLevel);
     _mesh->checkConsistencyLight();
 	_mesh->setName(_mesh->getName());
@@ -186,7 +185,10 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, con
     }
     
 	MEDCouplingUMesh*  mu = setMesh();
-	setGroups(m, mu);
+	setNodeGroups(m, mu);//Works for both cartesan and unstructured meshes
+	MEDFileUMesh *umedfile=dynamic_cast< MEDFileUMesh * > (m);
+	if(umedfile)
+		setFaceGroups(umedfile, mu);//Works only for unstructured meshes
 
 	cout<<endl<< "Loaded file "<< filename<<endl;
     cout<<"Mesh name = "<<m->getName()<<", mesh dim = "<< _meshDim<< ", space dim = "<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
@@ -1360,10 +1362,10 @@ Mesh::getElementTypesNames() const
 }
 
 void
-Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
+Mesh::setFaceGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 {
-	int nbCellsSubMesh, nbNodesSubMesh;
-	bool foundFace, foundNode;
+	int nbCellsSubMesh;
+	bool foundFace;
 	
 	/* Searching for face groups */
 	vector<string> faceGroups=medmesh->getGroupsNames() ;
@@ -1387,7 +1389,7 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 			
 			DataArrayDouble *baryCell = m->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
 			const double *coorBary=baryCell->getConstPointer();
-			/* Face identification */
+			// Face identification 
 			for (int ic(0), k(0); ic<nbCellsSubMesh; ic++, k+=_spaceDim)
 			{
 				vector<double> coorBaryXyz(3,0);
@@ -1414,7 +1416,13 @@ Mesh::setGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 			//m->decrRef();
 		}
 	}
-
+}
+void
+Mesh::setNodeGroups( const MEDFileMesh* medmesh, MEDCouplingUMesh*  mu)
+{
+	int  nbNodesSubMesh;
+	bool foundNode;
+	
 	/* Searching for node groups */
 	vector<string> nodeGroups=medmesh->getGroupsOnSpecifiedLev(1) ;
 
@@ -1876,10 +1884,18 @@ Mesh::writeMED ( const std::string fileName, bool fromScratch ) const
 {
 	if( !_meshNotDeleted )
 		throw CdmathException("Mesh::writeMED : Cannot save mesh : no MEDCouplingUMesh loaded");
-		
+
 	string fname=fileName+".med";
-	MEDCouplingUMesh* mu=_mesh->buildUnstructured();
-	MEDCoupling::WriteUMesh(fname.c_str(),mu, fromScratch);
+	if(_isStructured)//Check if we have a medcouplingimesh that can't be written directly
+	{
+		const MEDCoupling::MEDCouplingIMesh* iMesh = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingMesh*) _mesh);
+		if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
+			MEDCoupling::WriteMesh(fname.c_str(),iMesh->convertToCartesian(), fromScratch);
+		else//medcouplingcmesh : save directly
+			MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
+	}
+	else
+		MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
 
 	/* Try to save mesh groups */
 	//MEDFileUMesh meshMEDFile;

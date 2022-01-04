@@ -592,22 +592,40 @@ IJKMesh::writeVTKAllMeshes ( const std::string fileName ) const
 
 //----------------------------------------------------------------------
 void
-IJKMesh::writeMED ( const std::string fileName ) const
+IJKMesh::writeMED ( const std::string fileName, bool fromScratch ) const
 //----------------------------------------------------------------------
 {
 	string fname=fileName+".med";
-	MEDCoupling::WriteMesh(fname.c_str(),_mesh,true);
+	//Save cell mesh after checking mesh is imesh
+	const MEDCoupling::MEDCouplingIMesh* iMesh = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingStructuredMesh*) _mesh);
+	if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
+		MEDCoupling::WriteMesh(fname.c_str(),iMesh->convertToCartesian(), fromScratch);
+	else//medcouplingcmesh : save directly
+		MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
 }
 //----------------------------------------------------------------------
 void
-IJKMesh::writeMEDAllMeshes ( const std::string fileName ) const
+IJKMesh::writeMEDAllMeshes ( const std::string fileName, bool fromScratch ) const
 //----------------------------------------------------------------------
 {
+	//Save cell mesh after checking mesh is imesh
 	string fname=fileName+".med";
-	MEDCoupling::WriteMesh(fname.c_str(),_mesh,true);
+	const MEDCoupling::MEDCouplingIMesh* iMesh = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingStructuredMesh*) _mesh);
+	if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
+		MEDCoupling::WriteMesh(fname.c_str(),iMesh->convertToCartesian(), fromScratch);
+	else//medcouplingcmesh : save directly
+		MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
 
+	//Save face meshes after checking mesh is imesh
+	std::vector< const MEDCoupling::MEDCouplingIMesh* > iMeshes(_mesh->getMeshDimension());
 	for(int i=0; i< _mesh->getMeshDimension(); i++)
-		MEDCoupling::WriteMesh(fname.c_str(),_faceMeshes[i],true);
+	{
+		const MEDCoupling::MEDCouplingIMesh* iMeshes[i] = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingStructuredMesh*) _faceMeshes[i]);
+		if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
+			MEDCoupling::WriteMesh(fname.c_str(),iMeshes[i]->convertToCartesian(), fromScratch);
+		else//medcouplingcmesh : save directly
+			MEDCoupling::WriteMesh(fname.c_str(), _faceMeshes[i], fromScratch);
+	}
 }
 
 std::vector< double >   

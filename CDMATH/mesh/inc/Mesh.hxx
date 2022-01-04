@@ -28,9 +28,9 @@
 
 namespace MEDCoupling
 {
+class MEDFileMesh;
 class MEDFileUMesh;
 class MEDCouplingMesh;
-class MEDCouplingUMesh;
 class DataArrayIdType;
 }
 namespace ParaMEDMEM
@@ -120,7 +120,7 @@ public: //----------------------------------------------------------------
 	 * @param filename : file name of mesh med file
 	 * @param meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
 	 */
-	void readMeshMed( const std::string filename, const std::string & meshName="" , int meshLevel=0 ) ;
+	void readMeshMed( const std::string filename, const std::string & meshName="" , int meshLevel=0) ;
 
 	/**
 	 * \brief constructor by copy
@@ -304,7 +304,7 @@ public: //----------------------------------------------------------------
 	/**
 	 * \brief write mesh in the MED format
 	 */
-	void writeMED ( const std::string fileName, bool fromScratch = true ) const ;
+	void writeMED ( const std::string fileName, bool fromScratch = true ) const;
 
 	void setGroupAtPlan(double value, int direction, double eps, std::string groupName, bool isBoundaryGroup=true) ;
 
@@ -366,7 +366,8 @@ public: //----------------------------------------------------------------
 private: //----------------------------------------------------------------
 
 	MEDCoupling::MEDCouplingUMesh*  setMesh( void ) ;
-	void setGroups( const MEDCoupling::MEDFileUMesh* medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;//Read all face and node group
+	void setFaceGroups( const MEDCoupling::MEDFileUMesh* medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;//Read all face groups
+	void setNodeGroups( const MEDCoupling::MEDFileMesh*  medmesh, MEDCoupling::MEDCouplingUMesh*  mu) ;//Read all node groups
 	void addNewFaceGroup( const MEDCoupling::MEDCouplingUMesh *m);//adds one face group in the vectors _faceGroups, _faceGroupNames and _faceGroupIds
 	
 	/**
