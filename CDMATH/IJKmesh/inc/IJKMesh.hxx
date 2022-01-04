@@ -284,14 +284,24 @@ public: //----------------------------------------------------------------
 	std::vector<std::string> getNameOfNodeGroups( void )  const ;
 
 	/**
-	 * \brief write mesh in the VTK format
+	 * \brief write the cell mesh in the VTK format
 	 */
 	void writeVTK ( const std::string fileName ) const ;
 
 	/**
-	 * \brief write mesh in the MED format
+	 * \brief write the cell and face meshes in the VTK format
+	 */
+	void writeVTKAll meshes ( const std::string fileName ) const ;
+
+	/**
+	 * \brief write the cell mesh in the MED format
 	 */
 	void writeMED ( const std::string fileName, bool fromScratch = true ) const ;
+
+	/**
+	 * \brief write the cell and face meshes in the MED format
+	 */
+	void writeMEDAllMeshes ( const std::string fileName, bool fromScratch = true ) const ;
 
 	/*
      * Functions to manage periodic boundary condition in square/cubic geometries 

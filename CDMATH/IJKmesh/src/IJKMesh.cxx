@@ -578,6 +578,17 @@ IJKMesh::writeVTK ( const std::string fileName ) const
 	string fname=fileName+".vtu";
 	_mesh->writeVTK(fname.c_str()) ;
 }
+//----------------------------------------------------------------------
+void
+IJKMesh::writeVTKAllMeshes ( const std::string fileName ) const
+//----------------------------------------------------------------------
+{
+	string fname=fileName+".vtu";
+	_mesh->writeVTK(fname.c_str()) ;
+
+	for(int i=0; i< _mesh->getMeshDimension(); i++)
+		_faceMeshes[i]->writeVTK(fname.c_str()) ;
+}
 
 //----------------------------------------------------------------------
 void
@@ -585,9 +596,18 @@ IJKMesh::writeMED ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
 	string fname=fileName+".med";
-	MEDCoupling::WriteCMesh(fname.c_str(),_mesh,true);
+	MEDCoupling::WriteMesh(fname.c_str(),_mesh,true);
+}
+//----------------------------------------------------------------------
+void
+IJKMesh::writeMEDAllMeshes ( const std::string fileName ) const
+//----------------------------------------------------------------------
+{
+	string fname=fileName+".med";
+	MEDCoupling::WriteMesh(fname.c_str(),_mesh,true);
 
-	mu->decrRef();
+	for(int i=0; i< _mesh->getMeshDimension(); i++)
+		MEDCoupling::WriteMesh(fname.c_str(),_faceMeshes[i],true);
 }
 
 std::vector< double >   
