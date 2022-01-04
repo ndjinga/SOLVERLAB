@@ -370,16 +370,12 @@ private: //----------------------------------------------------------------
      * \brief Generate the face meshes from the cell mesh
 	 */
 	void setFaceMeshes();
-    /**
-     * \brief The cell types
-	 */
-	std::vector< INTERP_KERNEL::NormalizedCellType > _eltsTypes;//List of cell types contained in the mesh
-    
-    /**
-     * \brief 
-	 */
-	std::vector<std::string> _faceGroupNames;
 
+	double _cellMeasure;
+	std::vector< double > _faceMeasures;
+	std::vector< std::vector< double > > _faceNormals;
+
+	/* Boundary data */
     /**
      * \brief The names of face groups.
 	 */
@@ -400,20 +396,21 @@ private: //----------------------------------------------------------------
 	std::vector<MEDCoupling::DataArrayIdType *> _nodeGroups;
 	
     /**
+     *  \brief List of boundary faces
+     */
+    std::vector< int > _boundaryFaceIds;
+    /**
+     *  \brief List of boundary nodes
+     */
+    std::vector< int > _boundaryNodeIds;
+    
+    /**
      * \brief Tools to manage periodic boundary conditions in square/cube geometries
      */
      bool _indexFacePeriodicSet;
      std::map<int,int> _indexFacePeriodicMap;
     
-    /* List of boundary faces*/
-    std::vector< int > _boundaryFaceIds;
-    /* List of boundary nodes*/
-    std::vector< int > _boundaryNodeIds;
-    
     double _epsilon;
-	double _cellMeasure;
-	std::vector< double > _faceMeasures;
-	std::vector< std::vector< double > > _faceNormals;
 };
 
 #endif /* IJKMESH_HXX_ */
