@@ -80,6 +80,7 @@ IJKMesh::setFaceMeshes()
 	double dxyzPtr[meshDim];
 	mcIdType nodeStrctPtr[meshDim];
 
+	/* Prepare the creation of face meshes, and the filling of face normals, face measures and cell measure */
 	for(int i=0; i<meshDim; i++)
 	{
 		originPtr[i]=origin[i];
@@ -87,10 +88,13 @@ IJKMesh::setFaceMeshes()
 		dxyzPtr[i]=dxyz[i];
 	}
 	_cellMeasure=1;
+	_faceNormals=std:vector< std:vector< double > > (meshDim, std:vector< double >(meshDim,0));
+	/* Creation of face meshes, and filling of face normals, face measures and cell measure */
 	for(int i=0; i<meshDim; i++)
 	{
 		_cellMeasure*=dxyz[i];
 		_faceMeasures[i]=1;
+		_faceNormals[i][i]=1;
 		for(int j=0; j<meshDim; j++)
 			if(j != i)
 			{

@@ -19,16 +19,16 @@
  *  nx    *  ny    *  nz    cell structure
  * (nx+1) * (ny+1) * (nz+1) node structure
  * 
- * The face structures is more tricky because it depends on the dimension
+ * The face structure is more tricky because it depends on the dimension
  * if dim=1, a single grid : 
  *                  nx+1 nodes
  * if dim=2, union of two grids : 
- *                  (nx+1)*ny nodes (faces orthogonal to x-axis), origine (0,dy/2) 
- *                  nx*(ny+1) nodes (faces orthogonal to x-axis), origine (dx/2,0)
+ *                  (nx+1)*ny nodes (faces orthogonal to x-axis), origin (0,dy/2) 
+ *                  nx*(ny+1) nodes (faces orthogonal to x-axis), origin (dx/2,0)
  * if dim=3, union of three grids : 
- *                  nx*ny*(nz+1) (faces orthogonal to x-axis), origine (0,dy/2,dz/2) 
- *                  nx*(ny+1)*nz (faces orthogonal to y-axis), origine (dx/2,0,dz/2)  
- *                  (nx+1)*ny*nz (faces orthogonal to z-axis), origine (dx/2,dy/2,0)
+ *                  nx*ny*(nz+1) (faces orthogonal to x-axis), origin (0,dy/2,dz/2) 
+ *                  nx*(ny+1)*nz (faces orthogonal to y-axis), origin (dx/2,0,dz/2)  
+ *                  (nx+1)*ny*nz (faces orthogonal to z-axis), origin (dx/2,dy/2,0)
  * 
  * Mesh face structures are stored in a vector of meshes _faceMeshes of size meshDim
  * The face centers are located on the nodes of the meshes in _faceMeshes
@@ -38,6 +38,7 @@
  * - number  of faces surounding each cell : known constant : 2 _Ndim
  * - normal vectors surrounding each cell
  * - measure of each cell : known constant : dx*dy*dz
+ * - measures of faces : known constants : dx*dy, dx*dz and dy*dz
  */
 
 namespace MEDCoupling
@@ -342,7 +343,7 @@ public: //----------------------------------------------------------------
 	/**
 	 * return normal vectors around each cell
 	 */
-	std::vector< Vector > getNormalVectors (void) const ;
+	std::vector< Vector > getNormalVectors (void) const { return _faceNormals;};
 
 
 private: //----------------------------------------------------------------
@@ -402,6 +403,7 @@ private: //----------------------------------------------------------------
     double _epsilon;
 	double _cellMeasure;
 	std::vector< double > _faceMeasures;
+	std::vector< std::vector< double > > _faceNormals;
 };
 
 #endif /* IJKMESH_HXX_ */
