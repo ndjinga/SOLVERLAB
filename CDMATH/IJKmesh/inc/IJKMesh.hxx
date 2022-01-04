@@ -23,16 +23,16 @@
  * if dim=1, a single grid : 
  *                  nx+1 nodes
  * if dim=2, union of two grids : 
- *                  (nx+1)*ny nodes (faces orthogonal to x-axis) 
- *                  nx*(ny+1) nodes (faces orthogonal to x-axis)
+ *                  (nx+1)*ny nodes (faces orthogonal to x-axis), origine (0,dy/2) 
+ *                  nx*(ny+1) nodes (faces orthogonal to x-axis), origine (dx/2,0)
  * if dim=3, union of three grids : 
- *                  nx*ny*(nz+1) (faces orthogonal to x-axis) 
- *                  nx*(ny+1)*nz (faces orthogonal to y-axis)  
- *                  (nx+1)*ny*nz (faces orthogonal to z-axis)
+ *                  nx*ny*(nz+1) (faces orthogonal to x-axis), origine (0,dy/2,dz/2) 
+ *                  nx*(ny+1)*nz (faces orthogonal to y-axis), origine (dx/2,0,dz/2)  
+ *                  (nx+1)*ny*nz (faces orthogonal to z-axis), origine (dx/2,dy/2,0)
  * 
  * Mesh face structures are stored in a vector of meshes _faceMeshes of size meshDim
  * The face centers are located on the nodes of the meshes in _faceMeshes
- * The origins of the meshes in _faceMeshes are shifted from the origin of _mesh by dx on x-axis, dy on y-axis and dz on z-axis
+ * The origins of the meshes in _faceMeshes are shifted from the origin of _mesh by dx/2 on x-axis, dy/2 on y-axis and dz/2 on z-axis
  * 
  * - number  of nodes surounding each cell : known constant : 2*_Ndim
  * - number  of faces surounding each cell : known constant : 2 _Ndim
@@ -320,7 +320,7 @@ public: //----------------------------------------------------------------
 	/**
 	 * \brief Compute the minimum value over all cells of the ratio cell perimeter/cell volume
 	 */
-    double minRatioVolSurf() const;
+    double minRatioVolSurf() const{ return _cellMeasure / *max_element(begin(_faceMeasures), end(_faceMeasures));};
     
 	/**
 	 * \brief Compute the maximum number of neighbours around an element (cells around a cell or nodes around a node)
@@ -329,10 +329,16 @@ public: //----------------------------------------------------------------
     
     /**
 	 * return the measure of a cell (length in 1D, surface in 2D or volume in 3D)
-	 * @return _measureOfCells
+	 * @return _cellMeasure
 	 */
-	double getCellMeasure ( int cellId ) const { return _measureField[cellId];};
+	double getCellMeasure ( ) const { return _cellMeasure;};
 
+    
+    /**
+	 * return the measure of a cell (length in 1D, surface in 2D or volume in 3D)
+	 * @return _faceMeasures
+	 */
+	std::vector< double > getFaceMeasures ( ) const { return _faceMeasures;};
 	/**
 	 * return normal vectors around each cell
 	 */
@@ -394,7 +400,8 @@ private: //----------------------------------------------------------------
     std::vector< int > _boundaryNodeIds;
     
     double _epsilon;
-	MEDCouplingFieldDouble * _measureField;
+	double _cellMeasure;
+	std::vector< double > _faceMeasures;
 };
 
 #endif /* IJKMESH_HXX_ */

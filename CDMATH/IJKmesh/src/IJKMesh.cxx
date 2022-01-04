@@ -86,13 +86,17 @@ IJKMesh::setFaceMeshes()
 		nodeStrctPtr[i]=nodeStr[i];
 		dxyzPtr[i]=dxyz[i];
 	}
+	_cellMeasure=1;
 	for(int i=0; i<meshDim; i++)
 	{
+		_cellMeasure*=dxyz[i];
+		_faceMeasures[i]=1;
 		for(int j=0; j<meshDim; j++)
 			if(j != i)
 			{
 				nodeStrctPtr[j]-=1;
 				originPtr[j]+=dxyz[j]/2;
+				_faceMeasures[i]*=dxyz[j];
 			}
 		_faceMesh[i]=MEDCouplingIMesh::New(_mesh->getName()+"_faces_"+std::to_string(i),
 				_mesh->getMeshDimension(),
