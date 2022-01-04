@@ -1505,8 +1505,8 @@ Mesh::getNy( void )  const
 {
     if(!_isStructured)
 		throw CdmathException("int Mesh::getNy( void ) : Ny is defined only for structured meshes !");
-	if(_spaceDim < 2)
-		throw CdmathException("int Mesh::getNy( void ) : Ny is not defined in dimension < 2!");
+	if(_meshDim < 2)
+		throw CdmathException("int Mesh::getNy( void ) : Ny is not defined for mesh dimension < 2!");
 
 	return _nxyz[1];
 }
@@ -1518,8 +1518,8 @@ Mesh::getNz( void )  const
 {
     if(!_isStructured)
 		throw CdmathException("int Mesh::getNz( void ) : Nz is defined only for structured meshes !");
-	if(_spaceDim < 3)
-		throw CdmathException("int Mesh::getNz( void ) : Nz is not defined in dimension < 3!");
+	if(_meshDim < 3)
+		throw CdmathException("int Mesh::getNz( void ) : Nz is not defined for mesh dimension < 3!");
 
 	return _nxyz[2];
 }
@@ -1529,7 +1529,7 @@ double
 Mesh::getXMin( void )  const
 //----------------------------------------------------------------------
 {
-	double Box0[2*_spaceDim];
+	double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
 	return Box0[0] ;
@@ -1540,7 +1540,7 @@ double
 Mesh::getXMax( void )  const
 //----------------------------------------------------------------------
 {
-	double Box0[2*_spaceDim];
+	double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
 	return Box0[1] ;
@@ -1551,10 +1551,10 @@ double
 Mesh::getYMin( void )  const
 //----------------------------------------------------------------------
 {
-	if(_spaceDim<2)
+	if(_meshDim<2)
 		throw CdmathException("Mesh::getYMin : dimension should be >=2");
 		
-	double Box0[2*_spaceDim];
+	double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
 	return Box0[2] ;
@@ -1565,10 +1565,10 @@ double
 Mesh::getYMax( void )  const
 //----------------------------------------------------------------------
 {
-	if(_spaceDim<2)
+	if(_meshDim<2)
 		throw CdmathException("Mesh::getYMax : dimension should be >=2");
 		
-	double Box0[2*_spaceDim];
+	double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
 	return Box0[3] ;
@@ -1579,10 +1579,10 @@ double
 Mesh::getZMin( void )  const
 //----------------------------------------------------------------------
 {
-	if(_spaceDim<3)
+	if(_meshDim<3)
 		throw CdmathException("Mesh::getZMin : dimension should be 3");
 		
-	double Box0[2*_spaceDim];
+	double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
 	return Box0[4] ;
@@ -1593,10 +1593,10 @@ double
 Mesh::getZMax( void )  const
 //----------------------------------------------------------------------
 {
-	if(_spaceDim<3)
+	if(_meshDim<3)
 		throw CdmathException("Mesh::getZMax : dimension should be 3");
 
-	double Box0[2*_spaceDim];
+	double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
 	return Box0[5] ;
