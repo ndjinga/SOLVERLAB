@@ -369,7 +369,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 40, M22.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, M22.getNumberOfEdges() );
     CPPUNIT_ASSERT(M22.meshNotDeleted());
-    CPPUNIT_ASSERT(!M22.isStructured());
+    CPPUNIT_ASSERT(M22.isStructured());
 
     cout<<"Test mesh M22 normals "<<endl;
     testNormals(M22);
@@ -447,7 +447,7 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_EQUAL( 40, M6.getNumberOfFaces() );
     CPPUNIT_ASSERT_EQUAL( 40, M6.getNumberOfEdges() );
     CPPUNIT_ASSERT(M6.meshNotDeleted());
-    CPPUNIT_ASSERT(!M6.isStructured());
+    CPPUNIT_ASSERT(M6.isStructured());
 
     /*
     const MEDCouplingMesh* M1MEDMesh = M2.getMEDCouplingMesh();
