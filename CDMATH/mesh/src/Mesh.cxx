@@ -77,7 +77,7 @@ Mesh::getName( void ) const
     return _name;
 }
 
-Mesh::Mesh( const MEDCoupling::MEDCouplingMesh* mesh )
+Mesh::Mesh( MEDCoupling::MCAuto<const MEDCoupling::MEDCouplingMesh> mesh )
 {
 	_spaceDim=mesh->getSpaceDimension();
 	_meshDim=mesh->getMeshDimension();
@@ -86,7 +86,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingMesh* mesh )
     _indexFacePeriodicSet=false;
 	_meshNotDeleted=true;
     
-	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
+	_mesh= mesh->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
 
     MEDCoupling::MEDCouplingStructuredMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingStructuredMesh*> (_mesh.retn());
     if(structuredMesh)
@@ -142,7 +142,7 @@ Mesh::Mesh( const Mesh& mesh )
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
     
-	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
+	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
 
 	_mesh=m1;
     _meshNotDeleted=mesh.meshNotDeleted();
@@ -235,7 +235,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     delete [] coords;
     coords_arr->decrRef();
 
-    _mesh=mesh1d->buildUnstructured();//To enable writeMED. Because we declared the mesh as unstructured, we decide to build the unstructured data (not mandatory)
+    _mesh=mesh1d;//To enable writeMED. Because we declared the mesh as unstructured, we decide to build the unstructured data (not mandatory)
     _meshNotDeleted=true;
     _isStructured = false;
 
@@ -1751,7 +1751,7 @@ Mesh::operator= ( const Mesh& mesh )
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
 
-	_mesh=mesh.getMEDCouplingMesh()->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
+	_mesh=mesh.getMEDCouplingMesh()->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
 
 	return *this;
 }

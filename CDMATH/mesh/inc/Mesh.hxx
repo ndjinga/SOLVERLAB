@@ -65,7 +65,7 @@ public: //----------------------------------------------------------------
 	 * \brief constructor with data from a medcoupling mesh
 	 * @param medcoupling mesh 
 	 */
-	Mesh( const MEDCoupling::MEDCouplingMesh* mesh ) ;
+	Mesh( MEDCoupling::MCAuto<const MEDCoupling::MEDCouplingMesh> mesh ) ;
 
 	/**
 	 * \brief constructor with data to load a general unstructured mesh
