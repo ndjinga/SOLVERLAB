@@ -18,8 +18,6 @@ endif (COREFLOWS_WITH_PYTHON )
 
 add_custom_target (CoreFlows COMMAND ctest -O testsCoreFlows.log)
 
-add_custom_target (cpp COMMAND ctest -R .exe)# may be replace ctest -R with ctest -L
-add_custom_target (mpi COMMAND ctest -R Proc)# may be replace ctest -R with ctest -L
 add_custom_target (eos COMMAND ctest -R EOS)# may be replace ctest -R with ctest -L
 add_custom_target (coupled COMMAND ctest -R Coupled)# may be replace ctest -R with ctest -L
 

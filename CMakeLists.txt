@@ -658,6 +658,9 @@ if (SOLVERLAB_WITH_TESTS)                                                       
    ENDIF( DEFINED CPPUNIT_ROOT_DIR)
  ENDIF( DEFINED CPPUNIT_ROOT_DIR OR DEFINED ENV{CPPUNIT_ROOT_DIR})
   find_package (CPPUNIT REQUIRED)
+  
+  add_custom_target (cpp COMMAND ctest -R .exe)# may be replace ctest -R with ctest -L
+  add_custom_target (mpi COMMAND ctest -R Proc)# may be replace ctest -R with ctest -L
 endif(SOLVERLAB_WITH_TESTS)			
 				    
 # Enter subdirectories
