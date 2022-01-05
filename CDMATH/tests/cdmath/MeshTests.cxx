@@ -513,14 +513,14 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT_DOUBLES_EQUAL( 1., volM7, eps );
     
     //Testing deletion of MEDCoupling for unstructured meshes (should not deletethe structured meshes)
-    M1.deleteMEDCouplingUMesh();
-    M2.deleteMEDCouplingUMesh();
-    M23.deleteMEDCouplingUMesh();
-    M3.deleteMEDCouplingUMesh();
-    M4.deleteMEDCouplingUMesh();
-    M5.deleteMEDCouplingUMesh();
-    M2Triangle.deleteMEDCouplingUMesh();
-    M3Tetra.deleteMEDCouplingUMesh();
+    M1.deleteMEDCouplingMesh();
+    M2.deleteMEDCouplingMesh();
+    M23.deleteMEDCouplingMesh();
+    M3.deleteMEDCouplingMesh();
+    M4.deleteMEDCouplingMesh();
+    M5.deleteMEDCouplingMesh();
+    M2Triangle.deleteMEDCouplingMesh();
+    M3Tetra.deleteMEDCouplingMesh();
 
     //Testting boundary functions
     Mesh M5Boundary = M5.getBoundaryMesh (  );

@@ -253,7 +253,7 @@ class Field
     /** 
 	 * \brief Delete the medcoupling mesh to save memory space
      */
-    void deleteMEDCouplingUMesh();
+    void deleteMEDCouplingMesh();
     
     /** 
      * \brief Returns true iff an unstructured mesh has been loaded

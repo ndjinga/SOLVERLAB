@@ -2762,8 +2762,7 @@ void SinglePhase::save(){
 	}
 	_VV.setTime(_time,_nbTimeStep);
 
-	// create mesh and component info
-	if (_nbTimeStep ==0 || _restartWithNewFileName){		
+	if (_nbTimeStep ==0 || _restartWithNewFileName){	// write mesh and component info	
 		string prim_suppress ="rm -rf "+prim+"_*";
 		string cons_suppress ="rm -rf "+cons+"_*";
 
@@ -2815,8 +2814,7 @@ void SinglePhase::save(){
 		}
 
 	}
-	// do not create mesh
-	else{
+	else{// do not write mesh and component info
 		switch(_saveFormat)
 		{
 		case VTK :
@@ -2856,7 +2854,7 @@ void SinglePhase::save(){
 				_Vitesse(i,j)=0;
 		}
 		_Vitesse.setTime(_time,_nbTimeStep);
-		if (_nbTimeStep ==0 || _restartWithNewFileName){		
+		if (_nbTimeStep ==0 || _restartWithNewFileName){// write mesh and component info		
 			_Vitesse.setInfoOnComponent(0,"Velocity_x_(m/s)");
 			_Vitesse.setInfoOnComponent(1,"Velocity_y_(m/s)");
 			_Vitesse.setInfoOnComponent(2,"Velocity_z_(m/s)");
@@ -2945,7 +2943,7 @@ void SinglePhase::save(){
 			if(_Ndim>2)
 				_VitesseZ.setTime(_time,_nbTimeStep);
 		}
-		if (_nbTimeStep ==0 || _restartWithNewFileName){		
+		if (_nbTimeStep ==0 || _restartWithNewFileName){// write mesh and component info		
 			switch(_saveFormat)
 			{
 			case VTK :
@@ -2992,7 +2990,7 @@ void SinglePhase::save(){
 				break;
 			}
 		}
-		else{
+		else{// do not write mesh and component info
 			switch(_saveFormat)
 			{
 			case VTK :
@@ -3090,6 +3088,10 @@ void SinglePhase::save(){
 		}
 	}
 
+	if (_nbTimeStep ==0 || _restartWithNewFileName){	// delete mesh in memory	
+		_VV.deleteMEDCouplingMesh();
+		_UU.deleteMEDCouplingMesh();
+	}
 	if (_restartWithNewFileName)
 		_restartWithNewFileName=false;
 }

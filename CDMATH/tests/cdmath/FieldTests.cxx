@@ -257,7 +257,7 @@ FieldTests::testClassField( void )
     concF2.writeMED("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
     concF2.writeVTK("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
     concF2.writeCSV("FieldConcF2");//This saves the mesh and the values of iteration 0 at time t=0
-   	concF2.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+   	concF2.deleteMEDCouplingMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     concF2.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
     for (int j=0;j<concF2.getNumberOfComponents();j++)
     	for (int i=0;i<concF2.getNumberOfElements();i++)
@@ -292,7 +292,7 @@ FieldTests::testClassField( void )
     concF4.writeMED("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
     concF4.writeVTK("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
     concF4.writeCSV("FieldConcF4");//This saves the mesh and the values of iteration 0 at time t=0
-   	concF4.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+   	concF4.deleteMEDCouplingMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     concF4.setTime(0.5,1);//Increase the time to 0.5 and the iteration to 1
     for (int j=0;j<concF4.getNumberOfComponents();j++)
     	for (int i=0;i<concF4.getNumberOfElements();i++)
@@ -317,7 +317,7 @@ FieldTests::testClassField( void )
     concF5.writeMED("FieldConcF5");//This saves the mesh and the values of iteration 0 at time t=0
     concF5.writeVTK("FieldConcF5");//This saves the mesh and the values of iteration 0 at time t=0
     concF5.writeCSV("FieldConcF5");//This saves the mesh and the values of iteration 0 at time t=0
-  	concF5.deleteMEDCouplingUMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
+  	concF5.deleteMEDCouplingMesh();//medcouplingmesh is no longer needed as the mesh was already saved in the previous line
     for (int j=0;j<concF5.getNumberOfComponents();j++)
     	for (int i=0;i<concF5.getNumberOfElements();i++)
     		concF5(i,j)=i*j;

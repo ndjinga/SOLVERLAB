@@ -1944,7 +1944,7 @@ Mesh::setNodeGroupByIds(std::vector< int > nodeIds, std::string groupName)
         getNode(nodeIds[i]).setGroupName(groupName);
 }
 
-void Mesh::deleteMEDCouplingUMesh()
+void Mesh::deleteMEDCouplingMesh()
 { 
 	if(_meshNotDeleted) 
 	{

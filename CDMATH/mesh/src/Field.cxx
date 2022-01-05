@@ -1207,7 +1207,7 @@ std::ostream& operator<<(std::ostream& out, const Field& field )
 	return out;
 }
 
-void Field::deleteMEDCouplingUMesh()
+void Field::deleteMEDCouplingMesh()
 { 
-	return _mesh.deleteMEDCouplingUMesh();
+	return _mesh.deleteMEDCouplingMesh();
 }
