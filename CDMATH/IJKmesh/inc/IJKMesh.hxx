@@ -128,7 +128,7 @@ public: //----------------------------------------------------------------
 	 * @param int k : cell index along z-axis
 	 * @return global cell number
      */
-    int getCellNumber(int i, int j, int k) const { return getCellIdFromPos ( i, j, k); };
+    int getCellNumber(int i, int j, int k) const { return _mesh->getCellIdFromPos ( i, j, k); };
     /**
      * \brief Computes the global node number from its IJK position
 	 * @param int i : node index along x-axis
@@ -136,7 +136,16 @@ public: //----------------------------------------------------------------
 	 * @param int k : node index along z-axis
 	 * @return global node number
      */
-    int getNodeNumber(int i, int j, int k) const { return getNodeIdFromPos ( i, j, k); };
+    int getNodeNumber(int i, int j, int k) const { return _mesh->getNodeIdFromPos ( i, j, k); };
+    /**
+     * \brief Computes the global face number from its IJK position
+     * @param int face grid number corresponding to the direction of the face normal : 0->x, 1->y, 2->z
+	 * @param int i : node index along x-axis
+	 * @param int j : node index along y-axis
+	 * @param int k : node index along z-axis
+	 * @return global node number
+     */
+    int getFaceNumber(int face_grid_number, int i, int j, int k) const { return _faceMeshes[face_grid_number]->getNodeIdFromPos ( i, j, k); };
     /**
      * \brief Computes the IJK position of a cell from its index  number
 	 * @param int cellId : global cell index 
@@ -150,6 +159,13 @@ public: //----------------------------------------------------------------
      */
 	std::vector< int > getIJKNodeCoordinates(int nodeId) const { return _mesh->getLocationFromNodeId(nodeId); };
     /**
+     * \brief Computes the IJK position of a face from its index  number
+     * @param int face grid number corresponding to the direction of the face normal : 0->x, 1->y, 2->z
+	 * @param int faceId : global face index 
+	 * @return vector of i,j,k indices of the node
+     */
+	std::vector< int > getIJKFaceCoordinates( int face_grid_number, int faceId) const { return _faceMeshes[face_grid_number]->getLocationFromNodeId(faceId); };
+    /**
      * \brief Computes the indices of nodes surrounding a given cell
 	 * @param int cellId : global cell index 
 	 * @return vector of indices of the nodes surrounding the cell 
@@ -160,7 +176,14 @@ public: //----------------------------------------------------------------
 	 * @param int nodeId : global node index 
 	 * @return vector of components of the node coordinates 
      */
-    std::vector< double >   getNodeCoordinates (mcIdType nodeId) const { std::vector< double > coo; _mesh_>getCoordinatesOfNode(mcIdType cellId, coo) ; return coo; };
+    std::vector< double >   getNodeCoordinates (mcIdType nodeId) const { std::vector< double > coo; _mesh_>getCoordinatesOfNode(mcIdType nodeId, coo) ; return coo; };
+    /**
+     * \brief Computes the coordinates of a face center of mass
+     * @param int face grid number corresponding to the direction of the face normal : 0->x, 1->y, 2->z
+	 * @param int faceId : global face index 
+	 * @return vector of components of the face coordinates 
+     */
+    std::vector< double >   getFaceCoordinates ( int face_grid_number, mcIdType faceId) const { std::vector< double > coo; _faceMeshes[face_grid_number]>getCoordinatesOfNode(mcIdType faceId, coo) ; return coo; };
     /**
      * \brief Computes the isobarycenter of a cell
 	 * @param int cellId : cell number
