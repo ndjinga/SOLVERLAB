@@ -360,6 +360,7 @@ private: //----------------------------------------------------------------
 
     /**
      * \brief The cell mesh
+	 * Question : can _mesh be const since no buildUnstructured is applied?
 	 */
 	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> _mesh;//This is either a MEDCouplingIMesh (creation from scratch) or a MEDCouplingCMesh (loaded from a file)
     /**

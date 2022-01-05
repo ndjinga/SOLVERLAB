@@ -61,6 +61,7 @@ IJKMesh::IJKMesh( const MEDCoupling::MEDCouplingStructuredMesh* mesh )
     _indexFacePeriodicSet=false;
 	_measureField = mesh->getMeasureField(true);    
 	
+	//_mesh=mesh if _mesh is declared const
 	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
 	setFaceMeshes();
 }
@@ -133,6 +134,7 @@ IJKMesh::IJKMesh( const IJKMesh& m )
     if(_indexFacePeriodicSet)
         _indexFacePeriodicMap=m.getIndexFacePeriodic();
     
+	//_mesh=m if _mesh is declared const
 	_mesh=m.getMEDCouplingIMesh()->clone(false);
 }
 
@@ -549,6 +551,7 @@ IJKMesh::operator= ( const IJKMesh& mesh )
 	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
 	_nodeGroups = mesh.getNodeGroups() ;
 
+	//_mesh=mesh if _mesh is declared const
 	_mesh=mesh.getMEDCouplingStructuredMesh()->clone(false);
 	
 	_faceMeshes=mesh.getFaceMeshes());
