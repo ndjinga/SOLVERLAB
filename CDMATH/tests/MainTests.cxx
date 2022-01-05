@@ -46,16 +46,16 @@ int main( int argc, char* argv[] )
     CppUnit::TextUi::TestRunner runner;
     runner.addTest( VectorTests::suite() );
     runner.addTest( MatrixTests::suite() );
+    #ifdef CDMATH_WITH_PETSC
+        runner.addTest( LinearSolverTests::suite() );
+        runner.addTest( SparseMatrixPetscTests::suite() );
+    #endif
     runner.addTest( PointTests::suite() );
     runner.addTest( NodeTests::suite() );
     runner.addTest( CellTests::suite() );
     runner.addTest( FaceTests::suite() );
     runner.addTest( MeshTests::suite() );
     runner.addTest( FieldTests::suite() );
-    #ifdef CDMATH_WITH_PETSC
-        runner.addTest( LinearSolverTests::suite() );
-        runner.addTest( SparseMatrixPetscTests::suite() );
-    #endif
 
     runner.run( controller );
     CppUnit::CompilerOutputter outputter( &result, CppUnit::stdCOut() );
