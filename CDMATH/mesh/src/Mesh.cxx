@@ -84,6 +84,7 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingMesh* mesh )
     _name=mesh->getName();
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
+	_meshNotDeleted=true;
     
 	_mesh=mesh->clone(false);//No deep copy : it is assumed node coordinates and cell connectivity will not change
 
@@ -91,14 +92,10 @@ Mesh::Mesh( const MEDCoupling::MEDCouplingMesh* mesh )
     if(structuredMesh)
     {
         _isStructured=true;
-		_meshNotDeleted=false;
         _nxyz=structuredMesh->getCellGridStructure();
     }
     else
-    {
         _isStructured=false;
-		_meshNotDeleted=true;
-    }
 
 	setMesh();
 }
@@ -170,19 +167,16 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, int
     _name=_mesh->getName();
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
+	_meshNotDeleted=true;
 
     MEDCoupling::MEDCouplingStructuredMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingStructuredMesh*> (_mesh.retn());
     if(structuredMesh)
     {
         _isStructured=true;
-		_meshNotDeleted=false;
         _nxyz=structuredMesh->getCellGridStructure();
     }
     else
-    {
         _isStructured=false;
-		_meshNotDeleted=true;
-    }
     
 	MEDCouplingUMesh*  mu = setMesh();
 	setNodeGroups(m, mu);//Works for both cartesan and unstructured meshes
@@ -217,8 +211,6 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 	_meshDim  = 1 ;
     _name=meshName;
     _epsilon=1e-6;
-
-    _isStructured = false;
     _indexFacePeriodicSet=false;
     
     MEDCouplingUMesh * mesh1d = MEDCouplingUMesh::New(meshName, 1);
@@ -245,6 +237,7 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 
     _mesh=mesh1d->buildUnstructured();//To enable writeMED. Because we declared the mesh as unstructured, we decide to build the unstructured data (not mandatory)
     _meshNotDeleted=true;
+    _isStructured = false;
 
 	setMesh();
 }
@@ -264,7 +257,6 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 	_meshDim  = 1 ;
     _name=meshName;
     _epsilon=1e-6;
-    _isStructured = true;
     _indexFacePeriodicSet=false;
 
 	_nxyz.resize(_spaceDim);
@@ -286,7 +278,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _meshNotDeleted=true;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
+    _meshNotDeleted=true;
+    _isStructured = true;
 
 	setMesh();
 }
@@ -333,14 +326,13 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _meshNotDeleted=true;//Because the mesh is structured cartesian : no data in memory. No nodes and cell coordinates stored
+    _meshNotDeleted=true;
     _isStructured = true;
 
     if(split_to_triangles_policy==0 || split_to_triangles_policy==1)
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             _mesh->simplexize(split_to_triangles_policy);
-            _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
         }
     else if (split_to_triangles_policy != -1)
@@ -401,21 +393,19 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
 			originPtr+_spaceDim,
 			dxyzPtr,
 			dxyzPtr+_spaceDim);
-    _meshNotDeleted=true;//Because the mesh is structured cartesian : no data in memory. Nno nodes and cell coordinates stored
+    _meshNotDeleted=true;
     _isStructured = true;
 
     if( split_to_tetrahedra_policy == 0 )
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
-            _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
-            _meshNotDeleted=true;//Now the mesh is unstructured and stored with nodes and cell coordinates
 			_isStructured = false;
         }
     else if ( split_to_tetrahedra_policy != -1 )
@@ -1870,8 +1860,8 @@ void
 Mesh::writeVTK ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
-	if( !_isStructured && !_meshNotDeleted )
-		throw CdmathException("Mesh::writeVTK : Cannot save mesh : no MEDCouplingUMesh loaded");
+	if( !_meshNotDeleted )
+		throw CdmathException("Mesh::writeVTK : Cannot save mesh : no MEDCouplingMesh loaded (may be deleted)");
 		
 	string fname=fileName+".vtu";
 	_mesh->writeVTK(fname.c_str()) ;
@@ -1883,7 +1873,7 @@ Mesh::writeMED ( const std::string fileName, bool fromScratch ) const
 //----------------------------------------------------------------------
 {
 	if( !_meshNotDeleted )
-		throw CdmathException("Mesh::writeMED : Cannot save mesh : no MEDCouplingUMesh loaded");
+		throw CdmathException("Mesh::writeMED : Cannot save mesh : no MEDCouplingMesh loaded (may be deleted)");
 
 	string fname=fileName+".med";
 	if(_isStructured)//Check if we have a medcouplingimesh that can't be written directly
