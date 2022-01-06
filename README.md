@@ -25,7 +25,7 @@ The main research objectives of SOLVERLAB are the study of
 - New preconditioners for implicit methods for two phase flows
 - The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
 
-The library is currently maintained and distributed by the SALOME developpement team on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows10.
+The library is currently maintained and distributed by the SALOME developpement team on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows-10.
 The corresponding binary files can be found  [here](https://www.salome-platform.org/downloads/current-version).
 
 Examples of use
@@ -41,14 +41,16 @@ Examples of use
 - [Surface Finite elements for the Poisson-Beltrami problem on a sphere in 3D (by M. Nguemfouo, PhD student)](CDMATH/tests/doc/3DPoissonSphereEF/SynthesisConvergenceFESphere.pdf)
 - [Surface Finite elements for the Poisson-Beltrami problem on a torus in 3D (by M. Nguemfouo, PhD student)](CDMATH/tests/doc/3DPoissonTorusEF/SynthesisConvergenceFETorus.pdf)
 
-Download SOLVERLAB sources to compile
+Download SOLVERLAB sources for compilation
 ----------------------------------
+The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/downloads/current-version).
+However the binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a better alternative using less disk and memory space.
 
-Create your source directory. For instance:
+To compile SOLVERLAB source, first create a source directory, for instance with:
 * `mkdir ~/workspace/SOLVERLAB`
 * `cd ~/workspace/SOLVERLAB`
 
-Download from GitHub
+Download SOLVERLAB source from GitHub
 * click on the following link : `https://github.com/ndjinga/SOLVERLAB/archive/master.zip`, then unzip the file in a directory SOLVERLAB-master
 * or type the following in a terminal : `wget https://github.com/ndjinga/SOLVERLAB/archive/master.zip`, then unzip the file in a directory SOLVERLAB-master
 * or clone the git repository to a folder SOLVERLAB-master:  `git clone https://github.com/ndjinga/SOLVERLAB.git SOLVERLAB-master`
@@ -78,7 +80,7 @@ Directories. Create the suggested build and installation folders:
 Compile and install SOLVERLAB
 --------------------------
 Simpler build for a minimum version:
-* `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release `  
+* `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_GUI=ON -DSOLVERLAB_WITH_DOCUMENTATION=ON `  
 > This will download and build the following dependencies
 > - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz
 > - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
@@ -90,10 +92,10 @@ Simpler build for a minimum version:
 If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:
 * `cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON`  
 > This assumes that you have an existing 
-> - install of PETSc (with submodules SLEPC and HDF5) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
+> - installation of PETSc (with submodules SLEPC and HDF5) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
 > See the instructions given in [the official documentation](http://www.mcs.anl.gov/petsc/documentation/installation.html)
-> - install of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
-> - install of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
+> - installation of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
+> - installation of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
 
 The 3 dependencies PETSC, MED and MEDCOUPLING should have been compiled with the same version of HDF5  
 Warning : the linux package libhdf5-dev is generally not compatible with the libraries MED and MEDCoupling  
