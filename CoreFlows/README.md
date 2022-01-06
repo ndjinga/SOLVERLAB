@@ -1,7 +1,7 @@
-CDMATH-CoreFlows
+SOLVERLAB-CoreFlows
 ================
 
-CDMATH-CoreFlows is an open source C++/Python library intended at solving PDE systems
+SOLVERLAB-CoreFlows is an open source C++/Python library intended at solving PDE systems
 arising from the thermalhydraulics of two phase flows in power plant boilers. It
 is a simple environment meant at students and researchers to test new numerical
 methods on general geometries with unstructured meshes. It is developped by
@@ -17,7 +17,7 @@ are the study of
 - New preconditioners for implicit methods for two phase flows
 - The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
 
-CDMATH-CoreFlows relies on the numerical toolbox [CDMATH-Toolbox](https://github.com/ndjinga/CDMATH) of the project [CDMATH](http://cdmath.jimdo.com) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
+SOLVERLAB-CoreFlows relies on the numerical toolbox [SOLVERLAB-Toolbox](https://github.com/ndjinga/CDMATH) of the project [CDMATH](http://cdmath.jimdo.com) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
 You will need the packages 'doxygen' if you want to generate de documentation and 'swig' if you want to use python scripts.  The software is currently developed for linux distributions and is maintained on Ubuntu 16.04 LTS, 18.04 LTS and 20.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
 
 User guide
@@ -35,7 +35,7 @@ The user guide is organized as follows :
 - [Software structure](Documentation/software.md)
 - [The numerical methods](Documentation/numericalPage.ipynb)
 - [Summary of  available functionalities](Documentation/functionalities.ipynb)
-- [CDMATH-CoreFlows example scripts](Documentation/examples.md)
+- [SOLVERLAB-CoreFlows example scripts](Documentation/examples.md)
 
 Download and compilation of CDMATH and PETSc
 --------------------------------------------
@@ -71,16 +71,16 @@ By default, [CDMATH-Toolbox](https://github.com/ndjinga/CDMATH) will compile a n
 Download and compilation of CoreFlows
 ---------------------------------------------
 First create and access a working directory :
-- `mkdir -p ~/workspace/CDMATH-CoreFlows `
-- `cd ~/workspace/CDMATH-CoreFlows `
+- `mkdir -p ~/workspace/SOLVERLAB-CoreFlows `
+- `cd ~/workspace/SOLVERLAB-CoreFlows `
 Now create build and install repositories:
-- `mkdir CDMATH-CoreFlows_build CDMATH-CoreFlows_install `
+- `mkdir SOLVERLAB-CoreFlows_build SOLVERLAB-CoreFlows_install `
 
-In order to download CDMATH-CoreFlows either unzip the following file to a directory CDMATH-CoreFlows-master
-- `https://github.com/ndjinga/CDMATH-CoreFlows/archive/master.zip`
-or clone the git repository to a folder CDMATH-CoreFlows-master
-- `git clone https://github.com/ndjinga/CDMATH-CoreFlows.git CDMATH-CoreFlows-master`
-Either of these latter commands results in the creation of a directory `~/workspace/CDMATH-CoreFlows/CDMATH-CoreFlows-master`  containing the source files.
+In order to download SOLVERLAB-CoreFlows either unzip the following file to a directory SOLVERLAB-CoreFlows-master
+- `https://github.com/ndjinga/SOLVERLAB-CoreFlows/archive/master.zip`
+or clone the git repository to a folder SOLVERLAB-CoreFlows-master
+- `git clone https://github.com/ndjinga/SOLVERLAB/CoreFlows/CoreFlows.git SOLVERLAB-CoreFlows-master`
+Either of these latter commands results in the creation of a directory `~/workspace/SOLVERLAB-CoreFlows/SOLVERLAB-CoreFlows-master`  containing the source files.
 
 In the following steps we assume that [PETSC](https://www.mcs.anl.gov/petsc/) (version 3.4 or more recent) has been installed with CDMATH with the process described above.
 You need to set the following variables 
@@ -98,26 +98,26 @@ Go to the build directory
 - `cd CoreFlows_build `
 
 Then run the command
-- `../CDMATH-CoreFlows-master/configure  --prefix=../CDMATH-CoreFlows_install/ --with-petsc-dir=$PETSC_DIR --with-petsc-arch=$PETSC_ARCH --with-cdmath-dir=$CDMATH_INSTALL --with-python --with-doc`
+- `../SOLVERLAB-CoreFlows-master/configure  --prefix=../SOLVERLAB-CoreFlows_install/ --with-petsc-dir=$PETSC_DIR --with-petsc-arch=$PETSC_ARCH --with-cdmath-dir=$CDMATH_INSTALL --with-python --with-doc`
 - `make doc install`
 
 You can add the following optional commands
-- `--with-gui`, if you want to use CDMATH-CoreFlows as a Salomé module (you will need to use a Salomé shell)
-- `--with-debug`, if you want to use CDMATH-CoreFlows in debug mode instead of the default optimised mode
+- `--with-gui`, if you want to use SOLVERLAB-CoreFlows as a Salomé module (you will need to use a Salomé shell)
+- `--with-debug`, if you want to use SOLVERLAB-CoreFlows in debug mode instead of the default optimised mode
 
-Use of CDMATH-CoreFlows
+Use of SOLVERLAB-CoreFlows
 -----------------------
-First load CDMATH-CoreFlows environment from the CoreFlows-master directory
-- `source ~/workspace/CDMATH-CoreFlows/CDMATH-CoreFlows_install/env_CoreFlows.sh `
+First load SOLVERLAB-CoreFlows environment from the CoreFlows-master directory
+- `source ~/workspace/SOLVERLAB-CoreFlows/SOLVERLAB-CoreFlows_install/env_CoreFlows.sh `
 
 If you use C language: edit the file CoreFlows-master/CoreFlows_src/main.cxx then in a terminal type
-- `cd ~/workspace/CDMATH-CoreFlows/CDMATH-CoreFlows_build  `
+- `cd ~/workspace/SOLVERLAB-CoreFlows/SOLVERLAB-CoreFlows_build  `
 - `make`
 - `make install`
 Then you can run the simulation in any directory with the command line
 - `$CoreFlows `
 
-If you use python language: edit your own python file `my_file.py` following for example the pattern of the file `CDMATH-CoreFlows-master/main.py`. Then in a terminal type
+If you use python language: edit your own python file `my_file.py` following for example the pattern of the file `SOLVERLAB-CoreFlows-master/main.py`. Then in a terminal type
 - `python my_file.py `
 
 If you use the graphic interface, you need to run a [SALOME](https://www.salome-platform.org/) Unix shell 
@@ -126,4 +126,4 @@ and type the command line
 - `runSalome -mCOREFLOWS`
 then click on new study to open CoreFlows interface
 
-The complete documentation is available in the directory `~/workspace/CDMATH-CoreFlows/CDMATH-CoreFlows_install/share/doc/`
+The complete documentation is available in the directory `~/workspace/SOLVERLAB-CoreFlows/SOLVERLAB-CoreFlows_install/share/doc/`
