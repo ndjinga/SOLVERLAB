@@ -647,9 +647,8 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
     message (FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly.")
   endif(NOT DOXYGEN_FOUND)
   
-  add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE}                                                  #
   configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
-  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)			                                            #
+  add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)			                                            #
   install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION share/doc/solverlab-dev-doc OPTIONAL)                  #
 endif(SOLVERLAB_WITH_DOCUMENTATION)			
 
