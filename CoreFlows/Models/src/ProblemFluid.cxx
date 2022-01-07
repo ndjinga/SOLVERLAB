@@ -1,5 +1,6 @@
 #include "ProblemFluid.hxx"
 #include "math.h"
+#include  <numeric>
 
 using namespace std;
 
@@ -173,8 +174,7 @@ void ProblemFluid::initialize()
 
 
 	int *indices = new int[_Nmailles];
-	for(int i=0; i<_Nmailles; i++)
-		indices[i] = i;
+	std::iota(indices, indices +_Nmailles, 0);
 	VecSetValuesBlocked(_conservativeVars, _Nmailles, indices, initialFieldCons, INSERT_VALUES);
 	VecAssemblyBegin(_conservativeVars);
 	VecAssemblyEnd(_conservativeVars);
