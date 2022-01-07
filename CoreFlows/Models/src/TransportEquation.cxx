@@ -139,14 +139,8 @@ void TransportEquation::initialize()
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Hn_seq);//For saving results on proc 0
 	VecScatterCreateToZero(_Hn,&_scat,&_Hn_seq);
 
-	//Linear solver
-	KSPCreate(PETSC_COMM_SELF, &_ksp);
-	KSPSetType(_ksp, _ksptype);
-	// if(_ksptype == KSPGMRES) KSPGMRESSetRestart(_ksp,10000);
-	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
-	KSPGetPC(_ksp, &_pc);
-	PCSetType(_pc, _pctype);
-
+	createKSP();
+	
 	_initializedMemory=true;
 	save();//save initial data
 }
