@@ -16,7 +16,7 @@ fi
 ##### default parameter(s) for script as environ variables 'get_...' (as policy)
 #  may be more later
 get_branch=${get_branch:-ym_M30}
-get_configure=${get_configure:-packagespy/configure_solverlabGUI.sh}
+get_configure=${get_configure:-configure_solverlabGUI.sh}
 
 ##### utilities #####
 
@@ -44,6 +44,8 @@ function f_git_log {
   git --no-pager log -5 --graph --pretty=format:"%h %ad | %s%d <%an>" --date=short
   echo -e "\n\ngit branches:"
   git branch -a
+  echo -e "\ngit status:"
+  git status
 }
 
 
@@ -62,13 +64,17 @@ workdir=$(basename $(pwd))
 [ -d "packagespy" ] && f_error "directory .../SOLVERLAB/packagespy existing yet, fix it (remove ?)."
 git clone --branch ${get_branch} https://codev-tuleap.intra.cea.fr/plugins/git/matix/packagespy.git || f_error "git clone packagespy"
 
+# this local copy is only for EZ development of packagespy/${get_configure}
+[ ${USER:-none} == "wambeke" ] && cp ${get_configure} packagespy/.
+
 # store some current packagespy git info before configure/clean
 cd packagespy && f_git_log | tee git_history.txt
 
 # theorically something as 'packagespy/configure_solverlabGUI.sh'
-[ -f "$get_configure" ] || f_error "inexisting file $get_configure"
-${get_configure} || f_error "problem in $get_configure"
+[ -f "$get_configure" ] || f_error "inexisting file packagespy/$get_configure"
+${get_configure} || f_error "problem in packagespy/$get_configure"
 
 echo
 f_green ${0} seems to be OK
-echo
+
+exit 0
