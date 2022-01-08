@@ -2,8 +2,8 @@
 \page install Installation and use of CoreFlows 
 
 
-CDMATH-CoreFlows is currently developped and maintained on Fedora and Ubuntu distributions.
-CDMATH-CoreFlows relies on the numerical toolbox of the project [CDMATH]((http://cdmath.jimdo.com)) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
+SOLVERLAB-CoreFlows is currently developped and maintained on Fedora and Ubuntu distributions.
+SOLVERLAB-CoreFlows relies on the numerical toolbox of the project [CDMATH]((http://cdmath.jimdo.com)) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
 You will need the packages  '\a cmake ', '\a gcc', '\a gfortran' and '\a hdf5', plus '\a doxygen' if you want to generate this documentation and '\a swig' if you want to use python scripts.
 
 Download and compilation of CDMATH and PETSc
@@ -15,13 +15,13 @@ First create and enter a working dir
  cd ~/workspace/cdmath
 \endverbatim
 
-In order to download the approriate branch of \ref cdmath either unzip the following file to a directory cdmath-master
+In order to download the approriate branch of \ref cdmath either unzip the following file to a directory solverlab-master
 \verbatim 
  https://github.com/ndjinga/CDMATH/archive/master.zip
 \endverbatim
-or clone the git repository to a folder cdmath-master
+or clone the git repository to a folder solverlab-master
 \verbatim 
-git clone https://github.com/ndjinga/CDMATH.git cdmath-master
+git clone https://github.com/ndjinga/CDMATH.git solverlab-master
 \endverbatim 
 
 In order to compile \ref cdmath you will need at least the libraries '\a cmake ', '\a gcc', '\a gfortran' , and '\a hdf5' plus optionally '\a swig' 'python-dev' and '\a numpy' if you intend to use \ref cdmath functions in your python scripts. 
@@ -38,7 +38,7 @@ Enter the build directory
 
 Then run the commands
 \verbatim 
- cmake ../cdmath-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PYTHON=ON -DCDMATH_WITH_PETSC=ON
+ cmake ../solverlab-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PYTHON=ON -DCDMATH_WITH_PETSC=ON
  make
  make install
 \endverbatim 
@@ -49,24 +49,24 @@ Download and compilation of CoreFlows
 ---------------------------------------------
 First create and access a working directory :
 \verbatim
- mkdir -p ~/workspace/CDMATH-CoreFlows
- cd ~/workspace/CDMATH-CoreFlows
+ mkdir -p ~/workspace/SOLVERLAB-CoreFlows
+ cd ~/workspace/SOLVERLAB-CoreFlows
 \endverbatim
 
 Now create build and install repositories:
 \verbatim
-mkdir CDMATH-CoreFlows_build CDMATH-CoreFlows_install
+mkdir SOLVERLAB-CoreFlows_build SOLVERLAB-CoreFlows_install
 \endverbatim
 
-In order to download CDMATH-CoreFlows either unzip the following file to a directory CDMATH-CoreFlows-master
+In order to download SOLVERLAB-CoreFlows either unzip the following file to a directory SOLVERLAB-CoreFlows-master
 \verbatim
- https://github.com/ndjinga/CDMATH-CoreFlows/archive/master.zip
+ https://github.com/ndjinga/SOLVERLAB-CoreFlows/archive/master.zip
 \endverbatim
-or clone the git repository to a folder CDMATH-CoreFlows-master
+or clone the git repository to a folder SOLVERLAB-CoreFlows-master
 \verbatim 
-git clone https://github.com/ndjinga/CDMATH-CoreFlows.git CDMATH-CoreFlows-master
+git clone https://github.com/ndjinga/SOLVERLAB-CoreFlows.git SOLVERLAB-CoreFlows-master
 \endverbatim 
-Either of these latter commands results in the creation of a directory `~/workspace/CDMATH-CoreFlows/CDMATH-CoreFlows-master`  containing the source files.
+Either of these latter commands results in the creation of a directory `~/workspace/SOLVERLAB-CoreFlows/SOLVERLAB-CoreFlows-master`  containing the source files.
 
 In the following steps we assume that 'PETSc' (version 3.4 or more recent) has been installed with 'CDMATH' with the process described above.
 You need to set the following variables 
@@ -79,17 +79,17 @@ source ~/workspace/cdmath/cdmath_install/env_CDMATH.sh
 \endverbatim
 Go to the build directory
 \verbatim
-cd CDMATH-CoreFlows_build
+cd SOLVERLAB-CoreFlows_build
 \endverbatim
 
 Then run the command
 \verbatim
-../CDMATH-CoreFlows-master/configure  --prefix=../CDMATH-CoreFlows_install/ --with-petsc-dir=$PETSC_DIR --with-petsc-arch=$PETSC_ARCH --with-cdmath-dir=$CDMATH_DIR --with-python --with-doc
+../SOLVERLAB-CoreFlows-master/configure  --prefix=../SOLVERLAB-CoreFlows_install/ --with-petsc-dir=$PETSC_DIR --with-petsc-arch=$PETSC_ARCH --with-cdmath-dir=$CDMATH_DIR --with-python --with-doc
 make doc install
 \endverbatim
 You can add the following optional commands
-- `--with-gui`, if you want to use CDMATH-CoreFlows as a Salomé module (you will need to use a Salomé shell)
-- `--with-debug`, if you want to use CDMATH-CoreFlows in debug mode instead of the default optimised mode
+- `--with-gui`, if you want to use SOLVERLAB-CoreFlows as a Salomé module (you will need to use a Salomé shell)
+- `--with-debug`, if you want to use SOLVERLAB-CoreFlows in debug mode instead of the default optimised mode
 
 Use of CoreFlows
 ----------------
@@ -109,7 +109,7 @@ Then you can run the simulation in any directory with the command line
 $CoreFlows
 \endverbatim
 
-- If you use python language: edit your own python file my_file.py following for example the pattern of the file CDMATH-CoreFlows-master/main.py. Then in a terminal type
+- If you use python language: edit your own python file my_file.py following for example the pattern of the file SOLVERLAB-CoreFlows-master/main.py. Then in a terminal type
 \verbatim
 python my_file.py
 \endverbatim

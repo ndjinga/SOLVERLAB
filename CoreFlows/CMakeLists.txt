@@ -65,13 +65,12 @@ endif(COREFLOWS_WITH_PYTHON)                                                    
                                                                                                             #
 if   (COREFLOWS_WITH_DOCUMENTATION)                                                                           #
   configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)                              #
+  add_custom_target (docCoreFlows COMMAND ${DOXYGEN_EXECUTABLE}  ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)			                                            #
   FILE(GLOB_RECURSE CoreFlows_Documentation ${CoreFlows_SOURCE_DIR}/Documentation *.dox)                    #
   SET(Documentation_SRC                                                                                     #
     ${PROJECT_BINARY_DIR}/Doxyfile                                                                          #
     ${CoreFlows_Documentation}                                                                              #
       )                                                                                                     #
-  add_custom_target (docCoreFlows COMMAND ${DOXYGEN_EXECUTABLE}                                                  #
-  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)			                                            #
   install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION share/doc/coreflows-dev-doc OPTIONAL)                  #
   INSTALL(FILES ${CoreFlows_SOURCE_DIR}/Documentation/CoreFlows.pdf DESTINATION share/doc OPTIONAL)	    #
 endif(COREFLOWS_WITH_DOCUMENTATION)                                                                                                    #

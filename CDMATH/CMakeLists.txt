@@ -75,8 +75,7 @@ endif(CDMATH_WITH_PETSC)
 # Documentation
 if (CDMATH_WITH_DOCUMENTATION)
   configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
-  add_custom_target (docCDMATH COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-  							  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
+  add_custom_target (docCDMATH COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
   if   ( IS_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html)
     install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION share/doc/cdmath-dev-doc)
   endif( IS_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html)
