@@ -406,12 +406,26 @@ SparseMatrixPetsc::operator/= (double value)
 }
 
 void
-SparseMatrixPetsc::viewMatrix() const 
+SparseMatrixPetsc::viewMatrix(bool useXWindow, double pause_lenght) const 
 {
     MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
 
-	MatView(_mat,PETSC_VIEWER_STDOUT_SELF);
+	if(!useXWindow)
+		MatView(_mat,PETSC_VIEWER_STDOUT_WORLD);
+	else
+	{
+		//MatView(_mat,PETSC_VIEWER_DRAW_WORLD);
+		//PetscSleep(pause_lenght);
+	   PetscViewer viewer;
+	   PetscDraw draw;
+	   PetscViewerCreate(PETSC_COMM_WORLD, &viewer);
+	   PetscViewerSetType(viewer, PETSCVIEWERDRAW);
+	   PetscViewerDrawGetDraw(viewer, 0, &draw);
+	   PetscDrawSetPause(draw, pause_lenght); // Wait for user
+	   MatView(_mat, viewer);
+	   PetscViewerDestroy(&viewer);
+	}
 }
 
 void 

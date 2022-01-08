@@ -190,6 +190,11 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
     A4.setValue(3,2,15.);
     A4.setValue(3,3,16.);
 
+	A4.viewMatrix();//Display matrix coefficients on the screen
+	A4.viewMatrix(true,0.05);//Open an x windows displaying the matrix nonzero strcture
+    //The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
+	//A4.viewMatrix(true,-1);//This pauses the x window until the user presses right mouse
+
     SparseMatrixPetsc A5(A4.transpose());
 	CPPUNIT_ASSERT_EQUAL( 1., A5(0,0) );
 	CPPUNIT_ASSERT_EQUAL( 5., A5(0,1) );
@@ -263,4 +268,9 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	CPPUNIT_ASSERT_EQUAL( 4.0, A8(0,1) );
 	CPPUNIT_ASSERT_EQUAL( 6.0, A8(1,0) );
 	CPPUNIT_ASSERT_EQUAL( 8.0, A8(1,1) );
+	
+	A8.viewMatrix();//Display matrix coefficients on the screen
+	A8.viewMatrix(true,0.05);//Open an x windows displaying the matrix nonzero strcture
+    //The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
+	//A8.viewMatrix(true,-1);//This pauses the x window until the user presses right mouse
 }

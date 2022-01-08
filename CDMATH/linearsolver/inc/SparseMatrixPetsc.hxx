@@ -101,7 +101,7 @@ public:
 
 	friend SparseMatrixPetsc operator*(const SparseMatrixPetsc& M, const SparseMatrixPetsc& N) ;
 
-	void viewMatrix() const ;
+	void viewMatrix(bool useXWindow=false, double pause_lenght=0) const ;
 	//Save matrix coefficients into a file in ascii or binary mode
 	void saveMatrix(std::string filename, bool binaryMode=false) const ;
 	double getMatrixCoeff(int i, int j) const;    

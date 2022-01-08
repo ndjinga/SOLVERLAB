@@ -51,6 +51,11 @@ class TestsLinearSolverSwig(unittest.TestCase):
         A1[1, 0] = -1.
         A1[1, 1] =  1.
 
+        A1.viewMatrix()#Display matrix coefficients on the screen
+        A1.viewMatrix(True,0.05)#Open an x windows displaying the matrix nonzero structure
+        #The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
+        #A1.viewMatrix(True,-1)#This pauses the x window until the user presses right mouse
+        
         B1 = Vector(2)
         B1[0] = 2.
         B1[1] =-2.
@@ -164,6 +169,11 @@ class TestsLinearSolverSwig(unittest.TestCase):
         A2[5, 4] = -1.
         A2[5, 5] = 2.
 
+        A2.viewMatrix()#Display matrix coefficients on the screen
+        A2.viewMatrix(True,0.05)#Open an x windows displaying the matrix nonzero structure
+        #The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
+        #A2.viewMatrix(True,-1)#This pauses the x window until the user presses right mouse
+        
         Xana2 = Vector(6)
         Xana2[0] = 1.
         Xana2[1] = 2.
