@@ -732,10 +732,10 @@ ProblemCoreFlows::getConditionNumber(bool isSingular, double tol) const
   return A.getConditionNumber( isSingular, tol);
 }
 std::vector< double > 
-ProblemCoreFlows::getEigenvalues(int nev, EPSWhich which, double tol) const
+ProblemCoreFlows::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght) const
 {
   SparseMatrixPetsc A = SparseMatrixPetsc(_A);
-  return A.getEigenvalues( nev, which, tol);
+  return A.getEigenvalues( nev, which, tol, type, viewEigenvaluesInXWindows, pause_lenght);
 }
 std::vector< Vector > 
 ProblemCoreFlows::getEigenvectors(int nev, EPSWhich which, double tol) const
@@ -758,10 +758,10 @@ ProblemCoreFlows::getEigenvectorsField(int nev, EPSWhich which, double tol) cons
 }
 
 std::vector< double > 
-ProblemCoreFlows::getSingularValues( int nsv, SVDWhich which, double tol) const
+ProblemCoreFlows::getSingularValues( int nsv, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght) const
 {
   SparseMatrixPetsc A = SparseMatrixPetsc(_A);
-  return A.getSingularValues( nsv, which, tol);
+  return A.getSingularValues( nsv, which, tol, type, viewSingularValuesInXWindows, pause_lenght);
 }
 std::vector< Vector > 
 ProblemCoreFlows::getSingularVectors(int nsv, SVDWhich which, double tol) const
