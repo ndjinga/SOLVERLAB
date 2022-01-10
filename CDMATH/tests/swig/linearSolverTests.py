@@ -55,6 +55,8 @@ class TestsLinearSolverSwig(unittest.TestCase):
         A1.viewMatrix(True,0.05)#Open an x windows displaying the matrix nonzero structure
         #The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
         #A1.viewMatrix(True,-1)#This pauses the x window until the user presses right mouse
+        A1.getEigenvalues(    4, EPS_SMALLEST_MAGNITUDE, 1.e-6, EPSKRYLOVSCHUR, True, 0.05);#Plot eigenvalues in a X-Windows
+        A1.getSingularValues( 4, SVD_SMALLEST          , 1.e-6, SVDCYCLIC     , True, 0.05);#Plot eigenvalues in a X-Windows
         
         B1 = Vector(2)
         B1[0] = 2.

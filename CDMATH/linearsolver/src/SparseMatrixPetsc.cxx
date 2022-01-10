@@ -415,14 +415,11 @@ SparseMatrixPetsc::viewMatrix(bool useXWindow, double pause_lenght) const
 		MatView(_mat,PETSC_VIEWER_STDOUT_WORLD);
 	else
 	{
-	   PetscViewer viewer;
+	   PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
 	   PetscDraw draw;
-	   PetscViewerCreate(PETSC_COMM_WORLD, &viewer);
-	   PetscViewerSetType(viewer, PETSCVIEWERDRAW);
 	   PetscViewerDrawGetDraw(viewer, 0, &draw);
 	   PetscDrawSetPause(draw, pause_lenght); // Wait for user
 	   MatView(_mat, viewer);
-	   PetscViewerDestroy(&viewer);
 	}
 }
 
