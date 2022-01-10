@@ -548,7 +548,7 @@ bool SparseMatrixPetsc::isSymmetric(double tol) const
 }
 
 int 
-SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which, double tol, EPSType type) const
+SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght) const
 {
   EPS            eps;         /* eigenproblem solver context */
   PetscReal      error;
@@ -594,8 +594,18 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   EPSSolve(eps);
+  
+  if(viewEigenvaluesInXWindows)
+  {
+    PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
+    PetscDraw draw;
+    PetscViewerDrawGetDraw(viewer, 0, &draw);
+    PetscDrawSetPause(draw, pause_lenght); // Wait for user
+    EPSValuesView(eps, viewer);
+  }
+
   /*
-     Optional: Get some information from the solver and display it
+     Optional: Get some information from the solver and display it on the screen
   */
   EPSGetIterationNumber(eps,&its);
   PetscPrintf(PETSC_COMM_WORLD," Number of iterations of the method: %D\n",its);
@@ -684,7 +694,7 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
 }
 
 int 
-SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich which, double tol, SVDType type) const
+SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght) const
 {
   SVD            svd;         /* Singular value decomposition solver context */
   PetscReal      error;
@@ -732,6 +742,16 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   SVDSolve(svd);
+
+  if(viewSingularValuesInXWindows)
+  {
+    PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
+    PetscDraw draw;
+    PetscViewerDrawGetDraw(viewer, 0, &draw);
+    PetscDrawSetPause(draw, pause_lenght); // Wait for user
+    SVDValuesView(svd, viewer);
+  }
+
   /*
      Optional: Get some information from the solver and display it
   */
@@ -815,13 +835,13 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
 }
 
 std::vector< double > 
-SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type) const
+SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght) const
 {
 	int nconv;
 	double * valP;
 	double **vecP;
 
-	nconv=computeSpectrum(nev, &valP, &vecP, which, tol,type);
+	nconv=computeSpectrum(nev, &valP, &vecP, which, tol,type, viewEigenvaluesInXWindows, pause_lenght);
 	
     std::vector< double > result(nconv);
 	
@@ -957,13 +977,13 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 }
 
 std::vector< double > 
-SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol, SVDType type) const
+SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght) const
 {
 	int nconv;
 	double * valS;
 	double **vecS;
 	
-	nconv=computeSVD(nsv, &valS, &vecS, which, tol, type);
+	nconv=computeSVD(nsv, &valS, &vecS, which, tol, type,  viewSingularValuesInXWindows, pause_lenght);
 	
     std::vector< double > result(nconv);
 	
@@ -1005,6 +1025,8 @@ SparseMatrixPetsc::getSingularVectors(int nsv, SVDWhich which, double tol, SVDTy
 
     return result;
 }
+
+
 
 void 
 SparseMatrixPetsc::leftDiagonalScale(Vector v)
