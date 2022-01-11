@@ -57,9 +57,9 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 
 
-#####################
-# Detection of MPI  #
-#####################
+#############################
+# Detection of MPI + MPI4PY #
+#############################
 if   ( DEFINED MPI_ROOT_DIR )
   set(MPI_HOME    ${MPI_ROOT_DIR})
 endif( DEFINED MPI_ROOT_DIR )
@@ -76,7 +76,7 @@ else(  DEFINED ENV{MPI_HOME} OR MPI_HOME )
   set(SOLVERLAB_WITH_MPI OFF)
 endif( DEFINED ENV{MPI_HOME} OR MPI_HOME )
 
-# Definition of MPI4PY_ROOT_DIR
+# Definition of MPI4PY_ROOT_DIR from either the environment or petsc
 if(   ${SOLVERLAB_WITH_PYTHON} AND ${SOLVERLAB_WITH_MPI} AND NOT ${MPI4PY_ROOT_DIR})
   message(STATUS "Defining MPI4PY directory" )
   if(    DEFINED ENV{MPI4PY_ROOT_DIR})
@@ -88,7 +88,7 @@ endif(${SOLVERLAB_WITH_PYTHON} AND ${SOLVERLAB_WITH_MPI} AND NOT ${MPI4PY_ROOT_D
 
 if(    MPI4PY_ROOT_DIR)
   message(STATUS "MPI4PY directory is ${MPI4PY_ROOT_DIR}" )
-  SET(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DMPI4PY_ROOT_DIR=${MPI4PY_ROOT_DIR})
+  SET(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DMPI4PY_ROOT_DIR=${MPI4PY_ROOT_DIR})#Necessary for swig generation of mpi structures
 endif( MPI4PY_ROOT_DIR)
 
 ############################
@@ -343,19 +343,17 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       set(HDF5_LIBRARY_DIR ${HDF5_ROOT}/lib)
       set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
 
-      #define MPI variables
-      #set(SOLVERLAB_WITH_MPI ON)
-      #set(MPI_HOME    ${PETSC_INSTALL} )
-      #set(MPI_LIBRARY ${PETSC_INSTALL}/lib/libmpi.so)
-      #set(MPIEXEC     ${PETSC_INSTALL}/bin/mpiexec)
-      #set(MPI4PY_ROOT_DIR    ${PETSC_INSTALL}/lib/mpi4py )
-
     endif ( IS_DIRECTORY "/usr/include/petsc/" AND EXISTS "/usr/lib64/libpetsc.so" )
   endif ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
 
 if   ( ${PETSC_VERSION} VERSION_GREATER 3.5 )
   add_definitions(-DPETSC_VERSION_GREATER_3_5)
 endif( ${PETSC_VERSION} VERSION_GREATER 3.5 )
+
+if   ( ${SOLVERLAB_WITH_PYTHON} )
+  set(SLEPC4PY_ROOT_DIR ${PETSC_DIR}/${PETSC_ARCH}/lib/slepc4py)# or use FindSLEPC4PY
+  set(PETSC4PY_ROOT_DIR ${PETSC_DIR}/${PETSC_ARCH}/lib/petsc4py)# or use FindPETSC4PY
+endif( ${SOLVERLAB_WITH_PYTHON} )
 
 string(REPLACE ";" ":"  PETSC_INCLUDES_INSTALL "${PETSC_INCLUDES}")# use colon instead of semicolon in environment file env_SOLVERLAB.sh
 
