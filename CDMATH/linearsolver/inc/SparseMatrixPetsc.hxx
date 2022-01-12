@@ -116,6 +116,7 @@ public:
     
     std::vector< double > getEigenvalues( int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getEigenvectors(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
+    void plotEigenvalues(std::string matrixName="", double pause_lenght=0, double tol=1e-6, EPSWhich which=EPS_SMALLEST_MAGNITUDE, EPSType type = EPSKRYLOVSCHUR) const;
     MEDCoupling::DataArrayDouble * getEigenvectorsDataArrayDouble(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
     std::vector< double > getSingularValues( int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getSingularVectors(int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC) const;
