@@ -118,6 +118,7 @@ for i in range(nbCells):
 
 print("Stiffness matrix construction done")
 Rigidite.viewMatrix(True, 0, "RigidityMatrix_FiniteElementsOn"+mesh_name+"Laplace")
+Rigidite.plotEigenvalues("FiniteElementsOn"+mesh_name+"Laplace")
 
 # Conditionnement de la matrice de rigidité
 #=================================

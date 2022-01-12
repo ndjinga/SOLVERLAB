@@ -111,6 +111,7 @@ for i in range(nbCells):
 
 print("Linear system matrix building done")
 Rigidite.viewMatrix(True, 0, "RigidityMatrix_FiniteElementsOn"+mesh_name+"LaplaceBeltrami")
+Rigidite.plotEigenvalues("FiniteElementsOn"+mesh_name+"LaplaceBeltrami")
 
 # Conditionnement de la matrice de rigidité
 #==========================================

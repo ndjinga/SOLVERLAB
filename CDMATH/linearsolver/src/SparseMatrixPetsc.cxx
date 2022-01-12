@@ -860,12 +860,15 @@ SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType t
 }
 
 void
-SparseMatrixPetsc::plotEigenvalues(std::string matrixName, double pause_lenght, double tol, EPSWhich which, EPSType type) const
+SparseMatrixPetsc::plotEigenvalues(std::string matrixName, int nev, double pause_lenght, double tol, EPSWhich which, EPSType type) const
 {
 	double * valP;
 	double **vecP;
 
-	computeSpectrum(_numberOfRows, &valP, &vecP, which, tol,type, true, pause_lenght, matrixName);
+	if(nev <=0)
+		computeSpectrum(_numberOfRows, &valP, &vecP, which, tol,type, true, pause_lenght, matrixName);	
+	else
+		computeSpectrum(nev, &valP, &vecP, which, tol,type, true, pause_lenght, matrixName);
 	
 	delete[] valP;
     for (int i=0;i<_numberOfRows;i++) 
