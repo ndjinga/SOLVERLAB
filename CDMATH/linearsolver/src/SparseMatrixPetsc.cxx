@@ -961,7 +961,7 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 	    else
 			nsv=1 ;
 	
-		nconv=computeSVD(nsv, &valS, &vecS, SVD_SMALLEST, tol,SVDCYCLIC);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_SMALLEST, tol,SVDCROSS);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the smallest singular value");
 	    sigma_min=valS[nsv-1];
@@ -969,7 +969,7 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 	    
 	    /*** Largest singular value ***/
 	    nsv=1;
-		nconv=computeSVD(nsv, &valS, &vecS, SVD_LARGEST, tol,SVDCYCLIC);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_LARGEST, tol,SVDCROSS);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the largest singular value");
 	    sigma_max=valS[nsv-1];
