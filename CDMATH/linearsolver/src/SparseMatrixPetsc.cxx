@@ -406,7 +406,7 @@ SparseMatrixPetsc::operator/= (double value)
 }
 
 void
-SparseMatrixPetsc::viewMatrix(bool useXWindow, double pause_lenght) const 
+SparseMatrixPetsc::viewMatrix(bool useXWindow, double pause_lenght, std::string matrixName) const 
 {
     MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
@@ -419,6 +419,8 @@ SparseMatrixPetsc::viewMatrix(bool useXWindow, double pause_lenght) const
 	   PetscDraw draw;
 	   PetscViewerDrawGetDraw(viewer, 0, &draw);
 	   PetscDrawSetPause(draw, pause_lenght); // Wait for user
+	   std::string filename="MatrixNonZeroPlot_"+matrixName+".ppm";
+	   PetscDrawSetSave( draw, filename.c_str());
 	   MatView(_mat, viewer);
 	}
 }
@@ -545,7 +547,7 @@ bool SparseMatrixPetsc::isSymmetric(double tol) const
 }
 
 int 
-SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght) const
+SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght, std::string matrixName) const
 {
   EPS            eps;         /* eigenproblem solver context */
   PetscReal      error;
@@ -597,7 +599,9 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
     PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
     PetscDraw draw;
     PetscViewerDrawGetDraw(viewer, 0, &draw);
-    PetscDrawSetPause(draw, pause_lenght); // Wait for user
+    PetscDrawSetPause(draw, pause_lenght); // time duration of the display. if pause_lenght = -1 then wait for user to press a key
+    std::string filename="MatrixEigenvaluePlot_"+matrixName+".ppm";
+    PetscDrawSetSave( draw, filename.c_str());
     EPSValuesView(eps, viewer);
   }
 
@@ -691,7 +695,7 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valP, double ***vecP, EPSW
 }
 
 int 
-SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght) const
+SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght, std::string matrixName) const
 {
   SVD            svd;         /* Singular value decomposition solver context */
   PetscReal      error;
@@ -745,7 +749,9 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
     PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
     PetscDraw draw;
     PetscViewerDrawGetDraw(viewer, 0, &draw);
-    PetscDrawSetPause(draw, pause_lenght); // Wait for user
+    PetscDrawSetPause(draw, pause_lenght); // time duration of the display. If pause_lenght = -1 then wait for user to press a key
+    std::string filename="MatrixSingularValuePlot_"+matrixName+".ppm";
+    PetscDrawSetSave( draw, filename.c_str());
     SVDValuesView(svd, viewer);
   }
 
@@ -832,13 +838,13 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
 }
 
 std::vector< double > 
-SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght) const
+SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght, std::string matrixName) const
 {
 	int nconv;
 	double * valP;
 	double **vecP;
 
-	nconv=computeSpectrum(nev, &valP, &vecP, which, tol,type, viewEigenvaluesInXWindows, pause_lenght);
+	nconv=computeSpectrum(nev, &valP, &vecP, which, tol,type, viewEigenvaluesInXWindows, pause_lenght, matrixName);
 	
     std::vector< double > result(nconv);
 	
@@ -974,13 +980,13 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 }
 
 std::vector< double > 
-SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght) const
+SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght, std::string matrixName) const
 {
 	int nconv;
 	double * valS;
 	double **vecS;
 	
-	nconv=computeSVD(nsv, &valS, &vecS, which, tol, type,  viewSingularValuesInXWindows, pause_lenght);
+	nconv=computeSVD(nsv, &valS, &vecS, which, tol, type,  viewSingularValuesInXWindows, pause_lenght, matrixName);
 	
     std::vector< double > result(nconv);
 	

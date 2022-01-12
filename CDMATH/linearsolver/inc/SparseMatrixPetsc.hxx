@@ -101,7 +101,7 @@ public:
 
 	friend SparseMatrixPetsc operator*(const SparseMatrixPetsc& M, const SparseMatrixPetsc& N) ;
 
-	void viewMatrix(bool useXWindow=false, double pause_lenght=0) const ;
+	void viewMatrix(bool useXWindow=false, double pause_lenght=0, std::string matrixName="") const ;
 	//Save matrix coefficients into a file in ascii or binary mode
 	void saveMatrix(std::string filename, bool binaryMode=false) const ;
 	double getMatrixCoeff(int i, int j) const;    
@@ -114,10 +114,10 @@ public:
     void diagonalShift(double lambda);
     void zeroEntries();//sets the matrix coefficients to zero
     
-    std::vector< double > getEigenvalues( int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0) const;
+    std::vector< double > getEigenvalues( int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getEigenvectors(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
     MEDCoupling::DataArrayDouble * getEigenvectorsDataArrayDouble(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
-    std::vector< double > getSingularValues( int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0) const;
+    std::vector< double > getSingularValues( int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getSingularVectors(int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC) const;
     double getConditionNumber(bool isSingular=false, double tol=1e-6) const;
         
@@ -131,8 +131,8 @@ private:
 
 	int _numberOfNonZeros ;//The maximum number of nonzeros coefficients per line (or an upper bound)
 	
-	int computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0) const;
-	int computeSVD     (int nsv, double ** valS, double ***vecS, SVDWhich which=SVD_SMALLEST          , double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0) const;
+	int computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
+	int computeSVD     (int nsv, double ** valS, double ***vecS, SVDWhich which=SVD_SMALLEST          , double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
 
 	Vector vecToVector(const Vec& vec) const ;
 	Vec vectorToVec( const Vector& myVector ) const ;
