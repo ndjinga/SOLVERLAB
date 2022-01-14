@@ -1,5 +1,6 @@
 #include "ProblemFluid.hxx"
 #include "math.h"
+#include  <numeric>
 
 using namespace std;
 
@@ -173,8 +174,7 @@ void ProblemFluid::initialize()
 
 
 	int *indices = new int[_Nmailles];
-	for(int i=0; i<_Nmailles; i++)
-		indices[i] = i;
+	std::iota(indices, indices +_Nmailles, 0);
 	VecSetValuesBlocked(_conservativeVars, _Nmailles, indices, initialFieldCons, INSERT_VALUES);
 	VecAssemblyBegin(_conservativeVars);
 	VecAssemblyEnd(_conservativeVars);
@@ -197,13 +197,7 @@ void ProblemFluid::initialize()
 	delete[] initialFieldCons;
 	delete[] indices;
 
-	//Linear solver
-	KSPCreate(PETSC_COMM_SELF, &_ksp);
-	KSPSetType(_ksp, _ksptype);
-	// if(_ksptype == KSPGMRES) KSPGMRESSetRestart(_ksp,10000);
-	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
-	KSPGetPC(_ksp, &_pc);
-	PCSetType(_pc, _pctype);
+	createKSP();
 
 	// Creation du solveur de Newton de PETSc
 	if( _timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)

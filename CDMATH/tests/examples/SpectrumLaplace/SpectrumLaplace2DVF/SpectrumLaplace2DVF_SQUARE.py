@@ -74,6 +74,8 @@ for i in range(nbCells):
         Rigidite.addValue(i,i,coeff) # terme diagonal
 
 print("Stiffness matrix construction done")
+Rigidite.viewMatrix(True, 0, "RigidityMatrix_FiniteVolumesOn"+mesh_name+"Laplace")
+Rigidite.plotEigenvalues("FiniteVolumesOn"+mesh_name+"Laplace")
 
 # Conditionnement de la matrice de rigidité
 #=================================

@@ -190,6 +190,13 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
     A4.setValue(3,2,15.);
     A4.setValue(3,3,16.);
 
+	A4.viewMatrix();//Display matrix coefficients on the screen
+	A4.viewMatrix(true,0.05, "A4");//Open an x windows displaying the matrix nonzero strcture
+    //The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
+	//A4.viewMatrix(true,-1);//This pauses the x window until the user presses right mouse
+	A4.getEigenvalues(    4, EPS_SMALLEST_MAGNITUDE, 1e-6, EPSKRYLOVSCHUR, true, 0.05, "A4");//Plot eigenvalues in a X-Windows and write the image in a file
+	A4.getSingularValues( 4, SVD_SMALLEST          , 1e-6, SVDCYCLIC     , true, 0.05, "A4");//Plot eigenvalues in a X-Windows and write the image in a file
+	
     SparseMatrixPetsc A5(A4.transpose());
 	CPPUNIT_ASSERT_EQUAL( 1., A5(0,0) );
 	CPPUNIT_ASSERT_EQUAL( 5., A5(0,1) );
@@ -263,4 +270,11 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	CPPUNIT_ASSERT_EQUAL( 4.0, A8(0,1) );
 	CPPUNIT_ASSERT_EQUAL( 6.0, A8(1,0) );
 	CPPUNIT_ASSERT_EQUAL( 8.0, A8(1,1) );
+	
+	A8.viewMatrix();//Display matrix coefficients on the screen
+	A8.viewMatrix(true,0.05, "A8");//Open an x windows displaying the matrix nonzero strcture
+    //The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
+	//A8.viewMatrix(true,-1);//This pauses the x window until the user presses right mouse
+	A8.getEigenvalues(    4, EPS_SMALLEST_MAGNITUDE, 1e-6, EPSKRYLOVSCHUR, true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
+	A8.getSingularValues( 4, SVD_SMALLEST          , 1e-6, SVDCYCLIC     , true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
 }

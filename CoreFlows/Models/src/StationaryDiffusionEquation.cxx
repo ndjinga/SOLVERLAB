@@ -71,10 +71,7 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
 	_NEWTON_its=0;
 	int _PetscIts=0;//the number of iterations of the linear solver
 	_ksptype = (char*)&KSPGMRES;
-	if( _mpi_size>1)
-		_pctype = (char*)&PCNONE;
-	else
-		_pctype = (char*)&PCLU;
+	_pctype = (char*)&PCILU;
 
 	_conditionNumber=false;
 	_erreur_rel= 0;
@@ -224,13 +221,39 @@ void StationaryDiffusionEquation::initialize()
 		_Tk_seq=_Tk;
 	VecScatterCreateToZero(_Tk,&_scat,&_Tk_seq);
 
-	//Linear solver
+	//PETSc Linear solver
 	KSPCreate(PETSC_COMM_WORLD, &_ksp);
 	KSPSetType(_ksp, _ksptype);
-	// if(_ksptype == KSPGMRES) KSPGMRESSetRestart(_ksp,10000);
 	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
 	KSPGetPC(_ksp, &_pc);
-	PCSetType(_pc, _pctype);
+	//PETSc preconditioner
+	if(_mpi_size==1 )
+		PCSetType(_pc, _pctype);
+	else
+	{
+		PCSetType(_pc, PCBJACOBI);//Global preconditioner is block jacobi
+		if(_pctype != (char*)&PCILU)//Default pc type is ilu
+		{
+			PetscOptionsSetValue(NULL,"-sub_pc_type ",_pctype);
+			PetscOptionsSetValue(NULL,"-sub_ksp_type ","preonly");
+			//If the above setvalue does not work, try the following
+			/*
+			KSPSetUp(_ksp);//to set the block Jacobi data structures (including creation of an internal KSP context for each block)
+			KSP * subKSP;
+			PC subpc;
+			int nlocal;//nb local blocs (should equal 1)
+			PCBJacobiGetSubKSP(_pc,&nlocal,NULL,&subKSP);
+			if(nlocal==1)
+			{
+				KSPSetType(subKSP[0], KSPPREONLY);//local block solver is same as global
+				KSPGetPC(subKSP[0],&subpc);
+				PCSetType(subpc,_pctype);
+			}
+			else
+				throw CdmathException("PC Block Jacobi, more than one block in this processor!!");
+			*/ 
+		}
+	}
 
     //Checking whether all boundary conditions are Neumann boundary condition
     //if(_FECalculation) _onlyNeumannBC = _NdirichletNodes==0;

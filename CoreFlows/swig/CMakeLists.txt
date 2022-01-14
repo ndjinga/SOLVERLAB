@@ -18,14 +18,30 @@ IF(    ${SOLVERLAB_WITH_MPI} )
     ${PETSC_INCLUDES}
     ${SLEPC_INCLUDES}
   ) 
+
+  if(EXISTS ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py/mpi4py.i)
+    INCLUDE_DIRECTORIES( ${MPI4PY_ROOT_DIR}/mpi4py/include
+                         ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py )
+  elseif (EXISTS ${MPI4PY_ROOT_DIR}/include/mpi4py/mpi4py.i )
+    INCLUDE_DIRECTORIES( ${MPI4PY_ROOT_DIR}/include
+                         ${MPI4PY_ROOT_DIR}/include/mpi4py )
+  endif()
 ENDIF( ${SOLVERLAB_WITH_MPI} )
 
-if(EXISTS ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py/mpi4py.i)
-  INCLUDE_DIRECTORIES( ${MPI4PY_ROOT_DIR}/mpi4py/include
-                       ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py )
-elseif (EXISTS ${MPI4PY_ROOT_DIR}/include/mpi4py/mpi4py.i )
-  INCLUDE_DIRECTORIES( ${MPI4PY_ROOT_DIR}/include
-                       ${MPI4PY_ROOT_DIR}/include/mpi4py )
+if(EXISTS ${PETSC4PY_ROOT_DIR}/petsc4py/include/petsc4py/petsc4py.i)
+  INCLUDE_DIRECTORIES( ${PETSC4PY_ROOT_DIR}/petsc4py/include
+                       ${PETSC4PY_ROOT_DIR}/petsc4py/include/petsc4py )
+elseif (EXISTS ${PETSC4PY_ROOT_DIR}/include/petsc4py/petsc4py.i )
+  INCLUDE_DIRECTORIES( ${PETSC4PY_ROOT_DIR}/include
+                       ${PETSC4PY_ROOT_DIR}/include/petsc4py )
+endif()
+
+if(EXISTS ${SLEPC4PY_ROOT_DIR}/slepc4py/include/slepc4py/slepc4py.i)
+  INCLUDE_DIRECTORIES( ${SLEPC4PY_ROOT_DIR}/slepc4py/include
+                       ${SLEPC4PY_ROOT_DIR}/slepc4py/include/slepc4py )
+elseif (EXISTS ${SLEPC4PY_ROOT_DIR}/include/slepc4py/slepc4py.i )
+  INCLUDE_DIRECTORIES( ${SLEPC4PY_ROOT_DIR}/include
+                       ${SLEPC4PY_ROOT_DIR}/include/slepc4py )
 endif()
 
 IF   (${CMAKE_VERSION} VERSION_LESS "3.8.0") 

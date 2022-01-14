@@ -117,7 +117,9 @@ for i in range(nbCells):
 				#else: si condition limite non nulle au bord, ajouter la contribution du bord au second membre de la cellule j
 
 print("Stiffness matrix construction done")
-quit()
+Rigidite.viewMatrix(True, 0, "RigidityMatrix_FiniteElementsOn"+mesh_name+"Laplace")
+Rigidite.plotEigenvalues("FiniteElementsOn"+mesh_name+"Laplace")
+
 # Conditionnement de la matrice de rigidité
 #=================================
 cond = Rigidite.getConditionNumber()

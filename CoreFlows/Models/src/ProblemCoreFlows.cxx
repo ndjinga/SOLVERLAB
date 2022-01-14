@@ -732,10 +732,10 @@ ProblemCoreFlows::getConditionNumber(bool isSingular, double tol) const
   return A.getConditionNumber( isSingular, tol);
 }
 std::vector< double > 
-ProblemCoreFlows::getEigenvalues(int nev, EPSWhich which, double tol) const
+ProblemCoreFlows::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght) const
 {
   SparseMatrixPetsc A = SparseMatrixPetsc(_A);
-  return A.getEigenvalues( nev, which, tol);
+  return A.getEigenvalues( nev, which, tol, type, viewEigenvaluesInXWindows, pause_lenght);
 }
 std::vector< Vector > 
 ProblemCoreFlows::getEigenvectors(int nev, EPSWhich which, double tol) const
@@ -758,10 +758,10 @@ ProblemCoreFlows::getEigenvectorsField(int nev, EPSWhich which, double tol) cons
 }
 
 std::vector< double > 
-ProblemCoreFlows::getSingularValues( int nsv, SVDWhich which, double tol) const
+ProblemCoreFlows::getSingularValues( int nsv, SVDWhich which, double tol, SVDType type, bool viewSingularValuesInXWindows, double pause_lenght) const
 {
   SparseMatrixPetsc A = SparseMatrixPetsc(_A);
-  return A.getSingularValues( nsv, which, tol);
+  return A.getSingularValues( nsv, which, tol, type, viewSingularValuesInXWindows, pause_lenght);
 }
 std::vector< Vector > 
 ProblemCoreFlows::getSingularVectors(int nsv, SVDWhich which, double tol) const
@@ -809,4 +809,43 @@ ProblemCoreFlows::setHeatPowerField(string fileName, string fieldName, int itera
 	_heatPowerField=Field(fileName, CELLS,fieldName, iteration, order, meshLevel);
 	_heatPowerField.getMesh().checkFastEquivalWith(_mesh);
 	_heatPowerFieldSet=true;
+}
+
+void 
+ProblemCoreFlows::createKSP()
+{
+	//PETSc Linear solver
+	KSPCreate(PETSC_COMM_WORLD, &_ksp);
+	KSPSetType(_ksp, _ksptype);
+	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
+	KSPGetPC(_ksp, &_pc);
+	//PETSc preconditioner
+	if(_mpi_size==1 )
+		PCSetType(_pc, _pctype);
+	else
+	{
+		PCSetType(_pc, PCBJACOBI);//Global preconditioner is block jacobi
+		if(_pctype != (char*)&PCILU)//Default pc type is ilu
+		{
+			PetscOptionsSetValue(NULL,"-sub_pc_type ",_pctype);
+			PetscOptionsSetValue(NULL,"-sub_ksp_type ","preonly");
+			//If the above setvalue does not work, try the following
+			/*
+			KSPSetUp(_ksp);//to set the block Jacobi data structures (including creation of an internal KSP context for each block)
+			KSP * subKSP;
+			PC subpc;
+			int nlocal;//nb local blocs (should equal 1)
+			PCBJacobiGetSubKSP(_pc,&nlocal,NULL,&subKSP);
+			if(nlocal==1)
+			{
+				KSPSetType(subKSP[0], KSPPREONLY);//local block solver is same as global
+				KSPGetPC(subKSP[0],&subpc);
+				PCSetType(subpc,_pctype);
+			}
+			else
+				throw CdmathException("PC Block Jacobi, more than one block in this processor!!");
+			*/ 
+		}
+	}
+	
 }
