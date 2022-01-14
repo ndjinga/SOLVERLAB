@@ -33,7 +33,7 @@ then
 fi
 
 # TODO 220114 do not work yet because needs a preexisting python3 context with PyQt5/numpy/matplotlib/paraview etc. compatible!
-# prototyping existing dir PACKAGESPY to get solverlabGUI (standalone installation, not in salome context)
+# this is PROTOTYPING of dir PACKAGESPY to get solverlabGUI (standalone installation, not in salome context)
 # please better use a tar.gz salome installation !
 if [ -d ${SOLVERLAB_INSTALL}/PACKAGESPY ] # test existing dir PACKAGESPY to get solverlabGUI standalone 
 then
@@ -42,9 +42,8 @@ then
     export PYTHONPATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PYTHONPATH
     export PATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PATH
     export SOLVERLABGUI=${SOLVERLABGUI_ROOT_DIR}/solverlabGUI  # main initial python script
-    echo "to launch solverlabGUI type '\$SOLVERLAB --gui'"
+    echo "to launch solverlabGUI type '\$SOLVERLABGUI --gui'"
 fi
 
 
 export SOLVERLAB_ROOT_DIR=$SOLVERLAB_INSTALL
-export SOLVERLABGUI=$SOLVERLAB_INSTALL/bin/salome/CoreFlows_Standalone.py
