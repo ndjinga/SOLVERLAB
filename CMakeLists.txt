@@ -685,6 +685,16 @@ if(SOLVERLAB_WITH_COREFLOWS)
   add_subdirectory (CoreFlows)
 endif(SOLVERLAB_WITH_COREFLOWS)
 
+# to use solverlabGUI simply copy directory PACKAGESPY as it was previously configured by get_packagespy.sh
+#if ( IS_DIRECTORY "PACKAGESPY" )
+  INSTALL(
+    DIRECTORY PACKAGESPY
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    USE_SOURCE_PERMISSIONS
+    PATTERN ".git" EXCLUDE
+  )
+#endif ()
+
 # Configuration file
 configure_file(
     ${PROJECT_SOURCE_DIR}/env_SOLVERLAB.sh

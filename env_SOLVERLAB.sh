@@ -19,7 +19,7 @@ export SOLVERLAB=$SOLVERLAB_INSTALL/bin/Executable/COREFLOWSMainExe
 export LD_LIBRARY_PATH=$SOLVERLAB_INSTALL/lib:$PETSC_DIR/lib:$PETSC_DIR/$PETSC_ARCH/lib:$MEDCOUPLING_LIBRARIES:$MEDFILE_ROOT_DIR/lib:$HDF5_ROOT/lib:$PV_LIB_DIR:$LD_LIBRARY_PATH
 export PYTHONPATH=$SOLVERLAB_INSTALL/bin:$SOLVERLAB_INSTALL/bin/cdmath:$SOLVERLAB_INSTALL/bin/cdmath/postprocessing:$SOLVERLAB_INSTALL/bin/coreflows:$SOLVERLAB_INSTALL/lib:$SOLVERLAB_INSTALL/lib/cdmath:$SOLVERLAB_INSTALL/lib/coreflows:$PETSC_DIR/$PETSC_ARCH/lib:$PETSC_DIR/lib:$MEDCOUPLING_LIBRARIES:$MEDCOUPLING_LIBRARIES/python@Python_VERSION_MAJOR@.@Python_VERSION_MINOR@/site-packages/:$MEDFILE_ROOT_DIR/lib:$HDF5_ROOT/lib:$MPI4PY_ROOT_DIR:$PV_PYTHON_DIR:$PYTHONPATH
 
-if [ @SOLVERLAB_WITH_MPI@ = ON ] 
+if [ @SOLVERLAB_WITH_MPI@ = ON ] # test SOLVERLAB_WITH_MPI
 then
   export mpirun=$PETSC_DIR/$PETSC_ARCH/bin/mpirun
   export mpiexec=$PETSC_DIR/$PETSC_ARCH/bin/mpiexec
@@ -27,10 +27,24 @@ then
   export PYTHONPATH=$MPI4PY_ROOT_DIR:$PYTHONPATH
 fi
 
-if [ @PRELOAD_NETCDF_ON_UBUNTU20@ = ON ] 
+if [ @PRELOAD_NETCDF_ON_UBUNTU20@ = ON ]  # test RELOAD_NETCDF_ON_UBUNTU20
 then
     export  LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libnetcdf.so
 fi
+
+# TODO 220114 do not work yet because needs a preexisting python3 context with PyQt5/numpy/matplotlib/paraview etc. compatible!
+# prototyping existing dir PACKAGESPY to get solverlabGUI (standalone installation, not in salome context)
+# please better use a tar.gz salome installation !
+if [ -d ${SOLVERLAB_INSTALL}/PACKAGESPY ] # test existing dir PACKAGESPY to get solverlabGUI standalone 
+then
+    export PACKAGESPY_ROOT_DIR=${SOLVERLAB_INSTALL}/PACKAGESPY
+    export SOLVERLABGUI_ROOT_DIR=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix/solverlabGUI
+    export PYTHONPATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PYTHONPATH
+    export PATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PATH
+    export SOLVERLABGUI=${SOLVERLABGUI_ROOT_DIR}/solverlabGUI  # main initial python script
+    echo "to launch solverlabGUI type '\$SOLVERLAB --gui'"
+fi
+
 
 export SOLVERLAB_ROOT_DIR=$SOLVERLAB_INSTALL
 export SOLVERLABGUI=$SOLVERLAB_INSTALL/bin/salome/CoreFlows_Standalone.py
