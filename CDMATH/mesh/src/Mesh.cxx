@@ -124,9 +124,11 @@ Mesh::Mesh( const Mesh& mesh )
 	_numberOfEdges = mesh.getNumberOfEdges();
 
 	_faceGroupNames = mesh.getNameOfFaceGroups() ;
-	_faceGroups = mesh.getFaceGroups() ;
+	_faceGroups = mesh.getMEDCouplingFaceGroups() ;
+	_faceGroupsIds = mesh.getFaceGroups() ;
 	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
-	_nodeGroups = mesh.getNodeGroups() ;
+	_nodeGroups = mesh.getMEDCouplingNodeGroups() ;
+	_nodeGroupsIds = mesh.getNodeGroups() ;
 
 	_nodes   = mesh.getNodes() ;
 	_faces   = mesh.getFaces() ;
@@ -1107,7 +1109,7 @@ Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupN
 			_faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
 		}
 		else
-		{cout<<"_faceGroupNames.size()="<<_faceGroupNames.size()<<", _faceGroupsIds.size()="<<_faceGroupsIds.size()<<endl;
+		{
 			std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
 			faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
 			/* Detect and erase duplicates face ids */
@@ -1694,8 +1696,14 @@ Mesh::getNameOfFaceGroups( void )  const
 	return _faceGroupNames;
 }
 
-vector<MEDCoupling::MEDCouplingUMesh *>
+vector< std::vector<int> >
 Mesh::getFaceGroups( void )  const
+{
+	return _faceGroupsIds;
+}
+
+vector<MEDCoupling::MEDCouplingUMesh *>
+Mesh::getMEDCouplingFaceGroups( void )  const
 {
 	return _faceGroups;
 }
@@ -1706,8 +1714,15 @@ Mesh::getNameOfNodeGroups( void )  const
 	return _nodeGroupNames;
 }
 
-vector<MEDCoupling::DataArrayIdType *>
+vector< std::vector<int> >
 Mesh::getNodeGroups( void )  const
+{
+	return _nodeGroupsIds;
+}
+
+
+vector<MEDCoupling::DataArrayIdType *>
+Mesh::getMEDCouplingNodeGroups( void )  const
 {
 	return _nodeGroups;
 }
@@ -1733,9 +1748,11 @@ Mesh::operator= ( const Mesh& mesh )
         _nxyz = mesh.getCellGridStructure() ;
 
 	_faceGroupNames = mesh.getNameOfFaceGroups() ;
-	_faceGroups = mesh.getFaceGroups() ;
+	_faceGroupsIds = mesh.getFaceGroups() ;
+	_faceGroups = mesh.getMEDCouplingFaceGroups() ;
 	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
-	_nodeGroups = mesh.getNodeGroups() ;
+	_nodeGroupsIds = mesh.getNodeGroups() ;
+	_nodeGroups = mesh.getMEDCouplingNodeGroups() ;
 
 	_nodes   = mesh.getNodes() ;
 	_faces   = mesh.getFaces() ;

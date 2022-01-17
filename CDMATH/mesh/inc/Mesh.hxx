@@ -260,16 +260,28 @@ public: //----------------------------------------------------------------
 	std::vector<std::string> getNameOfNodeGroups( void )  const ;
 
 	/**
+	 * \brief return the list of face groups ids
+	 * @return _faceGroupsIds
+	 */
+	std::vector< std::vector<int> > getFaceGroups( void )  const ;
+
+	/**
+	 * \brief return the list of node groups Ids
+	 * @return _nodeGroupsIds
+	 */
+	std::vector< std::vector<int> > getNodeGroups( void )  const ;
+
+	/**
 	 * \brief return the list of face groups
 	 * @return _faceGroups
 	 */
-	std::vector<MEDCoupling::MEDCouplingUMesh *> getFaceGroups( void )  const ;
+	std::vector<MEDCoupling::MEDCouplingUMesh *> getMEDCouplingFaceGroups( void )  const ;
 
 	/**
 	 * \brief return the list of node groups
 	 * @return _nodeGroups
 	 */
-	std::vector<MEDCoupling::DataArrayIdType *> getNodeGroups( void )  const ;
+	std::vector<MEDCoupling::DataArrayIdType *> getMEDCouplingNodeGroups( void )  const ;
 
     /**
      * \brief Functions to extract boundary nodes and faces Ids
