@@ -1,5 +1,5 @@
 
-.. include:: ./rst_prolog.rst
+.. include:: ../rst_prolog.rst
 
 
 .. _svlInstallation:
@@ -21,24 +21,48 @@ Some dependencies are needed for the installation and need to be on your compute
 - cmake3
 - g++ (or another C++ compiler)
 - python3-dev, python3-numpy, swig3
+- PyQt5_
 
 
 Standalone installation
 --------------------------
 
 The most simple installation process and should suit to most users.
+This way of installation will download the following dependencies you need to have internet.
 
-To use the GUI you need to have installed Python3_ on your computer with the following dependency:
+Start by creating two folders on the same level as the source.
 
-- PyQt5_
+.. code-block:: bash
 
-- TODO packagespy
+    cd ~/workspace/SOLVERLAB    
+    mkdir SOLVERLAB_build
+    mkdir SOLVERLAB_install
+    cd SOLVERLAB_build
 
-.. warning:: For the moment Solverlab **doesn't** work with Conda TODO why ? can't find some librairy
+Then we are going to compile the project with cmake and install it.
 
-When all the dependency are installed on your computer you can follow the `Solverlab install process <Solveralabinstall_>`_
+.. code-block:: bash
+    
+    cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_GUI=ON -DSOLVERLAB_WITH_DOCUMENTATION=ON
+    make
+    make install
 
-When it's done you should be able to launch the GUI with the command
+To check if your installation use 
+
+.. code-block:: bash
+
+    make validation
+    
+If all test succed you can now go in the install folder.
+
+Before any use of Solverlab don't forget to set its environement variable. 
+You will find the script env_SOLVERLAB.sh in the install folder.
+
+.. code-block:: bash
+    
+    source ~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh
+
+You can now launch the GUI with
 
 .. code-block:: bash
 

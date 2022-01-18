@@ -1,5 +1,5 @@
 
-.. include:: ./rst_prolog.rst
+.. include:: ../rst_prolog.rst
 
 
 .. _packagespy:
@@ -16,7 +16,32 @@ Le Model est une structure de donnée de type Arbre ou les feuilles contiennent 
 Vue
 --------------------
 
-Packagespy a d'abord été pensé pour une disposition graphique spécifique. Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenetre central pour afficher du contenu.
+Packagespy a d'abord été pensé pour une disposition graphique spécifique et est basé sur PyQt5. Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenetre central pour afficher du contenu. 
+
+.. code-block:: python
+
+    class TreeViewSvl(TreeXmlXyz):
+      class COLS:
+      labels = ['Name', 'Value', 'Attributes']
+      Tag = 0
+      Text = 1
+      Attributes = 2
+
+      def __init__(self, parent=None):
+      super(TreeViewSvl, self).__init__(parent)
+
+      self.setHeaderLabels(self.COLS.labels)
+      self.setAlternatingRowColors(True)
+      pal = self.palette()
+      config = CFGSVL.getMainConfigCatchAll()
+      colb = CFGSVL.toListInt(config.MainWindow.color_treeview_base)
+      colt = CFGSVL.toListInt(config.MainWindow.color_treeview_text)
+      pal.setColor(pal.Base, QtGui.QColor(*colb))
+      pal.setColor(pal.Text, QtGui.QColor(*colt))
+      self.setPalette(pal)
+
+      self.formats_treeview = FORMATS_TREEVIEW
+
 
 
 Model
@@ -35,6 +60,10 @@ Une classe typique est composé de 3 éléments:
 
 .. code-block:: python
 
+    import xyzpy.classFactoryXyz as CLFX
+    from xyzpy.intFloatListXyz import StrInListXyz #only need to import class we want to derivate.
+    from xyzpy.baseXyz import _XyzConstrainBase, ListOfBaseXyz
+    
     class AnimalList(StrInListXyz):
       _allowedList = ["None", "Cat", "Dog", "Other"]
 
@@ -61,7 +90,7 @@ Une classe typique est composé de 3 éléments:
 
     class MyModel(_XyzConstrainBase):
       
-      _atributesList = [
+      _attributesList = [
       ("Customers","ListExample"),
       ]
       
@@ -75,6 +104,7 @@ Une classe typique est composé de 3 éléments:
         self._defautNameAsRoot = "Hotel"
         self._setAllAttributesList()
       
+    CLFX.appendAllXyzClasses([AnimalList, NodeExample, ListExample, MyModel]) 
       
 Controller
 ------------
