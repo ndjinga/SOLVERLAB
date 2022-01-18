@@ -1,0 +1,71 @@
+
+.. include:: ./rst_prolog.rst
+
+
+.. _iraUsage:
+
+**********************
+Usage of solverlabGUI
+**********************
+
+Usage
+=====
+
+SolverlabGUI usage is a Command Line Interface (CLI_), which is
+Windows *and* Linux compatible (but only tested on Linus for the moment).
+
+.. code-block:: bash
+
+  solverlabGUI --[options]
+
+
+Options of solverlabGUI
+............................
+
+Useful but *not exhaustive* generic options of *solverlabGUI* CLI.
+
+
+Option *--help or -h*
+............................
+
+Get help as simple text.
+
+.. code-block:: bash
+
+    solverlabGUI --help          # get list of existing options
+
+
+Option *--doc or -d*
+............................
+
+Get documentation as browser html.
+
+.. code-block:: bash
+
+    solverlabGUI --doc           # see html doc
+
+
+Option *--verbose or -v*
+............................
+
+Change verbosity level (default is 'info').
+
+.. code-block:: bash
+
+    # execute solverlabGUI command in verbose debug mode
+    solverlabGUI -v debug
+
+
+Option *--workdir or -w*
+............................
+
+Change working directory (user data directory). Default is
+../SOLVERLABGUI_WORKDIR
+
+.. code-block:: bash
+
+    # execute solverlabGUI in user choice working directory
+    solverlabGUI -w .../MY_WORKDIR
+
+
+

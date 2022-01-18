@@ -644,6 +644,12 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
   add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)			                                            #
   install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION share/doc/solverlab-dev-doc OPTIONAL)                  #
+  
+  if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
+    find_package(Sphinx)
+    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/CoreFlows/gui/doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
+    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Utilities/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
+  endif( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)			
 
 if (SOLVERLAB_WITH_TESTS)                                                                                  #
