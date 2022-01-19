@@ -14,6 +14,22 @@ if (CDMATH_WITH_PETSC)
       ${SLEPC_INCLUDES}
       ${LINEARSOLVER_DIR}/inc
     )
+  if(     EXISTS ${PETSC4PY_ROOT_DIR}/petsc4py/include/petsc4py/petsc4py.i)
+    INCLUDE_DIRECTORIES( ${PETSC4PY_ROOT_DIR}/petsc4py/include
+                         ${PETSC4PY_ROOT_DIR}/petsc4py/include/petsc4py )
+  elseif (EXISTS ${PETSC4PY_ROOT_DIR}/include/petsc4py/petsc4py.i )
+    INCLUDE_DIRECTORIES( ${PETSC4PY_ROOT_DIR}/include
+                         ${PETSC4PY_ROOT_DIR}/include/petsc4py )
+  endif(  EXISTS ${PETSC4PY_ROOT_DIR}/petsc4py/include/petsc4py/petsc4py.i)
+
+  if(     EXISTS ${SLEPC4PY_ROOT_DIR}/slepc4py/include/slepc4py/slepc4py.i)
+    INCLUDE_DIRECTORIES( ${SLEPC4PY_ROOT_DIR}/slepc4py/include
+                         ${SLEPC4PY_ROOT_DIR}/slepc4py/include/slepc4py )
+  elseif (EXISTS ${SLEPC4PY_ROOT_DIR}/include/slepc4py/slepc4py.i )
+    INCLUDE_DIRECTORIES( ${SLEPC4PY_ROOT_DIR}/include
+                         ${SLEPC4PY_ROOT_DIR}/include/slepc4py )
+  endif(  EXISTS ${SLEPC4PY_ROOT_DIR}/slepc4py/include/slepc4py/slepc4py.i)
+
     file(COPY cdmath_with_petsc.i DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     file(RENAME ${CMAKE_CURRENT_BINARY_DIR}/cdmath_with_petsc.i ${CMAKE_CURRENT_BINARY_DIR}/cdmath.i)
 else (CDMATH_WITH_PETSC)
