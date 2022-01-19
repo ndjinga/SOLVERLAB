@@ -4,16 +4,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Project name
 project (CDMATH)
-set (CDMATH_VERSION_MAJOR 1)
-set (CDMATH_VERSION_MINOR 0)
+set (CDMATH_VERSION_MAJOR 9)
+set (CDMATH_VERSION_MINOR 8)
 
-# Project options
-option (CDMATH_WITH_PETSC "Compile CDMATH with PETSc linking." ON)
-option (CDMATH_WITH_DOCUMENTATION "Generate documentation with doxygen." ON)
-option (CDMATH_WITH_PYTHON "Compile Python interface for CDMATH." ON)
-option (CDMATH_WITH_POSTPRO "Install postprocessing Python modules." ON)
-option (CDMATH_WITH_PACKAGE "Generate RPM, Debian and tarball packages." OFF)
-option (CDMATH_WITH_TESTS "Compile unit testing." ON)
+# CDMATH project options (deprecated, see SOLVERLAB options)
+set (CDMATH_WITH_PETSC CACHE STRING ON "Compile CDMATH with PETSc linking")
+set (CDMATH_WITH_DOCUMENTATION ON CACHE STRING "Generate documentation with doxygen")
+set (CDMATH_WITH_PYTHON ON CACHE STRING "Compile Python interface for CDMATH")
+set (CDMATH_WITH_POSTPRO ON CACHE STRING "Install postprocessing Python modules")
+set (CDMATH_WITH_PACKAGE OFF CACHE STRING "Generate RPM, Debian and tarball packages")
+set (CDMATH_WITH_TESTS ON CACHE STRING "Compile unit testing")
 
 #Path to installed libraries
 set (PETSC_DIR            OFF CACHE STRING "PETSc library path" )

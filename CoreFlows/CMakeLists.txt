@@ -4,18 +4,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Project name
 project (CoreFlows C CXX)
-set (COREFLOWS_VERSION_MAJOR 0)
-set (COREFLOWS_VERSION_MINOR 1)
+set (COREFLOWS_VERSION_MAJOR 9)
+set (COREFLOWS_VERSION_MINOR 8)
 
-option (COREFLOWS_WITH_DOCUMENTATION "Generate documentation for CoreFlows use." ON)
-option (COREFLOWS_WITH_PYTHON "Compile Python interface for COREFLOWS." ON)
-option (COREFLOWS_WITH_GUI "Compile Graphic user Interface for COREFLOWS." OFF)
-option (COREFLOWS_WITH_PACKAGE "Generate RPM, Debian and tarball packages." OFF)
-option (COREFLOWS_WITH_TESTS "Compile with testing and examples." ON)
-
-#Path to installed libraries
-set (PETSC_DIR            OFF CACHE STRING "PETSc library path" )
-set (SLEPC_DIR            OFF CACHE STRING "SLEPc library path" )
+# CDMATH project options (deprecated, see SOLVERLAB options)
+set (COREFLOWS_WITH_DOCUMENTATION ON CACHE STRING "Generate documentation for CoreFlows use")
+set (COREFLOWS_WITH_PYTHON ON CACHE STRING "Compile Python interface for COREFLOWS")
+set (COREFLOWS_WITH_GUI OFF CACHE STRING "Compile Graphic user Interface for COREFLOWS")
+set (COREFLOWS_WITH_PACKAGE OFF CACHE STRING "Generate RPM, Debian and tarball packages")
+set (COREFLOWS_WITH_TESTS ON CACHE STRING "Compile with testing and examples")
 
 # Debug mode activates testing and profiling --------------------------------------------------------------#
 if   (CMAKE_BUILD_TYPE STREQUAL Debug)									   #
