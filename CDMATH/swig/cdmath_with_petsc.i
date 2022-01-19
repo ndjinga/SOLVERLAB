@@ -78,7 +78,7 @@ def VectorIdiv(self,*args):
 %include "MEDCouplingCommon.i"
 %include std_string.i
 
-%include slepc4py.i
+/* %include slepc4py.i */
 
 %include "GenericMatrix.hxx"
 %include "Matrix.hxx"

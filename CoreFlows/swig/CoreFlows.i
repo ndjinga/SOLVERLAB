@@ -4,7 +4,7 @@
 %include std_vector.i
 %include std_map.i
 
-%include slepc4py.i
+/* %include slepc4py.i */
 
 #ifdef MPI4PY_ROOT_DIR
 %include mpi4py.i
