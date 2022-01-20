@@ -4,6 +4,8 @@
 %include std_vector.i
 %include std_map.i
 
+%include "Mesh.hxx"
+
 /* %include slepc4py.i */
 
 #ifdef MPI4PY_ROOT_DIR

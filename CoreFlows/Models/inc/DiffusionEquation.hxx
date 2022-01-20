@@ -88,7 +88,7 @@ public :
 			 * \param [in] int : int corresponding to the enum CELLS or NODES
 			 * \param [out] void
 			 *  */
-	void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
+	void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type);
 	void setDirichletBoundaryCondition(string groupName, Field bc_field){
 		_limitField[groupName]=LimitFieldDiffusion(DirichletDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
 	}
@@ -111,7 +111,7 @@ public :
 			 * \param [in] int : int corresponding to the enum CELLS or NODES 
 			 * \param [out] void
 			 *  */
-	void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
+	void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type);
 	void setNeumannBoundaryCondition(string groupName, Field BC_Field){
 		_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1, 0);//This line will be deleted when variable BC are properly treated in solverlab 
 	};

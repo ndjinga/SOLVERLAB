@@ -237,62 +237,6 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
     _o_nnz =  nbVoisinsMax   *_nVar;
 }
 
-//Function needed because swig of enum EntityType fails
-void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type)
-{
-	if(_FECalculation && field_support_type!= NODES)
-		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
-
-	Field VV;
-	
-	switch(field_support_type)
-	{
-	case CELLS:
-		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case NODES:
-		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case FACES:
-		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	default:
-		std::ostringstream message;
-		message << "Error ProblemCoreFlows::setInitialField \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
-		throw CdmathException(message.str().c_str());
-	}	
-
-	setInitialField(VV);
-}
-//Function needed because swig of enum EntityType fails
-void ProblemCoreFlows::setInitialFieldConstant( int nDim, const vector<double> Vconstant, double xmin, double xmax, int nx, string leftSide, string rightSide,
-		double ymin, double ymax, int ny, string backSide, string frontSide,
-		double zmin, double zmax, int nz, string bottomSide, string topSide, int field_support_type)
-{	
-	if(_FECalculation && field_support_type!= NODES)
-		cout<<"Warning : finite element simulation should have initial field on nodes!!!"<<endl;
-
-	EntityType typeField;
-	
-	switch(field_support_type)
-	{
-	case CELLS:
-		typeField=CELLS;
-		break;
-	case NODES:
-		typeField=NODES;
-		break;
-	case FACES:
-		typeField=FACES;
-		break;
-	default:
-		std::ostringstream message;
-		message << "Error ProblemCoreFlows::setInitialField \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
-		throw CdmathException(message.str().c_str());
-	}	
-	
-	setInitialFieldConstant( nDim, Vconstant, xmin, xmax, nx, leftSide, rightSide, ymin, ymax, ny, backSide, frontSide, zmin, zmax, nz, bottomSide, topSide, typeField);
-}
 void ProblemCoreFlows::setInitialField(string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType typeField)
 {
 	if(_FECalculation && typeField!= NODES)

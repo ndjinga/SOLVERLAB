@@ -909,59 +909,27 @@ DiffusionEquation::setFluidTemperatureField(Field coupledTemperatureField){
 };
 
 void 
-DiffusionEquation::setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type){
+DiffusionEquation::setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type){
 	if(_FECalculation && field_support_type != NODES)
-		cout<<"Warning : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : DiffusionEquation::setDirichletBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 	else if(!_FECalculation && field_support_type == NODES)
-		cout<<"Warning : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : DiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 
-	Field VV;
+	Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
 	
-	switch(field_support_type)
-	{
-	case CELLS:
-		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case NODES:
-		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case FACES:
-		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	default:
-		std::ostringstream message;
-		message << "Error DiffusionEquation::setDirichletBoundaryCondition \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
-		throw CdmathException(message.str().c_str());
-	}	
 	/* For the moment the boundary value is taken constant equal to zero */
 	_limitField[groupName]=LimitFieldDiffusion(DirichletDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
 }
 
 void 
-DiffusionEquation::setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type){
+DiffusionEquation::setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type){
 	if(_FECalculation && field_support_type != NODES)
-		cout<<"Warning : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : DiffusionEquation::setNeumannBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 	else if(!_FECalculation && field_support_type == NODES)
-		cout<<"Warning : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : DiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 
-	Field VV;
-	
-	switch(field_support_type)
-	{
-	case CELLS:
-		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case NODES:
-		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case FACES:
-		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	default:
-		std::ostringstream message;
-		message << "Error DiffusionEquation::setNeumannBoundaryCondition \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
-		throw CdmathException(message.str().c_str());
-	}	
+	Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
+
 	/* For the moment the boundary value is taken constant equal to zero */
 	_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1,0);//This line will be deleted when variable BC are properly treated in solverlab 
 }
