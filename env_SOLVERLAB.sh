@@ -35,4 +35,4 @@ then
 fi
 
 export SOLVERLAB_ROOT_DIR=$SOLVERLAB_INSTALL
-export SOLVERLABGUI=$SOLVERLAB_INSTALL/bin/salome/CoreFlows_Standalone.py
+export SOLVERLABGUI=$SOLVERLAB_INSTALL/bin/salome/solverlabGUI
