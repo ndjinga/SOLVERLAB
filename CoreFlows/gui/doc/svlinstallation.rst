@@ -1,5 +1,5 @@
 
-.. include:: ./rst_prolog.rst
+.. include:: ../rst_prolog.rst
 
 
 .. _svlInstallation:
@@ -66,7 +66,7 @@ You can now launch the GUI with
 
 .. code-block:: bash
 
-   $SOLVERLABGUI
+   python3 $SOLVERLABGUI
 
 
 Advanced Installation

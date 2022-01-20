@@ -648,7 +648,7 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
     find_package(Sphinx)
     add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/CoreFlows/gui/doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Utilities/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
+    install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
   endif( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)			
 

@@ -1,5 +1,5 @@
 
-.. include:: ./rst_prolog.rst
+.. include:: ../rst_prolog.rst
 
 .. empty first toctree is used for pdf contents maxdepth, see sphinx/builders/latex/__init__.py, toctrees[0].get('maxdepth')
 

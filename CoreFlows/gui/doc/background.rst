@@ -1,5 +1,5 @@
 
-.. include:: ./rst_prolog.rst
+.. include:: ../rst_prolog.rst
 
 
 .. _iraBackground:
