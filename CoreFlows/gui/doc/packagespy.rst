@@ -100,6 +100,8 @@ Une classe typique est composé de 3 éléments:
       
     CLFX.appendAllXyzClasses([AnimalList, NodeExample, ListExample, MyModel]) 
       
+CLFX.appendAllXyzClasses() est une méthode qui permet d'informer n'importe quel partie du code de la présence des classes ajoutées en parametres. Ca permet au code d'intancier un classe uniquement en connaissant son nom.  
+
 Controller
 ------------
 
@@ -114,10 +116,10 @@ Le Controller est la partie du code qui va gérer les interactions entre le Mode
 Ajouter un model dans SolverlabGui
 ------------------------------------
 
+L'ajout d'un nouveau modele utilisable dans l'interface devrait normalement se limiter à la creation d'un model spécifique pour l'équation choisi et du script faisant le lien entre celui ci et solverlab.
 
-
-
-
+EquationSvl est une classe qui ne doit pas etre instanciée mais qui contient tous les paramètres commun à chaque modèle ainsi que ceux necessaires au fonctionnement de solverlab.
+Il faut donc créer une nouvelle classe pour acceuillir les données specifiques au modele que l'on veut implémenter.
 
 
 
