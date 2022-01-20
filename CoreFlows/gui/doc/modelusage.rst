@@ -37,10 +37,13 @@ The Solverlab Tree Object you can see in the **TREE VIEW** broke down as follows
 Diffusion Equation
 +++++++++++++++++++
 
-You can see the documentation here (TODO put link to solverlab git hub doc)
+You can see the documentation `here <SolverlabDiffusion_>`_
 
 .. image:: images/diffusionequationtree.png
     :align: center
 
-Some value can be a scalar or use a field already in your .med file you can select which mode to use and the GUI will adapt itself.
-(Todo show how to switch mode)
+A field need to be present in your mesh file to be visible in the GUI. All "field_option" are here for advanced user, it is recommanded to leave them with default value.
+
+Some value can be a field present in the mesh file or a scalar and the GUI let you choose between those two options. 
+
+The boundary condition are created dynamically by reading in the .med file.

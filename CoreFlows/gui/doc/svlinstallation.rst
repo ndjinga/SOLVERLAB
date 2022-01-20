@@ -1,5 +1,5 @@
 
-.. include:: ../rst_prolog.rst
+.. include:: ./rst_prolog.rst
 
 
 .. _svlInstallation:
@@ -28,7 +28,7 @@ Standalone installation
 --------------------------
 
 The most simple installation process and should suit to most users.
-This way of installation will download the following dependencies you need to have internet.
+This way of installation will download the some dependencies, you need to have internet.
 
 Start by creating two folders on the same level as the source.
 
@@ -37,12 +37,12 @@ Start by creating two folders on the same level as the source.
     cd ~/workspace/SOLVERLAB    
     mkdir SOLVERLAB_build
     mkdir SOLVERLAB_install
-    cd SOLVERLAB_build
 
-Then we are going to compile the project with cmake and install it.
+Then we are going to compile the project with cmake in the build folder and install it.
 
 .. code-block:: bash
     
+    cd SOLVERLAB_build
     cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_GUI=ON -DSOLVERLAB_WITH_DOCUMENTATION=ON
     make
     make install
@@ -66,7 +66,7 @@ You can now launch the GUI with
 
 .. code-block:: bash
 
-   python3 $SOLVERLABGUI
+   $SOLVERLABGUI
 
 
 Advanced Installation

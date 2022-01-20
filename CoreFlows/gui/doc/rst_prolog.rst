@@ -43,3 +43,4 @@
 .. _GNUgcc: https://www.gnu.org/software/gcc
 .. _7-zip: https://www.7-zip.org
 .. _Solveralabinstall: https://github.com/ndjinga/SOLVERLAB#compile-and-install-solverlab
+.. _SolverlabDiffusion: https://github.com/ndjinga/SOLVERLAB/blob/master/CoreFlows/Documentation/PhysicalModels/DiffusionEq.ipynb

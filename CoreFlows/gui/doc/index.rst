@@ -62,6 +62,6 @@ Release Notes
 .. toctree::
    :maxdepth: 1
 
-   Release Notes 9.8.0 <release_notes/release_notes_9.8.0>
+   Release Notes 1.0.0 <release_notes/release_notes_1.0.0>
 
-.. [1] solverlabGUI/doc/src/solverlabDocuments/solverlab_manual.pdf
+.. [1] solverlabGUI/doc/src/solverlabDocuments/20140804_solverlab_manual.pdf

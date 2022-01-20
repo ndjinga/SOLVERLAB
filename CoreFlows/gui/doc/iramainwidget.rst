@@ -125,9 +125,7 @@ This widget displays the content of the selected med file.
 It use the MEDCoupling API to do so.
 
 .. image:: images/solverlabOtherTab.png
-
-How to use
-+++++++++++
+    :align: center
 
 The user can *mouse-right-click* on the fileMed field in the **TREE VIEW** and select the "Dump ascii content" context menu.
 

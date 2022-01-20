@@ -1,5 +1,5 @@
 
-.. include:: ../rst_prolog.rst
+.. include:: ./rst_prolog.rst
 
 
 .. _packagespy:
@@ -16,7 +16,9 @@ Le Model est une structure de donnée de type Arbre ou les feuilles contiennent 
 Vue
 --------------------
 
-Packagespy a d'abord été pensé pour une disposition graphique spécifique et est basé sur PyQt5. Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenetre central pour afficher du contenu. 
+Packagespy a d'abord été pensé pour une disposition graphique spécifique et est basé sur PyQt5. Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenetre central pour afficher du contenu.
+La classe TreeXmlXyz peut être directement instancié et utilisera donc des réglages par defaut.
+On peut aussi la dériver et créer un affichage spécifique pour une application. 
 
 .. code-block:: python
 
@@ -32,14 +34,6 @@ Packagespy a d'abord été pensé pour une disposition graphique spécifique et 
 
       self.setHeaderLabels(self.COLS.labels)
       self.setAlternatingRowColors(True)
-      pal = self.palette()
-      config = CFGSVL.getMainConfigCatchAll()
-      colb = CFGSVL.toListInt(config.MainWindow.color_treeview_base)
-      colt = CFGSVL.toListInt(config.MainWindow.color_treeview_text)
-      pal.setColor(pal.Base, QtGui.QColor(*colb))
-      pal.setColor(pal.Text, QtGui.QColor(*colt))
-      self.setPalette(pal)
-
       self.formats_treeview = FORMATS_TREEVIEW
 
 
@@ -85,7 +79,7 @@ Une classe typique est composé de 3 éléments:
          self.setIsCast(True)
          self._setAllAttributesList()
       
-    class ListExample(ListOfBaseXyz)
+    class ListExample(ListOfBaseXy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z)
       _allowedClasses = ["NodeExample"]
 
     class MyModel(_XyzConstrainBase):
@@ -110,4 +104,50 @@ Controller
 ------------
 
 Le Controller est la partie du code qui va gérer les interactions entre le Model en mémoire et les actions de l'utilisateur sur la fenetre ainsi que celle avec le code sur lequel la GUI s'appuie.
+
+.. code-block:: python
+
+    
+    
+    
+    
+Ajouter un model dans SolverlabGui
+------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
