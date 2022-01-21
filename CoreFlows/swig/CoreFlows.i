@@ -4,7 +4,7 @@
 %include std_vector.i
 %include std_map.i
 
-%include "Mesh.hxx"
+%include "Mesh.hxx" /* To include Mesh.hxx for the enum EntityType */
 
 /* %include slepc4py.i */
 
