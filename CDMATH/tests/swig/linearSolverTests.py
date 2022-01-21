@@ -175,6 +175,8 @@ class TestsLinearSolverSwig(unittest.TestCase):
         A2.viewMatrix(True,0.05, "A2")#Open an x windows displaying the matrix nonzero structure
         #The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
         #A2.viewMatrix(True,-1)#This pauses the x window until the user presses right mouse
+        A2.getEigenvalues(    4, SLEPc.EPS.Which.SMALLEST_MAGNITUDE, 1.e-6, SLEPc.EPS.Type.KRYLOVSCHUR, True, 0.05, "A1");#Plot eigenvalues in a X-Windows and write the image in a file
+        A2.getSingularValues( 4, SLEPc.SVD.Which.SMALLEST          , 1.e-6, SLEPc.SVD.Type.CYCLIC     , True, 0.05, "A1");#Plot eigenvalues in a X-Windows and write the image in a file
         
         Xana2 = Vector(6)
         Xana2[0] = 1.
