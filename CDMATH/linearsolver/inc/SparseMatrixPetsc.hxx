@@ -14,8 +14,8 @@
 
 #include "MEDCouplingUMesh.hxx"
 #include "Vector.hxx"
-#include <petsc.h>
 
+#include <petscmat.h>
 #include <slepceps.h>
 #include <slepcsvd.h>
 

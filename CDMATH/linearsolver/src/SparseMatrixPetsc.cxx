@@ -7,6 +7,7 @@
 
 #include "SparseMatrixPetsc.hxx"
 #include "CdmathException.hxx"
+#include <petscdraw.h>
 
 using namespace std;
 
