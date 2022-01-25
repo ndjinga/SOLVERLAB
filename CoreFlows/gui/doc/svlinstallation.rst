@@ -66,7 +66,7 @@ You can now launch the GUI with
 
 .. code-block:: bash
 
-   python3 $SOLVERLABGUI
+   $SOLVERLABGUI
 
 
 Advanced Installation

@@ -572,12 +572,18 @@ public :
 	}
 
 	/** \fn setLinearSolver
-	 * \brief sets the linear solver and preconditioner
-	 * \details virtual function overloaded by intanciable classes
-	 * @param kspType linear solver type (GMRES or BICGSTAB)
-	 * @param pcType preconditioner (ILU,LU or NOPC)
+	 * \brief Legacy function that sets the linear solver and preconditioner
+	 * @param Three choices of linear solvers (GMRES, BICGSTAB or CG)
+	 * @param Five choices of preconditioner (ILU,LU, ICC, CHOLESKY or NOPC)
 	 */
 	void setLinearSolver(linearSolver solverName, preconditioner pcType, double maxIts=50);
+
+	/** \fn setLinearSolver
+	 * \brief sets the linear solver and preconditioner
+	 * @param Any available solver in PETSc (See PETSc KSPType)
+	 * @param Any available preconditioner in PETSc (See PETSc PCType)
+	 */
+	void setLinearSolver(std::string solverName, std::string pcName, double maxIts=50);
 
 	/** \fn setNewtonSolver
 	 * \brief sets the Newton type algorithm for solving the nonlinear algebraic system arising from the discretisation of the PDE

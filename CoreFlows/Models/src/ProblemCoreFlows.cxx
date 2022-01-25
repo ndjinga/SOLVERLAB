@@ -477,6 +477,15 @@ void ProblemCoreFlows::setLinearSolver(linearSolver kspType, preconditioner pcTy
 	}
 }
 
+void ProblemCoreFlows::setLinearSolver(std::string solverName, std::string pcName, double maxIts)
+{
+	_maxPetscIts=maxIts;
+	// set linear solver algorithm
+	_ksptype = ("KSP"+solverName).c_str();
+	// set preconditioner
+	_pctype = ("PC"+pcName).c_str();
+}
+
 void ProblemCoreFlows::setNewtonSolver(double precision, int iterations, nonLinearSolver solverName)
 {
 	_maxNewtonIts=iterations;

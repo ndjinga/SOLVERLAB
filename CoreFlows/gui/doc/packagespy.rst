@@ -100,10 +100,13 @@ Une classe typique est composé de 3 éléments:
       
     CLFX.appendAllXyzClasses([AnimalList, NodeExample, ListExample, MyModel]) 
       
+CLFX.appendAllXyzClasses() est une méthode qui permet d'informer n'importe quel partie du code de la présence des classes ajoutées en parametres. Ca permet au code d'intancier un classe uniquement en connaissant son nom.  
+
 Controller
 ------------
 
 Le Controller est la partie du code qui va gérer les interactions entre le Model en mémoire et les actions de l'utilisateur sur la fenetre ainsi que celle avec le code sur lequel la GUI s'appuie.
+Il faut donc créer des signaux pyqt qui vont ensuite pouvoir etre intercepté lorsque l'utilisateur va faire des actions sur la GUI pour pouvoir répondre en conséquence.
 
 .. code-block:: python
 
@@ -114,10 +117,27 @@ Le Controller est la partie du code qui va gérer les interactions entre le Mode
 Ajouter un model dans SolverlabGui
 ------------------------------------
 
+L'ajout d'un nouveau modele utilisable dans l'interface devrait normalement se limiter à la creation d'un model spécifique pour l'équation choisi et du script faisant le lien entre celui ci et solverlab.
 
+EquationSvl est une classe qui ne doit pas etre instanciée, elle contient tous les paramètres commun aux modèles ainsi que ceux necessaires au fonctionnement de solverlab.
+Il faut donc créer une nouvelle classe pour acceuillir les données specifiques au modele que l'on veut implémenter. En initialisant les données avec les valeur par defaut de solverlab.
 
+Pour exemple:
 
+.. code-block:: python
 
+    class TransportEq(_XyzConstraintBase):
+        _attributesList = [
+          ("field_name", "SelectField"),
+          ("field_option", "FieldOptionSvl"),
+          ("SpecificValue","NewValueClass"),
+          ("SpecificBoundaryCondition","NewBoundaryClass"),
+          ("numerical_parameters", "NumericalSvl"),
+          ("computation_parameters", "ComputationSvl"),
+          ]
+          
+          
+Il faut ensuite créer un script qui va faire la liaison entre les données du model et solverlab.
 
 
 

@@ -36,8 +36,8 @@ class MandatoryDiffusionEq(_XyzConstrainBase):
     self.setDefaultValues()
 
   def setDefaultValues(self):
-    self.specific_heat = 0
-    self.solid_density = 0
+    self.specific_heat = 1
+    self.solid_density = 1
     self.thermal_conductivity = 0
 
 
@@ -166,7 +166,7 @@ class DiffusionEq(_XyzConstrainBase):
     ("finite_method", "CalculationMethod"),
     ("mandatory_values", "MandatoryDiffusionEq"),
     ("optional_values", "OptionalDiffusionEq"),
-    ("boundary_condition", "BoundaryDiffusionEq"),
+    ("boundary_condition", "SelectBondary"),
     ("numerical_parameters", "NumericalSvl"),
     ("computation_parameters", "ComputationSvl")
   ]
