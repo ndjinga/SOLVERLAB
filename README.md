@@ -126,7 +126,7 @@ Then in your terminal simply type
 To use the Graphical User Interface of SOLVERLAB, you can load the SOLVERLAB environment in your terminal using the command
  * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
 Then in your terminal simply type
-- `python3 $SOLVERLABGUI `
+- `python3 $SOLVERLABGUI -g`
 
 If performance or parallelism is an issue for your simulations, you can use SOLVERLAB librairies with your C++ code :
  * C++ libraries: `export LD_LIBRARY_PATH=~/workspace/SOLVERLAB/SOLVERLAB_install/lib`
