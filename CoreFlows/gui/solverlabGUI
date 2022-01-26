@@ -69,9 +69,6 @@ KOSYS = 1  # KO
 # get path to solverlabGui sources
 solverlabdir = os.path.dirname(os.path.realpath(__file__))
 
-if os.getenv("USER") == "ym268439":
-  os.environ["PACKAGESPY_ROOT_DIR"] = "/volatile/catB/ym268439/packagespyGUI"  # for yacine temporary TODO remove that line
-
 packagespydir = os.getenv("PACKAGESPY_ROOT_DIR", None)
 if packagespydir is None: # supposed salome mode in directory INSTALL
     packagespydir = os.path.realpath(os.path.join(solverlabdir, '..', 'PACKAGESPY'))

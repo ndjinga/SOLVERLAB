@@ -28,7 +28,6 @@ def loadXML(file):
 
 
 if __name__ == "__main__":
-  # os.environ["PACKAGESPY_ROOT_DIR"] = "/volatile/catB/ym268439/packagespy"
   packagespydir = os.getenv("PACKAGESPY_ROOT_DIR", None) # check all environement variable to use the model from packagespy
   solverlabdir = os.getenv("SOLVERLABGUI_ROOT_DIR", None)
   if packagespydir is None or solverlabdir is None:
