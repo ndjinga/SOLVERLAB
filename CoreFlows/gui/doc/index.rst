@@ -48,7 +48,7 @@ Programmer's guide
 
 Packagespy 
 ============   
-(TODO packagespy doc)
+(TODO move this doc to the packagespygui repo)
 
 .. toctree::
    :maxdepth: 1

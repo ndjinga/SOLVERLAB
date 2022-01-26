@@ -12,7 +12,7 @@ Usage of the script
 ---------------------
 
 SolverlabGUI usage is a Command Line Interface (CLI_), which is
-Windows *and* Linux compatible (but only tested on Linus for the moment).
+Windows *and* Linux compatible (but only tested on Linux for the moment).
 
 .. code-block:: bash
 
