@@ -8,7 +8,7 @@
 Installation
 **************
 
-In a normal use case Solverlab should be installed with _SALOME
+In a normal use case Solverlab should be installed with SALOME_
 This section describe other method to get it.
 
 Prerequisite
