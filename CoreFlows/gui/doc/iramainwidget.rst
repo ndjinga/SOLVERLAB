@@ -99,6 +99,7 @@ This widget displays log trace of Solverlab code execution.
 
 Solverlab code is executed when users activate *Launch Solverlab calculus* button
 in the **TOOLBAR**.
+The log are printed only if the user have choose the *launchInBackground* option.
 
 .. image:: images/solverlabLogRunCodeWidget1.png
    :scale: 80 %

@@ -20,7 +20,7 @@ Some dependencies are needed for the installation and need to be on your compute
 
 - cmake3
 - g++ (or another C++ compiler)
-- python3-dev, python3-numpy, swig3
+- python3-dev, python3-numpy, swig3, python3-pandas
 - PyQt5_
 
 
