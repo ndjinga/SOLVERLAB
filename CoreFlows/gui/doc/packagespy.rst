@@ -138,6 +138,11 @@ Pour exemple:
           
           
 Il faut ensuite créer un script qui va faire la liaison entre les données du model et solverlab.
+C'est un script qui va parcourir le model tout en transmettant les données à l'api solverlab.
+Le script déjà implémenter se nomme launchDiffusionEQ.py.
+
+Enfin il faut modifié la classe ListOfEquation dans equationsvl.py afin d'y autorisé la nouvelle classe.
+Ainsi que permettre à RunSolverlab.py de lancer le script de calcul de la nouvelle classe.
 
 
 
