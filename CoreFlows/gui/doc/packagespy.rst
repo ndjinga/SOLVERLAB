@@ -9,15 +9,15 @@
 Packagespy
 =============
 
-Packagespy est une bibliothèque python développé au CEA permettant la création d'interface graphique. Elle est basé sur le design du Model-Vue-Controller.
-Le Model est une structure de donnée de type Arbre ou les feuilles contiennent les valeurs.
-(Chaque partie est normalement indépendante et ne peux pas agir directement sur l'autre ainsi elle communique la l'aide de request au coeur de l'api)
+Packagespy est une bibliothèque python développée au CEA permettant la création d'interfaces graphiques. Elle est basé sur le design du *Model-View-Controller*.
+Le *Model* est une structure de donnée de type Arbre où les feuilles contiennent les valeurs.
+(Chaque partie est normalement indépendante et ne peut pas agir directement sur l'autre. Ainsi, elle communique à l'aide de request au coeur de l'api)
 
-Vue
+*View*
 --------------------
 
-Packagespy a d'abord été pensé pour une disposition graphique spécifique et est basé sur PyQt5. Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenetre central pour afficher du contenu.
-La classe TreeXmlXyz peut être directement instancié et utilisera donc des réglages par defaut.
+Packagespy a d'abord été pensé pour une disposition graphique spécifique et est basé sur PyQt5. Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenêtre centrale pour afficher du contenu.
+La classe TreeXmlXyz peut être directement instanciée et utilisera donc des réglages par defaut.
 On peut aussi la dériver et créer un affichage spécifique pour une application. 
 
 .. code-block:: python
@@ -38,19 +38,19 @@ On peut aussi la dériver et créer un affichage spécifique pour une applicatio
 
 
 
-Model
+*Model*
 -----------
 
-Le Model est la structure de donnée qui va enregistrer les données entrées par l'utilisateur. Packagespy à été concu pour fonctionner avec un arbre de donnée. Chaque noeud comportant une Key, son nom et une Value, sa classe.
+Le *Model* est la structure de donnée qui va enregistrer les données entrées par l'utilisateur. Packagespy à été concu pour fonctionner avec un arbre de donnée. Chaque noeud comportant une *Key*, son nom et une *Value*, sa classe.
 
-Toute les classes utilisées en tant que noeud doivent hérité de xyz.BaseFreeXyz
-Packagespy fournit des classes abstraites (reconnaissable car commançant par "_" ) ainsi que des classes basique permettant de répondre a une grande parties des besoins de la plupart des structures de données necessaire aux lancements des applications.
+Toute les classes utilisées en tant que noeud doivent hériter de xyz.BaseFreeXyz
+Packagespy fournit des classes abstraites (reconnaissables car commançant par "_" ) ainsi que des classes basiques permettant de répondre a une grande parties des besoins de la plupart des structures de données necessaires aux lancements des applications.
 
 Une classe typique est composé de 3 éléments:
 
 - _attributesList : une liste contenant les fils du noeud actuel.
-- _helpDict : un dictionnaire contenant des tooltips a afficher a l'utilisateur pour chaque fils du noeud.
-- __init__ : la fonction qui va definir le comportement a l'initialisation.
+- _helpDict : un dictionnaire contenant des tooltips à afficher à l'utilisateur pour chaque fils du noeud.
+- __init__ : la fonction qui va definir le comportement à l'initialisation.
 
 .. code-block:: python
 
@@ -100,13 +100,13 @@ Une classe typique est composé de 3 éléments:
       
     CLFX.appendAllXyzClasses([AnimalList, NodeExample, ListExample, MyModel]) 
       
-CLFX.appendAllXyzClasses() est une méthode qui permet d'informer n'importe quel partie du code de la présence des classes ajoutées en parametres. Ca permet au code d'intancier un classe uniquement en connaissant son nom.  
+CLFX.appendAllXyzClasses() est une méthode qui permet d'informer n'importe quelle partie du code de la présence des classes ajoutées en parametres. Ca permet au code d'intancier un classe uniquement en connaissant son nom.  
 
-Controller
+*Controller*
 ------------
 
-Le Controller est la partie du code qui va gérer les interactions entre le Model en mémoire et les actions de l'utilisateur sur la fenetre ainsi que celle avec le code sur lequel la GUI s'appuie.
-Il faut donc créer des signaux pyqt qui vont ensuite pouvoir etre intercepté lorsque l'utilisateur va faire des actions sur la GUI pour pouvoir répondre en conséquence.
+Le *Controller* est la partie du code qui va gérer les interactions entre le *Model* en mémoire et les actions de l'utilisateur sur la fenêtre ainsi que celles avec le code sur lequel la GUI s'appuie.
+Il faut donc créer des signaux PyQt qui vont ensuite pouvoir être interceptés lorsque l'utilisateur va faire des actions sur la GUI pour pouvoir répondre en conséquence.
 
 .. code-block:: python
 
@@ -114,13 +114,13 @@ Il faut donc créer des signaux pyqt qui vont ensuite pouvoir etre intercepté l
     
     
     
-Ajouter un model dans SolverlabGui
-------------------------------------
+Ajouter un modèle physique dans SolverlabGui
+--------------------------------------------
 
-L'ajout d'un nouveau modele utilisable dans l'interface devrait normalement se limiter à la creation d'un model spécifique pour l'équation choisi et du script faisant le lien entre celui ci et solverlab.
+L'ajout d'un nouveau modèle physique ie d'une nouvelle équation mathématique utilisable dans l'interface devrait normalement se limiter à la creation d'un *Model* spécifique pour l'équation choisie et du script faisant le lien entre celui ci et solverlab.
 
 EquationSvl est une classe qui ne doit pas etre instanciée, elle contient tous les paramètres commun aux modèles ainsi que ceux necessaires au fonctionnement de solverlab.
-Il faut donc créer une nouvelle classe pour acceuillir les données specifiques au modele que l'on veut implémenter. En initialisant les données avec les valeur par defaut de solverlab.
+Il faut donc créer une nouvelle classe pour accueillir les données specifiques au modèle physique que l'on veut implémenter, en initialisant les données avec les valeurs par defaut de solverlab.
 
 Pour exemple:
 
@@ -137,12 +137,12 @@ Pour exemple:
           ]
           
           
-Il faut ensuite créer un script qui va faire la liaison entre les données du model et solverlab.
-C'est un script qui va parcourir le model tout en transmettant les données à l'api solverlab.
-Le script déjà implémenter se nomme launchDiffusionEQ.py.
+Il faut ensuite créer un script qui va faire la liaison entre les données du *Model* et solverlab.
+C'est un script qui va parcourir le *Model* tout en transmettant les données à l'api solverlab.
+Le script déjà implémenté se nomme launchDiffusionEQ.py.
 
-Enfin il faut modifié la classe ListOfEquation dans equationsvl.py afin d'y autorisé la nouvelle classe.
-Ainsi que permettre à RunSolverlab.py de lancer le script de calcul de la nouvelle classe.
+Enfin il faut modifier la classe ListOfEquation dans equationsvl.py afin d'y autoriser la nouvelle classe,
+ainsi que permettre à RunSolverlab.py de lancer le script de calcul de la nouvelle classe.
 
 
 
