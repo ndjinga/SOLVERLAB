@@ -47,4 +47,5 @@
 .. _CEA: https://www.cea.fr
 .. _ModelViewController: https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller
 .. _API: https://en.wikipedia.org/wiki/API
+.. _PACKAGESPY: https://github.com/ndjinga/PACKAGESPYGUI
 

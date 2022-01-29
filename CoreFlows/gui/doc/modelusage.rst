@@ -4,8 +4,8 @@
 
 .. _modelUsage:
 
-Model
----------
+Physical models
+---------------
 
 This section will explicit all options of the implemented model in the GUI
 

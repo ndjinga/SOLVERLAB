@@ -21,7 +21,7 @@ Solverlab GUI
 The Solverlab GUI code is a GUI_ (Graphical User Interface)
 used to perform simulations with `Solverlab physical models <SolverlabPresentationPdf_>`_.
 
-The Solverlab GUI is designed with (Packagespy based on) PyQt5_ and Python3_ scripts files.
+The Solverlab GUI is designed with the library PACKAGESPY_, which is based on PyQt5_ and Python3_ scripts files.
 
 
 
@@ -45,14 +45,6 @@ Programmer's guide
    :maxdepth: 1
 
    background
-
-Packagespy 
-============   
-(TODO move this doc to the packagespygui repo)
-
-.. toctree::
-   :maxdepth: 1
-   
    packagespy
 
 

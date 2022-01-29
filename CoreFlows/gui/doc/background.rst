@@ -4,8 +4,9 @@
 
 .. _iraBackground:
 
-Background
------------
+====================
+Launch in Background
+====================
 
 When you choose to launch a simulation in background you can have more control on your case.
 
