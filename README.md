@@ -80,7 +80,7 @@ Directories. Create the suggested build and installation folders:
 Compile and install SOLVERLAB
 --------------------------
 Simpler build for a minimum version:
-* `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_GUI=ON -DSOLVERLAB_WITH_DOCUMENTATION=ON `  
+* `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON `  
 > This will download and build the following dependencies
 > - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz
 > - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
@@ -116,7 +116,7 @@ Generate documentation of CoreFlows module
 * make docCoreFlows
 
 Use of SOLVERLAB
--------------
+----------------
 
 To use SOLVERLAB in your Python code `main.py `, you can load the SOLVERLAB environment in your terminal using the command
  * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
@@ -139,3 +139,7 @@ The SOLVERLAB environment variables consist in :
  * MED library path: `${MEDFILE_ROOT_DIR}/lib`
  * MEDCOUPLING library path: `${MEDCOUPLING_ROOT_DIR}/lib`
 
+Use of SOLVERLAB
+----------------
+A new GUI based on the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) is being developped for SOLVERLAB. In order to use the new GUI use the cmake option `-DSOLVERLAB_WITH_PACKAGESPY=ON` that will download the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) from github.
+If you have a local copy of the library PACKAGESPY, give the to solverlab using the cmake option `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`.

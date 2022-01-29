@@ -28,7 +28,7 @@ Standalone installation
 --------------------------
 
 The most simple installation process and should suit to most users.
-This way of installation will download the some dependencies, you need to have internet.
+This way of installation will download the some dependencies, you need to have an internet onnection.
 
 Start by creating two folders on the same level as the source.
 
@@ -43,7 +43,7 @@ Then we are going to compile the project with cmake in the build folder and inst
 .. code-block:: bash
     
     cd SOLVERLAB_build
-    cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_GUI=ON -DSOLVERLAB_WITH_DOCUMENTATION=ON
+    cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON -DSOLVERLAB_WITH_PACKAGESPY=ON
     make
     make install
 
@@ -66,7 +66,7 @@ You can now launch the GUI with
 
 .. code-block:: bash
 
-   $SOLVERLABGUI
+   python3 $SOLVERLABGUI -g
 
 
 Advanced Installation
@@ -84,8 +84,10 @@ This assumes that you have an existing install of:
 
 The 3 dependencies PETSC, MED and MEDCOUPLING should have been compiled with the same version of HDF5
 
+You also need a copy of the PACKAGESPY python library in a folder that we will call PACKAGESPY_ROOT_DIR
+
 .. code-block:: bash 
     
-    cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR} -DSOLVERLAB_WITH_GUI=ON
+    cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR} -DSOLVERLAB_WITH_GUI=ON -DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}
 
 

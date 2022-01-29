@@ -76,8 +76,18 @@ endif(COREFLOWS_WITH_DOCUMENTATION)                                             
 
 # Standalone graphic interface-----------------------------------------------------------------------------------------#
      													    #
-if   (COREFLOWS_WITH_GUI) 														    #
-  set (CoreFlows_GUI_DIR ${CoreFlows_SOURCE_DIR}/gui)                                                        #
+if   (COREFLOWS_WITH_GUI) 
+  if   ( NOT PACKAGESPY_ROOT_DIR AND NOT SOLVERLAB_WITH_PACKAGESPY)													    #
+    set (CoreFlows_GUI_DIR ${CoreFlows_SOURCE_DIR}/gui_old)                                                        #
+  else ( NOT PACKAGESPY_ROOT_DIR AND NOT SOLVERLAB_WITH_PACKAGESPY)													    #
+    set (CoreFlows_GUI_DIR ${CoreFlows_SOURCE_DIR}/gui)      
+    if   ( NOT PACKAGESPY_ROOT_DIR )                                                  #
+      FILE(DOWNLOAD ${DOWNLOAD_PACKAGESPY} packagespy.zip )
+      FILE(ARCHIVE_EXTRACT INPUT packagespy.zip DESTINATION ${CoreFlows_GUI_DIR} )
+      INSTALL(DIRECTORY ${CoreFlows_GUI_DIR}/PACKAGESPYGUI DESTINATION bin/salome )
+      set (PACKAGESPY_ROOT_DIR ${PROJECT_INSTALL_DIR}/bin/salome/PACKAGESPYGUI)   
+    endif( NOT PACKAGESPY_ROOT_DIR )                                                  #
+  endif( NOT PACKAGESPY_ROOT_DIR AND NOT SOLVERLAB_WITH_PACKAGESPY)													    #
   add_subdirectory(${CoreFlows_GUI_DIR})
 endif(COREFLOWS_WITH_GUI)                                                                                                    #
 													    #
