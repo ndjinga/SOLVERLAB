@@ -32,12 +32,13 @@ Simple standalone installation
 The most simple installation process and should suit to most users.
 This way of installation will download the some dependencies, you need to have an internet onnection.
 
-Suppose the source files are located in `~/workspace/SOLVERLAB/SOLVERLAB-master`. Start by creating two folders on the same level as the source.
+Suppose the source files are located in `~/workspace/SOLVERLAB/SOLVERLAB-master`.  
+Start by creating two folders on the same level as the source.
 
 .. code-block:: bash
 
     cd ~/workspace/SOLVERLAB    
-    mkdir SOLVERLAB_build
+    mkdir SOLVERLAB_build  
     mkdir SOLVERLAB_install
 
 Then compile the project with cmake in the build folder.
@@ -92,21 +93,23 @@ The 3 dependencies PETSC, MED and MEDCOUPLING should have been compiled with the
 
 You also need a copy of the PACKAGESPY python library in a folder that we will call PACKAGESPY_ROOT_DIR.
 
-Now you can use an advance cmake configuration
+Now you can use an advanced cmake configuration :
+
 .. code-block:: bash 
     
     cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR} -DSOLVERLAB_WITH_GUI=ON -DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}
 
 The next steps of the installation are similar as those of the :ref:Simple-standalone-installation above :
+
 .. code-block:: bash
-   make
-   make docGUI
+   make  
+   make docGUI  
    make install
 
 You can now launch the GUI with
 
 .. code-block:: bash
 
-   source ~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh
+   source ~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh  
    python3 $SOLVERLABGUI -g
 
