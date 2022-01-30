@@ -21,7 +21,7 @@ The Solverlab Tree Object you can see in the **TREE VIEW** broke down as follows
 
 * Model
 
-    * List of Model (Right-click to add one)
+    * List of Models (Right-click to add one)
 
 * Analysis
 

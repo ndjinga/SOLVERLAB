@@ -26,7 +26,7 @@ User's manual
 Programmer's guide
 ====================
 
-   [Launch in Background](background.rst)  
+   [Launch in background](background.rst)  
    [How to add a new physical model to SolverlabGUI](packagespy.rst)  
 
 
