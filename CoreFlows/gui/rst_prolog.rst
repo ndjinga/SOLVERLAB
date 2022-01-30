@@ -3,7 +3,7 @@
 
     \clearpage
 
-.. _SOLVERLAB: https://www.nano.uni-jena.de/en/solverlab.html
+.. _SOLVERLAB: https://github.com/ndjinga/SOLVERLAB
 .. _SALOME: http://www.salome-platform.org
 .. _SPHINX: http://sphinx-doc.org
 .. _MATPLOTLIB: https://matplotlib.org
