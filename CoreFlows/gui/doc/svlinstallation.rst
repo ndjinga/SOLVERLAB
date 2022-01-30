@@ -99,9 +99,10 @@ Now you can use an advanced cmake configuration :
     
     cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR} -DSOLVERLAB_WITH_GUI=ON -DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}
 
-The next steps of the installation are similar as those of the :ref:Simple-standalone-installation above :
+The next steps of the installation are similar as those of the :ref:Simple-standalone-installation above.
 
 .. code-block:: bash
+
    make  
    make docGUI  
    make install

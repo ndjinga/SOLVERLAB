@@ -13,7 +13,7 @@ When you choose to launch a simulation in background you can have more control o
 Launch in Background was thought to have the possiblity to replay case whenever you want in addition to not blocking the GUI_ when a simulation is launch.
 Everything needed to relaunch the case is written in the output directory. And you can choose to copy your mesh here too so you can just zip the directory and send it for exemple.
 
-Every case launched generate a save of the Solverlab tree in ..xml. It means your always have a readable save of all your parameters.
+Every case launched generate a save of the Solverlab tree in a .xml file. It means you will always have a readable save of all your simulation parameters.
 You can also choose to save the mesh locally to always have it near the parameters.
 
 One Bash script is generated. The scrpit generated will save the latest path used for PACKAGESPY_.
@@ -28,6 +28,7 @@ If the environment variable of SOLVERLAB_ is not set the script will not work. Y
     source SOLVERLAB_install/env_solverlab.sh 
 
 then launch the bash script in background
+
 .. code-block:: bash
 
     ./LaunchSolverlab.sh.

@@ -26,10 +26,12 @@ The Solverlab Tree Object you can see in the **TREE VIEW** broke down as follows
 * Analysis  
 
     * datainformations  
+
         * name: name of the directory where it will save your work  
         * directory: location of the directory
         
     * caseSolverlab  
+
         * launchInBackground:  
         * Equation: Choose which simulation to launch from the List of Model  
         * NumberOfProcessors: If in background try to launch solverlab in multicore
