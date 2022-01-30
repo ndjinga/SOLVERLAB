@@ -8,8 +8,9 @@
 Installation
 **************
 
-In a normal use case Solverlab should be installed with SALOME_
-This section describe other method to get it.
+The easiest way to use SOLVERLAB_ is to download the SALOME_ targz file correponding to your operating system (OS), and to use its Python_ shell environment.
+However SALOME is a much bigger project than SOLVERLAB, binaries for your OS may not be avalaible, and one way which to build SOLVERLAB as a light standalone library.
+This section describes the build of SOLVERLAB from its source files.
 
 Prerequisite
 --------------

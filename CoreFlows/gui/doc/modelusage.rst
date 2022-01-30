@@ -42,7 +42,7 @@ You can see the documentation `here <SolverlabDiffusion_>`_
 .. image:: images/diffusionequationtree.png
     :align: center
 
-A field need to be present in your mesh file to be visible in the GUI. All "field_option" are here for advanced user, it is recommanded to leave them with default value.
+A field need to be present in your mesh file to be visible in the GUI. All "field_option" are here for advanced user, it is recommended to leave them with default value.
 
 Some value can be a field present in the mesh file or a scalar and the GUI let you choose between those two options. 
 
