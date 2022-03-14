@@ -3,7 +3,7 @@
 # Name        : Calcul VF du spectre de l'opérateur de Laplace 2D -\triangle avec conditions aux limites de Dirichlet u=0
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2020
-# Description : Utilisation de la méthode des volumes finis P1 avec champs discrétisés aux cellules d'un maillage quelconque
+# Description : Utilisation de la méthode des volumes finis avec champs discrétisés aux cellules d'un maillage quelconque
 #		        Création et sauvegarde des champs résultant en utilisant la librairie CDMATH
 #================================================================================================================================
 
