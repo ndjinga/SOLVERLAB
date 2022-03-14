@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+# -*-coding:utf-8 -*
+
+#===============================================================================================================================
+# Name        : Calcul VF du spectre du système des ondes 2D sans terme source
+#                \partial_t p + c^2 \div q = 0
+#                \partial_t q +    \grad p = 0
+# Author      : Michaël Ndjinga
+# Copyright   : CEA Saclay 2022
+# Description : Utilisation du schéma colocalisé centré ou amont sur un maillage général
+#              
+#================================================================================================================================
+
+
+from math import sin, cos, pi, sqrt
+from numpy import sign
+import cdmath
+import PV_routines
+import VTK_routines
+import sys
+
+p0=155e5#reference pressure in a pressurised nuclear vessel
+c0=700.#reference sound speed for water at 155 bars, 600K
+rho0=p0/c0*c0#reference density
+precision=1e-5
+
+def jacobianMatrices(normal, coeff, signun, is_upwind):
+    dim=normal.size()
+    A=cdmath.Matrix(dim+1,dim+1)
+
+    if(not is_upwind):
+	    for i in range(dim):
+	        A[i+1,0]=normal[i]*coeff
+	        A[0,i+1]=c0*c0*normal[i]*coeff
+	    
+	    return A*(1./2)
+    else:
+	    absA=cdmath.Matrix(dim+1,dim+1)
+	
+	    absA[0,0]=c0*coeff
+	    for i in range(dim):
+	        A[i+1,0]=      normal[i]*coeff
+	        A[0,i+1]=c0*c0*normal[i]*coeff
+	        for j in range(dim):
+	            absA[i+1,j+1]=c0*normal[i]*normal[j]*coeff
+	    
+	    return (A - absA)*(1./2)
+    
+def computeDivergenceMatrix(my_mesh,nbVoisinsMax, is_upwind):
+    nbCells = my_mesh.getNumberOfCells()
+    dim=my_mesh.getMeshDimension()
+    nbComp=dim+1
+    normal=cdmath.Vector(dim)
+
+    implMat=cdmath.SparseMatrixPetsc(nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp)
+
+    idMoinsJacCL=cdmath.Matrix(nbComp)
+
+    v0=cdmath.Vector(dim)
+    for i in range(dim) :
+        v0[i] = 1.
+
+    for j in range(nbCells):#On parcourt les cellules
+        Cj = my_mesh.getCell(j)
+        nbFaces = Cj.getNumberOfFaces();
+
+        for k in range(nbFaces) :
+            indexFace = Cj.getFacesId()[k];
+            Fk = my_mesh.getFace(indexFace);
+            for i in range(dim) :
+                normal[i] = Cj.getNormalVector(k, i);#normale sortante
+
+            signun=sign(normal*v0)
+            Am=jacobianMatrices( normal,Fk.getMeasure()/Cj.getMeasure(),signun, is_upwind);
+
+            cellAutre =-1
+            if ( not Fk.isBorder()) :
+                # hypothese: La cellule d'index indexC1 est la cellule courante index j */
+                if (Fk.getCellsId()[0] == j) :
+                    # hypothese verifiée 
+                    cellAutre = Fk.getCellsId()[1];
+                elif(Fk.getCellsId()[1] == j) :
+                    # hypothese non verifiée 
+                    cellAutre = Fk.getCellsId()[0];
+                else :
+                    raise ValueError("computeFluxes: problem with mesh, unknown cel number")
+                    
+                implMat.addValue(j*nbComp,cellAutre*nbComp,Am)
+                implMat.addValue(j*nbComp,        j*nbComp,Am*(-1.))
+            else  :
+                if( Fk.getGroupName() != "Periodic" and Fk.getGroupName() != "Neumann"):#Wall boundary condition unless Periodic/Neumann specified explicitly
+                    v=cdmath.Vector(dim+1)
+                    for i in range(dim) :
+                        v[i+1]=normal[i]
+                    idMoinsJacCL=v.tensProduct(v)*2
+                    
+                    implMat.addValue(j*nbComp,j*nbComp,Am*(-1.)*idMoinsJacCL)
+                    
+                elif( Fk.getGroupName() == "Periodic"):#Periodic boundary condition
+                    indexFP=my_mesh.getIndexFacePeriodic(indexFace)
+                    Fp = my_mesh.getFace(indexFP)
+                    cellAutre = Fp.getCellsId()[0]
+                    
+                    implMat.addValue(j*nbComp,cellAutre*nbComp,Am)
+                    implMat.addValue(j*nbComp,        j*nbComp,Am*(-1.))
+                elif(Fk.getGroupName() != "Neumann"):#Nothing to do for Neumann boundary condition
+                    print( Fk.getGroupName() )
+                    raise ValueError("computeFluxes: Unknown boundary condition name");
+                
+    return implMat
+
+def WaveSystemSpectrum( cfl, my_mesh, filename, is_upwind):
+    dim=my_mesh.getMeshDimension()
+    nbCells = my_mesh.getNumberOfCells()
+    meshName=my_mesh.getName()
+    
+    nbVoisinsMax=my_mesh.getMaxNbNeighbours(cdmath.CELLS)
+    
+    dx_min=my_mesh.minRatioVolSurf()
+
+    dt = cfl * dx_min / c0
+
+    divMat=computeDivergenceMatrix(my_mesh,nbVoisinsMax, is_upwind)
+
+    # Add the identity matrix on the diagonal
+    divMat.diagonalShift(1/dt)#only after  filling all coefficients
+    divMat.viewMatrix(True, 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem")
+    divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem")
+
+
+def solveSpectrum(my_mesh,meshName, is_upwind):
+    print( "Spectrum of the Wave system in dimension ", my_mesh.getSpaceDimension() )
+    if( is_upwind ):
+        print( "Numerical method : ", "Upwind" )
+    else:
+        print( "Numerical method : ", "Centered" )
+    print( "Wall boundary conditions" )
+    print( "Mesh name : ",meshName , my_mesh.getNumberOfCells(), " cells" )
+    
+    # Problem data
+    cfl = 100000./my_mesh.getSpaceDimension()
+
+    WaveSystemSpectrum( cfl, my_mesh, meshName, is_upwind)
+
+def solve_file_spectrum( filename,meshName, is_upwind):
+    my_mesh = cdmath.Mesh(filename+".med")
+
+    return solve(my_mesh, filename+str(my_mesh.getNumberOfCells()), is_upwind)
+    
+
+if __name__ == """__main__""":
+    if len(sys.argv) >1 :
+        filename=sys.argv[1]
+        if len(sys.argv) >2 :
+            is_upwind = sys.argv[2].lower() in ['false', '0', 'f', 'n', 'no']
+        else:
+           is_upwind = True
+        my_mesh = cdmath.Mesh(filename)
+        solveSpectrum(my_mesh,filename, is_upwind)
+    else :
+        raise ValueError("WaveSystemSpectrum.py expects a mesh file name")
