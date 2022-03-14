@@ -24,29 +24,42 @@ c0=700.#reference sound speed for water at 155 bars, 600K
 rho0=p0/c0*c0#reference density
 precision=1e-5
 
-def jacobianMatrices(normal, coeff, signun, is_upwind):
+def jacobianMatrices(normal, coeff, signun, num_scheme):
     dim=normal.size()
     A=cdmath.Matrix(dim+1,dim+1)
 
-    if(not is_upwind):
-	    for i in range(dim):
-	        A[i+1,0]=normal[i]*coeff
-	        A[0,i+1]=c0*c0*normal[i]*coeff
-	    
-	    return A*(1./2)
-    else:
-	    absA=cdmath.Matrix(dim+1,dim+1)
-	
-	    absA[0,0]=c0*coeff
-	    for i in range(dim):
-	        A[i+1,0]=      normal[i]*coeff
-	        A[0,i+1]=c0*c0*normal[i]*coeff
-	        for j in range(dim):
-	            absA[i+1,j+1]=c0*normal[i]*normal[j]*coeff
-	    
-	    return (A - absA)*(1./2)
+    if num_scheme.lower() in ['centered','centred','centré']:
+        for i in range(dim):
+            A[i+1,0]=normal[i]*coeff
+            A[0,i+1]=c0*c0*normal[i]*coeff
+        
+        return A*(1./2)
+    elif num_scheme.lower() in ['upwind','amont','décentré']:
+        absA=cdmath.Matrix(dim+1,dim+1)
     
-def computeDivergenceMatrix(my_mesh,nbVoisinsMax, is_upwind):
+        absA[0,0]=c0*coeff
+        for i in range(dim):
+            A[i+1,0]=      normal[i]*coeff
+            A[0,i+1]=c0*c0*normal[i]*coeff
+            for j in range(dim):
+                absA[i+1,j+1]=c0*normal[i]*normal[j]*coeff
+        
+        return (A - absA)*(1./2)
+    elif num_scheme.lower() in ['staggered','stag','décalé','pstag','pseudodécalé']:
+        absA=cdmath.Matrix(dim+1,dim+1)
+    
+        for i in range(dim):
+            A[i+1,0]=normal[i]*coeff
+            absA[i+1,0]=-signun*A[i+1,0]
+            A[0,i+1]=c0*c0*normal[i]*coeff
+            absA[0,i+1]=signun*A[0,i+1]
+        
+        return (A-absA)*(1./2)
+    else:
+        print('Numerical scheme requested is ', num_scheme)
+        raise ValueError("WaveSystemSpectrum : schemes allowed are upwind, centred or pstag")
+    
+def computeDivergenceMatrix(my_mesh,nbVoisinsMax, num_scheme):
     nbCells = my_mesh.getNumberOfCells()
     dim=my_mesh.getMeshDimension()
     nbComp=dim+1
@@ -71,7 +84,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax, is_upwind):
                 normal[i] = Cj.getNormalVector(k, i);#normale sortante
 
             signun=sign(normal*v0)
-            Am=jacobianMatrices( normal,Fk.getMeasure()/Cj.getMeasure(),signun, is_upwind);
+            Am=jacobianMatrices( normal,Fk.getMeasure()/Cj.getMeasure(),signun, num_scheme);
 
             cellAutre =-1
             if ( not Fk.isBorder()) :
@@ -109,7 +122,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax, is_upwind):
                 
     return implMat
 
-def WaveSystemSpectrum( cfl, my_mesh, filename, is_upwind):
+def WaveSystemSpectrum( cfl, my_mesh, filename, num_scheme):
     dim=my_mesh.getMeshDimension()
     nbCells = my_mesh.getNumberOfCells()
     meshName=my_mesh.getName()
@@ -120,42 +133,47 @@ def WaveSystemSpectrum( cfl, my_mesh, filename, is_upwind):
 
     dt = cfl * dx_min / c0
 
-    divMat=computeDivergenceMatrix(my_mesh,nbVoisinsMax, is_upwind)
+    divMat=computeDivergenceMatrix(my_mesh,nbVoisinsMax, num_scheme)
 
     # Add the identity matrix on the diagonal
     divMat.diagonalShift(1/dt)#only after  filling all coefficients
-    divMat.viewMatrix(True, 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem")
-    divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem")
+    divMat.viewMatrix( True, 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme)
+    divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme)
 
 
-def solveSpectrum(my_mesh,meshName, is_upwind):
+def solveSpectrum(my_mesh,meshName, num_scheme):
     print( "Spectrum of the Wave system in dimension ", my_mesh.getSpaceDimension() )
-    if( is_upwind ):
+    if   num_scheme.lower() in ['upwind','amont','décentré']:
         print( "Numerical method : ", "Upwind" )
-    else:
+    elif num_scheme.lower() in ['centered','centred','centré']:    
         print( "Numerical method : ", "Centered" )
+    elif num_scheme.lower() in ['staggered','stag','décalé','pstag','pseudodécalé']:    
+        print( "Numerical method : ", "pseudo-staggered" )
+    else:
+        print('Numerical scheme requested is ', num_scheme)
+        raise ValueError("WaveSystemSpectrum : schemes allowed are upwind, centred or pstag")
     print( "Wall boundary conditions" )
     print( "Mesh name : ",meshName , my_mesh.getNumberOfCells(), " cells" )
     
     # Problem data
     cfl = 100000./my_mesh.getSpaceDimension()
 
-    WaveSystemSpectrum( cfl, my_mesh, meshName, is_upwind)
+    WaveSystemSpectrum( cfl, my_mesh, meshName, num_scheme)
 
-def solve_file_spectrum( filename,meshName, is_upwind):
+def solve_file_spectrum( filename,meshName, num_scheme):
     my_mesh = cdmath.Mesh(filename+".med")
 
-    return solve(my_mesh, filename+str(my_mesh.getNumberOfCells()), is_upwind)
+    return solve(my_mesh, filename+str(my_mesh.getNumberOfCells()), num_scheme)
     
 
 if __name__ == """__main__""":
     if len(sys.argv) >1 :
         filename=sys.argv[1]
         if len(sys.argv) >2 :
-            is_upwind = sys.argv[2].lower() in ['false', '0', 'f', 'n', 'no']
+            num_scheme = sys.argv[2]
         else:
-           is_upwind = True
+           num_scheme = 'Upwind'
         my_mesh = cdmath.Mesh(filename)
-        solveSpectrum(my_mesh,filename, is_upwind)
+        solveSpectrum(my_mesh,filename, num_scheme)
     else :
         raise ValueError("WaveSystemSpectrum.py expects a mesh file name")
