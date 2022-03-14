@@ -78,7 +78,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,test_bc,velocity, is_upwind):
     return implMat
 
 
-def solveSpectrum(my_mesh, meshName, resolution, meshType, cfl, test_bc, is_upwind):
+def solveSpectrum(my_mesh, meshName, meshType, cfl, test_bc, is_upwind):
     print( "Spectrum of the Transport Equation in dimension ", my_mesh.getMeshDimension() )
     if( is_upwind ):
         print( "Numerical method : ", "Upwind" )
@@ -108,10 +108,10 @@ def solveSpectrum(my_mesh, meshName, resolution, meshType, cfl, test_bc, is_upwi
     divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation")
 
 
-def solve_file( filename,meshName, resolution,meshType, cfl, test_bc, is_upwind):
+def solve_file( filename,meshName, meshType, cfl, test_bc, is_upwind):
     my_mesh = cdmath.Mesh(filename+".med")
 
-    return solveSpectrum(my_mesh, meshName+str(my_mesh.getNumberOfCells()),resolution, meshType, cfl, test_bc, is_upwind)
+    return solveSpectrum(my_mesh, meshName+str(my_mesh.getNumberOfCells()), meshType, cfl, test_bc, is_upwind)
     
 
 if __name__ == """__main__""":
@@ -124,5 +124,5 @@ if __name__ == """__main__""":
     print("is_upwind",is_upwind,"!!!!!!!!!!!!!!!!!!!!")
     M1=cdmath.Mesh(0.,1.,12,0.,1.,12)
     cfl=1000000
-    solveSpectrum(M1,"SquareRegularTriangles",100,"Regular triangles",cfl,"Periodic", is_upwind)
+    solveSpectrum(M1,"SquareRegularTriangles","Regular triangles",cfl,"Periodic", is_upwind)
 	
