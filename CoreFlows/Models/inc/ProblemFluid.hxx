@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : ProblemCoreFlows
+// Name        : ProblemFluid
 // Author      : M. Ndjinga
 // Version     :
 // Copyright   : CEA Saclay 2014
