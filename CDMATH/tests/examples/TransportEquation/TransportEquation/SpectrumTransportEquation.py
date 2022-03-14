@@ -10,23 +10,26 @@
 #================================================================================================================================
 
 from math import sin, cos, pi, sqrt
-import time, json
+import time, json, sys
 import cdmath
 import PV_routines
 import VTK_routines
 
 precision=1e-5
 
-def upwinding_coeff(normal, coeff, velocity):
+def upwinding_coeff(normal, coeff, velocity, is_upwind):
     dim=normal.size()
     
-    if(velocity*normal<0.):
-        return velocity*normal*coeff
+    if(not is_upwind):
+        return (velocity*normal)/2
     else:
-        return 0.
+        if(velocity*normal<0.):
+            return velocity*normal*coeff
+        else:
+            return 0.
     
     
-def computeDivergenceMatrix(my_mesh,nbVoisinsMax,test_bc,velocity):
+def computeDivergenceMatrix(my_mesh,nbVoisinsMax,test_bc,velocity, is_upwind):
     nbCells = my_mesh.getNumberOfCells()
     dim=my_mesh.getMeshDimension()
     nbComp=1
@@ -44,7 +47,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,test_bc,velocity):
             for i in range(dim) :
                 normal[i] = Cj.getNormalVector(k, i);#normale sortante
 
-            Am=upwinding_coeff( normal,Fk.getMeasure()/Cj.getMeasure(),velocity);
+            Am=upwinding_coeff( normal,Fk.getMeasure()/Cj.getMeasure(),velocity, is_upwind);
 
             cellAutre =-1
             if ( not Fk.isBorder()) :
@@ -75,9 +78,12 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,test_bc,velocity):
     return implMat
 
 
-def solveSpectrum(my_mesh, meshName, resolution, meshType, cfl, test_bc):
+def solveSpectrum(my_mesh, meshName, resolution, meshType, cfl, test_bc, is_upwind):
     print( "Spectrum of the Transport Equation in dimension ", my_mesh.getMeshDimension() )
-    print( "Numerical method : ", "Upwind" )
+    if( is_upwind ):
+        print( "Numerical method : ", "Upwind" )
+    else:
+        print( "Numerical method : ", "Centered" )
     print( "Mesh name : ",meshName , ", ", my_mesh.getNumberOfCells(), " cells" )
     
     
@@ -94,7 +100,7 @@ def solveSpectrum(my_mesh, meshName, resolution, meshType, cfl, test_bc):
 
     dt = cfl * dx_min / velocity.norm()
 
-    divMat=computeDivergenceMatrix(my_mesh,nbVoisinsMax,test_bc,velocity)
+    divMat=computeDivergenceMatrix(my_mesh,nbVoisinsMax,test_bc,velocity, is_upwind)
     #Adding the identity matrix on the diagonal
     divMat.diagonalShift(1/dt)#only after  filling all coefficients
     
@@ -102,13 +108,21 @@ def solveSpectrum(my_mesh, meshName, resolution, meshType, cfl, test_bc):
     divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation")
 
 
-def solve_file( filename,meshName, resolution,meshType, cfl, test_bc):
+def solve_file( filename,meshName, resolution,meshType, cfl, test_bc, is_upwind):
     my_mesh = cdmath.Mesh(filename+".med")
 
-    return solveSpectrum(my_mesh, meshName+str(my_mesh.getNumberOfCells()),resolution, meshType, cfl, test_bc)
+    return solveSpectrum(my_mesh, meshName+str(my_mesh.getNumberOfCells()),resolution, meshType, cfl, test_bc, is_upwind)
     
 
 if __name__ == """__main__""":
-    M1=cdmath.Mesh(0.,1.,15,0.,1.,15)
-    cfl=100000
-    solveSpectrum(M1,"SquareRegularTriangles",100,"Regular triangles",cfl,"Periodic")
+    if len(sys.argv) >1 :
+        print("!!!!!!!!!! More than 1 param")
+        is_upwind = sys.argv[1].lower() in ['false', '0', 'f', 'n', 'no']
+    else :
+        is_upwind = True
+
+    print("is_upwind",is_upwind,"!!!!!!!!!!!!!!!!!!!!")
+    M1=cdmath.Mesh(0.,1.,12,0.,1.,12)
+    cfl=1000000
+    solveSpectrum(M1,"SquareRegularTriangles",100,"Regular triangles",cfl,"Periodic", is_upwind)
+	
