@@ -104,8 +104,12 @@ def solveSpectrum(my_mesh, meshName, meshType, cfl, test_bc, is_upwind):
     #Adding the identity matrix on the diagonal
     divMat.diagonalShift(1/dt)#only after  filling all coefficients
     
-    divMat.viewMatrix(True, 0, "FiniteVolumesMatrixOn"+meshName+"_TransportEquation")
-    divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation")
+    if is_upwind:
+        num_scheme='Upwind'
+    else:
+        num_scheme='Centred'
+    divMat.viewMatrix( True, 0, "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme)
+    divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation"+num_scheme)
 
 
 def solve_file( filename,meshName, meshType, cfl, test_bc, is_upwind):
@@ -116,12 +120,10 @@ def solve_file( filename,meshName, meshType, cfl, test_bc, is_upwind):
 
 if __name__ == """__main__""":
     if len(sys.argv) >1 :
-        print("!!!!!!!!!! More than 1 param")
         is_upwind = sys.argv[1].lower() in ['false', '0', 'f', 'n', 'no']
     else :
         is_upwind = True
 
-    print("is_upwind",is_upwind,"!!!!!!!!!!!!!!!!!!!!")
     M1=cdmath.Mesh(0.,1.,12,0.,1.,12)
     cfl=1000000
     solveSpectrum(M1,"SquareRegularTriangles","Regular triangles",cfl,"Periodic", is_upwind)
