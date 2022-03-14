@@ -6,7 +6,7 @@
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2022
 # Description : Utilisation de la méthode des volumes finis avec champs discrétisés aux cellules d'un maillage quelconque
-#		        Création et sauvegarde des champs résultant en utilisant la librairie CDMATH
+#		Schéma amont ou centré
 #================================================================================================================================
 
 from math import sin, cos, pi, sqrt
