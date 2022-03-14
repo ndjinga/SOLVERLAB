@@ -196,6 +196,9 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	//A4.viewMatrix(true,-1);//This pauses the x window until the user presses right mouse
 	A4.getEigenvalues(    4, EPS_SMALLEST_MAGNITUDE, 1e-6, EPSKRYLOVSCHUR, true, 0.05, "A4");//Plot eigenvalues in a X-Windows and write the image in a file
 	A4.getSingularValues( 4, SVD_SMALLEST          , 1e-6, SVDCYCLIC     , true, 0.05, "A4");//Plot eigenvalues in a X-Windows and write the image in a file
+	A4.getEigenvalues(    2);//get only two eigenvalues
+	A4.plotEigenvalues( "A4_plot_all");//plot all eigenvalues
+	A4.plotEigenvalues( "A4_plot_2",2);//plot only two eigenvalues
 	
     SparseMatrixPetsc A5(A4.transpose());
 	CPPUNIT_ASSERT_EQUAL( 1., A5(0,0) );
@@ -277,4 +280,7 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	//A8.viewMatrix(true,-1);//This pauses the x window until the user presses right mouse
 	A8.getEigenvalues(    4, EPS_SMALLEST_MAGNITUDE, 1e-6, EPSKRYLOVSCHUR, true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
 	A8.getSingularValues( 4, SVD_SMALLEST          , 1e-6, SVDCYCLIC     , true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
+	A8.getEigenvalues(    2);//get only two eigenvalues
+	A8.plotEigenvalues( "A8_plot_all");//plot all eigenvalues
+	A8.plotEigenvalues( "A8_plot_2",2);//plot only two eigenvalues
 }
