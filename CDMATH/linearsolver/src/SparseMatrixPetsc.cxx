@@ -865,14 +865,15 @@ SparseMatrixPetsc::plotEigenvalues(std::string matrixName, int nev, double pause
 {
 	double * valP;
 	double **vecP;
+	int nconv;
 
 	if(nev <=0)
-		computeSpectrum(_numberOfRows, &valP, &vecP, which, tol,type, true, pause_lenght, matrixName);	
+		nconv=computeSpectrum(_numberOfRows, &valP, &vecP, which, tol,type, true, pause_lenght, matrixName);	
 	else
-		computeSpectrum(nev, &valP, &vecP, which, tol,type, true, pause_lenght, matrixName);
+		nconv=computeSpectrum(nev, &valP, &vecP, which, tol,type, true, pause_lenght, matrixName);
 	
 	delete[] valP;
-    for (int i=0;i<_numberOfRows;i++) 
+    for (int i=0;i<nconv;i++) 
 		delete[] vecP[i];
 	delete[] vecP;	
 }
