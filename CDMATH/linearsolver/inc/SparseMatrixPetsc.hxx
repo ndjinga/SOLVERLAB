@@ -114,10 +114,14 @@ public:
     void diagonalShift(double lambda);
     void zeroEntries();//sets the matrix coefficients to zero
     
+    /* !!! Warning : the following function compute only the real part of the spectrum */
     std::vector< double > getEigenvalues( int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getEigenvectors(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
-    void plotEigenvalues(std::string matrixName="", int nev=-1, double pause_lenght=0, double tol=1e-6, EPSWhich which=EPS_SMALLEST_MAGNITUDE, EPSType type = EPSKRYLOVSCHUR) const;
     MEDCoupling::DataArrayDouble * getEigenvectorsDataArrayDouble(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
+
+	/* This is the only function that returns both the real and imaginary parts of the spectrum */
+    std::vector< std::vector< double > >  plotEigenvalues(std::string matrixName="", int nev=-1, double pause_lenght=0, double tol=1e-6, EPSWhich which=EPS_SMALLEST_MAGNITUDE, EPSType type = EPSKRYLOVSCHUR) const;
+
     std::vector< double > getSingularValues( int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getSingularVectors(int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC) const;
     double getConditionNumber(bool isSingular=false, double tol=1e-6) const;
@@ -132,7 +136,7 @@ private:
 
 	int _numberOfNonZeros ;//The maximum number of nonzeros coefficients per line (or an upper bound)
 	
-	int computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
+	int computeSpectrum(int nev, double ** valPr, double ***vecPr, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
 	int computeSVD     (int nsv, double ** valS, double ***vecS, SVDWhich which=SVD_SMALLEST          , double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
 
 	Vector vecToVector(const Vec& vec) const ;
