@@ -40,7 +40,8 @@ enum linearSolver
 {
 	GMRES,/**< linearSolver is GMRES */
 	BCGS,/**< linearSolver is BiCGSstab */
-	CG/**< linearSolver is CG */
+	CG,/**< linearSolver is Conjugate Gradient */
+	CGNE/**< linearSolver is Conjugate Gradient for Normal Equations */
 };
 
 //! enumeration preconditioner

@@ -448,15 +448,17 @@ void ProblemCoreFlows::setLinearSolver(linearSolver kspType, preconditioner pcTy
 	// set linear solver algorithm
 	if (kspType==GMRES)
 		_ksptype = (char*)&KSPGMRES;
+	else if (kspType==CGNE)
+		_ksptype = (char*)&KSPCGNE;
 	else if (kspType==CG)
 		_ksptype = (char*)&KSPCG;
 	else if (kspType==BCGS)
 		_ksptype = (char*)&KSPBCGS;
 	else {
-		PetscPrintf(PETSC_COMM_WORLD,"!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!\n");
-		*_runLogFile << "!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!" << endl;
+		PetscPrintf(PETSC_COMM_WORLD,"!!! Error : only 'GMRES', 'CG', 'CGNE' or 'BCGS' is acceptable as a linear solver !!!\n");
+		*_runLogFile << "!!! Error : only 'GMRES', 'CG', 'CGNE' or 'BCGS' is acceptable as a linear solver !!!" << endl;
 		_runLogFile->close();
-		throw CdmathException("!!! Error : only 'GMRES', 'CG' or 'BCGS' algorithm is acceptable !!!");
+		throw CdmathException("!!! Error : only 'GMRES', 'CG', 'CGNE' or 'BCGS' algorithm is acceptable !!!");
 	}
 	// set preconditioner
 	if (pcType == NOPC)

@@ -426,6 +426,8 @@ LinearSolver::solve( void )
 		KSPSetType(_ksp,KSPLGMRES);
 	else if (_nameOfMethod.compare("CG")==0)
 		KSPSetType(_ksp,KSPCG);
+	else if (_nameOfMethod.compare("CGNE")==0)
+		KSPSetType(_ksp,KSPCGNE);
 	else if (_nameOfMethod.compare("BCGS")==0)
 		KSPSetType(_ksp,KSPBCGS);
 	else if (_nameOfMethod.compare("CR")==0)
@@ -451,7 +453,7 @@ LinearSolver::solve( void )
 	else
 	{
 		string msg="Vector LinearSolver::solve( void ) : The method "+_nameOfMethod+" is not yet implemented.\n";
-		msg+="The methods implemented are : GMRES, BICG, CG, CHOLESKY, LU, BCGS, LGMRES, LSQR, CR, CGS and GCR.\n";
+		msg+="The methods implemented are : GMRES, BICG, CG, CGNE, CHOLESKY, LU, BCGS, LGMRES, LSQR, CR, CGS and GCR.\n";
 		throw CdmathException(msg);
 	}
 
