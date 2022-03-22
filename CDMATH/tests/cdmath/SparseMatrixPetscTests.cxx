@@ -124,7 +124,7 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
     A.setValue(1,1,1.);
 	CPPUNIT_ASSERT_EQUAL( true, A.isSymmetric(1.e-10) );
 
-	/* Eigenvalues and eigenvectors */
+	/* Eigenvalues and eigenvectors (real parts only) */
 	std::vector< double > vp = A.getEigenvalues(2);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, vp[0],1.e-5);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 2, vp[1],1.e-5);
@@ -143,6 +143,7 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
     A.setValue(1,0, 1.);
     A.setValue(1,1,-1.);
 
+	/* Singular values and vectors */
 	std::vector< double > sigma = A.getSingularValues(2);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, sigma[0],1.e-5);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 2, sigma[1],1.e-5);
@@ -197,7 +198,12 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	A4.getEigenvalues(    4, EPS_SMALLEST_MAGNITUDE, 1e-6, EPSKRYLOVSCHUR, true, 0.05, "A4");//Plot eigenvalues in a X-Windows and write the image in a file
 	A4.getSingularValues( 4, SVD_SMALLEST          , 1e-6, SVDCYCLIC     , true, 0.05, "A4");//Plot eigenvalues in a X-Windows and write the image in a file
 	A4.getEigenvalues(    2);//get only two eigenvalues
-	A4.plotEigenvalues( "A4_plot_all");//plot all eigenvalues
+	std::vector< std::vector< double > >  ev_A4 = A4.plotEigenvalues( "A4_plot_all");//plot all eigenvalues
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A4[1][0], 1.e-10 );
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A4[1][1], 1.e-10 );
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A4[1][2], 1.e-10 );
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A4[1][3], 1.e-10 );
+
 	A4.plotEigenvalues( "A4_plot_2",2);//plot only two eigenvalues
 	
     SparseMatrixPetsc A5(A4.transpose());
@@ -278,9 +284,10 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	A8.viewMatrix(true,0.05, "A8");//Open an x windows displaying the matrix nonzero strcture
     //The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
 	//A8.viewMatrix(true,-1);//This pauses the x window until the user presses right mouse
-	A8.getEigenvalues(    4, EPS_SMALLEST_MAGNITUDE, 1e-6, EPSKRYLOVSCHUR, true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
-	A8.getSingularValues( 4, SVD_SMALLEST          , 1e-6, SVDCYCLIC     , true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
-	A8.getEigenvalues(    2);//get only two eigenvalues
-	A8.plotEigenvalues( "A8_plot_all");//plot all eigenvalues
+	A8.getEigenvalues(    2, EPS_SMALLEST_MAGNITUDE, 1e-6, EPSKRYLOVSCHUR, true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
+	A8.getSingularValues( 2, SVD_SMALLEST          , 1e-6, SVDCYCLIC     , true, 0.05, "A8");//Plot eigenvalues in a X-Windows and write the image in a file
+	std::vector< std::vector< double > >  ev_A8 = A8.plotEigenvalues( "A8_plot_all");//plot all eigenvalues
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A8[1][0], 1.e-10 );
+	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A8[1][1], 1.e-10 );
 	A8.plotEigenvalues( "A8_plot_2",2);//plot only two eigenvalues
 }
