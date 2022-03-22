@@ -548,7 +548,7 @@ bool SparseMatrixPetsc::isSymmetric(double tol) const
 }
 
 int 
-SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ***vecPr, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght, std::string matrixName) const
+SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ** valPi, double ***vecPr, double ***vecPi, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght, std::string matrixName) const
 {
   EPS            eps;         /* eigenproblem solver context */
   PetscReal      error;
@@ -628,8 +628,10 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ***vecPr, EP
   PetscPrintf(PETSC_COMM_WORLD," Number of converged eigenpairs: %D\n\n",nconv);
 
   *valPr=new double[nconv];
+  *valPi=new double[nconv];
   *vecPr=new double * [nconv];
-  double * myvecPr;
+  *vecPi=new double * [nconv];
+  double * myvecPr, * myvecPi;
     
   if (nconv>0) {
     /*
@@ -665,10 +667,16 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ***vecPr, EP
 	        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12s\n",(double)kr,"Null eigenvalue");
 	   }
 	   
+	  /* Copy real part of the spectrum */
       *(*valPr + i)=kr;
       VecGetArray(xr,&myvecPr);
       *(*vecPr+  i)=new double [_numberOfRows];
       memcpy(*(*vecPr+  i),myvecPr,_numberOfRows*sizeof(double)) ;
+	  /* Copy imaginary part of the spectrum */
+      *(*valPi + i)=ki;
+      VecGetArray(xi,&myvecPi);
+      *(*vecPi+  i)=new double [_numberOfRows];
+      memcpy(*(*vecPi+  i),myvecPi,_numberOfRows*sizeof(double)) ;
     }
     PetscPrintf(PETSC_COMM_WORLD,"\n");
     /*
@@ -842,20 +850,20 @@ std::vector< double >
 SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType type, bool viewEigenvaluesInXWindows, double pause_lenght, std::string matrixName) const
 {
 	int nconv;
-	double * valPr;
-	double **vecPr;
+	double * valPr, *  valPi;
+	double **vecPr, ** vecPi;
 
-	nconv=computeSpectrum(nev, &valPr, &vecPr, which, tol,type, viewEigenvaluesInXWindows, pause_lenght, matrixName);
+	nconv=computeSpectrum(nev, &valPr, &valPi, &vecPr, &vecPi, which, tol,type, viewEigenvaluesInXWindows, pause_lenght, matrixName);
 	
     std::vector< double > result(nconv);
 	
     for (int i=0;i<nconv;i++) 
         result[i]=valPr[i];
 
-	delete[] valPr;
+	delete[] valPr, valPi;
     for (int i=0;i<nconv;i++) 
-		delete[] vecPr[i];
-	delete[] vecPr;	
+		delete[] vecPr[i], vecPi[i];
+	delete[] vecPr, &vecPi;	
 	
     return result;
 }
@@ -863,30 +871,32 @@ SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType t
 std::vector< std::vector< double > >
 SparseMatrixPetsc::plotEigenvalues(std::string matrixName, int nev, double pause_lenght, double tol, EPSWhich which, EPSType type) const
 {
-	double * valPr;
-	double **vecPr;
+	double * valPr, *  valPi;
+	double **vecPr, ** vecPi;
 	std::vector< std::vector< double > > result(2);
 	
 	int nconv;
 
 	if(nev <=0)
-		nconv=computeSpectrum(_numberOfRows, &valPr, &vecPr, which, tol,type, true, pause_lenght, matrixName);	
+		nconv=computeSpectrum(_numberOfRows, &valPr, &valPi, &vecPr, &vecPi, which, tol,type, true, pause_lenght, matrixName);	
 	else
-		nconv=computeSpectrum(nev, &valPr, &vecPr, which, tol,type, true, pause_lenght, matrixName);
+		nconv=computeSpectrum(          nev, &valPr, &valPi, &vecPr, &vecPi, which, tol,type, true, pause_lenght, matrixName);
 	
     std::vector< double > result_r(nconv);//real parts of the eigenvalues
     std::vector< double > result_i(nconv);//imaginary parts of the eigenvalues
 
     for (int i=0;i<nconv;i++) 
+    {
         result_r[i]=valPr[i];
-
+        result_i[i]=valPi[i];
+	}
 	result[0]=result_r;
 	result[1]=result_i;
 	
-	delete[] valPr;
+	delete[] valPr, valPi;
     for (int i=0;i<nconv;i++) 
-		delete[] vecPr[i];
-	delete[] vecPr;	
+		delete[] vecPr[i], vecPi[i];
+	delete[] vecPr, vecPi;	
 	
 	return result;
 }
@@ -895,10 +905,10 @@ std::vector< Vector >
 SparseMatrixPetsc::getEigenvectors(int nev, EPSWhich which, double tol, EPSType type) const
 {
 	int nconv;
-	double * valPr;
-	double **vecPr;
+	double * valPr, *  valPi;
+	double **vecPr, ** vecPi;
 
-	nconv=computeSpectrum(nev, &valPr, &vecPr, which, tol,type);
+	nconv=computeSpectrum(nev, &valPr, &valPi, &vecPr, &vecPi, which, tol,type);
 	
     std::vector< Vector > result(nconv);
 
@@ -910,10 +920,10 @@ SparseMatrixPetsc::getEigenvectors(int nev, EPSWhich which, double tol, EPSType 
         result[i]=myvecPr;
 	}
 
-	delete[] valPr;
+	delete[] valPr, valPi;
     for (int i=0;i<nconv;i++) 
-		delete[] vecPr[i];
-	delete[] vecPr;	
+		delete[] vecPr[i], vecPi[i];
+	delete[] vecPr, vecPi;	
 	
     return result;
 }
@@ -922,10 +932,10 @@ MEDCoupling::DataArrayDouble *
 SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, double tol, EPSType type) const
 {
 	int nconv;
-	double * valPr;
-	double **vecPr;
+	double * valPr, *  valPi;
+	double **vecPr, ** vecPi;
 
-	nconv=computeSpectrum(nev, &valPr, &vecPr, which, tol);
+	nconv=computeSpectrum(nev, &valPr, &valPi, &vecPr, &vecPi, which, tol);
 	
 #ifdef MEDCoupling_VERSION_VERSION_GREATER_9_4
 	std::vector< long unsigned int > compoId(1);
@@ -943,8 +953,8 @@ SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, doubl
 		arrays->setSelectedComponents(array,compoId);
 		arrays->setInfoOnComponent(i,std::to_string(valPr[i]));
 	}
-	delete[] valPr;
-	delete[] vecPr;	
+	delete[] valPr, valPi;
+	delete[] vecPr, vecPi;	
 	
     return arrays;
 }

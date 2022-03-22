@@ -114,9 +114,10 @@ public:
     void diagonalShift(double lambda);
     void zeroEntries();//sets the matrix coefficients to zero
     
-    /* !!! Warning : the following function compute only the real part of the spectrum */
+    /* !!! Warning : the following two functions return only the real part of the eigenvalues */
     std::vector< double > getEigenvalues( int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getEigenvectors(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
+    /* !!! Warning : the following function returns only the real part of the eigenvectors */
     MEDCoupling::DataArrayDouble * getEigenvectorsDataArrayDouble(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
 
 	/* This is the only function that returns both the real and imaginary parts of the spectrum */
@@ -136,7 +137,7 @@ private:
 
 	int _numberOfNonZeros ;//The maximum number of nonzeros coefficients per line (or an upper bound)
 	
-	int computeSpectrum(int nev, double ** valPr, double ***vecPr, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
+	int computeSpectrum(int nev, double ** valPr, double ** valPi, double ***vecPr, double ***vecPi, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
 	int computeSVD     (int nsv, double ** valS, double ***vecS, SVDWhich which=SVD_SMALLEST          , double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
 
 	Vector vecToVector(const Vec& vec) const ;
