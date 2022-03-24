@@ -4,61 +4,49 @@ install(FILES ${MESH_MED} DESTINATION share/examples/WaveSystemLinearSolvers)
 
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
-    SET(NUM_METHOD  centered  )
+    SET(MESH_FILE  ${MED_MESHES}/meshSquare.med  )
 
     SET(LIN_SOLVER  gmres  )
 
-    SET(MESH_FILE  ${MED_MESHES}/meshSquare.med  )
+    SET(NUM_METHOD  centered  )
 
     ADD_TEST(ExampleWaveSystem_GMRES_Centered_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
-    SET(MESH_FILE  ${MED_MESHES}/squareWithSquares.med  )
+    SET(NUM_METHOD  upwind  )
 
-    ADD_TEST(ExampleWaveSystem_GMRES_Centered_squares ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
+    ADD_TEST(ExampleWaveSystem_GMRES_Upwind_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
-    SET(MESH_FILE  ${MED_MESHES}/meshCube.med  )
+    SET(NUM_METHOD  PStag  )
 
-    ADD_TEST(ExampleWaveSystem_GMRES_Centered_tetrahedra ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
-
-    SET(MESH_FILE  ${MED_MESHES}/cubeWithCubes.med  )
-
-    ADD_TEST(ExampleWaveSystem_GMRES_Centered_cubes ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
+    ADD_TEST(ExampleWaveSystem_GMRES_PStag_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
     SET(LIN_SOLVER  cgne  )
 
-    SET(MESH_FILE  ${MED_MESHES}/meshSquare.med  )
+    SET(NUM_METHOD  centered  )
 
     ADD_TEST(ExampleWaveSystem_CGNE_Centered_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
-    SET(MESH_FILE  ${MED_MESHES}/squareWithSquares.med  )
+    SET(NUM_METHOD  upwind  )
 
-    ADD_TEST(ExampleWaveSystem_CGNE_Centered_squares ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
+    ADD_TEST(ExampleWaveSystem_CGNE_Upwind_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
-    SET(MESH_FILE  ${MED_MESHES}/meshCube.med  )
+    SET(NUM_METHOD  PStag  )
 
-    ADD_TEST(ExampleWaveSystem_CGNE_Centered_tetrahedra ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
-
-    SET(MESH_FILE  ${MED_MESHES}/cubeWithCubes.med  )
-
-    ADD_TEST(ExampleWaveSystem_CGNE_Centered_cubes ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
+    ADD_TEST(ExampleWaveSystem_CGNE_PStag_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
     SET(LIN_SOLVER  lu  )
 
-    SET(MESH_FILE  ${MED_MESHES}/meshSquare.med  )
+    SET(NUM_METHOD  centered  )
 
     ADD_TEST(ExampleWaveSystem_LU_Centered_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
-    SET(MESH_FILE  ${MED_MESHES}/squareWithSquares.med  )
+    SET(NUM_METHOD  upwind  )
 
-    ADD_TEST(ExampleWaveSystem_LU_Centered_squares ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
+    ADD_TEST(ExampleWaveSystem_LU_Upwind_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
-    SET(MESH_FILE  ${MED_MESHES}/meshCube.med  )
+    SET(NUM_METHOD  PStag  )
 
-    ADD_TEST(ExampleWaveSystem_LU_Centered_tetrahedra ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
-
-    SET(MESH_FILE  ${MED_MESHES}/cubeWithCubes.med  )
-
-    ADD_TEST(ExampleWaveSystem_LU_Centered_cubes ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
+    ADD_TEST(ExampleWaveSystem_LU_PStag_triangles ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystemLinearSolvers.py  ${MESH_FILE} ${NUM_METHOD} ${LIN_SOLVER})
 
 endif (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 

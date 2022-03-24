@@ -270,7 +270,7 @@ if __name__ == """__main__""":
                raise ValueError("WaveSystemCentered.py expects a linear solver name")
         else:
            raise ValueError("WaveSystemCentered.py expects a numerical method name")
-        cfl = 100000.
+        cfl = 1000000.
         solve(my_mesh,filename, num_scheme, lin_solver, cfl)
     else :
         raise ValueError("WaveSystemCentered.py expects a mesh file name")
