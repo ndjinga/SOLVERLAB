@@ -297,4 +297,4 @@ if __name__ == """__main__""":
         my_mesh = cdmath.Mesh(filename)
         solve(my_mesh,filename,100)
     else :
-        raise ValueError("WaveSystemUpwind.py expects a mesh file name")
+        raise ValueError("WaveSystemCentered.py expects a mesh file name")
