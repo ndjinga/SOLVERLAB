@@ -522,9 +522,14 @@ LinearSolver::solve( void )
 		_convergence=true;
 	else{
 		_convergence=false;
-		cout<<"Linear system algorithm did not converge, divergence reason "<< reason <<endl;
-        cout<<"Solver used "<<  _nameOfMethod<<", preconditioner "<<_nameOfPc<<endl;
-		cout<<"Final number of iteration= "<<_numberOfIter<<". Maximum allowed was " << _numberMaxOfIter<<endl;
+		cout<<endl<<"!!!!!!!!!!!!!!!!!!  Linear system algorithm did not converge  !!!!!!!!!!!!!!" <<endl;
+		if( reason == -3)
+		    cout<<"Maximum number of iterations "<<_numberMaxOfIter<<" reached"<<endl;
+		else{
+		    cout<<"PETSc divergence reason  "<< reason <<endl;
+			cout<<"Final iteration= "<<_numberOfIter<<". Maximum allowed was " << _numberMaxOfIter<<endl;
+		}
+        cout<<"Solver used "<<  _nameOfMethod<<", with preconditioner "<<_nameOfPc<<endl;
 		cout<<"Final residual "<< _residu<< ". Objective was "<< _tol<<endl;
 		string msg="Linear system algorithm did not converge";
 		throw CdmathException(msg);
