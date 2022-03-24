@@ -242,7 +242,7 @@ def WaveSystemVF( cfl, my_mesh, filename, num_scheme, lin_solver):
     velocity_field.setTime(dt,1);
     velocity_field.writeVTK("WaveSystem"+str(dim)+"D"+num_scheme+meshName+"_velocity",False);
 
-    return iterGMRES, end - start
+    return iterGMRES, end - start, nbCells
     
 def solve(my_mesh,meshName,num_scheme, lin_solver, cfl):
     print( "Resolution of the Wave system in dimension ", my_mesh.getSpaceDimension() )
