@@ -422,8 +422,8 @@ LinearSolver::solve( void )
 {
 	if (_nameOfMethod.compare("GMRES")==0)
 		KSPSetType(_ksp,KSPGMRES);
-	else if (_nameOfMethod.compare("LGMRES")==0)
-		KSPSetType(_ksp,KSPLGMRES);
+	else if (_nameOfMethod.compare("FGMRES")==0)
+		KSPSetType(_ksp,KSPFGMRES);
 	else if (_nameOfMethod.compare("CG")==0)
 		KSPSetType(_ksp,KSPCG);
 	else if (_nameOfMethod.compare("CGNE")==0)
@@ -465,6 +465,18 @@ LinearSolver::solve( void )
 		PCSetType(_prec,PCICC);
 	else if (_nameOfPc.compare("CHOLESKY")==0)
 		PCSetType(_prec,PCCHOLESKY);
+#if SOLVERLAB_WITH_MPI 
+	else if (_nameOfPc.compare("euclid")==0 || _nameOfPc.compare("pilut")==0 || _nameOfPc.compare("parasails")==0 || _nameOfPc.compare("ams")==0 || _nameOfPc.compare("ads")==0)
+	{
+		PCSetType(_prec,PCHYPRE);
+		PCHYPRESetType(_prec,_nameOfPc.c_str());
+	}
+	else if (_nameOfPc.compare("BOOMERAMG")==0)
+	{
+		PCSetType(_prec,PCHYPRE);
+		PetscOptionsInsertString(NULL,"-pc_type hypre -pc_hypre_type boomeramg -pc_hypre_boomeramg_strong_threshold 0.7  -pc_hypre_boomeramg_agg_nl 4 -pc_hypre_boomeramg_agg_num_paths 5 -pc_hypre_boomeramg_max_levels 25 -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_interp_type ext+i -pc_hypre_boomeramg_P_max 2 -pc_hypre_boomeramg_truncfactor 0.3");
+	}
+#endif
 	else if (_nameOfPc.compare("")==0)
 		PCSetType(_prec,PCNONE);
 	else
