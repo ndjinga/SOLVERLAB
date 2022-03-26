@@ -407,35 +407,40 @@ SparseMatrixPetsc::operator/= (double value)
 }
 
 void
-SparseMatrixPetsc::viewMatrix(bool drawMatrix, double pause_lenght, std::string matrixName) const 
+SparseMatrixPetsc::viewNonZeroStructure(double pause_lenght, std::string matrixName) const 
 {
     MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
 
-	PetscViewer viewer;
-	std::string filename;//To save either matrix coefficients (text file) or non zero structure (picture)
+	PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
+	std::string filename="MatrixNonZeroPlot_"+matrixName+".ppm";//To save non zero structure to a picture file
 	
-	if(!drawMatrix)
-	{
-		viewer = PETSC_VIEWER_STDOUT_WORLD;
-		MatView(_mat, viewer);//Print matrix coefficients on screen
-		filename="MatrixCoefficients_"+matrixName+".txt";
-		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &viewer);//Prepare dumping to file
-	}
-	else
-	{
-	   viewer = PETSC_VIEWER_DRAW_WORLD;
-	   PetscDraw draw;
-	   PetscViewerDrawGetDraw(viewer, 0, &draw);
-	   PetscDrawSetPause(draw, pause_lenght);
-	   filename="MatrixNonZeroPlot_"+matrixName+".ppm";
-	   PetscDrawSetSave( draw, filename.c_str());
-	}
+   PetscDraw draw;
+   PetscViewerDrawGetDraw(viewer, 0, &draw);
+   PetscDrawSetPause(draw, pause_lenght);
+   PetscDrawSetSave( draw, filename.c_str());
+
    MatView(_mat, viewer);
 }
 
+void
+SparseMatrixPetsc::printCoefficients(std::string matrixName) const 
+{
+    MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
+
+	PetscViewer viewer = PETSC_VIEWER_STDOUT_WORLD;
+	std::string filename="MatrixCoefficients_"+matrixName+".txt";//To save matrix coefficients to a text file
+	
+	MatView(_mat, viewer);//Print matrix coefficients on screen
+	PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &viewer);//Prepare dumping to file
+
+    MatView(_mat, viewer);
+	PetscViewerDestroy(&viewer);
+}
+
 void 
-SparseMatrixPetsc::saveMatrix(string filename, bool binaryMode) const
+SparseMatrixPetsc::saveToFile(string filename, bool binaryMode) const
 {
     MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
