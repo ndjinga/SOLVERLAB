@@ -101,7 +101,13 @@ public:
 
 	friend SparseMatrixPetsc operator*(const SparseMatrixPetsc& M, const SparseMatrixPetsc& N) ;
 
-	void viewMatrix(bool useXWindow=false, double pause_lenght=0, std::string matrixName="") const ;
+	/**
+	 * Display matrix content (on terminal) or non-zero structure (through picture)
+	 * @param bool drawMatrix : if false, print matrix coefficients, if true, plot non-zero structure on screen and dump picture on a file
+	 * @param double pause_lenght : if drawMatrix is true, duration of the picture displayed on screen. Wait for user input if value is -1.
+	 * @param string matrixName : matrix non-zero structure  dumped to file matrixName.ppm (portable pixmap with no compression)
+	 */
+	void viewMatrix(bool drawMatrix=false, double pause_lenght=0, std::string matrixName="myMatrix") const ;
 	//Save matrix coefficients into a file in ascii or binary mode
 	void saveMatrix(std::string filename, bool binaryMode=false) const ;
 	double getMatrixCoeff(int i, int j) const;    

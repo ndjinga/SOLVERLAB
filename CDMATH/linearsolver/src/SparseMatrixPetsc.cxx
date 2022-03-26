@@ -407,23 +407,31 @@ SparseMatrixPetsc::operator/= (double value)
 }
 
 void
-SparseMatrixPetsc::viewMatrix(bool useXWindow, double pause_lenght, std::string matrixName) const 
+SparseMatrixPetsc::viewMatrix(bool drawMatrix, double pause_lenght, std::string matrixName) const 
 {
     MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
 
-	if(!useXWindow)
-		MatView(_mat,PETSC_VIEWER_STDOUT_WORLD);
+	PetscViewer viewer;
+	std::string filename;//To save either matrix coefficients (text file) or non zero structure (picture)
+	
+	if(!drawMatrix)
+	{
+		viewer = PETSC_VIEWER_STDOUT_WORLD;
+		MatView(_mat, viewer);//Print matrix coefficients on screen
+		filename="MatrixCoefficients_"+matrixName+".txt";
+		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &viewer);//Prepare dumping to file
+	}
 	else
 	{
-	   PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
+	   viewer = PETSC_VIEWER_DRAW_WORLD;
 	   PetscDraw draw;
 	   PetscViewerDrawGetDraw(viewer, 0, &draw);
-	   PetscDrawSetPause(draw, pause_lenght); // Wait for user
-	   std::string filename="MatrixNonZeroPlot_"+matrixName+".ppm";
+	   PetscDrawSetPause(draw, pause_lenght);
+	   filename="MatrixNonZeroPlot_"+matrixName+".ppm";
 	   PetscDrawSetSave( draw, filename.c_str());
-	   MatView(_mat, viewer);
 	}
+   MatView(_mat, viewer);
 }
 
 void 
