@@ -441,20 +441,11 @@ SparseMatrixPetsc::saveMatrix(string filename, bool binaryMode) const
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
 
 	PetscViewer fileViewer;
-	PetscViewerCreate(PETSC_COMM_WORLD,&fileViewer);
-    PetscViewerFileSetMode(fileViewer,FILE_MODE_WRITE);
-    PetscViewerFileSetName(fileViewer,filename.c_str());
 
 	if( binaryMode)
-	{
-		PetscViewerSetType(fileViewer, PETSCVIEWERBINARY);		
 		PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename.c_str(), FILE_MODE_WRITE, &fileViewer);
-	}
 	else
-	{
-		PetscViewerSetType(fileViewer, PETSCVIEWERASCII);		
 		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
-	}
      
 	MatView(_mat,fileViewer);
 	PetscViewerDestroy(&fileViewer);
