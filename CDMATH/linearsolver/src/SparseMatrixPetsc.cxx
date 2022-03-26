@@ -457,6 +457,7 @@ SparseMatrixPetsc::saveMatrix(string filename, bool binaryMode) const
 	}
      
 	MatView(_mat,fileViewer);
+	PetscViewerDestroy(&fileViewer);
 }
 
 double
