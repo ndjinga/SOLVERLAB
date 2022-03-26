@@ -191,6 +191,8 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
     A4.setValue(3,2,15.);
     A4.setValue(3,3,16.);
 
+	A4.saveMatrix("A4.txt");//save ASCII text file
+	A4.saveMatrix("A4.bin",true);//save binary (compressed) file
 	A4.viewMatrix();//Display matrix coefficients on the screen, and dump them to a txt file
 	A4.viewMatrix(true,0.05, "A4");//Open an x windows displaying the matrix nonzero structure and save the picture to a file
     //The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
@@ -280,6 +282,8 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	CPPUNIT_ASSERT_EQUAL( 6.0, A8(1,0) );
 	CPPUNIT_ASSERT_EQUAL( 8.0, A8(1,1) );
 	
+	A8.saveMatrix("A8.txt");//save ASCII text file
+	A8.saveMatrix("A8.bin",true);//save binary (compressed) file
 	A8.viewMatrix();//Display matrix coefficients on the screen, and dump them to a txt file
 	A8.viewMatrix(true,0.05, "A8");//Open an x windows displaying the matrix nonzero structure and save the picture to a file
     //The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
