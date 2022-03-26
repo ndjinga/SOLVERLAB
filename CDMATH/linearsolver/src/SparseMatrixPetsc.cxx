@@ -448,12 +448,12 @@ SparseMatrixPetsc::saveMatrix(string filename, bool binaryMode) const
 	if( binaryMode)
 	{
 		PetscViewerSetType(fileViewer, PETSCVIEWERBINARY);		
-		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
+		PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename.c_str(), FILE_MODE_WRITE, &fileViewer);
 	}
 	else
 	{
 		PetscViewerSetType(fileViewer, PETSCVIEWERASCII);		
-		PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename.c_str(), FILE_MODE_WRITE, &fileViewer);
+		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
 	}
      
 	MatView(_mat,fileViewer);
