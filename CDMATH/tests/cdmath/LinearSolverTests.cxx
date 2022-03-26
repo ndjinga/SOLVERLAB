@@ -190,7 +190,7 @@ LinearSolverTests::testClassLinearSolver( void )
 	CPPUNIT_ASSERT_EQUAL(LS12.getTolerance(),1.E-10);
 	CPPUNIT_ASSERT_EQUAL(LS12.getNumberOfIter(),1);
 
-    LinearSolver LS13(A2,B2,500,1.E-10,"LGMRES","ILU");
+    LinearSolver LS13(A2,B2,500,1.E-10,"FGMRES","ILU");
     Vector X13=LS13.solve();
     for (int i=0;i<X13.getNumberOfRows();i++)
     	CPPUNIT_ASSERT_DOUBLES_EQUAL(Xana2(i), X13(i), 1.E-10);
