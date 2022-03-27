@@ -595,6 +595,43 @@ LinearSolver::vecToVector(const Vec& vec) const
 	return result;
 }
 
+Vector
+LinearSolver::getResidual( Vector X ) const
+{//This is adapted from PETSc source code of KSPInitialResidual
+ Mat  Amat, Pmat;
+ Vec  vb, vt1, vt2, vres;//vb=rhs, vres==resultat, vt1,vt2=temporary storage
+ PCSide side;
+ KSPGetPCSide(_ksp,&side);
+
+    PCGetOperators(_prec,&Amat,&Pmat);
+    if ( X.size()!=0 ) {
+      Vec vsoln = vectorToVec(X);
+      MatMult(Amat,vsoln,vt1);
+      VecCopy(vb,vt2);
+      VecAXPY(vt2,-1.0,vt1);
+      if ( side == PC_RIGHT) {
+        PCDiagonalScaleLeft(_prec,vt2,vres);
+      } else if ( side == PC_LEFT) {
+        PCApply(_prec,vt2,vres);
+        PCDiagonalScaleLeft(_prec,vres,vres);
+      } else if ( side == PC_SYMMETRIC) {
+        PCApplySymmetricLeft(_prec,vt2,vres);
+      } else throw CdmathException( "LinearSolver::getResidualInvalid preconditioning side ");
+    } else {
+      VecCopy(vb,vt2);
+      if ( side == PC_RIGHT) {
+        PCDiagonalScaleLeft(_prec,vb,vres);
+      } else if ( side == PC_LEFT) {
+        PCApply(_prec,vb,vres);
+        PCDiagonalScaleLeft(_prec,vres,vres);
+      } else if ( side == PC_SYMMETRIC) {
+        PCApplySymmetricLeft(_prec, vb, vres);
+      } else throw CdmathException( "LinearSolver::getResidualInvalid preconditioning side ");
+    }	
+    
+    return vecToVector(vres);
+}
+
 //----------------------------------------------------------------------
 const LinearSolver&
 LinearSolver::operator= ( const LinearSolver& linearSolver )
