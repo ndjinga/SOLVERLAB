@@ -99,6 +99,8 @@ WaveSystem_stationary_source/2DWaveSystemUpwindCheckerboard
 WaveSystem_stationary_source/2DWaveSystemUpwindBrickWall
 WaveSystem_stationary_source/2DWaveSystemUpwindHexagons
 WaveSystem_stationary_source/2DWaveSystemUpwindDeformedQuadrangles
+WaveSystem_LinearSolvers/2DTriangles
+WaveSystem_LinearSolvers/2DSquares
 ReferenceSolutions/
 EulerEquations/1DToroBenchmark
 test_synthesis 
@@ -235,7 +237,6 @@ notebook COMMAND
 &&   jupyter-nbconvert --to markdown ${CMAKE_CURRENT_BINARY_DIR}/2DPoissonVF_loc_ref/Convergence_Poisson_FV5_SQUARE_loc_ref.ipynb
 
 )
-
 
 ENDIF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
