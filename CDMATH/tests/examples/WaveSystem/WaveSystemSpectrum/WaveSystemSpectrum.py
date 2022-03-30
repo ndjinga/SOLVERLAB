@@ -137,7 +137,8 @@ def WaveSystemSpectrum( cfl, my_mesh, filename, num_scheme):
 
     # Add the identity matrix on the diagonal
     divMat.diagonalShift(1/dt)#only after  filling all coefficients
-    divMat.viewMatrix( True, 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme)
+    divMat.viewNonZeroStructure( 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme)
+    divMat.saveToFile( "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme,  True)
     divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme)
 
 

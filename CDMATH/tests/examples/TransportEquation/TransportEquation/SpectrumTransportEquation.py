@@ -108,7 +108,8 @@ def solveSpectrum(my_mesh, meshName, meshType, cfl, test_bc, is_upwind):
         num_scheme='Upwind'
     else:
         num_scheme='Centred'
-    divMat.viewMatrix( True, 0, "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme)
+    divMat.viewNonZeroStructure(0, "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme)
+    divMat.saveToFile( "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme, True)
     divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation"+num_scheme)
 
 
