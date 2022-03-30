@@ -440,3 +440,7 @@ Vector.__isub__=VectorIsub
 Vector.__imul__=VectorImul
 Vector.__idiv__=VectorIdiv
 %}
+
+namespace std {
+ %template(VectorVectorDouble) vector< vector<double> >;
+};

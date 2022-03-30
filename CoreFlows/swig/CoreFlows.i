@@ -6,8 +6,6 @@
 
 %include "Mesh.hxx" /* To include the enum EntityType */
 
-/* %include slepc4py.i */
-
 #ifdef MPI4PY_ROOT_DIR
 %include mpi4py.i
 %mpi4py_typemap(Comm, MPI_Comm);
@@ -17,6 +15,7 @@
 
 namespace std {
  %template(VectorDouble) vector<double>;
+ %template(VectorVectorDouble) vector< vector<double> >;
  %template(VectorInt) vector<int>;
  %template(MapIntDouble) map<int,double>;
 };
