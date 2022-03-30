@@ -14,9 +14,8 @@
 
 from math import sin, cos, pi, sqrt
 from numpy import sign
+from matplotlib import pyplot as plt
 import cdmath
-import PV_routines
-import VTK_routines
 import sys
 
 p0=155e5#reference pressure in a pressurised nuclear vessel
@@ -139,7 +138,15 @@ def WaveSystemSpectrum( cfl, my_mesh, filename, num_scheme):
     divMat.diagonalShift(1/dt)#only after  filling all coefficients
     divMat.viewNonZeroStructure( 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme)
     divMat.saveToFile( "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme,  True)
-    divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme)
+    X,Y=divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme)
+    plt.scatter(X,Y, label=num_scheme+' scheme')#
+    plt.xlabel("Real part")
+    plt.ylabel("Imaginary part")
+    plt.axvline(x=0, color='black')
+    plt.axhline(y=0, color='black')
+    plt.legend()
+    plt.show(False)
+    plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_WaveSystem.png")
 
 
 def solveSpectrum(my_mesh,meshName, num_scheme):

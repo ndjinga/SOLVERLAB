@@ -10,10 +10,9 @@
 #================================================================================================================================
 
 from math import sin, cos, pi, sqrt
-import time, json, sys
+import sys
+from matplotlib import pyplot as plt
 import cdmath
-import PV_routines
-import VTK_routines
 
 precision=1e-5
 
@@ -110,7 +109,16 @@ def solveSpectrum(my_mesh, meshName, meshType, cfl, test_bc, is_upwind):
         num_scheme='Centred'
     divMat.viewNonZeroStructure(0, "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme)
     divMat.saveToFile( "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme, True)
-    divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation"+num_scheme)
+    X,Y=divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation"+num_scheme)
+    plt.scatter(X,Y, label=num_scheme+' scheme')#
+    plt.xlabel("Real part")
+    plt.ylabel("Imaginary part")
+    plt.axvline(x=0, color='black')
+    plt.axhline(y=0, color='black')
+    plt.legend()
+    plt.show(False)
+    plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_TransportEquation.png")
+    
 
 
 def solve_file( filename,meshName, meshType, cfl, test_bc, is_upwind):
