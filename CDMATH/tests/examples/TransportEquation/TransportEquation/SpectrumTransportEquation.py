@@ -129,7 +129,12 @@ def solveSpectrum(my_mesh, meshName, meshType, cfl, test_bc, is_upwind):
     plt.legend()
     plt.show(False)
     plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_TransportEquation_symmetrised.png")
-
+    
+    assert abs(min(Y2))<precision
+    sigma_min = min(X2)
+    sigma_max = max(X2)
+    print("Minimum singular value   A = ", sqrt(sigma_min), ", maximum singular value   A = ", format(sqrt(sigma_max),'.1E'), ", conditionnement   A = ", format(sqrt(sigma_max/sigma_min),'.1E') )
+    print("Minimum singular value tAA = ",      sigma_min,  ", maximum singular value tAA = ", format(     sigma_max ,'.1E'), ", conditionnement tAA = ", format(     sigma_max/sigma_min ,'.1E') )
 
 def solve_file( filename,meshName, meshType, cfl, test_bc, is_upwind):
     my_mesh = cdmath.Mesh(filename+".med")
