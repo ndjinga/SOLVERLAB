@@ -119,6 +119,16 @@ def solveSpectrum(my_mesh, meshName, meshType, cfl, test_bc, is_upwind):
     plt.show(False)
     plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_TransportEquation.png")
     
+    divMatSquare = divMat*divMat.transpose()
+    X2,Y2=divMatSquare.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation"+num_scheme+"_symmetrised")
+    plt.scatter(X2,Y2, label=num_scheme+' scheme'+" symmetrised")#
+    plt.xlabel("Real part")
+    plt.ylabel("Imaginary part")
+    plt.axvline(x=0, color='black')
+    plt.axhline(y=0, color='black')
+    plt.legend()
+    plt.show(False)
+    plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_TransportEquation_symmetrised.png")
 
 
 def solve_file( filename,meshName, meshType, cfl, test_bc, is_upwind):
