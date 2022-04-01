@@ -148,6 +148,16 @@ def WaveSystemSpectrum( cfl, my_mesh, filename, num_scheme):
     plt.show(False)
     plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_WaveSystem.png")
 
+    divMatSquare = divMat*divMat.transpose()
+    X2,Y2=divMatSquare.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme+"_symmetrised")
+    plt.scatter(X2,Y2, label=num_scheme+' scheme'+" symmetrised")#
+    plt.xlabel("Real part")
+    plt.ylabel("Imaginary part")
+    plt.axvline(x=0, color='black')
+    plt.axhline(y=0, color='black')
+    plt.legend()
+    plt.show(False)
+    plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_WaveSystem_symmetrised.png")
 
 def solveSpectrum(my_mesh,meshName, num_scheme):
     print( "Spectrum of the Wave system in dimension ", my_mesh.getSpaceDimension() )
