@@ -71,8 +71,12 @@ public: //----------------------------------------------------------------
 	std::string getNameOfPc( void ) const ;
 
 	Vector solve( void ) ;
-	/* Compute the residual P(AX-b) where P is the preconditioner*/
+	/* Compute the residual P(AX-b) where P is the preconditioner and X is an input vector */
 	Vector getResidual( Vector X = Vector(0) ) const;
+	/* Compute the initial residual P(-b) where P is the preconditioner*/
+	Vector getInitialResidual( ) const;
+	/* Compute the final residual P(AX-b) where P is the preconditioner and X is a the solution vector */
+	Vector getFinalResidual( ) const;
 
 	void setMatrix(const GenericMatrix& matrix) ;
 

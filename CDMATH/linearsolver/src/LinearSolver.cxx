@@ -601,9 +601,11 @@ LinearSolver::getResidual( Vector X ) const
  Mat  Amat, Pmat;
  Vec  vb, vt1, vt2, vres;//vb=rhs, vres==resultat, vt1,vt2=temporary storage
  PCSide side;
- KSPGetPCSide(_ksp,&side);
 
-    PCGetOperators(_prec,&Amat,&Pmat);
+ KSPGetPCSide(_ksp,&side);
+ PCGetOperators(_prec,&Amat,&Pmat);
+ KSPGetRhs( _ksp,&vb);
+
     if ( X.size()!=0 ) {
       Vec vsoln = vectorToVec(X);
       MatMult(Amat,vsoln,vt1);
@@ -616,9 +618,9 @@ LinearSolver::getResidual( Vector X ) const
         PCDiagonalScaleLeft(_prec,vres,vres);
       } else if ( side == PC_SYMMETRIC) {
         PCApplySymmetricLeft(_prec,vt2,vres);
-      } else throw CdmathException( "LinearSolver::getResidualInvalid preconditioning side ");
+      } else throw CdmathException( "LinearSolver::getResidual : Invalid preconditioning side ");
     } else {
-      VecCopy(vb,vt2);
+      VecCopy(vb,vt2);//A quoi sert cette ligne ???
       if ( side == PC_RIGHT) {
         PCDiagonalScaleLeft(_prec,vb,vres);
       } else if ( side == PC_LEFT) {
@@ -626,8 +628,59 @@ LinearSolver::getResidual( Vector X ) const
         PCDiagonalScaleLeft(_prec,vres,vres);
       } else if ( side == PC_SYMMETRIC) {
         PCApplySymmetricLeft(_prec, vb, vres);
-      } else throw CdmathException( "LinearSolver::getResidualInvalid preconditioning side ");
+      } else throw CdmathException( "LinearSolver::getResidual : Invalid preconditioning side ");
     }	
+    
+    return vecToVector(vres);
+}
+
+Vector
+LinearSolver::getInitialResidual( ) const
+{
+ Mat  Amat, Pmat;
+ Vec  vb, vres;//vb=rhs, vres==resultat
+ PCSide side;
+
+ KSPGetPCSide(_ksp,&side);
+ KSPGetRhs( _ksp,&vb);
+ PCGetOperators(_prec,&Amat,&Pmat);
+
+  if ( side == PC_RIGHT)
+        PCDiagonalScaleLeft(_prec,vb,vres);
+  else if ( side == PC_LEFT){
+        PCApply(_prec,vb,vres);//Pb
+        PCDiagonalScaleLeft(_prec,vres,vres);}
+  else if ( side == PC_SYMMETRIC)
+        PCApplySymmetricLeft(_prec, vb, vres);
+  else 
+        throw CdmathException( "LinearSolver::getInitialResidual : Invalid preconditioning side ");
+    
+    return vecToVector(vres);
+}
+
+Vector
+LinearSolver::getFinalResidual( ) const
+{
+ Mat  Amat, Pmat;
+ Vec  vb, vsoln, vt1, vres;//vsoln=solution, vb=rhs, vres==resultat, vt12=temporary storage
+ PCSide side;
+
+ KSPGetPCSide(_ksp,&side);
+ KSPGetSolution( _ksp,&vsoln);
+ KSPGetRhs( _ksp,&vb);
+ PCGetOperators(_prec,&Amat,&Pmat);
+
+  MatMult(Amat,vsoln,vt1);//AX
+  VecAXPY(vb,-1.0,vt1);//b-AX
+  if ( side == PC_RIGHT) {
+	PCDiagonalScaleLeft(_prec,vb,vres);
+  } else if ( side == PC_LEFT) {
+	PCApply(_prec,vb,vres);//P(b-AX)
+	PCDiagonalScaleLeft(_prec,vres,vres);
+  } else if ( side == PC_SYMMETRIC) {
+	PCApplySymmetricLeft(_prec,vb,vres);
+  } else 
+	throw CdmathException( "LinearSolver::getFinalResidual : Invalid preconditioning side ");
     
     return vecToVector(vres);
 }
