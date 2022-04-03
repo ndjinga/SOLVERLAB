@@ -216,7 +216,7 @@ class TestsLinearSolverSwig(unittest.TestCase):
         self.assertEqual(LS11.getTolerance(), 1.E-10)
         self.assertEqual(LS11.getNumberOfIter(), 1)
 
-        LS11 = LinearSolver(A2, B2, 500, 1.E-10, "LGMRES", "ILU")
+        LS11 = LinearSolver(A2, B2, 500, 1.E-10, "FGMRES", "ILU")
         X11 = LS11.solve()
         for i in range(X11.getNumberOfRows()):
             self.assertTrue(abs(X11[i] - Xana2[i]) < 1.E-10)
