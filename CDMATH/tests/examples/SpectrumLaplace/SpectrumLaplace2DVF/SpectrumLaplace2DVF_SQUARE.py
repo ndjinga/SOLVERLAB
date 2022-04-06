@@ -88,7 +88,9 @@ nev=10
 d=Rigidite.getEigenvectorsDataArrayDouble(nev)
 my_eigenfield = cdmath.Field("Eigenvectors field", cdmath.CELLS, my_mesh, nev)
 my_eigenfield.setFieldByDataArrayDouble(d)
-
+# Free memory
+d.decrRef()
+    
 # Sauvegarde du champ résultat
 #===========================
 my_eigenfield.writeVTK("spectrumFiniteVolumesOn"+mesh_name+"Laplace")

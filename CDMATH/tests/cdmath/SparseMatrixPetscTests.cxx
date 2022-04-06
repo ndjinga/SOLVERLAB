@@ -137,7 +137,8 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	const double *values=VpArrayDouble->getConstPointer();
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, abs(values[0]) - abs(values[1]),1.e-5);
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0, abs(values[2]) - abs(values[3]),1.e-5);
-
+	VpArrayDouble->decrRef();
+	
     A.setValue(0,0,-1.);
     A.setValue(0,1, 1.);
     A.setValue(1,0, 1.);

@@ -143,6 +143,8 @@ for j in range(nbBoundaryNodes):
       my_eigenfield[boundaryNodes[j],k]=0;#remplissage des valeurs pour les noeuds frontière (condition limite)
 for k in range(nev):
     my_eigenfield.setInfoOnComponent(k,d.getInfoOnComponent(k))
+# Free memory
+d.decrRef()
     
 # Sauvegarde du champ résultat
 #===========================
