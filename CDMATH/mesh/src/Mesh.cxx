@@ -334,7 +334,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
     if(split_to_triangles_policy==0 || split_to_triangles_policy==1)
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
-            _mesh->simplexize(split_to_triangles_policy);
+            DataArrayIdType * o2n = _mesh->simplexize(split_to_triangles_policy);
+            o2n->decrRef();
 			_isStructured = false;
         }
     else if (split_to_triangles_policy != -1)
