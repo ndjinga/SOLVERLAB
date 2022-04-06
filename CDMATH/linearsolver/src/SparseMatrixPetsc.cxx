@@ -602,35 +602,35 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ** valPi, do
   
   if(viewEigenvaluesInXWindows)
   {
-    PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
-    PetscDraw draw;
-    PetscViewerDrawGetDraw(viewer, 0, &draw);
-    PetscDrawSetPause(draw, pause_lenght); // time duration of the display. if pause_lenght = -1 then wait for user to press a key
-    std::string filename="MatrixEigenvaluePlot_"+matrixName+".ppm";
-    PetscDrawSetSave( draw, filename.c_str());
-    EPSValuesView(eps, viewer);
+	PetscViewer viewer = PETSC_VIEWER_DRAW_WORLD;
+	PetscDraw draw;
+	PetscViewerDrawGetDraw(viewer, 0, &draw);
+	PetscDrawSetPause(draw, pause_lenght); // time duration of the display. if pause_lenght = -1 then wait for user to press a key
+	std::string filename="MatrixEigenvaluePlot_"+matrixName+".ppm";
+	PetscDrawSetSave( draw, filename.c_str());
+	EPSValuesView(eps, viewer);
+
   }
+	/*
+	 Optional: Get some information from the solver and display it on the screen
+	*/
+	EPSGetIterationNumber(eps,&its);
+	PetscPrintf(PETSC_COMM_WORLD," Number of iterations of the method: %D\n",its);
+	EPSGetType(eps,&type);
+	PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n\n",type);
+	EPSGetDimensions(eps,&nev,NULL,NULL);
+	PetscPrintf(PETSC_COMM_WORLD," Number of requested eigenvalues: %D\n",nev);
+	EPSGetTolerances(eps,&tol,&maxit);
+	PetscPrintf(PETSC_COMM_WORLD," Stopping condition: tol=%.4g, maxit=%D\n",(double)tol,maxit);
 
-  /*
-     Optional: Get some information from the solver and display it on the screen
-  */
-  EPSGetIterationNumber(eps,&its);
-  PetscPrintf(PETSC_COMM_WORLD," Number of iterations of the method: %D\n",its);
-  EPSGetType(eps,&type);
-  PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n\n",type);
-  EPSGetDimensions(eps,&nev,NULL,NULL);
-  PetscPrintf(PETSC_COMM_WORLD," Number of requested eigenvalues: %D\n",nev);
-  EPSGetTolerances(eps,&tol,&maxit);
-  PetscPrintf(PETSC_COMM_WORLD," Stopping condition: tol=%.4g, maxit=%D\n",(double)tol,maxit);
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                    Display solution and clean up
-     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-  /*
-     Get number of converged approximate eigenpairs
-  */
-  EPSGetConverged(eps,&nconv);
-  PetscPrintf(PETSC_COMM_WORLD," Number of converged eigenpairs: %D\n\n",nconv);
+	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+					Display solution and clean up
+	 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+	/*
+	 Get number of converged approximate eigenpairs
+	*/
+	EPSGetConverged(eps,&nconv);
+	PetscPrintf(PETSC_COMM_WORLD," Number of converged eigenpairs: %D\n\n",nconv);
 
   *valPr=new double[nconv];
   *valPi=new double[nconv];
@@ -642,9 +642,10 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ** valPi, do
     /*
        Display eigenvalues and relative errors
     */
-    PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||\n"
-         "   ----------------- ------------------\n");
+    if(viewEigenvaluesInXWindows)
+      PetscPrintf(PETSC_COMM_WORLD,
+           "           k          ||Ax-kx||/||kx||\n"
+           "   ----------------- ------------------\n");
 
     for (int i=0;i<nconv;i++) {
       /*
@@ -652,26 +653,28 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ** valPi, do
         ki (imaginary part)
       */
       EPSGetEigenpair(eps,i,&kr,&ki,xr,xi);
-      /*
-         Compute the relative error associated to each eigenpair
-      */
-      if(fabs(kr)>tol || fabs(ki)>tol)
+      if(viewEigenvaluesInXWindows)
       {
-	      EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);
-	
-	      if (ki!=0.0)
-	        PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)kr,(double)ki,(double)error);
-	      else
-	        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)kr,(double)error);
-	   }
-	   else
-      {
-	      if (ki!=0.0)
-	        PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12s\n",(double)kr,(double)ki,"Null eigenvalue");
-	      else
-	        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12s\n",(double)kr,"Null eigenvalue");
-	   }
-	   
+	      /*
+	         Compute the relative error associated to each eigenpair
+	      */
+	      if(fabs(kr)>tol || fabs(ki)>tol)
+	      {
+		      EPSComputeError(eps,i,EPS_ERROR_RELATIVE,&error);
+		
+		      if (ki!=0.0)
+		        PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)kr,(double)ki,(double)error);
+		      else
+		        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)kr,(double)error);
+		   }
+		   else
+	      {
+		      if (ki!=0.0)
+		        PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12s\n",(double)kr,(double)ki,"Null eigenvalue");
+		      else
+		        PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12s\n",(double)kr,"Null eigenvalue");
+		   }
+      }	   
 	  /* Copy real part of the spectrum */
       *(*valPr + i)=kr;
       VecGetArray(xr,&myvecPr);
@@ -683,7 +686,8 @@ SparseMatrixPetsc::computeSpectrum(int nev, double ** valPr, double ** valPi, do
       *(*vecPi+  i)=new double [_numberOfRows];
       memcpy(*(*vecPi+  i),myvecPi,_numberOfRows*sizeof(double)) ;
     }
-    PetscPrintf(PETSC_COMM_WORLD,"\n");
+    if(viewEigenvaluesInXWindows)
+      PetscPrintf(PETSC_COMM_WORLD,"\n");
     /*
      Free work space
     */
@@ -798,7 +802,8 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
     /*
        Display eigenvalues and relative errors
     */
-    PetscPrintf(PETSC_COMM_WORLD,
+    if(viewSingularValuesInXWindows)
+      PetscPrintf(PETSC_COMM_WORLD,
          "           k          ||Ax-kx||/||kx||\n"
          "   ----------------- ------------------\n");
 
@@ -807,18 +812,20 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
         Get converged singular values: i-th eigenvalue is stored in valS
       */
       SVDGetSingularTriplet(svd,i,*valS+i, u, v);
-      if(fabs(*(*valS+i))>tol)
+      if(viewSingularValuesInXWindows)
       {
-	      /*
-	         Compute the relative error associated to each singular value
-	      */
-	      SVDComputeError( svd, i, SVD_ERROR_RELATIVE, &error );
-	
-	      PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)*(*valS+i),(double)error);
-		}
-       else
-          PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12s\n",(double)*(*valS+i),"Null singular value");
-	
+	      if(fabs(*(*valS+i))>tol)
+	      {
+		      /*
+		         Compute the relative error associated to each singular value
+		      */
+		      SVDComputeError( svd, i, SVD_ERROR_RELATIVE, &error );
+		
+		      PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g\n",(double)*(*valS+i),(double)error);
+			}
+	       else
+	          PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12s\n",(double)*(*valS+i),"Null singular value");
+	  }
       VecGetArray(u,&myVecS);
       *(*vecS + i)=new double [_numberOfRows];
       memcpy(*(*vecS + i),myVecS,_numberOfRows*sizeof(double)) ;
@@ -826,7 +833,8 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
       *(*vecS + i + nconv)=new double [_numberOfColumns];
       memcpy(*(*vecS + i + nconv),myVecS,_numberOfColumns*sizeof(double)) ;
     }
-    PetscPrintf(PETSC_COMM_WORLD,"\n");
+    if(viewSingularValuesInXWindows)
+      PetscPrintf(PETSC_COMM_WORLD,"\n");
     /*
      Free work space
     */
