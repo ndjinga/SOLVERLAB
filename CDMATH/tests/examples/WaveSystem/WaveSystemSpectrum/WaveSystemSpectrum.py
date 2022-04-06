@@ -158,12 +158,17 @@ def WaveSystemSpectrum( cfl, my_mesh, filename, num_scheme):
     plt.legend()
     plt.show(False)
     plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_WaveSystem_symmetrised.png")
-    
-    assert abs(min(Y2))<precision
+
+    assert min(map(abs,Y2))<precision
     sigma_min = min(X2)
     sigma_max = max(X2)
-    print("Minimum singular value   A = ", sqrt(sigma_min), ", maximum singular value   A = ", format(sqrt(sigma_max),'.1E'), ", conditionnement   A = ", format(sqrt(sigma_max/sigma_min),'.1E') )
-    print("Minimum singular value tAA = ",      sigma_min,  ", maximum singular value tAA = ", format(     sigma_max ,'.1E'), ", conditionnement tAA = ", format(     sigma_max/sigma_min ,'.1E') )
+    
+    if sigma_min >0.:#avoid division by zero
+        print("Minimum singular value   A = ", sqrt(sigma_min), ", maximum singular value   A = ", format(sqrt(sigma_max),'.1E'), ", conditionnement   A = ", format(sqrt(sigma_max/sigma_min),'.1E') )
+        print("Minimum singular value tAA = ",      sigma_min,  ", maximum singular value tAA = ", format(     sigma_max ,'.1E'), ", conditionnement tAA = ", format(     sigma_max/sigma_min ,'.1E') )
+    else:
+        print("Minimum singular value   A = ", 0, ", maximum singular value   A = ", format(sqrt(sigma_max),'.1E'), ", conditionnement   A = infinity" )
+        print("Minimum singular value tAA = ", 0, ", maximum singular value tAA = ", format(     sigma_max ,'.1E'), ", conditionnement tAA = infinity" )
 
 def solveSpectrum(my_mesh,meshName, num_scheme):
     print( "Spectrum of the Wave system in dimension ", my_mesh.getSpaceDimension() )
