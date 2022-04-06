@@ -439,7 +439,8 @@ Mesh::setMesh( void )
 	MEDCouplingUMesh* mu2;//mesh of dimension N-1 containing the cell interfaces->cell/face connectivity
 	
 	mu->unPolyze();
-    mu->sortCellsInMEDFileFrmt( );
+    DataArrayIdType * o2n = mu->sortCellsInMEDFileFrmt( );
+	o2n->decrRef();
 	
 	if(_meshDim<2)
 		mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
