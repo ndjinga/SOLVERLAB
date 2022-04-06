@@ -924,16 +924,16 @@ Mesh::setMesh( void )
 	revCell->decrRef();
 	revCellI->decrRef();
 
+    // Arrays used if _meshDim =3 to determine the edges
+	revNode2->decrRef();
+	revNodeI2->decrRef();
+	desc2->decrRef();
+	descI2->decrRef();
+	revDesc2->decrRef();
+	revDescI2->decrRef();
+
     if (_meshDim == 3)
-    {
-        revNode2->decrRef();
-        revNodeI2->decrRef();
-        desc2->decrRef();
-        descI2->decrRef();
-        revDesc2->decrRef();
-        revDescI2->decrRef();
         mu3->decrRef();
-    }
     	
     return mu;
 }
