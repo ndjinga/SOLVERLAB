@@ -991,6 +991,7 @@ SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, doubl
 	delete[] vecPr;
 	delete[] vecPi;	
 	
+    array->decrRef();
     return arrays;
 }
 
