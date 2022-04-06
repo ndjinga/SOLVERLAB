@@ -968,13 +968,18 @@ SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, doubl
 	
     for (int i=0;i<nconv;i++) 
     {
-		array->useArray(vecPr[i],true, MEDCoupling::DeallocType::CPP_DEALLOC, _numberOfRows,1);
+		array->useArray(vecPr[i],false, MEDCoupling::DeallocType::CPP_DEALLOC, _numberOfRows,1);//array vecPr[i] will not be deallocated
 		compoId[0]=i;
 		arrays->setSelectedComponents(array,compoId);
 		arrays->setInfoOnComponent(i,std::to_string(valPr[i]));
 	}
 	delete[] valPr;
 	delete[] valPi;
+    for (int i=0;i<nconv;i++) 
+    {
+		delete[] vecPr[i];
+		delete[] vecPi[i];
+	}
 	delete[] vecPr;
 	delete[] vecPi;	
 	
