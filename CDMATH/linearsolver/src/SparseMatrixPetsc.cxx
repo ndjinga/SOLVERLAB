@@ -1025,19 +1025,27 @@ SparseMatrixPetsc::getConditionNumber(bool isSingular, double tol) const
 	    else
 			nsv=1 ;
 	
-		nconv=computeSVD(nsv, &valS, &vecS, SVD_SMALLEST, tol,SVDCROSS);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_SMALLEST, tol, SVDCROSS);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the smallest singular value");
 	    sigma_min=valS[nsv-1];
-	    delete[] valS, vecS;
+
+	    delete[] valS;
+	    for (int i=0;i<2*nconv;i++) 
+			delete[] vecS[i];
+	    delete[] vecS;
 	    
 	    /*** Largest singular value ***/
 	    nsv=1;
-		nconv=computeSVD(nsv, &valS, &vecS, SVD_LARGEST, tol,SVDCROSS);
+		nconv=computeSVD(nsv, &valS, &vecS, SVD_LARGEST, tol, SVDCROSS);
 		if(nconv<nsv)
 			throw CdmathException("SparseMatrixPetsc::getConditionNumber could not find the largest singular value");
 	    sigma_max=valS[nsv-1];
-	    delete[] valS, vecS;
+
+	    delete[] valS;
+	    for (int i=0;i<2*nconv;i++) 
+			delete[] vecS[i];
+	    delete[] vecS;
 	    
 	    return sigma_max/sigma_min;
 	}
@@ -1057,7 +1065,10 @@ SparseMatrixPetsc::getSingularValues(int nsv, SVDWhich which, double tol, SVDTyp
     for (int i=0;i<nconv;i++) 
         result[i]=valS[i];
 
-	delete[] valS, vecS;
+	delete[] valS;
+	    for (int i=0;i<2*nconv;i++) 
+			delete[] vecS[i];
+	delete[] vecS;
 	
     return result;
 }
@@ -1086,7 +1097,7 @@ SparseMatrixPetsc::getSingularVectors(int nsv, SVDWhich which, double tol, SVDTy
 	}
 
 	delete[] valS;
-    for (int i=0;i<nconv;i++) 
+    for (int i=0;i<2*nconv;i++) 
 		delete[] vecS[i];
 	delete[] vecS;	
 
