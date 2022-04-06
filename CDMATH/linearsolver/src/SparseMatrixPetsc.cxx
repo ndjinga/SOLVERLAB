@@ -865,10 +865,15 @@ SparseMatrixPetsc::getEigenvalues(int nev, EPSWhich which, double tol, EPSType t
     for (int i=0;i<nconv;i++) 
         result[i]=valPr[i];
 
-	delete[] valPr, valPi;
+	delete[] valPr;
+	delete[] valPi;
     for (int i=0;i<nconv;i++) 
-		delete[] vecPr[i], vecPi[i];
-	delete[] vecPr, &vecPi;	
+    {
+		delete[] vecPr[i];
+		delete[] vecPi[i];
+	}
+	delete[] vecPr;
+	delete[] vecPi;	
 	
     return result;
 }
@@ -898,10 +903,15 @@ SparseMatrixPetsc::plotEigenvalues(std::string matrixName, int nev, double pause
 	result[0]=result_r;
 	result[1]=result_i;
 	
-	delete[] valPr, valPi;
+	delete[] valPr;
+	delete[] valPi;
     for (int i=0;i<nconv;i++) 
-		delete[] vecPr[i], vecPi[i];
-	delete[] vecPr, vecPi;	
+    {
+		delete[] vecPr[i];
+		delete[] vecPi[i];
+	}
+	delete[] vecPr;
+	delete[] vecPi;	
 	
 	return result;
 }
@@ -925,10 +935,15 @@ SparseMatrixPetsc::getEigenvectors(int nev, EPSWhich which, double tol, EPSType 
         result[i]=myvecPr;
 	}
 
-	delete[] valPr, valPi;
+	delete[] valPr;
+	delete[] valPi;
     for (int i=0;i<nconv;i++) 
-		delete[] vecPr[i], vecPi[i];
-	delete[] vecPr, vecPi;	
+    {
+		delete[] vecPr[i];
+		delete[] vecPi[i];
+	}
+	delete[] vecPr;
+	delete[] vecPi;	
 	
     return result;
 }
@@ -958,8 +973,10 @@ SparseMatrixPetsc::getEigenvectorsDataArrayDouble(int nev, EPSWhich which, doubl
 		arrays->setSelectedComponents(array,compoId);
 		arrays->setInfoOnComponent(i,std::to_string(valPr[i]));
 	}
-	delete[] valPr, valPi;
-	delete[] vecPr, vecPi;	
+	delete[] valPr;
+	delete[] valPi;
+	delete[] vecPr;
+	delete[] vecPi;	
 	
     return arrays;
 }
