@@ -97,7 +97,8 @@ Mesh::Mesh( MEDCoupling::MCAuto<const MEDCoupling::MEDCouplingMesh> mesh )
     else
         _isStructured=false;
 
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -190,6 +191,7 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, int
     cout<<"Mesh name = "<<m->getName()<<", mesh dim = "<< _meshDim<< ", space dim = "<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
 
 	m->decrRef();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -241,7 +243,8 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     _meshNotDeleted=true;
     _isStructured = false;
 
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -283,7 +286,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
     _meshNotDeleted=true;
     _isStructured = true;
 
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -344,7 +348,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : Unknown splitting policy");
         }
     
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -417,7 +422,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : splitting policy value should be 0 or 1");
         }
     
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
