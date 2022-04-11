@@ -1906,7 +1906,11 @@ Mesh::writeMED ( const std::string fileName, bool fromScratch ) const
 	{
 		const MEDCoupling::MEDCouplingIMesh* iMesh = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingMesh*) _mesh);
 		if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
-			MEDCoupling::WriteMesh(fname.c_str(),iMesh->convertToCartesian(), fromScratch);
+		{
+			MEDCouplingCMesh * cMesh = iMesh->convertToCartesian();
+			MEDCoupling::WriteMesh(fname.c_str(), cMesh, fromScratch);
+			cMesh->decrRef();
+		}
 		else//medcouplingcmesh : save directly
 			MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
 	}
