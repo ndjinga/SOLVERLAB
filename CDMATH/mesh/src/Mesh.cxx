@@ -69,6 +69,8 @@ Mesh::~Mesh( void )
 	//	_nodeGroups[i]->decrRef();
 	if( _meshNotDeleted)
 		(_mesh.retn())->decrRef();
+	//if( _boundaryMesh)
+	//    _boundaryMesh->decrRef();
 }
 
 std::string 
