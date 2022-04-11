@@ -1461,6 +1461,7 @@ Mesh::setNodeGroups( const MEDFileMesh* medmesh, MEDCouplingUMesh*  mu)
 					throw CdmathException("No node found for group " + groupName );
 			}
 		}
+	nodeGroup->decrRef();
 	}
 }
 
