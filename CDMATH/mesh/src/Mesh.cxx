@@ -407,13 +407,15 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
     if( split_to_tetrahedra_policy == 0 )
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
-            _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
+            DataArrayIdType * o2n = _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
+            o2n->decrRef();
 			_isStructured = false;
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
-            _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
+            DataArrayIdType * o2n = _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
+            o2n->decrRef();
 			_isStructured = false;
         }
     else if ( split_to_tetrahedra_policy != -1 )
