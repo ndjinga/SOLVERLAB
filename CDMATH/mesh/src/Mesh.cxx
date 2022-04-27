@@ -917,13 +917,12 @@ Mesh::setMesh( void )
     _nodeGroupNames.push_back("Boundary");
     _faceGroupsIds.push_back(_boundaryFaceIds);
     _nodeGroupsIds.push_back(_boundaryNodeIds);
-    if( _meshDim>1 )
-    {    //Set face boundary group
+    if( _meshDim>1 )//Set face boundary group
 		_boundaryMesh = mu->computeSkin();
-		_faceGroups.push_back(_boundaryMesh);
-	}
-	else
-		_faceGroups.push_back(NULL);
+    else//in dimension 1 computeSkin leads to a degenerate mesh
+		_boundaryMesh = NULL;
+
+    _faceGroups.push_back(_boundaryMesh);
     _nodeGroups.push_back(NULL);
 
     desc->decrRef();
