@@ -356,7 +356,6 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT(Mcopy2.meshNotDeleted());
     CPPUNIT_ASSERT(Mcopy2.isStructured());
 
-
     // Connection with MED
     string fileNameVTK="TestMesh";
     string fileNameMED="TestMesh";
@@ -449,10 +448,6 @@ MeshTests::testClassMesh( void )
     CPPUNIT_ASSERT(M6.meshNotDeleted());
     CPPUNIT_ASSERT(M6.isStructured());
 
-    /*
-    const MEDCouplingMesh* M1MEDMesh = M2.getMEDCouplingMesh();
-     */
-
     //Test of a mesh with spaceDim=3 different from meshDim=2 (triangles)
     Mesh M4("meshSphere.med");
     CPPUNIT_ASSERT(M4.isTriangular());
@@ -511,7 +506,20 @@ MeshTests::testClassMesh( void )
     for(int i=0; i<nbCellsM7; i++)
         volM7+=M7.getCell(i).getMeasure();
     CPPUNIT_ASSERT_DOUBLES_EQUAL( 1., volM7, eps );
-    
+
+    //Testing boundary functions
+    cout<<"Mesh M5 spaceDim "<< M5.getSpaceDimension() << " meshDim " <<M5.getMeshDimension()<<endl;
+    Mesh M5Boundary = M5.getBoundaryMesh (  );
+    cout<<"Mesh M3 spaceDim "<< M3.getSpaceDimension() << " meshDim " <<M3.getMeshDimension()<<endl;
+    Mesh M3Boundary = M3.getBoundaryMesh (  );
+    cout<<"Mesh M3Tetra spaceDim "<< M3Tetra.getSpaceDimension() << " meshDim " <<M3Tetra.getMeshDimension()<<endl;
+    Mesh M3TetraBoundary = M3Tetra.getBoundaryMesh (  );
+    cout<<"Mesh M2 spaceDim "<< M2.getSpaceDimension() << " meshDim " <<M2.getMeshDimension()<<endl;
+    Mesh M2Boundary = M2.getBoundaryMesh (  );
+    cout<<"Mesh M23 spaceDim "<< M23.getSpaceDimension() << " meshDim " <<M23.getMeshDimension()<<endl;
+    Mesh M23Boundary = M23.getBoundaryMesh (  );
+    Mesh M23Bottom = M23.getBoundaryGroupMesh ( "Bottom" );
+
     //Testing deletion of MEDCoupling for unstructured meshes (should not deletethe structured meshes)
     M1.deleteMEDCouplingMesh();
     M2.deleteMEDCouplingMesh();
@@ -521,14 +529,4 @@ MeshTests::testClassMesh( void )
     M5.deleteMEDCouplingMesh();
     M2Triangle.deleteMEDCouplingMesh();
     M3Tetra.deleteMEDCouplingMesh();
-
-    //Testting boundary functions
-    Mesh M5Boundary = M5.getBoundaryMesh (  );
-    Mesh M3Boundary = M3.getBoundaryMesh (  );
-    Mesh M3TetraBoundary = M3Tetra.getBoundaryMesh (  );
-    cout<<"Mesh M2 spaceDim "<< M2.getSpaceDimension() << " meshDim " <<M2.getMeshDimension()<<endl;
-    Mesh M2Boundary = M2.getBoundaryMesh (  );
-    cout<<"Mesh M23 spaceDim "<< M23.getSpaceDimension() << " meshDim " <<M23.getMeshDimension()<<endl;
-    Mesh M23Boundary = M23.getBoundaryMesh (  );
-    Mesh M23Bottom = M23.getBoundaryGroupMesh ( "Bottom" );
 }
