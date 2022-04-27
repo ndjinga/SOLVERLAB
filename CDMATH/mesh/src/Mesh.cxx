@@ -1820,7 +1820,10 @@ Mesh::minRatioVolSurf() const
 Mesh
 Mesh::getBoundaryMesh ( void )  const 
 {
-	return Mesh(_boundaryMesh);
+	if( _boundaryMesh )
+		return Mesh(_boundaryMesh);
+	else
+		throw CdmathException("Mesh::getBoundaryMesh Boundary mesh is empty");
 }
 
 MEDCoupling::MEDCouplingUMesh *
