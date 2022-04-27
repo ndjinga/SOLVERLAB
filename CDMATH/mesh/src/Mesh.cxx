@@ -1822,6 +1822,12 @@ Mesh::getBoundaryMesh ( void )  const
 	return Mesh(_boundaryMesh);
 }
 
+MEDCoupling::MEDCouplingUMesh *
+Mesh::getBoundaryMEDCouplingMesh ( void )  const 
+{
+	return _boundaryMesh;
+}
+
 Mesh 
 Mesh::getBoundaryGroupMesh ( std::string groupName, int nth_occurence )  const 
 {

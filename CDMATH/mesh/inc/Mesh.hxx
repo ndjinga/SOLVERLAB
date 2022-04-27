@@ -243,6 +243,11 @@ public: //----------------------------------------------------------------
 	Mesh getBoundaryMesh ( void )  const ;
 
 	/**
+	 * \brief return the skin surrounding the mesh (MEDCouplingMesh)
+	 */
+	MEDCoupling::MEDCouplingUMesh * getBoundaryMEDCouplingMesh ( void )  const ;
+
+	/**
 	 * \brief return a group surrounding the mesh
 	 */
 	Mesh getBoundaryGroupMesh ( std::string groupName, int nth_group_match = 0 )  const ;
