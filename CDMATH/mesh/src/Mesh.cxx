@@ -143,7 +143,9 @@ Mesh::Mesh( const Mesh& mesh )
 
     _boundaryFaceIds=mesh.getBoundaryFaceIds();
     _boundaryNodeIds=mesh.getBoundaryNodeIds();
-
+	
+    _boundaryMesh=mesh.getBoundaryMEDCouplingMesh();
+		
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
     
