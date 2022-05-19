@@ -18,9 +18,11 @@
 #
 
 SALOME_CONFIGURE_FILE(SalomeApp.xml.in SalomeApp.xml)
+SALOME_CONFIGURE_FILE(SalomeApp.xml.in SalomeAppSL.xml)
 
 SET(_res_FILES
     ${CMAKE_CURRENT_BINARY_DIR}/SalomeApp.xml
+    ${CMAKE_CURRENT_BINARY_DIR}/SalomeAppSL.xml
     icon.png
  )
 
