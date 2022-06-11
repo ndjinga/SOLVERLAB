@@ -83,8 +83,8 @@ def jacobianMatrices(normale,coeff,rho_l,q_l,rho_r,q_r):
     tangent[0]= normale[1];
     tangent[1]=-normale[0];
 
-    u_l = cdmath.Vector(2); u_l[0]*=q_l[0]/rho_l; u_l[1]*=q_l[1]/rho_l;
-    u_r = cdmath.Vector(2); u_r[0]*=q_r[0]/rho_r; u_r[1]*=q_r[1]/rho_r;
+    u_l = cdmath.Vector(2); u_l[0]=q_l[0]/rho_l; u_l[1]=q_l[1]/rho_l;
+    u_r = cdmath.Vector(2); u_r[0]=q_r[0]/rho_r; u_r[1]=q_r[1]/rho_r;
     if rho_l<0 or rho_r<0 :
         print( "rho_l=",rho_l, " rho_r= ",rho_r )
         raise ValueError("Negative density")
@@ -223,7 +223,7 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
             Un[k*(dim+1)+2] = Un[k*(dim+1)+0]*velocity_field[k,1]
             if(dim==3):
                 Un[k*(dim+1)+3] = Un[k*(dim+1)+0]*velocity_field[k,2]
-        print(Un[k*(dim+1)+0],Un[k*(dim+1)+1],Un[k*(dim+1)+2])
+    
     #sauvegarde de la donnée initiale
     pressure_field.setTime(time,it);
     pressure_field.writeVTK("EulerSystem"+str(dim)+"DUpwind"+"_isImplicit"+str(isImplicit)+meshName+"_pressure");
@@ -237,7 +237,7 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
         iterGMRESMax=50
         LS=cdmath.LinearSolver(divMat,Un,iterGMRESMax, precision, "GMRES","ILU")
 
-    print("Starting computation of the linear wave system with an explicit UPWIND scheme …")
+    print("Starting computation of the isentropic Euler system with an explicit UPWIND scheme …")
     
     # Starting time loop
     while (it<ntmax and time <= tmax and not isStationary):
@@ -317,7 +317,7 @@ def solve(my_mesh,filename,resolution, isImplicit):
 
     # Problem data
     tmax = 1.
-    ntmax = 1
+    ntmax = 100
     cfl = 1./my_mesh.getSpaceDimension()
     output_freq = 1
 
