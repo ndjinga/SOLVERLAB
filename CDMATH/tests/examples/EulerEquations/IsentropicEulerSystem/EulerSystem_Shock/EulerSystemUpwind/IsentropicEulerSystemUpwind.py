@@ -22,7 +22,7 @@ import VTK_routines
 import sys
 
 p0=155e5#reference pressure in a pressurised nuclear vessel (used for initial data)
-c0=700.#reference sound speed for water at 155 bars, 600K (used for eox p= rho c0**2
+c0=700.#reference sound speed for water at 155 bars, 600K (used for eos p= rho c0**2
 precision=1e-5
 
 def initial_conditions_shock(my_mesh, isCircle):
@@ -68,7 +68,7 @@ def initial_conditions_shock(my_mesh, isCircle):
             pressure_field[i] = p0
             pass
         else:
-            pressure_field[i] = p0
+            pressure_field[i] = p0/2
             pass
         pass
 
@@ -109,10 +109,10 @@ def jacobianMatrices(normale,coeff,rho_l,q_l,rho_r,q_r):
     AbsRoeMa[1,0]=(abs(un-c0)*(un+c0)*(u[0]-c0*normale[0])-abs(un+c0)*(un-c0)*(u[0]+c0*normale[0]))/(2*c0)-abs(un)*(u*tangent)*tangent[0];
     AbsRoeMa[2,0]=(abs(un-c0)*(un+c0)*(u[1]-c0*normale[1])-abs(un+c0)*(un-c0)*(u[1]+c0*normale[1]))/(2*c0)-abs(un)*(u*tangent)*tangent[1];
     #subMatrix=(abs(un+c0)*((u-c0*normale)^normale)-abs(un-c0)*((u-c0*normale)^normale))/(2*c0)+abs(un)*(tangent^tangent);
-    AbsRoeMa[1,1]=(abs(un+c0)*((u[0]-c0*normale[0])*normale[0])-abs(un-c0)*((u[0]-c0*normale[0])*normale[0]))/(2*c0)+abs(un)*(tangent[0]*tangent[0]);#subMatrix[0,0];
-    AbsRoeMa[1,2]=(abs(un+c0)*((u[0]-c0*normale[0])*normale[1])-abs(un-c0)*((u[0]-c0*normale[0])*normale[1]))/(2*c0)+abs(un)*(tangent[0]*tangent[1]);#subMatrix[0,1];
-    AbsRoeMa[2,1]=(abs(un+c0)*((u[1]-c0*normale[1])*normale[0])-abs(un-c0)*((u[1]-c0*normale[1])*normale[0]))/(2*c0)+abs(un)*(tangent[1]*tangent[0]);
-    AbsRoeMa[2,2]=(abs(un+c0)*((u[1]-c0*normale[1])*normale[1])-abs(un-c0)*((u[1]-c0*normale[1])*normale[1]))/(2*c0)+abs(un)*(tangent[1]*tangent[1]);
+    AbsRoeMa[1,1]=(abs(un+c0)*((u[0]+c0*normale[0])*normale[0])-abs(un-c0)*((u[0]-c0*normale[0])*normale[0]))/(2*c0)+abs(un)*(tangent[0]*tangent[0]);#subMatrix[0,0];
+    AbsRoeMa[1,2]=(abs(un+c0)*((u[0]+c0*normale[0])*normale[1])-abs(un-c0)*((u[0]-c0*normale[0])*normale[1]))/(2*c0)+abs(un)*(tangent[0]*tangent[1]);#subMatrix[0,1];
+    AbsRoeMa[2,1]=(abs(un+c0)*((u[1]+c0*normale[1])*normale[0])-abs(un-c0)*((u[1]-c0*normale[1])*normale[0]))/(2*c0)+abs(un)*(tangent[1]*tangent[0]);
+    AbsRoeMa[2,2]=(abs(un+c0)*((u[1]+c0*normale[1])*normale[1])-abs(un-c0)*((u[1]-c0*normale[1])*normale[1]))/(2*c0)+abs(un)*(tangent[1]*tangent[1]);
 
     return (RoeMat-AbsRoeMa)*coeff*0.5,un;
 
@@ -122,8 +122,8 @@ def computeDivergenceMatrix(my_mesh,implMat,Un):
     nbComp=dim+1
     normal=cdmath.Vector(dim)
     maxAbsEigVa = 0
-    q_l=cdmath.Vector(2);
-    q_r=cdmath.Vector(2);
+    q_l=cdmath.Vector(dim);
+    q_r=cdmath.Vector(dim);
 
     idMoinsJacCL=cdmath.Matrix(nbComp)
     
@@ -233,12 +233,14 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
     dx_min=my_mesh.minRatioVolSurf()
 
     divMat=cdmath.SparseMatrixPetsc(nbCells*(1+dim),nbCells*(1+dim),(nbVoisinsMax+1)*(1+dim))
-    if( isImplicit):
+
+    if(isImplicit):
         iterGMRESMax=50
         LS=cdmath.LinearSolver(divMat,Un,iterGMRESMax, precision, "GMRES","ILU")
-
-    print("Starting computation of the isentropic Euler system with an explicit UPWIND scheme …")
-    
+        print("Starting computation of the isentropic Euler system with an implicit UPWIND scheme …")
+    else: 
+        print("Starting computation of the isentropic Euler system with an explicit UPWIND scheme …")
+   
     # Starting time loop
     while (it<ntmax and time <= tmax and not isStationary):
         divMat.zeroEntries()#sets the matrix coefficients to zero
@@ -246,6 +248,8 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
         dt = cfl * dx_min / vp_max#To update at each time step
             
         if(isImplicit):
+            #Multiply by dt
+            divMat*=dt
             #Adding the identity matrix on the diagonal
             divMat.diagonalShift(1)#only after  filling all coefficients
             dUn=Un.deepCopy()
@@ -257,14 +261,15 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
             dUn-=Un
 
         else:
-            dUn=divMat*Un
-#            print(Un)
+            dUn=(divMat*Un)*dt
             Un-=dUn
-        
+
+        isStationary = dUn.norm()<precision
+
         time=time+dt;
         it=it+1;
  
-         #Sauvegardes
+        #Sauvegardes
         if(it%output_freq==0 or it>=ntmax or isStationary or time >=tmax):
             print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
 
@@ -275,14 +280,12 @@ def EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, i
                     velocity_field[k,1]=Un[k*(dim+1)+2]/Un[k*(dim+1)+0]
                     if(dim>2):
                         velocity_field[k,2]=Un[k*(dim+1)+3]/Un[k*(dim+1)+0]
-#                print(Un[k*(dim+1)+0],Un[k*(dim+1)+1],Un[k*(dim+1)+2])
 
             pressure_field.setTime(time,it);
             pressure_field.writeVTK("EulerSystem"+str(dim)+"DUpwind"+"_isImplicit"+str(isImplicit)+meshName+"_pressure",False);
             velocity_field.setTime(time,it);
             velocity_field.writeVTK("EulerSystem"+str(dim)+"DUpwind"+"_isImplicit"+str(isImplicit)+meshName+"_velocity",False);
 
-    print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
     print()
 
     if(it>=ntmax):
@@ -311,6 +314,10 @@ def solve(my_mesh,filename,resolution, isImplicit):
     if( my_mesh.getSpaceDimension()!=2):
         raise ValueError("Only dimension 2 simulations allowed")
     print( "Numerical method : upwind")
+    if(isImplicit):
+        print("Implicit time discretisation")
+    else:
+        print("Explicit time discretisation")
     print( "Initial data : spherical wave")
     print( "Wall boundary conditions")
     print( "Mesh name : ",filename , my_mesh.getNumberOfCells(), " cells")
@@ -319,7 +326,7 @@ def solve(my_mesh,filename,resolution, isImplicit):
     tmax = 1.
     ntmax = 100
     cfl = 1./my_mesh.getSpaceDimension()
-    output_freq = 1
+    output_freq = 10
 
     EulerSystemVF(ntmax, tmax, cfl, my_mesh, output_freq, filename,resolution, isImplicit)
 
