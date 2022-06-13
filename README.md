@@ -116,7 +116,7 @@ Generate documentation of CoreFlows module
 * make docCoreFlows
 
 Use of SOLVERLAB
--------------
+-----------------
 
 To use SOLVERLAB in your Python code `main.py `, you can load the SOLVERLAB environment in your terminal using the command
  * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
@@ -139,3 +139,8 @@ The SOLVERLAB environment variables consist in :
  * MED library path: `${MEDFILE_ROOT_DIR}/lib`
  * MEDCOUPLING library path: `${MEDCOUPLING_ROOT_DIR}/lib`
 
+
+Use of SOLVERLAB GUI
+--------------------
+
+See README_solverlabGUI.md
