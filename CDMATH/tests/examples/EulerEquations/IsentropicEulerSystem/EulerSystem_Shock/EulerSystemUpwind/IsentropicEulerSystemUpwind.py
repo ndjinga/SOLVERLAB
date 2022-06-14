@@ -108,6 +108,7 @@ def jacobianMatrices(normale,coeff,rho_l,q_l,rho_r,q_r):
     AbsRoeMa[0,2]= (abs(un+c0)-abs(un-c0))/(2*c0)*normale[1];
     AbsRoeMa[1,0]=(abs(un-c0)*(un+c0)*(u[0]-c0*normale[0])-abs(un+c0)*(un-c0)*(u[0]+c0*normale[0]))/(2*c0)-abs(un)*(u*tangent)*tangent[0];
     AbsRoeMa[2,0]=(abs(un-c0)*(un+c0)*(u[1]-c0*normale[1])-abs(un+c0)*(un-c0)*(u[1]+c0*normale[1]))/(2*c0)-abs(un)*(u*tangent)*tangent[1];
+    #Il faudrait swiger l'opérateur de produit vectoriel
     #subMatrix=(abs(un+c0)*((u-c0*normale)^normale)-abs(un-c0)*((u-c0*normale)^normale))/(2*c0)+abs(un)*(tangent^tangent);
     AbsRoeMa[1,1]=(abs(un+c0)*((u[0]+c0*normale[0])*normale[0])-abs(un-c0)*((u[0]-c0*normale[0])*normale[0]))/(2*c0)+abs(un)*(tangent[0]*tangent[0]);#subMatrix[0,0];
     AbsRoeMa[1,2]=(abs(un+c0)*((u[0]+c0*normale[0])*normale[1])-abs(un-c0)*((u[0]-c0*normale[0])*normale[1]))/(2*c0)+abs(un)*(tangent[0]*tangent[1]);#subMatrix[0,1];
@@ -147,7 +148,7 @@ def computeDivergenceMatrix(my_mesh,implMat,Un):
                     # hypothese non verifiée 
                     cellAutre = Fk.getCellsId()[0];
                 else :
-                    raise ValueError("computeFluxes: problem with mesh, unknown cell number")
+                    raise ValueError("computeDivergenceMatrix: problem with mesh, unknown cell number")
                     
                 q_l[0]=Un[j*nbComp+1]
                 q_l[1]=Un[j*nbComp+2]
@@ -185,7 +186,7 @@ def computeDivergenceMatrix(my_mesh,implMat,Un):
                     implMat.addValue(j*nbComp,        j*nbComp,Am*(-1.))
                 elif( Fk.getGroupName() != "Neumann"):#Nothing to do for Neumann boundary condition
                     print( Fk.getGroupName() )
-                    raise ValueError("computeFluxes: Unknown boundary condition name");
+                    raise ValueError("computeDivergenceMatrix: Unknown boundary condition name");
             
             maxAbsEigVa = max(maxAbsEigVa,abs(un+c0),abs(un-c0));
     
