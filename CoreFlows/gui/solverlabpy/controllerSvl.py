@@ -768,7 +768,7 @@ class ControllerSvl(ControllerXyz):
       else:
         etudeDir = testdir
         break
-    os.mkdir(etudeDir)
+    os.makedirs(etudeDir)
     logger.info("Launch solverlab in %s" % etudeDir)
 
     # ask to save .med in case dir
@@ -874,6 +874,7 @@ EXIT %solverlabExitCode%
     # logger.debug("current etude directory %s" % etudeDir)
 
     PACKAGESPY_ROOT_DIR = os.getenv("PACKAGESPY_ROOT_DIR")
+    SOLVERLABGUI_ROOT_DIR = os.getenv("SOLVERLABGUI_ROOT_DIR")
     nbproc = int(self._model.Analysis.caseSolverlab.NumberOfProcessors)
     if nbproc == 0:
       nbproc = 1
@@ -906,6 +907,7 @@ EXIT %solverlabExitCode%
 echo "########## START"
 
 export PACKAGESPY_ROOT_DIR={PACKAGESPY_ROOT_DIR}
+export SOLVERLABGUI_ROOT_DIR={SOLVERLABGUI_ROOT_DIR}
 
 cd {etudeDir}
 

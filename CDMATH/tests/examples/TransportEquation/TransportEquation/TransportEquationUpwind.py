@@ -88,7 +88,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt,test_bc,velocity):
                     # hypothese non verifiée 
                     cellAutre = Fk.getCellsId()[0];
                 else :
-                    raise ValueError("computeFluxes: problem with mesh, unknown cel number")
+                    raise ValueError("computeFluxes: problem with mesh, unknown cell number")
                     
                 implMat.addValue(j*nbComp,cellAutre*nbComp,Am)
                 implMat.addValue(j*nbComp,        j*nbComp,Am*(-1.))
@@ -147,7 +147,7 @@ def TransportEquationVF(ntmax, tmax, cfl, my_mesh, output_freq, meshName, resolu
         
         iterGMRESMax=50
         LS=cdmath.LinearSolver(divMat,Un+S*dt,iterGMRESMax, precision, "GMRES","ILU")
-        LS.setComputeConditionNumber()
+        #LS.setComputeConditionNumber()#Computes the condition number of the preconditioned operator
         
     print("Starting computation of the linear transport equation with an Upwind scheme …")
     

@@ -1120,59 +1120,27 @@ StationaryDiffusionEquation::setHeatPowerField(string fileName, string fieldName
 }
 
 void 
-StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type){
+StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type){
 	if(_FECalculation && field_support_type != NODES)
-		cout<<"Warning : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 	else if(!_FECalculation && field_support_type == NODES)
-		cout<<"Warning : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 
-	Field VV;
-	
-	switch(field_support_type)
-	{
-	case CELLS:
-		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case NODES:
-		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case FACES:
-		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	default:
-		std::ostringstream message;
-		message << "Error StationaryDiffusionEquation::setDirichletBoundaryCondition \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
-		throw CdmathException(message.str().c_str());
-	}	
+	Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
+
 	/* For the moment the boundary value is taken constant equal to zero */
 	_limitField[groupName]=LimitFieldStationaryDiffusion(DirichletStationaryDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
 }
 
 void 
-StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type){
+StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type){
 	if(_FECalculation && field_support_type != NODES)
-		cout<<"Warning : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 	else if(!_FECalculation && field_support_type == NODES)
-		cout<<"Warning : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+		cout<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
 
-	Field VV;
+	Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
 	
-	switch(field_support_type)
-	{
-	case CELLS:
-		VV = Field(fileName, CELLS, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case NODES:
-		VV = Field(fileName, NODES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	case FACES:
-		VV = Field(fileName, FACES, fieldName, timeStepNumber, order, meshLevel);
-		break;
-	default:
-		std::ostringstream message;
-		message << "Error StationaryDiffusionEquation::setNeumannBoundaryCondition \n Accepted field support integers are "<< CELLS <<" (for CELLS), "<<NODES<<" (for NODES), and "<< FACES <<" (for FACES)" ;
-		throw CdmathException(message.str().c_str());
-	}	
 	/* For the moment the boundary value is taken constant equal to zero */
 	_limitField[groupName]=LimitFieldStationaryDiffusion(NeumannStationaryDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
 }

@@ -2,7 +2,7 @@
 
 | ![logo](logoSOLVERLAB.png) |
 |:--:|
-| *SOLVERLAB* |
+| **SOLVERLAB** |
 
 </center>
 
@@ -26,7 +26,7 @@ The main research objectives of SOLVERLAB are the study of
 - The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
 
 The library is currently maintained and distributed by the SALOME developpement team on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows-10.
-The corresponding binary files can be found  [here](https://www.salome-platform.org/downloads/current-version).
+The corresponding binary files can be found  [here](https://www.salome-platform.org/?page_id=15).
 
 Examples of use
 ---------------
@@ -43,7 +43,7 @@ Examples of use
 
 Download SOLVERLAB sources for compilation
 ----------------------------------
-The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/downloads/current-version).
+The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15).
 However the binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a better alternative using less disk and memory space.
 
 To compile SOLVERLAB source, first create a source directory, for instance with:
@@ -80,14 +80,14 @@ Directories. Create the suggested build and installation folders:
 Compile and install SOLVERLAB
 --------------------------
 Simpler build for a minimum version:
-* `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_GUI=ON -DSOLVERLAB_WITH_DOCUMENTATION=ON `  
+* `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON `  
 > This will download and build the following dependencies
 > - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz
 > - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
 > - F2CBLASLAPACK from http://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
 > - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
 > - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
-> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.7.0.tar.gz
+> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
 
 If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:
 * `cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON`  
@@ -116,17 +116,13 @@ Generate documentation of CoreFlows module
 * make docCoreFlows
 
 Use of SOLVERLAB
------------------
+----------------
 
 To use SOLVERLAB in your Python code `main.py `, you can load the SOLVERLAB environment in your terminal using the command
  * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
 Then in your terminal simply type
 - `python3 main.py `
 
-To use the Graphical User Interface of SOLVERLAB, you can load the SOLVERLAB environment in your terminal using the command
- * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
-Then in your terminal simply type
-- `python3 $SOLVERLABGUI `
 
 If performance or parallelism is an issue for your simulations, you can use SOLVERLAB librairies with your C++ code :
  * C++ libraries: `export LD_LIBRARY_PATH=~/workspace/SOLVERLAB/SOLVERLAB_install/lib`
@@ -144,3 +140,12 @@ Use of SOLVERLAB GUI
 --------------------
 
 See README_solverlabGUI.md
+
+A new GUI based on the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) is being developped for SOLVERLAB. In order to use the new GUI use the cmake option `-DSOLVERLAB_WITH_PACKAGESPY=ON` that will download the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) from github.
+If you have a local copy of the library PACKAGESPY, give the to solverlab using the cmake option `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`.
+
+To use the Graphical User Interface of SOLVERLAB, you can load the SOLVERLAB environment in your terminal using the command
+ * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
+Then in your terminal simply type
+- `python3 $SOLVERLABGUI -g`
+

@@ -3,7 +3,7 @@
 
     \clearpage
 
-.. _SOLVERLAB: https://www.nano.uni-jena.de/en/solverlab.html
+.. _SOLVERLAB: https://github.com/ndjinga/SOLVERLAB
 .. _SALOME: http://www.salome-platform.org
 .. _SPHINX: http://sphinx-doc.org
 .. _MATPLOTLIB: https://matplotlib.org
@@ -44,3 +44,8 @@
 .. _7-zip: https://www.7-zip.org
 .. _Solveralabinstall: https://github.com/ndjinga/SOLVERLAB#compile-and-install-solverlab
 .. _SolverlabDiffusion: https://github.com/ndjinga/SOLVERLAB/blob/master/CoreFlows/Documentation/PhysicalModels/DiffusionEq.ipynb
+.. _CEA: https://www.cea.fr
+.. _ModelViewController: https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller
+.. _API: https://en.wikipedia.org/wiki/API
+.. _PACKAGESPY: https://github.com/ndjinga/PACKAGESPYGUI
+

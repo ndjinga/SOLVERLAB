@@ -56,6 +56,9 @@ SET(MED_MESHES  ${CMAKE_CURRENT_SOURCE_DIR}/ressources  )
 
 FILE(COPY doc/ DESTINATION share/doc/)
 
+#variables to be used in both example ans validation tests
+SET(WaveSystemLinearSolvers_script ${CMAKE_CURRENT_SOURCE_DIR}/examples/WaveSystem/WaveSystem_LinearSolvers/WaveSystemLinearSolvers.py)
+
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
   add_subdirectory (examples) #basic test that run a single calculation

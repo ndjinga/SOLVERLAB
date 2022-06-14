@@ -78,7 +78,23 @@ def VectorIdiv(self,*args):
 %include "MEDCouplingCommon.i"
 %include std_string.i
 
-/* %include slepc4py.i */
+typedef const char* EPSType;
+typedef const char* SVDType;
+
+typedef enum { EPS_LARGEST_MAGNITUDE=1,
+               EPS_SMALLEST_MAGNITUDE,
+               EPS_LARGEST_REAL,
+               EPS_SMALLEST_REAL,
+               EPS_LARGEST_IMAGINARY,
+               EPS_SMALLEST_IMAGINARY,
+               EPS_TARGET_MAGNITUDE,
+               EPS_TARGET_REAL,
+               EPS_TARGET_IMAGINARY,
+               EPS_ALL,
+               EPS_WHICH_USER } EPSWhich;
+
+typedef enum { SVD_LARGEST,
+               SVD_SMALLEST } SVDWhich;
 
 %include "GenericMatrix.hxx"
 %include "Matrix.hxx"
@@ -569,3 +585,7 @@ Vector.__isub__=VectorIsub
 Vector.__imul__=VectorImul
 Vector.__idiv__=VectorIdiv
 %}
+
+namespace std {
+ %template(VectorVectorDouble) vector< vector<double> >;
+};

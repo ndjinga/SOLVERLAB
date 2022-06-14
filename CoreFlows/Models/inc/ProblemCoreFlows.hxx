@@ -40,7 +40,8 @@ enum linearSolver
 {
 	GMRES,/**< linearSolver is GMRES */
 	BCGS,/**< linearSolver is BiCGSstab */
-	CG/**< linearSolver is CG */
+	CG,/**< linearSolver is Conjugate Gradient */
+	CGNE/**< linearSolver is Conjugate Gradient for Normal Equations */
 };
 
 //! enumeration preconditioner
@@ -352,17 +353,6 @@ public :
 	void setInitialField(const Field &VV);
 
 	/** \fn setInitialField
-	 * \brief sets the initial field from a field in a med file. 
-	 * \details This function is added because we have not been able yet to swig properly the enum EntityType. It is replaced by an integer.
-	 * \param [in] string : the file name
-	 * \param [in] string : the field name
-	 * \param [in] int : the time step number
-	 * \param [in] int : int corresponding to the enum CELLS, NODES or FACES
-	 * \param [out] void
-	 *  */
-	void setInitialField(string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, int field_support_type);
-
-	/** \fn setInitialField
 	 * \brief sets the initial field from a field in a med file
 	 * \details
 	 * \param [in] string : the file name
@@ -426,30 +416,6 @@ public :
 	void setInitialFieldConstant( int nDim, const vector<double> Vconstant, double xmin, double xmax,int nx, string leftSide, string rightSide,
 			double ymin=0, double ymax=0, int ny=0, string backSide="", string frontSide="",
 			double zmin=0, double zmax=0, int nz=0, string bottomSide="", string topSide="", EntityType typeField = CELLS);
-
-	/** \fn setInitialFieldConstant
-	 * \brief sets a constant initial field
-	 * \details This function is added because we have not been able yet to swig roperly the enum EntityType. It is replaced by an integer.
-	 * \param [in] int the space dimension
-	 * \param [in] vector<double> the value in each cell
-	 * \param [in] double the lowest value in the x direction
-	 * \param [in] double the highest value in the x direction
-	 * \param [in] string name of the left boundary
-	 * \param [in] string name of the right boundary
-	 * \param [in] double the lowest value in the y direction
-	 * \param [in] double the highest value in the y direction
-	 * \param [in] string name of the back boundary
-	 * \param [in] string name of the front boundary
-	 * \param [in] double the lowest value in the z direction
-	 * \param [in] double the highest value in the z direction
-	 * \param [in] string name of the bottom boundary
-	 * \param [in] string name of the top boundary
-	 * \param [in] integer corresponding to the field support enum : CELLS, NODES or FACES
-	 * \param [out] void
-	 *  */
-	void setInitialFieldConstant( int nDim, const vector<double> Vconstant, double xmin, double xmax,int nx, string leftSide, string rightSide,
-			double ymin, double ymax, int ny, string backSide, string frontSide,
-			double zmin, double zmax, int nz, string bottomSide, string topSide, int type_of_field );
 
 	/** \fn setInitialFieldStepFunction
 	 * \brief sets a step function initial field (Riemann problem)
@@ -607,12 +573,18 @@ public :
 	}
 
 	/** \fn setLinearSolver
-	 * \brief sets the linear solver and preconditioner
-	 * \details virtual function overloaded by intanciable classes
-	 * @param kspType linear solver type (GMRES or BICGSTAB)
-	 * @param pcType preconditioner (ILU,LU or NOPC)
+	 * \brief Legacy function that sets the linear solver and preconditioner
+	 * @param Three choices of linear solvers (GMRES, BICGSTAB or CG)
+	 * @param Five choices of preconditioner (ILU,LU, ICC, CHOLESKY or NOPC)
 	 */
 	void setLinearSolver(linearSolver solverName, preconditioner pcType, double maxIts=50);
+
+	/** \fn setLinearSolver
+	 * \brief sets the linear solver and preconditioner
+	 * @param Any available solver in PETSc (See PETSc KSPType)
+	 * @param Any available preconditioner in PETSc (See PETSc PCType)
+	 */
+	void setLinearSolver(std::string solverName, std::string pcName, double maxIts=50);
 
 	/** \fn setNewtonSolver
 	 * \brief sets the Newton type algorithm for solving the nonlinear algebraic system arising from the discretisation of the PDE

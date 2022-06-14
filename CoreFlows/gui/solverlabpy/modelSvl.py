@@ -15,48 +15,6 @@ import solverlabpy.equationSvl as EQ
 import solverlabpy.diffusionEq
 
 
-class MedSvl(_XyzConstrainBase):
-  """
-  Class containing the path to med file and list of equation to apply on it
-  """
-  _attributesList = [
-    ("GeometryMed", "DataFromFileMedXyz"),
-    ("equation", "ListOfEquation"),
-  ]
-  _helpDict = {
-    "GeometryMed": ("The file .med for initial geometry and fields etc.", ""),
-    "equation": ("Right click to choose the equation you want to apply on the .med", ""),
-  }
-
-  def __init__(self):
-    super(MedSvl, self).__init__()
-    self.setIsCast(True)
-    self._setAllAttributesList()
-    self.setDefaultValues()
-
-  def setDefaultValues(self):
-    # self.FileMed = "Right click to browse file"
-    # self.equation = EQ.EquationGeneralSvl()
-    return
-
-
-class ListOfMedSvl(ListOfBaseXyz):
-  _allowedClasses = [MedSvl]
-
-  def getActionsContextMenu(self):
-    """append action 'Append file med'"""
-    actions = super(ListOfMedSvl, self).getActionsContextMenu()
-    # actions.append( self._createAction('Append file materiaux', None, 'Browse looking for file materiaux.xml', self.browseDialog, "materiauxamt") )
-    return actions
-
-  def browseDialog(self):
-    for i in self._allowedClasses:
-      self.addItem(i)
-    f = self[-1].fileMateriaux
-    f.browseDialog()
-    return
-
-
 class ModelSvl(_XyzConstrainBase):
   """
   General model for solverlab
@@ -138,4 +96,4 @@ class ModelSvl(_XyzConstrainBase):
     self.getController().UserExpandSignal.emit(expanded)
 
 
-CLFX.appendAllXyzClasses([MedSvl, ListOfMedSvl, ModelSvl, ])
+CLFX.appendAllXyzClasses([ModelSvl, ])

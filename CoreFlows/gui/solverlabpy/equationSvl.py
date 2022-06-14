@@ -127,6 +127,7 @@ def getListField(file):
 
 
 class ListOfEquation(ListOfBaseXyz):
+  """List of all solverlab model implemented"""
   _allowedClasses = ["DiffusionEq"]
 
   def getActionsContextMenu(self):

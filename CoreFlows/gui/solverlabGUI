@@ -136,6 +136,8 @@ if __name__ == "__main__":
     else:
       # resolve '/../..'  and etc for windows raccourcis and .bat, for example
       solverlabgui_workdir = os.path.realpath(solverlabgui_workdir)
+    if not os.path.isdir(solverlabgui_workdir):
+        os.makedirs(solverlabgui_workdir)
     os.environ["SOLVERLABGUI_WORKDIR"] = solverlabgui_workdir
 
     # set log files directory same as SOLVERLABGUI_WORKDIR/logs if not set

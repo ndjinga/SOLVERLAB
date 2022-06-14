@@ -3,7 +3,7 @@
 # Name        : Calcul VF du spectre de l'opérateur de Laplace 2D -\triangle avec conditions aux limites de Dirichlet u=0
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2020
-# Description : Utilisation de la méthode des volumes finis P1 avec champs discrétisés aux cellules d'un maillage quelconque
+# Description : Utilisation de la méthode des volumes finis avec champs discrétisés aux cellules d'un maillage quelconque
 #		        Création et sauvegarde des champs résultant en utilisant la librairie CDMATH
 #================================================================================================================================
 
@@ -74,7 +74,7 @@ for i in range(nbCells):
         Rigidite.addValue(i,i,coeff) # terme diagonal
 
 print("Stiffness matrix construction done")
-Rigidite.viewMatrix(True, 0, "RigidityMatrix_FiniteVolumesOn"+mesh_name+"Laplace")
+Rigidite.viewNonZeroStructure( 0, "RigidityMatrix_FiniteVolumesOn"+mesh_name+"Laplace")
 Rigidite.plotEigenvalues("FiniteVolumesOn"+mesh_name+"Laplace")
 
 # Conditionnement de la matrice de rigidité
@@ -88,7 +88,9 @@ nev=10
 d=Rigidite.getEigenvectorsDataArrayDouble(nev)
 my_eigenfield = cdmath.Field("Eigenvectors field", cdmath.CELLS, my_mesh, nev)
 my_eigenfield.setFieldByDataArrayDouble(d)
-
+# Free memory
+d.decrRef()
+    
 # Sauvegarde du champ résultat
 #===========================
 my_eigenfield.writeVTK("spectrumFiniteVolumesOn"+mesh_name+"Laplace")

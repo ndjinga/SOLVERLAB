@@ -14,8 +14,8 @@
 
 #include "MEDCouplingUMesh.hxx"
 #include "Vector.hxx"
-#include <petsc.h>
 
+#include <petscmat.h>
 #include <slepceps.h>
 #include <slepcsvd.h>
 
@@ -101,9 +101,21 @@ public:
 
 	friend SparseMatrixPetsc operator*(const SparseMatrixPetsc& M, const SparseMatrixPetsc& N) ;
 
-	void viewMatrix(bool useXWindow=false, double pause_lenght=0, std::string matrixName="") const ;
+	/**
+	 * Display non-zero coefficients structure (through picture)
+	 * Plot non-zero structure on screen and dump picture on a file
+	 * @param double pause_lenght :  duration of the picture displayed on screen. Wait for user input if value is -1.
+	 * @param string matrixName : matrix non-zero structure is dumped to file matrixName.ppm (portable pixmap with no compression)
+	 */
+	void viewNonZeroStructure(double pause_lenght=0, std::string matrixName="myMatrix") const ;
+	/**
+	 * Display matrix coefficients on terminal
+	 * @param double pause_lenght : if drawMatrix is true, duration of the picture displayed on screen. Wait for user input if value is -1.
+	 * @param string matrixName : matrix non-zero structure  dumped to file matrixName.ppm (portable pixmap with no compression)
+	 */
+	void printCoefficients(std::string matrixName="") const ;
 	//Save matrix coefficients into a file in ascii or binary mode
-	void saveMatrix(std::string filename, bool binaryMode=false) const ;
+	void saveToFile(std::string filename, bool binaryMode=false) const ;
 	double getMatrixCoeff(int i, int j) const;    
 
 	bool containsPetscMatrix() const;
@@ -114,10 +126,15 @@ public:
     void diagonalShift(double lambda);
     void zeroEntries();//sets the matrix coefficients to zero
     
+    /* !!! Warning : the following two functions return only the real part of the eigenvalues */
     std::vector< double > getEigenvalues( int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getEigenvectors(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
-    void plotEigenvalues(std::string matrixName="", int nev=-1, double pause_lenght=0, double tol=1e-6, EPSWhich which=EPS_SMALLEST_MAGNITUDE, EPSType type = EPSKRYLOVSCHUR) const;
+    /* !!! Warning : the following function returns only the real part of the eigenvectors */
     MEDCoupling::DataArrayDouble * getEigenvectorsDataArrayDouble(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR) const;
+
+	/* This is the only function that returns both the real and imaginary parts of the spectrum */
+    std::vector< std::vector< double > >  plotEigenvalues(std::string matrixName="", int nev=-1, double pause_lenght=0, double tol=1e-6, EPSWhich which=EPS_SMALLEST_MAGNITUDE, EPSType type = EPSKRYLOVSCHUR) const;
+
     std::vector< double > getSingularValues( int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
     std::vector< Vector > getSingularVectors(int nsv, SVDWhich which=SVD_SMALLEST, double tol=1e-6, SVDType type = SVDCYCLIC) const;
     double getConditionNumber(bool isSingular=false, double tol=1e-6) const;
@@ -132,7 +149,7 @@ private:
 
 	int _numberOfNonZeros ;//The maximum number of nonzeros coefficients per line (or an upper bound)
 	
-	int computeSpectrum(int nev, double ** valP, double ***vecP, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
+	int computeSpectrum(int nev, double ** valPr, double ** valPi, double ***vecPr, double ***vecPi, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6, EPSType type = EPSKRYLOVSCHUR, bool viewEigenvaluesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
 	int computeSVD     (int nsv, double ** valS, double ***vecS, SVDWhich which=SVD_SMALLEST          , double tol=1e-6, SVDType type = SVDCYCLIC, bool viewSingularValuesInXWindows=false, double pause_lenght=0, std::string matrixName="") const;
 
 	Vector vecToVector(const Vec& vec) const ;

@@ -16,7 +16,6 @@
 
 
 from math import sin, cos, pi, sqrt
-from numpy import sign
 import cdmath
 import PV_routines
 import VTK_routines
@@ -79,7 +78,7 @@ def initial_conditions_square_vortex(my_mesh):
         
     return pressure_field, velocity_field
 
-def jacobianMatrices(normal, coeff, signun):
+def jacobianMatrices(normal, coeff ):
     dim=normal.size()
     A=cdmath.Matrix(dim+1,dim+1)
 
@@ -100,10 +99,6 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt):
 
     idMoinsJacCL=cdmath.Matrix(nbComp)
 
-    v0=cdmath.Vector(dim)
-    for i in range(dim) :
-        v0[i] = 1.
-
     for j in range(nbCells):#On parcourt les cellules
         Cj = my_mesh.getCell(j)
         nbFaces = Cj.getNumberOfFaces();
@@ -114,8 +109,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt):
             for i in range(dim) :
                 normal[i] = Cj.getNormalVector(k, i);#normale sortante
 
-            signun=sign(normal*v0)
-            Am=jacobianMatrices( normal,dt*Fk.getMeasure()/Cj.getMeasure(),signun);
+            Am=jacobianMatrices( normal,dt*Fk.getMeasure()/Cj.getMeasure() );
 
             cellAutre =-1
             if ( not Fk.isBorder()) :
@@ -127,7 +121,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt):
                     # hypothese non verifiée 
                     cellAutre = Fk.getCellsId()[0];
                 else :
-                    raise ValueError("computeFluxes: problem with mesh, unknown cel number")
+                    raise ValueError("computeFluxes: problem with mesh, unknown cell number")
                     
                 implMat.addValue(j*nbComp,cellAutre*nbComp,Am)
                 implMat.addValue(j*nbComp,        j*nbComp,Am*(-1.))
@@ -297,4 +291,4 @@ if __name__ == """__main__""":
         my_mesh = cdmath.Mesh(filename)
         solve(my_mesh,filename,100)
     else :
-        raise ValueError("WaveSystemUpwind.py expects a mesh file name")
+        raise ValueError("WaveSystemCentered.py expects a mesh file name")

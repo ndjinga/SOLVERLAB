@@ -51,12 +51,14 @@ class TestsLinearSolverSwig(unittest.TestCase):
         A1[1, 0] = -1.
         A1[1, 1] =  1.
 
-        A1.viewMatrix()#Display matrix coefficients on the screen
-        A1.viewMatrix(True,0.05, "A1")#Open an x windows displaying the matrix nonzero structure
+        A1.saveToFile("A1.txt");#save ASCII text file
+        A1.saveToFile("A1.bin",True);#save binary (compressed) file
+        A1.printCoefficients()#Display matrix coefficients on the screen
+        A1.viewNonZeroStructure(0.05, "A1")#Open an x windows displaying the matrix nonzero structure
         #The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
-        #A1.viewMatrix(True,-1)#This pauses the x window until the user presses right mouse
-        #A1.getEigenvalues(    4, SLEPc.EPS.Which.SMALLEST_MAGNITUDE, 1.e-6, SLEPc.EPS.Type.KRYLOVSCHUR, True, 0.05, "A1");#Plot eigenvalues in a X-Windows and write the image in a file
-        #A1.getSingularValues( 4, SLEPc.SVD.Which.SMALLEST          , 1.e-6, SLEPc.SVD.Type.CYCLIC     , True, 0.05, "A1");#Plot eigenvalues in a X-Windows and write the image in a file
+        #A1.viewNonZeroStructure(-1)#This pauses the x window until the user presses right mouse
+        A1.getEigenvalues(    4, SLEPc.EPS.Which.SMALLEST_MAGNITUDE, 1.e-6, SLEPc.EPS.Type.KRYLOVSCHUR, True, 0.05, "A1_eigenvalues");#Plot eigenvalues in a X-Windows and write the image in a file
+        A1.getSingularValues( 4, SLEPc.SVD.Which.SMALLEST          , 1.e-6, SLEPc.SVD.Type.CYCLIC     , True, 0.05, "A1_singular_values");#Plot eigenvalues in a X-Windows and write the image in a file
         
         B1 = Vector(2)
         B1[0] = 2.
@@ -171,10 +173,14 @@ class TestsLinearSolverSwig(unittest.TestCase):
         A2[5, 4] = -1.
         A2[5, 5] = 2.
 
-        A2.viewMatrix()#Display matrix coefficients on the screen
-        A2.viewMatrix(True,0.05, "A2")#Open an x windows displaying the matrix nonzero structure
+        A2.saveToFile("A2.txt");#save ASCII text file
+        A2.saveToFile("A2.bin",True);#save binary (compressed) file
+        A2.printCoefficients()#Display matrix coefficients on the screen
+        A2.viewNonZeroStructure(0.05, "A2")#Open an x windows displaying the matrix nonzero structure
         #The following line would pause the x window until the user presses right mouse : left mouse->zoom in, middle mouse->zoom out, right mouse->continue with the simulation
-        #A2.viewMatrix(True,-1)#This pauses the x window until the user presses right mouse
+        #A2.viewNonZeroStructure(-1)#This pauses the x window until the user presses right mouse
+        A2.getEigenvalues(    4, SLEPc.EPS.Which.SMALLEST_MAGNITUDE, 1.e-6, SLEPc.EPS.Type.KRYLOVSCHUR, True, 0.05, "A2_eigenvalues");#Plot eigenvalues in a X-Windows and write the image in a file
+        A2.getSingularValues( 4, SLEPc.SVD.Which.SMALLEST          , 1.e-6, SLEPc.SVD.Type.CYCLIC     , True, 0.05, "A2_singular_values");#Plot eigenvalues in a X-Windows and write the image in a file
         
         Xana2 = Vector(6)
         Xana2[0] = 1.
@@ -210,7 +216,7 @@ class TestsLinearSolverSwig(unittest.TestCase):
         self.assertEqual(LS11.getTolerance(), 1.E-10)
         self.assertEqual(LS11.getNumberOfIter(), 1)
 
-        LS11 = LinearSolver(A2, B2, 500, 1.E-10, "LGMRES", "ILU")
+        LS11 = LinearSolver(A2, B2, 500, 1.E-10, "FGMRES", "ILU")
         X11 = LS11.solve()
         for i in range(X11.getNumberOfRows()):
             self.assertTrue(abs(X11[i] - Xana2[i]) < 1.E-10)

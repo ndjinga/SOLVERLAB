@@ -34,9 +34,13 @@ then
     export  LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libnetcdf.so
 fi
 
-# TODO 220114 do not work yet because needs a preexisting python3 context with PyQt5/numpy/matplotlib/paraview etc. compatible!
+
+export SOLVERLAB_ROOT_DIR=$SOLVERLAB_INSTALL
+
+# TODO 220114 Have to be tested because needs a preexisting python3 context with PyQt5/numpy/matplotlib/paraview etc. compatible!
 # this is PROTOTYPING of dir PACKAGESPY to get solverlabGUI (standalone installation, not in salome context)
-# please better use a tar.gz salome installation !
+
+# PACKAGESPY in SOLVERLAB_INSTALL as salome usage with PACKAGESPY_ROOT_DIR as version wambeke
 if [ -d ${SOLVERLAB_INSTALL}/PACKAGESPY ] # test existing dir PACKAGESPY to get solverlabGUI standalone 
 then
     export PACKAGESPY_ROOT_DIR=${SOLVERLAB_INSTALL}/PACKAGESPY
@@ -44,10 +48,16 @@ then
     export PYTHONPATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PYTHONPATH
     export PATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PATH
     export SOLVERLABGUI=${SOLVERLABGUI_ROOT_DIR}/solverlabGUI  # main initial python script
+    echo "solverlabGUI installation wambeke as salome"
     echo "to launch solverlabGUI type '\$SOLVERLABGUI --gui'"
 fi
 
-
-export SOLVERLAB_ROOT_DIR=$SOLVERLAB_INSTALL
-# export SOLVERLABGUI=$SOLVERLAB_INSTALL/bin/salome/solverlabGUI
-
+# PACKAGESPY in SOLVERLAB_INSTALL as standalone version Mickael
+if [ @SOLVERLAB_WITH_GUI@ = ON ] 
+then
+  export SOLVERLABGUI=$SOLVERLAB_INSTALL/bin/salome/solverlabGUI
+  export SOLVERLABGUI_ROOT_DIR=$SOLVERLAB_INSTALL/bin/salome/
+  export PACKAGESPY_ROOT_DIR=@PACKAGESPY_ROOT_DIR@
+  echo "solverlabGUI installation mi as salome"
+  echo "to launch solverlabGUI type '\$SOLVERLABGUI --gui'"
+fi

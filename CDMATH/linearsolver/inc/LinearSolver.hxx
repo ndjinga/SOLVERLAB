@@ -70,7 +70,13 @@ public: //----------------------------------------------------------------
 
 	std::string getNameOfPc( void ) const ;
 
-	Vector solve( void ) ;
+	Vector solve( Vector X = Vector(0) ) ;
+	/* Compute the residual P(AX-b) where P is the preconditioner and X is an input vector */
+	Vector getResidual( Vector X = Vector(0) ) const;
+	/* Compute the initial residual P(-b) where P is the preconditioner*/
+	Vector getInitialResidual( ) const;
+	/* Compute the final residual P(AX-b) where P is the preconditioner and X is a the solution vector */
+	Vector getFinalResidual( ) const;
 
 	void setMatrix(const GenericMatrix& matrix) ;
 
@@ -99,7 +105,8 @@ private: //----------------------------------------------------------------
 	void setLinearSolver(const GenericMatrix& matrix, const Vector& secondMember) ;
 	KSP getPetscKsp() const ;
 	PC getPetscPc() const ;
-
+	Vec getKSPSolution() const { return _solution; }
+	
 	Vec vectorToVec( const Vector& myVector ) const ;
 
 	Vector vecToVector(const Vec& vec) const ;
@@ -120,6 +127,7 @@ private: //----------------------------------------------------------------
 	Vec _smb;
 	PC _prec;
 	KSP _ksp;
+	Vec _solution;//store the initial guess before solve and the solution after solve
 
 };
 

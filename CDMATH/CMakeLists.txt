@@ -24,9 +24,9 @@ set (MEDFILE_ROOT_DIR     OFF CACHE STRING "MED library path" )
 set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.13.tar.gz
+set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.16.tar.gz
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.13.4.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK ${CDMATH_SOURCE_DIR}/pre_requis/PETSc/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
@@ -34,7 +34,7 @@ set (DOWNLOAD_HDF5          ${CDMATH_SOURCE_DIR}/pre_requis/PETSc/hdf5-1.10.3.ta
      CACHE STRING           "HDF5 tarball path/url" )
 set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
      CACHE STRING           "MED tarball path/url")
-set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.4.0.tar.gz
+set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
      CACHE STRING           "MEDCoupling tarball path/url" )
 
 

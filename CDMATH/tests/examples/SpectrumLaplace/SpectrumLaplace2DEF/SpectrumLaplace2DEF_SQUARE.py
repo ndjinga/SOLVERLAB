@@ -117,7 +117,7 @@ for i in range(nbCells):
 				#else: si condition limite non nulle au bord, ajouter la contribution du bord au second membre de la cellule j
 
 print("Stiffness matrix construction done")
-Rigidite.viewMatrix(True, 0, "RigidityMatrix_FiniteElementsOn"+mesh_name+"Laplace")
+Rigidite.viewNonZeroStructure( 0, "RigidityMatrix_FiniteElementsOn"+mesh_name+"Laplace")
 Rigidite.plotEigenvalues("FiniteElementsOn"+mesh_name+"Laplace")
 
 # Conditionnement de la matrice de rigidité
@@ -143,6 +143,8 @@ for j in range(nbBoundaryNodes):
       my_eigenfield[boundaryNodes[j],k]=0;#remplissage des valeurs pour les noeuds frontière (condition limite)
 for k in range(nev):
     my_eigenfield.setInfoOnComponent(k,d.getInfoOnComponent(k))
+# Free memory
+d.decrRef()
     
 # Sauvegarde du champ résultat
 #===========================

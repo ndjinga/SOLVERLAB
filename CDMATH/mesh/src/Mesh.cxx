@@ -69,6 +69,8 @@ Mesh::~Mesh( void )
 	//	_nodeGroups[i]->decrRef();
 	if( _meshNotDeleted)
 		(_mesh.retn())->decrRef();
+	//if( _boundaryMesh)
+	//    _boundaryMesh->decrRef();
 }
 
 std::string 
@@ -97,7 +99,8 @@ Mesh::Mesh( MEDCoupling::MCAuto<const MEDCoupling::MEDCouplingMesh> mesh )
     else
         _isStructured=false;
 
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -140,7 +143,9 @@ Mesh::Mesh( const Mesh& mesh )
 
     _boundaryFaceIds=mesh.getBoundaryFaceIds();
     _boundaryNodeIds=mesh.getBoundaryNodeIds();
-
+	
+    _boundaryMesh=mesh.getBoundaryMEDCouplingMesh();
+		
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
     
@@ -190,6 +195,7 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, int
     cout<<"Mesh name = "<<m->getName()<<", mesh dim = "<< _meshDim<< ", space dim = "<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
 
 	m->decrRef();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -241,7 +247,8 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     _meshNotDeleted=true;
     _isStructured = false;
 
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -283,7 +290,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
     _meshNotDeleted=true;
     _isStructured = true;
 
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -334,7 +342,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
     if(split_to_triangles_policy==0 || split_to_triangles_policy==1)
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
-            _mesh->simplexize(split_to_triangles_policy);
+            DataArrayIdType * o2n = _mesh->simplexize(split_to_triangles_policy);
+            o2n->decrRef();
 			_isStructured = false;
         }
     else if (split_to_triangles_policy != -1)
@@ -343,7 +352,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : Unknown splitting policy");
         }
     
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -401,13 +411,15 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
     if( split_to_tetrahedra_policy == 0 )
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
-            _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
+            DataArrayIdType * o2n = _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
+            o2n->decrRef();
 			_isStructured = false;
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
-            _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
+            DataArrayIdType * o2n = _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
+            o2n->decrRef();
 			_isStructured = false;
         }
     else if ( split_to_tetrahedra_policy != -1 )
@@ -416,7 +428,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : splitting policy value should be 0 or 1");
         }
     
-	setMesh();
+	MEDCouplingUMesh*  mu = setMesh();
+	mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -439,7 +452,8 @@ Mesh::setMesh( void )
 	MEDCouplingUMesh* mu2;//mesh of dimension N-1 containing the cell interfaces->cell/face connectivity
 	
 	mu->unPolyze();
-    mu->sortCellsInMEDFileFrmt( );
+    DataArrayIdType * o2n = mu->sortCellsInMEDFileFrmt( );
+	o2n->decrRef();
 	
 	if(_meshDim<2)
 		mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
@@ -903,13 +917,12 @@ Mesh::setMesh( void )
     _nodeGroupNames.push_back("Boundary");
     _faceGroupsIds.push_back(_boundaryFaceIds);
     _nodeGroupsIds.push_back(_boundaryNodeIds);
-    if( _meshDim>1 )
-    {    //Set face boundary group
+    if( _meshDim>1 )//Set face boundary group
 		_boundaryMesh = mu->computeSkin();
-		_faceGroups.push_back(_boundaryMesh);
-	}
-	else
-		_faceGroups.push_back(NULL);
+    else//in dimension 1 computeSkin leads to a degenerate mesh
+		_boundaryMesh = NULL;
+
+    _faceGroups.push_back(_boundaryMesh);
     _nodeGroups.push_back(NULL);
 
     desc->decrRef();
@@ -924,16 +937,16 @@ Mesh::setMesh( void )
 	revCell->decrRef();
 	revCellI->decrRef();
 
+    // Arrays used if _meshDim =3 to determine the edges
+	revNode2->decrRef();
+	revNodeI2->decrRef();
+	desc2->decrRef();
+	descI2->decrRef();
+	revDesc2->decrRef();
+	revDescI2->decrRef();
+
     if (_meshDim == 3)
-    {
-        revNode2->decrRef();
-        revNodeI2->decrRef();
-        desc2->decrRef();
-        descI2->decrRef();
-        revDesc2->decrRef();
-        revDescI2->decrRef();
         mu3->decrRef();
-    }
     	
     return mu;
 }
@@ -1459,6 +1472,7 @@ Mesh::setNodeGroups( const MEDFileMesh* medmesh, MEDCouplingUMesh*  mu)
 					throw CdmathException("No node found for group " + groupName );
 			}
 		}
+	nodeGroup->decrRef();
 	}
 }
 
@@ -1806,7 +1820,16 @@ Mesh::minRatioVolSurf() const
 Mesh
 Mesh::getBoundaryMesh ( void )  const 
 {
-	return Mesh(_boundaryMesh);
+	if( _boundaryMesh )
+		return Mesh(_boundaryMesh);
+	else
+		throw CdmathException("Mesh::getBoundaryMesh Boundary mesh is empty");
+}
+
+MEDCoupling::MEDCouplingUMesh *
+Mesh::getBoundaryMEDCouplingMesh ( void )  const 
+{
+	return _boundaryMesh;
 }
 
 Mesh 
@@ -1897,7 +1920,11 @@ Mesh::writeMED ( const std::string fileName, bool fromScratch ) const
 	{
 		const MEDCoupling::MEDCouplingIMesh* iMesh = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingMesh*) _mesh);
 		if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
-			MEDCoupling::WriteMesh(fname.c_str(),iMesh->convertToCartesian(), fromScratch);
+		{
+			MEDCouplingCMesh * cMesh = iMesh->convertToCartesian();
+			MEDCoupling::WriteMesh(fname.c_str(), cMesh, fromScratch);
+			cMesh->decrRef();
+		}
 		else//medcouplingcmesh : save directly
 			MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
 	}

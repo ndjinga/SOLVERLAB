@@ -1,6 +1,9 @@
 
 .. include:: ../rst_prolog.rst
 
+===============================================
+How to add a new physical model to SolverlabGUI
+===============================================
 
 .. _packagespy:
 
@@ -9,14 +12,16 @@
 Packagespy
 =============
 
-Packagespy est une bibliothèque python développé au CEA permettant la création d'interface graphique. Elle est basé sur le design du Model-Vue-Controller.
-Le Model est une structure de donnée de type Arbre ou les feuilles contiennent les valeurs.
-(Chaque partie est normalement indépendante et ne peux pas agir directement sur l'autre ainsi elle communique la l'aide de request au coeur de l'api)
+Packagespy est une bibliothèque python développée au CEA permettant la création simplifiée d'interfaces graphique (IHMs). 
+Elle est basé sur le *design-pattern* Modèle-Vue-Controleur (MVC).
+
+Packagespy a d'abord été conçu pour une disposition graphique spécifique basée sur PyQt V5.
+
 
 Vue
 --------------------
 
-Packagespy a d'abord été pensé pour une disposition graphique spécifique et est basé sur PyQt5. Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenetre central pour afficher du contenu.
+Un arbre (TREEVIEW) dans le dock de gauche, un barre d'action (TOOLBAR) dans le dock du haut et une fenetre centrale pour afficher du contenu.
 La classe TreeXmlXyz peut être directement instancié et utilisera donc des réglages par defaut.
 On peut aussi la dériver et créer un affichage spécifique pour une application. 
 
@@ -38,13 +43,23 @@ On peut aussi la dériver et créer un affichage spécifique pour une applicatio
 
 
 
-Model
+Modèle
 -----------
 
-Le Model est la structure de donnée qui va enregistrer les données entrées par l'utilisateur. Packagespy à été concu pour fonctionner avec un arbre de donnée. Chaque noeud comportant une Key, son nom et une Value, sa classe.
+Le Modèle est une structure bien organisée de données de type Arbre où les feuilles contiennent 
+les valeurs élémentaires (modifiables).
 
-Toute les classes utilisées en tant que noeud doivent hérité de xyz.BaseFreeXyz
-Packagespy fournit des classes abstraites (reconnaissable car commançant par "_" ) ainsi que des classes basique permettant de répondre a une grande parties des besoins de la plupart des structures de données necessaire aux lancements des applications.
+Le Modèle est la structure de donnée qui va enregistrer les données entrées par l'utilisateur. 
+Packagespy à été concu pour fonctionner avec un arbre de donnée. 
+Chaque noeud comportant une clé, son nom et une valeur, à chaque noeud, une classe.
+
+Toutes les classes utilisées en tant que noeud héritent de quelques classes de base de packagespy.
+Des classes abstraites (reconnaissables lorsque commençant par "_" ).
+Ainsi que des classes génériques tres courantes
+(flottant, entier, string, entier positif, etc...).
+permettant de répondre immediatement à une grande partie des définitions élémentaires
+d'une structure de données arborescente qui représente les données d'entrée d'une applications particulière.
+
 
 Une classe typique est composé de 3 éléments:
 

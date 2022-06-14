@@ -31,6 +31,7 @@ LinearSolver::LinearSolver ( void )
 	_nameOfMethod="";
 	_mat=NULL;
 	_smb=NULL;
+	_solution=NULL;
 	_ksp=NULL;
 	_prec=NULL;
 	_isSparseMatrix=false;
@@ -71,8 +72,10 @@ LinearSolver::~LinearSolver ( void )
 {
 	//if(&_mat != NULL)
 	//	MatDestroy(&_mat);
-	if(&_smb != NULL)
+	if(_smb != NULL)
 		VecDestroy(&_smb);
+	if(_solution != NULL)
+		VecDestroy(&_solution);
 	KSPDestroy(&_ksp);
 	//PetscFinalize();
 }
@@ -130,6 +133,7 @@ LinearSolver::LinearSolver( const GenericMatrix& matrix,
 	_secondMember = secondMember;
 	_mat = NULL;
 	_smb = NULL;
+	_solution = NULL;
 	_prec = NULL;
 	_ksp = NULL;
 
@@ -159,6 +163,7 @@ LinearSolver::LinearSolver( const GenericMatrix& matrix,
 	_nameOfMethod = nameOfMethod;
 	_mat = NULL;
 	_smb = NULL;
+	_solution = NULL;
 	_prec = NULL;
 	_ksp = NULL;
 
@@ -224,6 +229,7 @@ LinearSolver::setLinearSolver(const GenericMatrix& matrix, const Vector& secondM
 	PetscInitialize(0, (char ***)"", PETSC_NULL, PETSC_NULL);//All constructors lead here so we initialize petsc here
 	setMatrix(matrix);
 	setSndMember(secondMember);
+	VecDuplicate(_smb,&_solution);
 }
 
 
@@ -358,6 +364,8 @@ LinearSolver::LinearSolver ( const LinearSolver& LS )
 	MatDuplicate(LS.getPetscMatrix(),MAT_COPY_VALUES,&_mat);
 	_smb=NULL;
 	VecDuplicate(LS.getPetscVector(),&_smb);    				;
+	_solution=NULL;
+	VecDuplicate(LS.getKSPSolution(),&_solution);
 	_ksp=NULL;
 	kspDuplicate(LS.getPetscKsp(),_mat,&_ksp);
 	_prec=NULL;
@@ -418,14 +426,16 @@ LinearSolver::getPetscPc() const
 }
 
 Vector
-LinearSolver::solve( void )
+LinearSolver::solve( Vector X0 )
 {
 	if (_nameOfMethod.compare("GMRES")==0)
 		KSPSetType(_ksp,KSPGMRES);
-	else if (_nameOfMethod.compare("LGMRES")==0)
-		KSPSetType(_ksp,KSPLGMRES);
+	else if (_nameOfMethod.compare("FGMRES")==0)
+		KSPSetType(_ksp,KSPFGMRES);
 	else if (_nameOfMethod.compare("CG")==0)
 		KSPSetType(_ksp,KSPCG);
+	else if (_nameOfMethod.compare("CGNE")==0)
+		KSPSetType(_ksp,KSPCGNE);
 	else if (_nameOfMethod.compare("BCGS")==0)
 		KSPSetType(_ksp,KSPBCGS);
 	else if (_nameOfMethod.compare("CR")==0)
@@ -451,7 +461,7 @@ LinearSolver::solve( void )
 	else
 	{
 		string msg="Vector LinearSolver::solve( void ) : The method "+_nameOfMethod+" is not yet implemented.\n";
-		msg+="The methods implemented are : GMRES, BICG, CG, CHOLESKY, LU, BCGS, LGMRES, LSQR, CR, CGS and GCR.\n";
+		msg+="The methods implemented are : GMRES, BICG, CG, CGNE, CHOLESKY, LU, BCGS, FGMRES, LSQR, CR, CGS and GCR.\n";
 		throw CdmathException(msg);
 	}
 
@@ -463,12 +473,28 @@ LinearSolver::solve( void )
 		PCSetType(_prec,PCICC);
 	else if (_nameOfPc.compare("CHOLESKY")==0)
 		PCSetType(_prec,PCCHOLESKY);
+#if SOLVERLAB_WITH_MPI 
+	else if (_nameOfPc.compare("euclid")==0 || _nameOfPc.compare("pilut")==0 || _nameOfPc.compare("parasails")==0 || _nameOfPc.compare("ams")==0 || _nameOfPc.compare("ads")==0)
+	{
+		PCSetType(_prec,PCHYPRE);
+		PCHYPRESetType(_prec,_nameOfPc.c_str());
+	}
+	else if (_nameOfPc.compare("BOOMERAMG")==0)
+	{
+		PCSetType(_prec,PCHYPRE);
+		PetscOptionsInsertString(NULL,"-pc_type hypre -pc_hypre_type boomeramg -pc_hypre_boomeramg_strong_threshold 0.7  -pc_hypre_boomeramg_agg_nl 4 -pc_hypre_boomeramg_agg_num_paths 5 -pc_hypre_boomeramg_max_levels 25 -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_interp_type ext+i -pc_hypre_boomeramg_P_max 2 -pc_hypre_boomeramg_truncfactor 0.3");
+	}
+#endif
 	else if (_nameOfPc.compare("")==0)
 		PCSetType(_prec,PCNONE);
 	else
 	{
 		string msg="Vector LinearSolver::solve( void ) : The preconditioner "+_nameOfPc+" is not yet available.\n";
-		msg+="The preconditioners available are : void, ICC, ILU, CHOLESKY and LU.\n";
+		msg+="The preconditioners available are : void, ICC, ILU, CHOLESKY, LU";
+#if SOLVERLAB_WITH_MPI 
+		msg+=", euclid, pilut, parasails, ams, ads, BOOMERAMG";
+#endif
+		msg+=".\n";
 		throw CdmathException(msg);
 	}
 
@@ -478,9 +504,14 @@ LinearSolver::solve( void )
 	PetscReal atol;
 	PetscInt maxits;
 
-	Vec X;
-	VecDuplicate(_smb,&X);
-
+	if( X0.size()==0)
+		KSPSetInitialGuessNonzero( _ksp,PETSC_FALSE);
+	else
+	{
+		KSPSetInitialGuessNonzero( _ksp,PETSC_TRUE);
+		_solution=vectorToVec(X0);
+	}
+	
 	if (_isSingular)//Matrix should be symmetric semi-definite with constant vectors in its kernel
 	{
 		//Check that the matrix is symmetric
@@ -505,7 +536,7 @@ LinearSolver::solve( void )
 	if(_computeConditionNumber)
 		KSPSetComputeSingularValues(_ksp,PETSC_TRUE);
 
-	KSPSolve(_ksp,_smb,X);
+	KSPSolve(_ksp,_smb,_solution);
 
 	KSPGetResidualNorm(_ksp,&atol);
 	_residu=(double)atol;
@@ -520,9 +551,14 @@ LinearSolver::solve( void )
 		_convergence=true;
 	else{
 		_convergence=false;
-		cout<<"Linear system algorithm did not converge, divergence reason "<< reason <<endl;
-        cout<<"Solver used "<<  _nameOfMethod<<", preconditioner "<<_nameOfPc<<endl;
-		cout<<"Final number of iteration= "<<_numberOfIter<<". Maximum allowed was " << _numberMaxOfIter<<endl;
+		cout<<endl<<"!!!!!!!!!!!!!!!!!!  Linear system algorithm did not converge  !!!!!!!!!!!!!!" <<endl;
+		if( reason == -3)
+		    cout<<"Maximum number of iterations "<<_numberMaxOfIter<<" reached"<<endl;
+		else{
+		    cout<<"PETSc divergence reason  "<< reason <<endl;
+			cout<<"Final iteration= "<<_numberOfIter<<". Maximum allowed was " << _numberMaxOfIter<<endl;
+		}
+        cout<<"Solver used "<<  _nameOfMethod<<", with preconditioner "<<_nameOfPc<<endl;
 		cout<<"Final residual "<< _residu<< ". Objective was "<< _tol<<endl;
 		string msg="Linear system algorithm did not converge";
 		throw CdmathException(msg);
@@ -536,7 +572,7 @@ LinearSolver::solve( void )
         _conditionNumber=sv_max/sv_min;
 	}
 
-	Vector X1=vecToVector(X);
+	Vector X1=vecToVector(_solution);
 
 	return X1;
 }
@@ -576,6 +612,120 @@ LinearSolver::vecToVector(const Vec& vec) const
 	return result;
 }
 
+Vector
+LinearSolver::getResidual( Vector X ) const
+{//This is adapted from PETSc source code of KSPInitialResidual
+ Mat  Amat, Pmat;
+ Vec  vb, vt1, vt2, vres;//vb=rhs, vres==resultat, vt1,vt2=temporary storage
+ PCSide side;
+
+ KSPGetPCSide(_ksp,&side);
+ PCGetOperators(_prec,&Amat,&Pmat);
+ KSPGetRhs( _ksp,&vb);
+
+    if ( X.size()!=0 ) {
+		//check size compatibility
+		int numberOfRows;
+		MatGetSize(_mat,&numberOfRows,NULL);
+		if( X.size()!= numberOfRows )
+			throw CdmathException("LinearSolver::getResidual input vector has incorrect size");
+
+      Vec vsoln = vectorToVec(X);
+      MatMult(Amat,vsoln,vt1);
+      VecCopy(vb,vt2);
+      VecAXPY(vt2,-1.0,vt1);
+      if ( side == PC_RIGHT) {
+        PCDiagonalScaleLeft(_prec,vt2,vres);
+      } else if ( side == PC_LEFT) {
+        PCApply(_prec,vt2,vres);
+        PCDiagonalScaleLeft(_prec,vres,vres);
+      } else if ( side == PC_SYMMETRIC) {
+        PCApplySymmetricLeft(_prec,vt2,vres);
+      } else throw CdmathException( "LinearSolver::getResidual : Invalid preconditioning side ");
+    } else {
+		//check initial guess zero
+		PetscBool has_non_zero_guess;
+		KSPGetInitialGuessNonzero( _ksp, &has_non_zero_guess);
+		if(has_non_zero_guess)
+			throw CdmathException( "LinearSolver::getResidual : initial guess was not zero ");
+
+      VecCopy(vb,vt2);//A quoi sert cette ligne ???
+      if ( side == PC_RIGHT) {
+        PCDiagonalScaleLeft(_prec,vb,vres);
+      } else if ( side == PC_LEFT) {
+        PCApply(_prec,vb,vres);
+        PCDiagonalScaleLeft(_prec,vres,vres);
+      } else if ( side == PC_SYMMETRIC) {
+        PCApplySymmetricLeft(_prec, vb, vres);
+      } 
+      else 
+		throw CdmathException( "LinearSolver::getResidual : Invalid preconditioning side ");
+    }	
+    
+    return vecToVector(vres);
+}
+
+Vector
+LinearSolver::getInitialResidual( ) const
+{
+	PetscBool has_non_zero_guess;
+	KSPGetInitialGuessNonzero( _ksp, &has_non_zero_guess);
+	if(has_non_zero_guess)
+		throw CdmathException( "LinearSolver::getInitialResidual : initial guess was not zero ");
+	
+ Mat  Amat, Pmat;
+ Vec  vb, vres;//vb=rhs, vres==resultat
+ PCSide side;
+
+ KSPGetPCSide(_ksp,&side);
+ KSPGetRhs( _ksp,&vb);
+ PCGetOperators(_prec,&Amat,&Pmat);
+
+  if ( side == PC_RIGHT)
+        PCDiagonalScaleLeft(_prec,vb,vres);
+  else if ( side == PC_LEFT){
+        PCApply(_prec,vb,vres);//Pb
+        PCDiagonalScaleLeft(_prec,vres,vres);}
+  else if ( side == PC_SYMMETRIC)
+        PCApplySymmetricLeft(_prec, vb, vres);
+  else 
+        throw CdmathException( "LinearSolver::getInitialResidual : Invalid preconditioning side ");
+    
+    return vecToVector(vres);
+}
+
+Vector
+LinearSolver::getFinalResidual( ) const
+{
+	if( !_convergence )
+        throw CdmathException( "LinearSolver::getFinalResidual : solve a linear system first ");
+
+	Mat  Amat, Pmat;
+	Vec  vb, vsoln, vt1, vres;//vsoln=solution, vb=rhs, vres==resultat, vt12=temporary storage
+	PCSide side;
+	
+	KSPGetPCSide(_ksp,&side);
+	KSPGetSolution( _ksp,&vsoln);
+	KSPGetRhs( _ksp,&vb);
+	PCGetOperators(_prec,&Amat,&Pmat);
+	
+	MatMult(Amat,vsoln,vt1);//AX
+	VecAXPY(vb,-1.0,vt1);//b-AX
+	if ( side == PC_RIGHT) {
+		PCDiagonalScaleLeft(_prec,vb,vres);
+	} 
+	else if ( side == PC_LEFT) {
+		PCApply(_prec,vb,vres);//P(b-AX)
+		PCDiagonalScaleLeft(_prec,vres,vres);
+	} 
+	else if ( side == PC_SYMMETRIC) {
+		PCApplySymmetricLeft(_prec,vb,vres);
+	} else 
+		throw CdmathException( "LinearSolver::getFinalResidual : Invalid preconditioning side ");
+    
+    return vecToVector(vres);
+}
+
 //----------------------------------------------------------------------
 const LinearSolver&
 LinearSolver::operator= ( const LinearSolver& linearSolver )
@@ -596,6 +746,8 @@ LinearSolver::operator= ( const LinearSolver& linearSolver )
 	MatDuplicate(linearSolver.getPetscMatrix(),MAT_COPY_VALUES,&_mat);
 	_smb=NULL;
 	VecDuplicate(linearSolver.getPetscVector(),&_smb);    				;
+	_solution=NULL;
+	VecDuplicate(linearSolver.getKSPSolution(),&_solution);    				;
 	_ksp=NULL;
 	kspDuplicate(linearSolver.getPetscKsp(),_mat,&_ksp);
 	_prec=NULL;

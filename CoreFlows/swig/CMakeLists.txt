@@ -6,9 +6,10 @@ SET_SOURCE_FILES_PROPERTIES(CoreFlows.i PROPERTIES SWIG_DEFINITIONS "-shadow")
 
 INCLUDE_DIRECTORIES(
   ${Python_INCLUDE_DIRS}
-  ${CoreFlows_INCLUDES}											    #
+  ${CoreFlows_INCLUDES}									    #
   ${PETSC_INCLUDES}
   ${SLEPC_INCLUDES}
+  ${SOLVERLAB_SOURCE_DIR}/CDMATH/mesh/inc # To include Mesh.hxx for the enum EntityType
 )
 
 IF(    ${SOLVERLAB_WITH_MPI} )

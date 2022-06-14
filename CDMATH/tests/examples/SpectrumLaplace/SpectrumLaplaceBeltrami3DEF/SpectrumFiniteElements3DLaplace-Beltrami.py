@@ -110,7 +110,7 @@ for i in range(nbCells):
 			Rigidite.addValue(j,k,GradShapeFuncs[j]*GradShapeFuncs[k]/Ci.getMeasure())
 
 print("Linear system matrix building done")
-Rigidite.viewMatrix(True, 0, "RigidityMatrix_FiniteElementsOn"+mesh_name+"LaplaceBeltrami")
+Rigidite.viewNonZeroStructure( 0, "RigidityMatrix_FiniteElementsOn"+mesh_name+"LaplaceBeltrami")
 Rigidite.plotEigenvalues("FiniteElementsOn"+mesh_name+"LaplaceBeltrami")
 
 # Conditionnement de la matrice de rigidité
@@ -129,7 +129,9 @@ nev=9
 d=Rigidite.getEigenvectorsDataArrayDouble(nev)
 my_eigenfield = cdmath.Field("Eigenvectors field", cdmath.NODES, my_mesh, nev)
 my_eigenfield.setFieldByDataArrayDouble(d)
-
+# Free memory
+d.decrRef()
+    
 # Sauvegarde du champ résultat
 #===========================
 my_eigenfield.writeVTK("spectrumFiniteElementsOn"+mesh_name+"LaplaceBeltrami")

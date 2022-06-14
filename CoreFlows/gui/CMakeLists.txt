@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2021  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2012-2022  CEA/DES, EDF R&D, OPEN CASCADE
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,10 @@ SET(GUI_bin_SCRIPTS
     ${CMAKE_CURRENT_SOURCE_DIR}/solverlabGUI
 )
 
+SET(solverlabpy_SCRIPTS
+    ${CMAKE_CURRENT_SOURCE_DIR}/solverlabpy
+)
+
 SET(GUI_lib_SCRIPTS
     ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
 )
@@ -32,6 +36,7 @@ IF   ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) 
   ADD_SUBDIRECTORY(salome)
 ELSE ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
   INSTALL(FILES ${GUI_bin_SCRIPTS} DESTINATION bin/salome)
+  INSTALL(DIRECTORY ${solverlabpy_SCRIPTS} DESTINATION bin/salome)
   INSTALL(FILES ${GUI_lib_SCRIPTS} DESTINATION lib/python)
 
   # Configure file SalomePyQt_MockUp.py
