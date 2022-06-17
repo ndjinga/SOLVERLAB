@@ -44,10 +44,10 @@ export SOLVERLAB_ROOT_DIR=$SOLVERLAB_INSTALL
 if [ -d ${SOLVERLAB_INSTALL}/PACKAGESPY ] # test existing dir PACKAGESPY to get solverlabGUI standalone 
 then
     export PACKAGESPY_ROOT_DIR=${SOLVERLAB_INSTALL}/PACKAGESPY
-    export SOLVERLABGUI_ROOT_DIR=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix/solverlabGUI
+    export SOLVERLAB_ROOT_DIR=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix/solverlabGUI
     export PYTHONPATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PYTHONPATH
     export PATH=${PACKAGESPY_ROOT_DIR}/pythonAppliMatix:$PATH
-    export SOLVERLABGUI=${SOLVERLABGUI_ROOT_DIR}/solverlabGUI  # main initial python script
+    export SOLVERLABGUI=${SOLVERLAB_ROOT_DIR}/solverlabGUI  # main initial python script
     echo "solverlabGUI installation wambeke as salome"
     echo "to launch solverlabGUI type '\$SOLVERLABGUI --gui'"
 fi
@@ -56,7 +56,7 @@ fi
 if [ @SOLVERLAB_WITH_GUI@ = ON ] 
 then
   export SOLVERLABGUI=$SOLVERLAB_INSTALL/bin/salome/solverlabGUI
-  export SOLVERLABGUI_ROOT_DIR=$SOLVERLAB_INSTALL/bin/salome/
+  export SOLVERLAB_ROOT_DIR=$SOLVERLAB_INSTALL/bin/salome/
   export PACKAGESPY_ROOT_DIR=@PACKAGESPY_ROOT_DIR@
   echo "solverlabGUI installation mi as salome"
   echo "to launch solverlabGUI type '\$SOLVERLABGUI --gui'"

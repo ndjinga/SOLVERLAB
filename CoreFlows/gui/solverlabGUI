@@ -23,19 +23,19 @@ in mode Command Line Argument(s) (CLI)
 
 | Usage (as linux example):
 | >> export HOMESVL=$HOME        # or else /volatile/wambeke
-| >> export SOLVERLABGUI_ROOT_DIR=$HOMESVL/solverlabGUI/solverlabCode
-| >> export SOLVERLABGUI_WORKDIR=$HOMESVL/SOLVERLABGUI_WORKDIR
-| >> export SOLVERLABGUI_LOGDIR=$HOMESVL/SOLVERLABGUI_WORKDIR/LOGS
-| >> $SOLVERLABGUI_ROOT_DIR/solverlabGUI -h
-| >> $SOLVERLABGUI_ROOT_DIR/solverlabGUI -g
+| >> export SOLVERLAB_ROOT_DIR=$HOMESVL/SOLVERLAB
+| >> export SOLVERLAB_WORKDIR=$HOMESVL/SOLVERLAB_WORKDIR
+| >> export SOLVERLAB_LOGDIR=$HOMESVL/SOLVERLAB_WORKDIR/LOGS
+| >> $SOLVERLAB_ROOT_DIR/solverlabGUI -h
+| >> $SOLVERLAB_ROOT_DIR/solverlabGUI -g
 |
 | Usage (as windows example):
 | >> set HOMESVL=%userprofile%
-| >> set SOLVERLABGUI_ROOT_DIR=%HOMESVL%/solverlabGUI/solverlabCode
-| >> set SOLVERLABGUI_WORKDIR=%HOMESVL%/SOLVERLABGUI_WORKDIR
-| >> set SOLVERLABGUI_LOGDIR=%HOMESVL%/SOLVERLABGUI_WORKDIR/LOGS
-| >> %SOLVERLABGUI_ROOT_DIR%/solverlabGUI -h
-| >> %SOLVERLABGUI_ROOT_DIR%/solverlabGUI -g
+| >> set SOLVERLAB_ROOT_DIR=%HOMESVL%/solverlabGUI/solverlabCode
+| >> set SOLVERLAB_WORKDIR=%HOMESVL%/SOLVERLAB_WORKDIR
+| >> set SOLVERLAB_LOGDIR=%HOMESVL%/SOLVERLAB_WORKDIR/LOGS
+| >> %SOLVERLAB_ROOT_DIR%/solverlabGUI -h
+| >> %SOLVERLAB_ROOT_DIR%/solverlabGUI -g
 """
 
 """
@@ -65,6 +65,13 @@ except:
 OKSYS = 0  # OK 
 KOSYS = 1  # KO
 
+_banner_ = """
+        ____       _                _       _      _____ _    _ _____ 
+      / ____|     | |              | |     | |    / ____| |  | |_   _|
+     | (___   ___ | |_   _____ _ __| | __ _| |__ | |  __| |  | | | |  
+      \___ \ / _ \| \ \ / / _ \ '__| |/ _` | '_ \| | |_ | |  | | | |  
+      ____) | (_) | |\ V /  __/ |  | | (_| | |_) | |__| | |__| |_| |_ 
+     |_____/ \___/|_| \_/ \___|_|  |_|\__,_|_.__/ \_____|\____/|_____| """
 
 # get path to solverlabGui sources
 solverlabdir = os.path.dirname(os.path.realpath(__file__))
@@ -82,9 +89,11 @@ import helppy.helpPager as HP  # to set before all os.environ["PAGER"] as cat
 # HP.helpToFile(np, "/tmp/${USER}/helpPager.tmp")
 
 from solverlabpy.testPrerequisitesSvl import TestImports
+from solverlabpy import getSolverlaGuiVersion
+
 if TestImports() != "OK":
   print("PACKAGESPY_ROOT_DIR %s" % packagespydir)
-  print("SOLVERLABGUI_ROOT_DIR %s" % solverlabdir)
+  print("SOLVERLAB_ROOT_DIR %s" % solverlabdir)
   sys.exit(KOSYS) # stop there is problem
 
 import xyzpy.loggingXyz as LOG
@@ -94,8 +103,10 @@ logger = LOG.getLogger()
 logger.setLevel("INFO")
 logtrace = logger.info # easy for future set it as logger.debug or logger.trace
 # logger.info = logger.critical # TODO go back to info
-logtrace("python version %s" % platform.python_version())
-logtrace("current operating system %s" % platform.system())
+msg = _banner_ + getSolverlaGuiVersion() + "\n\n" + \
+      "python version %s" % platform.python_version() + "\n" + \
+      "current operating system %s" % platform.system() + "\n"
+logtrace(msg)
 
 # platform problems
 if platform.system() == "Windows":
@@ -117,33 +128,31 @@ else:
 #################################
 if __name__ == "__main__":
 
-    os.environ["SOLVERLABGUI_ROOT_DIR"] = solverlabdir
-    logtrace("SOLVERLABGUI file is %s" % os.path.realpath(__file__))
-    logtrace("SOLVERLABGUI_ROOT_DIR is %s" % solverlabdir)
+    os.environ["SOLVERLAB_ROOT_DIR"] = solverlabdir
+    logtrace("SOLVERLAB GUI file is %s" % os.path.realpath(__file__))
+    logtrace("SOLVERLAB_ROOT_DIR is %s" % solverlabdir)
     logtrace("PACKAGESPY_ROOT_DIR is %s" % packagespydir)
 
-    solverlabgui_workdir = os.getenv("SOLVERLABGUI_WORKDIR")
-    if solverlabgui_workdir == None:
-      if "INSTALL/SOLVERLABGUI" in solverlabdir: # as linux salome installation, go to user workdir
-        # set as $SOLVERLABGUI_ROOT_DIR/../SOLVERLABGUI_WORKDIR
-        solverlabgui_workdir = os.path.realpath(os.path.expandvars(os.path.join("${HOME}",
-                                                                                "../../SOLVERLABGUI_WORKDIR")))
+    solverlab_workdir = os.getenv("SOLVERLAB_WORKDIR")
+    if solverlab_workdir == None:
+      if "INSTALL/SOLVERLAB" in solverlabdir: # as linux salome installation, go to user workdir
+        # set as $SOLVERLAB_ROOT_DIR/../SOLVERLAB_WORKDIR
+        solverlab_workdir = os.path.realpath(os.path.expandvars(os.path.join("${HOME}", "../../SOLVERLAB_WORKDIR")))
       else: # as windows/linux standalone package installation, go to parent workdir
-        # set as $SOLVERLABGUI_ROOT_DIR/../SOLVERLABGUI_WORKDIR
-        solverlabgui_workdir = os.path.realpath(os.path.join(solverlabdir, "..",
-                                                             "../../SOLVERLABGUI_WORKDIR"))
-      logtrace("set environ variable SOLVERLABGUI_WORKDIR by default:\n%s" % solverlabgui_workdir)
+        # set as $SOLVERLAB_ROOT_DIR/../SOLVERLAB_WORKDIR
+        solverlab_workdir = os.path.realpath(os.path.join(solverlabdir, "..", "../../SOLVERLAB_WORKDIR"))
+      logtrace("set environ variable SOLVERLAB_WORKDIR by default:\n%s" % solverlab_workdir)
     else:
       # resolve '/../..'  and etc for windows raccourcis and .bat, for example
-      solverlabgui_workdir = os.path.realpath(solverlabgui_workdir)
-    if not os.path.isdir(solverlabgui_workdir):
-        os.makedirs(solverlabgui_workdir)
-    os.environ["SOLVERLABGUI_WORKDIR"] = solverlabgui_workdir
+      solverlab_workdir = os.path.realpath(solverlab_workdir)
+    if not os.path.isdir(solverlab_workdir):
+        os.makedirs(solverlab_workdir)
+    os.environ["SOLVERLAB_WORKDIR"] = solverlab_workdir
 
-    # set log files directory same as SOLVERLABGUI_WORKDIR/logs if not set
+    # set log files directory same as SOLVERLAB_WORKDIR/logs if not set
     workdir4log = os.getenv("WORKDIR4LOG")
     if workdir4log is None:
-      workdir4log = os.path.realpath(os.path.join(solverlabgui_workdir, "logs"))
+      workdir4log = os.path.realpath(os.path.join(solverlab_workdir, "logs"))
       logtrace("logs directory by default:\n%s" % workdir4log)
       os.environ["WORKDIR4LOG"] = workdir4log
 

@@ -68,16 +68,20 @@ class TreeViewSvl(TreeXmlXyz):
     """
     self.setAlternatingRowColors(True)
     pal = self.palette()
-    config = CFGSVL.getMainConfigCatchAll()
-    if verbose: print("current configuration:\n%s" % config)
-    colb = CFGSVL.toListInt(config.MainWindow.color_treeview_base)
-    colt = CFGSVL.toListInt(config.MainWindow.color_treeview_text)
-    pal.setColor(pal.Base, QtGui.QColor(*colb))
-    pal.setColor(pal.Text, QtGui.QColor(*colt))
+    try:
+      config = CFGSVL.getMainConfigCatchAll()
+      if verbose: logger.info("current configuration:\n%s" % config)
+      colb = CFGSVL.toListInt(config.MainWindow.color_treeview_base)
+      colt = CFGSVL.toListInt(config.MainWindow.color_treeview_text)
+      pal.setColor(pal.Base, QtGui.QColor(*colb))
+      pal.setColor(pal.Text, QtGui.QColor(*colt))
+    except Exception as e:
+      logger.warning("TreeViewSvl problem config: not set as colors by default\n%s" % e)
+
     self.setPalette(pal)
     # TODO remove that later self._TreeXmlXyzItemClass = TreeXmlXyzItemSvl
     # default formats for treeViewSvl
-    self.formats_treeview = FORMATS_TREEVIEW # e to g format
+    self.formats_treeview = FORMATS_TREEVIEW # 'e' to 'g' formats numbers
 
 
 

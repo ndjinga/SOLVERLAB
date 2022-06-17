@@ -6,3 +6,6 @@
 version_info = (0, 0, 1)
 __version__ = "%i.%i.%i" % version_info
 __name__ = "SolverlabGUI"
+
+def getSolverlaGuiVersion():
+  return __version__

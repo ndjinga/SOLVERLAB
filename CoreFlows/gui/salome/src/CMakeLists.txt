@@ -19,6 +19,7 @@
 
 
 SET(SGPYQT_RES_DIR "${SALOME_INSTALL_RES}")
+
 SALOME_CONFIGURE_FILE(../../SalomePyQt_MockUp.py.in mockup/SalomePyQt_MockUp.py)
 SALOME_CONFIGURE_FILE(../../slutils.py.in             slutils.py)
 
@@ -29,6 +30,8 @@ SET(_bin_SCRIPTS
 
 SET(_lib_SCRIPTS
     ${GUI_lib_SCRIPTS}
+    SOLVERLABDesktop.py
+    SOLVERLAB_utils.py
     ${CMAKE_CURRENT_BINARY_DIR}/mockup/SalomePyQt_MockUp.py
     ${CMAKE_CURRENT_BINARY_DIR}/slutils.py
 )

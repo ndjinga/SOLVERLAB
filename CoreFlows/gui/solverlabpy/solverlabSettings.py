@@ -32,6 +32,8 @@ logger = LOG.getLogger()
 
 verbose = False
 
+
+
 ###################################################################
 class SolverlabSettings(SETT.Settings):
   """
@@ -80,14 +82,14 @@ def setEnvVar(envVar, value):
   return SETT.setEnvVar(envVar, value)
  
 def getSolverlabSysMacrosDir():
-  rootdir = getExpandedVar("_SOLVERLABGUI_ROOT_DIR")
+  rootdir = getExpandedVar("_SOLVERLAB_ROOT_DIR")
   if rootdir is None:
-    # raise Exception("user have to set env var 'SOLVERLABGUI_ROOT_DIR'")
-    logger.critical("user have to set env var 'SOLVERLABGUI_ROOT_DIR'")
+    # raise Exception("user have to set env var 'SOLVERLAB_ROOT_DIR'")
+    logger.critical("user have to set env var 'SOLVERLAB_ROOT_DIR'")
     return None
   aDir = os.path.join(rootdir, "macros")
   if not os.path.isdir(aDir):
-    logger.debug("inexisting ${SOLVERLABGUI_ROOT_DIR}/macros dir:\n  '%s'" % aDir)
+    logger.debug("inexisting ${SOLVERLAB_ROOT_DIR}/macros dir:\n  '%s'" % aDir)
     #devel uranie for gaudier, current dir
     aDir = os.getcwd()
   logger.debug("getSolverlabSysMacrosDir %s" % aDir)
@@ -96,15 +98,15 @@ def getSolverlabSysMacrosDir():
 # policy: 
 #   names var begins with "_" contains environment variable var reference
 #   theses setting are evaluated LATER,
-#   when using USET.getExpandedVar("_SOLVERLABCODE_ROOT_DIR"), for example
+#   when using USET.getExpandedVar("_SOLVERLAB_ROOT_DIR"), for example
 
 #_Settings.setVar("_URANIESYS", "${URANIESYS}")
-_Settings.setVar("_SOLVERLABCODE_ROOT_DIR", "${SOLVERLABCODE_ROOT_DIR}")
-# _Settings.setVar("_ROOTSYS", "${ROOTSYS}")
+_Settings.setVar("_SOLVERLAB_ROOT_DIR", "${SOLVERLAB_ROOT_DIR}")
+#_Settings.setVar("_ROOTSYS", "${ROOTSYS}")
 #_Settings.setVar("_URANIEWORKDIR", "${URANIEWORKDIR}")
-_Settings.setVar("_SOLVERLABGUI_WORKDIR", "${SOLVERLABGUI_WORKDIR}")
+_Settings.setVar("_SOLVERLAB_WORKDIR", "${SOLVERLAB_WORKDIR}")
 #_Settings.setVar("_URANIEGUIDIR", "${URANIEGUIDIR}")
-_Settings.setVar("_SOLVERLABGUI_ROOT_DIR", "${SOLVERLABGUI_ROOT_DIR}")
+#_Settings.setVar("_SOLVERLABGUI_ROOT_DIR", "${SOLVERLABGUI_ROOT_DIR}") # obsolete
 
 
 if platform.system() == "Windows":
@@ -126,7 +128,7 @@ else:
 
 #default setting
 #parent directory where create etudes directories is current launch directory
-#setEnvVarByDefault("${SOLVERLABGUI_WORKDIR}", os.getcwd())
+#setEnvVarByDefault("${SOLVERLAB_WORKDIR}", os.getcwd())
 #parent directory where create etudes directories is $HOME/UranieWorkdir
 """
 ok, valueDefault = _Settings.checkEnvVar("${HOME}/URANIEWORKDIR")

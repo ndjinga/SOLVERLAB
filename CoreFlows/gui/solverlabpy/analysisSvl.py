@@ -144,7 +144,7 @@ class DataInformationsSvl(_XyzConstrainBase):
     self.setIsCast(True)
 
   def setDefaultValues(self):
-    aDir = USET.getVar("_SOLVERLABGUI_WORKDIR")
+    aDir = USET.getVar("_SOLVERLAB_WORKDIR")
     aName = "study_" + UXYZ.getDateTimeNow()
     #aDirName = os.path.join(aDirw, aName)
     #aDir, aName = os.path.split(os.path.realpath(aDirName))
@@ -165,9 +165,9 @@ class DataInformationsSvl(_XyzConstrainBase):
     return os.path.join(str(self.directory), str(self.name))
 
   def getEtudeWorkdirBrut(self):
-    """return as ${SOLVERLABGUI_WORKDIR}"""
+    """return as ${SOLVERLAB_WORKDIR}"""
     r1 = os.path.join(str(self.directory), str(self.name))
-    r2 = os.path.join("${SOLVERLABGUI_WORKDIR}", str(self.name))
+    r2 = os.path.join("${SOLVERLAB_WORKDIR}", str(self.name))
     r1Exp = os.path.expandvars(r1)
     r2Exp = os.path.expandvars(r2)
     if r1Exp != r2Exp:
@@ -785,7 +785,7 @@ SURF5"""
 class DataSvl(_XyzConstrainBase):
   """DataFrame"""
   _typesFiles = "*.dat *.js".split()
-  _directory = USET.getVar("_SOLVERLABCODE_ROOT_DIR") #env var unix syntax
+  _directory = USET.getVar("_SOLVERLAB_ROOT_DIR") #env var unix syntax
 
   _attributesList = [ #list, not a dict because sequential order list is used in files
     ("name", "FileViewerXyz"),
@@ -961,7 +961,7 @@ class DataSvl(_XyzConstrainBase):
 class FileSvl(IFLX.FileViewerXyz):
   """initialize type of files extension for interest .C etc."""
   _typesFiles = "*.H *.C *.h *.c *.hxx *.cxx *.hpp *.cpp *.py *.bash *.so *.dat *.js".split()
-  _directory = USET.getVar("_SOLVERLABCODE_ROOT_DIR") #env var unix syntax
+  _directory = USET.getVar("_SOLVERLAB_ROOT_DIR") #env var unix syntax
   #_icon = #no icon
   pass
 
@@ -969,7 +969,7 @@ class FileSvl(IFLX.FileViewerXyz):
 class UserFileSvl(IFLX.FileViewerXyz):
   """initialize type of files extension for user interest"""
   _typesFiles = "*".split()
-  #_directory = USET.getVar("_SOLVERLABCODE_ROOT_DIR") #env var unix syntax
+  #_directory = USET.getVar("_SOLVERLAB_ROOT_DIR") #env var unix syntax
   #_icon = #no icon
   pass
 
@@ -978,7 +978,7 @@ class FunctionSvl(FileSvl):
   """initialize type of files extension for function files"""
   _typesFiles = "*".split()
   #_directory = USET.getVar("_ROOTSYS")+"/macros" #env var unix syntax
-  _directory = USET.getVar("_SOLVERLABCODE_ROOT_DIR") + "/macros"  # env var unix syntax
+  _directory = USET.getVar("_SOLVERLAB_ROOT_DIR") + "/macros"  # env var unix syntax
   _icon = "cpp"
   pass
 
@@ -986,7 +986,7 @@ class FunctionSvl(FileSvl):
 class LibrarySvl(FileSvl):
   """initialize type of files extension for libraries files .C .so"""
   _typesFiles = "*.C *.so".split()
-  _directory = USET.getVar("_SOLVERLABCODE_ROOT_DIR")+"/lib" #env var unix syntax
+  _directory = USET.getVar("_SOLVERLAB_ROOT_DIR")+"/lib" #env var unix syntax
   _icon = "solverlabpy.resources.branch_folder_s"
   pass
 

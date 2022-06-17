@@ -1,35 +1,24 @@
-#  Copyright (C) 2007-2010  CEA/DEN, EDF R&D, OPEN CASCADE
-#
-#  Copyright (C) 2003-2007  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-#  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS
-#
-#  This library is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU Lesser General Public
-#  License as published by the Free Software Foundation; either
-#  version 2.1 of the License.
-#
-#  This library is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
-#
-#  You should have received a copy of the GNU Lesser General Public
-#  License along with this library; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-#
-#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
-#
-# Author : A. Bruneton and B. Secher
-#
-import traceback
-import string
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# %% LICENSE_SALOME_CEA_BEGIN
+# see SOLVERLABGUI/LICENSE file
+# %% LICENSE_END
+
 import os
 import sys
-from qtsalome import *
+import traceback
+import string
+import pprint as PP
+
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+
+from SOLVERLABDesktop import SOLVERLABDesktop as Desktop
+import SOLVERLAB_utils as MUT # as Module_UTils
 
 import salome
-from CFDesktop import CFDesktop
-
 # Get SALOME PyQt interface
 import SalomePyQt
 import libSALOME_Swig
@@ -41,45 +30,77 @@ import libSALOME_Swig
 sgPyQt = SalomePyQt.SalomePyQt()
 sg = libSALOME_Swig.SALOMEGUI_Swig()
 sgDesktop = sgPyQt.getDesktop()
-widgetDialogBox = None
 
-moduleDesktop  = None
+_NAME = "SOLVERLAB"
+# one study
+moduleStudy = None
+# one desktop
+moduleDesktops = {}
+# associate ID and action
+dict_command = {}
+
+def verbose():
+  return False
+
+def log(mess):
+  if verbose: MUT.log_print(_NAME+ "GUI" + mess)
 
 ########################################################
 # Internal methods
 ########################################################
 
+def getStudy():
+    """This method returns the active study"""
+    global moduleStudy, moduleDesktops
+    current = str(salome.myStudy)
+    if moduleStudy is None:
+       moduleStudy = current  # first study detected copy objref_study as str
+       # first study as '<SALOMEDS._objref_Study object at 0x59398a8>' for example
+       log(" getStudy first activation on study %s" % current)
+    else:
+       if moduleStudy != current: # user have done menu "new study"
+          log(" WARNING: problematic new study detected: Relaunch Salome is the best recommended practice\n")
+          # problematic as wrapped C/C++ object of type QMainWindowForLog has been deleted and etc on menu and actions/slots
+          moduleDesktops = {}
+          setDesktop()
+          moduleStudy = current
+    # log(" getStudy %s %s" % (salome.myStudy, moduleStudy))
+    return salome.myStudy
+
 def getDesktop():
-    """This method returns the current SOLVERLABT desktop"""
+    """This method returns the current GUI desktop"""
+    MUT.log_print(" getDesktop")
+    return sgPyQt.getDesktop()
 
-    global moduleDesktop
-    return moduleDesktop
+def setDesktop():
+    """This method sets and returns GUI desktop"""
+    global moduleDesktops, dict_command
+    log(" setDesktop()")
+    study = str(salome.myStudy)
+    if study not in moduleDesktops:
+        log(" create Desktop")
+        desk = Desktop( sgPyQt, sg )
+        moduleDesktops[study] = desk
+        desk.set_dict_command( dict_command )
+        # log(" set dict_command", dict_command)
+    return moduleDesktops[study]
 
-def setDesktop( ):
-    """This method sets and returns SOLVERLABT desktop"""
+def resetDesktop():
+    """This method sets and returns GUI desktop widgets (when there is new study,for example)"""
+    log(" TODO resetDesktop()")
 
-    global moduleDesktop
-
-    if moduleDesktop is None:
-        moduleDesktop = CFDesktop( sgPyQt )
-        pass
-    return moduleDesktop
-
-def incObjToMap( m, id ):
-    """This method incrementes the object counter in the map"""
-
-    if id not in m: m[id] = 0
+def incObjToMap(m, id):
+    """This method increments the object counter in the map"""
+    if id not in m:
+        m[id] = 0
     m[id] += 1
-    pass
 
 def getSelection():
     """This method analyses selection"""
-
     selcount = sg.SelectedCount()
     seltypes = {}
-    for i in range( selcount ):
-        incObjToMap( seltypes, getObjectID( sg.getSelected( i ) ) )
-        pass
+    for i in range(selcount):
+        incObjToMap( seltypes, getObjectID(getStudy(), sg.getSelected(i)) )
     return selcount, seltypes
 
 ################################################
@@ -88,80 +109,106 @@ def getSelection():
 
 def initialize():
     """This method is called when module is initialized. It performs initialization actions"""
+    #for i in dir(SalomePyQt): log("SalomePyQt",i
+    log(" initialize()")
     setDesktop()
-    pass
 
 def windows():
     """This method is called when module is initialized. It returns a map of popup windows to be used by the module"""
-
+    #SalomePyQt WT_LogWindow,  WT_ObjectBrowser, WT_PyConsole, WT_User
+    log(" windows()")
     wm = {}
     wm[SalomePyQt.WT_ObjectBrowser] = Qt.LeftDockWidgetArea
-    wm[SalomePyQt.WT_PyConsole]     = Qt.BottomDockWidgetArea
+    # wm[SalomePyQt.WT_PyConsole] = Qt.BottomDockWidgetArea
     return wm
 
 def views():
-    """This method is called when module is initialized. It returns a list of 2D/3D views to be used by the module"""
+    """
+    for centralwidget, this method is called when module is initialized. 
+    It returns a list of 2D/3D views to be used by the module
+    """
+    log(" views()")
     return []
 
 def createPreferences():
-    """This method is called when module is initialized. It exports module preferences"""
+    """This method is called when module is initialized. It exports module preferences"""  
     pass
 
 def activate():
-    """This method is called when module is initialized. It returns True if activating is successfull, False otherwise"""
-
-    global moduleDesktop
-
-    fv = moduleDesktop.showCentralWidget()
+    """This method is called when module is initialized. It returns True if activating is successfull, False otherwise"""    
+    global moduleDesktops
+    log(" activate()")
+    study = str(getStudy())
+    if study in moduleDesktops:  # may be change with new study
+      moduleDesktops[study].activateDesktop()
+    else:
+      log(" activate(), no existing desktop")
     return True
 
-def viewTryClose( wid ):
-    sgPyQt.setViewClosable(wid, True)
-    pass
+def viewTryClose(widID):
+    """
+    if ViewClosable, delete object,
+    generate RuntimeError: wrapped C/C++ object of type QMainWindowForLog has been deleted
+    so not ViewClosable, hide it
+    """
+    log(" viewTryClose()")
+    sgPyQt.setViewClosable(widID, False)
+    sgPyQt.setViewVisible(widID, False)
 
 def deactivate():
     """This method is called when module is deactivated"""
-
-    global moduleDesktop, widgetDialogBox
-    moduleDesktop.hideCentralWidget()
-    pass
+    global moduleDesktops
+    log(" deactivate()")
+    study = str(getStudy())
+    if study in moduleDesktops:  # may be change with new study
+      moduleDesktops[study].deactivateDesktop()
+    else:
+      print(" deactivate(), no existing desktop")
 
 def activeStudyChanged():
-    """This method is called when active study is changed"""
+    """This method is called when active study is changed, and when salome desktop is activated"""
+    log(" activeStudyChanged %s" % getStudy())
 
-    setDesktop()
-    pass
+def createPopupMenu(popup, context):
+    """
+    for salome object browser and centralwidget views,
+    this method is called when popup menu is invocked
+    """
+    log(" createPopupMenu()")
 
-def createPopupMenu( popup, context ):
-    """This method is called when popup menu is invocked"""
-    pass
-
-def OnGUIEvent( commandID ):
+def OnGUIEvent(commandID):
     """This method is called when a GUI action is activated"""
-
+    global dict_command
+    log(" OnGUIEvent(): command id %s" % commandID)
     if commandID in dict_command:
        dict_command[commandID]()
-       pass
-    pass
+    else:
+       log("The command id %s is not implemented" % commandID)
 
-def preferenceChanged( section, setting ):
+def preferenceChanged(section, setting):
     """This method is called when module's preferences are changed"""
+    log(" referenceChanged(): section %s" % section)
     pass
 
-def activeViewChanged( viewID ):
+def activeViewChanged(viewID):
     """This method is called when active view is changed"""
+    log(" activeViewChanged(): id %s" % viewID)
     pass
 
-def viewCloned( viewID ):
+def viewCloned(viewID):
     """This method is called when active view is cloned"""
+    log(" viewCloned(): id %s" % viewID)
     pass
 
-def viewClosed( viewID ):
+def viewClosed(viewID):
     """This method is called when active view viewClosed"""
+    log(" viewClosed(): id %s" % viewID)
     pass
 
 def engineIOR():
     """This method is called when study is opened. It returns engine IOR"""
-    return getEngineIOR()
+    res = getEngineIOR()
+    log(" engineIOR(): %s" % res)
+    return res
 
-########################################################
+

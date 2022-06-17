@@ -25,7 +25,7 @@
   <section name="SOLVERLAB">
     <!-- Major module parameters -->
     <parameter name="name"            value="SOLVERLAB"/>
-    <parameter name="icon"            value="icon.png"/>
+    <parameter name="icon"            value="logoSOLVERLAB.png"/>
     <parameter name="library"         value="SalomePyQtGUILight"/>
     <parameter name="version"         value="@SALOMESOLVERLAB_VERSION@"/>
   </section>

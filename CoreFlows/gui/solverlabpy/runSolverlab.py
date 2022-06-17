@@ -29,9 +29,9 @@ def loadXML(file):
 
 if __name__ == "__main__":
   packagespydir = os.getenv("PACKAGESPY_ROOT_DIR", None) # check all environement variable to use the model from packagespy
-  solverlabdir = os.getenv("SOLVERLABGUI_ROOT_DIR", None)
+  solverlabdir = os.getenv("SOLVERLAB_ROOT_DIR", None)
   if packagespydir is None or solverlabdir is None:
-    raise ValueError("PACKAGESPY_ROOT_DIR or SOLVERLABGUI_ROOT_DIR environ variable not set, fix it.")
+    raise ValueError("PACKAGESPY_ROOT_DIR or SOLVERLAB_ROOT_DIR environ variable not set, fix it.")
   sys.path.insert(0, os.path.join(packagespydir, "pythonAppliMatix"))
   sys.path.insert(0, solverlabdir)
 

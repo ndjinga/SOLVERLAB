@@ -60,11 +60,11 @@ Option *--workdir or -w*
 ............................
 
 Change working directory (user data directory). Default is
-../SOLVERLABGUI_WORKDIR
+../SOLVERLAB_WORKDIR
 
 .. code-block:: bash
 
-    # execute solverlabGUI in user choice working directory
+    # execute solverlab GUI in user choice working directory
     solverlabGUI -w .../MY_WORKDIR
 
 

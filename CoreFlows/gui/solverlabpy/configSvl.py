@@ -83,10 +83,10 @@ color_treeview_text = 0, 0, 0
 # TODO not used yet
 # solverlab code root dir (.../solverlab)
 solverlab_root_dir = default
-# solverlab GUI working dir (.../SOLVERLABGUI_WORKDIR)
-solverlabgui_workdir = default
-# solverlab GUI LOGS dir  (.../SOLVERLABGUI_WORKDIR/LOGS)
-solverlabgui_logdir = default
+# solverlab GUI working dir (.../SOLVERLAB_WORKDIR)
+solverlab_workdir = default
+# solverlab GUI LOGS dir  (.../SOLVERLAB_WORKDIR/LOGS)
+solverlab_logdir = default
 
 [Logger]
 logdir = LOG
@@ -102,7 +102,8 @@ def getMainConfig():
   return _mainConfig[0] # have to be set in ConfigManager.getMainConfig()
 
 def getMainConfigCatchAll():
-  return getMainConfig().toCatchAll() # have to be set in ConfigManager.getMainConfig()
+  conf = getMainConfig()
+  return conf.toCatchAll() # have to be set in ConfigManager.getMainConfig()
 
 
 class ConfigManager(object):

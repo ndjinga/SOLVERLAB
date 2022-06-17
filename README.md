@@ -1,13 +1,13 @@
-</center>
 
-| ![logo](logoSOLVERLAB.png) |
-|:--:|
-| **SOLVERLAB** |
+![logo](./images/logoSOLVERLAB.png)
 
-</center>
+SOLVERLAB
+==========
+
 
 Introduction
 ------------
+
 SOLVERLAB is a geometrical and numerical C++/Python library designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The goal is to provide simple MATLAB style functions for the generation and manipulation of meshes, fields and matrices. The library is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of matrices and linear solvers. 
 
 SOLVERLAB includes PDE systems
@@ -30,6 +30,7 @@ The corresponding binary files can be found  [here](https://www.salome-platform.
 
 Examples of use
 ---------------
+
 - [Examples of stable numerical methods for the 1D linear transport equation](CDMATH/tests/doc/1DTransportEquation/RegularGrid/TransportEquation1D_RegularGrid.ipynb)
 - [Shock formation and numerical capture issues for the 1D Burgers' equations](CDMATH/tests/doc/1DBurgersEquation/BurgersEquation1D.ipynb)
 - [Influence of the mesh on the convergence and low Mach precision for the UPWIND finite volume method applied to the 2D wave system](CDMATH/tests/doc/2DWaveSystemVF_stationary/Convergence_WaveSystem_Upwind_SQUARE.ipynb)
@@ -42,7 +43,8 @@ Examples of use
 - [Surface Finite elements for the Poisson-Beltrami problem on a torus in 3D (by M. Nguemfouo, PhD student)](CDMATH/tests/doc/3DPoissonTorusEF/SynthesisConvergenceFETorus.pdf)
 
 Download SOLVERLAB sources for compilation
-----------------------------------
+-------------------------------------------
+
 The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15).
 However the binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a better alternative using less disk and memory space.
 
@@ -57,7 +59,8 @@ Download SOLVERLAB source from GitHub
 
 
 Set the environment for the compilation of SOLVERLAB
----------------------------------------------
+-----------------------------------------------------
+
 Dependencies. The following package list is sufficient on Ubuntu 20.04 :
 
  - `cmake3` (mandatory)
@@ -78,7 +81,8 @@ Directories. Create the suggested build and installation folders:
 
 
 Compile and install SOLVERLAB
---------------------------
+------------------------------
+
 Simpler build for a minimum version:
 * `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON `  
 > This will download and build the following dependencies
@@ -139,13 +143,5 @@ The SOLVERLAB environment variables consist in :
 Use of SOLVERLAB GUI
 --------------------
 
-See README_solverlabGUI.md
-
-A new GUI based on the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) is being developped for SOLVERLAB. In order to use the new GUI use the cmake option `-DSOLVERLAB_WITH_PACKAGESPY=ON` that will download the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) from github.
-If you have a local copy of the library PACKAGESPY, give the to solverlab using the cmake option `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`.
-
-To use the Graphical User Interface of SOLVERLAB, you can load the SOLVERLAB environment in your terminal using the command
- * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
-Then in your terminal simply type
-- `python3 $SOLVERLABGUI -g`
+See READMES/README_solverlabGUI.md
 

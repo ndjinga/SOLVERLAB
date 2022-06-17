@@ -58,7 +58,7 @@ _filePatterns = {
 "launchSolverlab.sh" : r"""#!/bin/bash
 
 # example of use:
-# cd $HOME/SOLVERLABGUI_WORKDIR/solverlabSim_test
+# cd $HOME/SOLVERLABGU_WORKDIR/solverlabSim_test
 # ./launchSolverlab.sh
 
 # this script is in launch directory of solverlab

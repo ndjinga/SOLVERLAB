@@ -88,7 +88,7 @@ class SelectEquation(IFLX.StrNoEditionXyz):
   def createEditor(self, parent):
     equationList = self.getRoot().getListEquation()
     if len(equationList) == 0:
-      QTW.QMessageBox.warning(self.getController().getDesktop(), "warning", "No equation")
+      QTW.QMessageBox.warning(self.getController().getDesktop(), "warning", "An equation is needed")
       return None
     combo = IFLX.XyzQComboBox(parent)
     intlist = []
@@ -97,9 +97,8 @@ class SelectEquation(IFLX.StrNoEditionXyz):
     combo.addItems(intlist)
     combo.setCurrentIndex(0)
     return combo
+
 ###############################################################
-
-
 class CaseSvl(_XyzConstrainBase):
   """
   general informations about case and for launch solverlab
@@ -118,7 +117,7 @@ class CaseSvl(_XyzConstrainBase):
     # "Target": (u"Define target materials and geometry parameters", u""),
     # "Simulation": (u"Define general simulation parameters", u""),
     # "Variables": (u"""(right-click to add/modify a variable)
-# Define simulation parameters as python coding variables""", u""),
+    # Define simulation parameters as python coding variables""", u""),
   }
 
   _defaultVersion = "1.0.0"
@@ -131,9 +130,9 @@ class CaseSvl(_XyzConstrainBase):
   def setDefaultValues(self):
     self.NumberOfProcessors = 1
     return
-    '''self.IonBeam.setDefaultValues()
-    self.Simulation.setDefaultValues()
-    self.Target.setDefaultValues()'''
+    #self.IonBeam.setDefaultValues()
+    #self.Simulation.setDefaultValues()
+    #self.Target.setDefaultValues()'''
 
   def isHidden(self, nameAttr):
     """to know if attribute is currently displayed in treeView and other dialog widget"""
@@ -163,7 +162,6 @@ class SimulationSvl(_XyzConstrainBase):
 
   def isHidden(self, nameAttr):
     """to know if attribute is currently displayed in treeView and other dialog widget"""
-
     res = False
     return res
 

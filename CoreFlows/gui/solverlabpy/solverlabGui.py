@@ -74,9 +74,9 @@ cmdsdir = os.path.join(rootdir, "commands")
 
 '''
 if DBG.isDeveloper():
-  workdirdefault = os.path.realpath(os.path.join(rootdir, "..", "SOLVERLABGUI_WORKDIR"))
+  workdirdefault = os.path.realpath(os.path.join(rootdir, "..", "SOLVERLAB_WORKDIR"))
 else:
-  workdirdefault = os.path.expandvars(os.path.join("$HOME", "SOLVERLABGUI_WORKDIR"))
+  workdirdefault = os.path.expandvars(os.path.join("$HOME", "SOLVERLAB_WORKDIR"))
 '''
 
 # load resources for internationalization
@@ -435,7 +435,7 @@ class Svl(object):
     Define all possible <options> for solverlabGui CLI: 'solverlabGUI <options>'
     (internal use only)
     """
-    workdirdefault = os.getenv("SOLVERLABGUI_WORKDIR")
+    workdirdefault = os.getenv("SOLVERLAB_WORKDIR")
     if workdirdefault is None:
       workdirdefault = ""
     workdirdefault = os.path.realpath(os.path.expandvars(workdirdefault))
@@ -679,9 +679,9 @@ class Svl(object):
     # splashscreen
     # https://wiki.qt.io/How_to_create_a_splash_screen_with_an_induced_delay
 
-    SOLVERLABGUI_ROOT_DIR = os.getenv("SOLVERLABGUI_ROOT_DIR")
-    # logger.info("SOLVERLABGUI_ROOT_DIR is " + SOLVERLABGUI_ROOT_DIR)
-    dir_tips = SOLVERLABGUI_ROOT_DIR + "/doc/src/images_tips/"
+    SOLVERLAB_ROOT_DIR = os.getenv("SOLVERLAB_ROOT_DIR")
+    # logger.info("SOLVERLAB_ROOT_DIR is %s" % SOLVERLAB_ROOT_DIR)
+    dir_tips = SOLVERLAB_ROOT_DIR + "/doc/src/images_tips/"
     if True: #TODO for future
       splash = MySplash(QPixmap(dir_tips + "splash_solverlabGUI_arrow.png"))
       splash.logger = logger

@@ -38,15 +38,15 @@ export PATH=$CONDADIR/bin:$PATH
 conda activate pyscientific # as correct python3 PyQt5
   
 # useful environ var
-SOLVERLABGUI_ROOT_DIR=.../solverlabGUI
+SOLVERLAB_ROOT_DIR=.../SOLVERLAB
 
 # optionally where solverlab CODE .de is located
-# default is $SOLVERLABGUI_ROOT_DIR/solverlabCode
-SOLVERLABCODE_ROOT_DIR=YourChoiceForAnotherDevelopmentDirectory
+# default is $SOLVERLAB_ROOT_DIR
+SOLVERLAB_ROOT_DIR=YourChoiceForAnotherDevelopmentDirectory
 
 
-${SOLVERLABGUI_ROOT_DIR}/solverlabGUI --help    # help
-${SOLVERLABGUI_ROOT_DIR}/solverlabGUI --gui     # launch GUI
+${SOLVERLAB_ROOT_DIR}/bin/solverlabGUI --help    # help
+${SOLVERLAB_ROOT_DIR}/bin/solverlabGUI --gui     # launch GUI
 """
 
 
@@ -61,11 +61,11 @@ in 'classical solverlabGUI installation' configuration.
 user usually have minimum environ variable set.
 
   >> bash
-  >> SOLVERLABGUI_ROOT_DIR=...    # where solverlabGUI is located
-  >> ${SOLVERLABGUI_ROOT_DIR}/solverlabGUI --gui  # launch GUI
+  >> SOLVERLAB_ROOT_DIR=...    # where solverlab is located
+  >> ${SOLVERLAB_ROOT_DIR}/bin/solverlabGUI --gui  # launch GUI
 
 Usual python configuration is (2020):
-  python 3.7
+  python 3.7+
   PyQt5, PyQt5.QtWebEngine
   xml
   numpy
@@ -74,26 +74,22 @@ Usual python configuration is (2020):
 
 Tricks:
   Easily get local python3 configuration (as no superuser Linux or Windows) 
+
+  1) google miniconda, and create correct python environment for solverlabGUI
+  2) use salome installation with correct python and solverlab configuration etc.
   
-  see:
-  ${SOLVERLABGUI_ROOT_DIR}/sandbox/conda/README_pySolverlabGUI3.md
-  
-  and create correct python environment for solverlabGUI
- 
 """
 
 #####################################
 _rootFeaturesErrorMessage = r"""
 ***********************************************
-* solverlab CODE configuration is incorrect.
+* solverlab configuration is incorrect.
 ***********************************************
 
-in 'classical solverlab CODE compilation/installation' configuration.
+in 'classical solverlab compilation/installation' configuration.
 user usually have minimum environ variable set.
 
-  >>> export SOLVERLABCODE_ROOT_DIR=...       # where solverlab .de CODE is located
-
-In solverlabGUI defaut value for SOLVERLABCODE_ROOT_DIR is ${SOLVERLABGUI_ROOT_DIR}/solverlabCode
+  >>> export SOLVERLAB_ROOT_DIR=...       # where solverlab is located
 """
 
 import subprocess as SP

@@ -62,7 +62,7 @@ verboseEvent = True
 _MyDir = os.path.split(os.path.realpath(__file__))[0]
 
 
-##############################################################################################################################################
+########################################################################################
 def join(*v):
   """
   as os.path.join but set antislash as slash,
@@ -71,6 +71,7 @@ def join(*v):
   # https://stackoverflow.com/questions/12086224/why-not-os-path-join-use-os-path-sep-or-os-sep
   res = os.path.join(*v).replace("\\", "/")
   return res
+
 
 
 ########################################################################################
@@ -203,7 +204,7 @@ class ControllerSvl(ControllerXyz):
 
     tabs = self.centralLogView.getTabs()
     filetab = self.centralLogView.getTabByName("Explore Dir")
-    rootPath = os.path.join("${SOLVERLABGUI_WORKDIR}")
+    rootPath = os.path.join("${SOLVERLAB_WORKDIR}")
     filetab.setDirRootPath(rootPath, filters=[])
     """
     self.setCentralWidget(central)
@@ -236,6 +237,7 @@ class ControllerSvl(ControllerXyz):
     # act = ACFX.getCommonActionByName("GeneralHelp")
     # if act != None: tb.addAction(act)
     self.toolBars.append(tb)
+
 
   def __createActions(self):
     """create actions for self widget AND other widgets through ACFX.addInCommonActions"""
@@ -321,7 +323,7 @@ class ControllerSvl(ControllerXyz):
 
   def SolverlabGuiHelpAction(self):
     nameBrowser = UXYZ.getBrowser()
-    tmp = "${SOLVERLABGUI_ROOT_DIR}/doc/build/html/index.html".split("/")
+    tmp = "${SOLVERLAB_ROOT_DIR}/doc/build/html/index.html".split("/")
     tmp = os.path.join(*tmp)
     nameUrlHelp = os.path.expandvars(tmp)
     if os.path.exists(nameUrlHelp):
@@ -329,6 +331,7 @@ class ControllerSvl(ControllerXyz):
       proc = SP.Popen(cmd, shell=True)
     else:
       logger.error("inexisting name Url Help: '%s'" % nameUrlHelp )
+
 
   def SolverlabCodeHelpAction(self):
     nameBrowser = UXYZ.getBrowser()
@@ -344,13 +347,13 @@ class ControllerSvl(ControllerXyz):
 
   def __initializeWorkdir(self):
     """
-    initialize user working directory $SOLVERLABGUI_WORKDIR if not existing
+    initialize user working directory $SOLVERLAB_WORKDIR if not existing
     """
-    nameVar = "SOLVERLABGUI_WORKDIR"
+    nameVar = "SOLVERLAB_WORKDIR"
     workDir = os.getenv(nameVar)
     if workDir == None:
       homeDir = os.getenv("HOME")
-      workDir = os.path.join(homeDir, "SOLVERLABGUI_WORKDIR")
+      workDir = os.path.join(homeDir, "SOLVERLAB_WORKDIR")
     workDir = os.path.realpath(workDir)
     os.environ[nameVar] = workDir
     if not os.path.exists(workDir):
@@ -358,11 +361,13 @@ class ControllerSvl(ControllerXyz):
     self.workDir = workDir
     self.currentDir = workDir
 
+
   def getEtudeWorkdirExpanded(self):
     if self._model == None:
       return None
     else:
       return self._model.getEtudeWorkdirExpanded()
+
 
   ############################################################################
   """
@@ -406,11 +411,11 @@ class ControllerSvl(ControllerXyz):
 
   def LaunchAllTestsAction(self):
     # cmd = "AllTestLauncher.py 2>&1" #unittests strerr to stdout
-    filesh = os.path.expandvars('${SOLVERLABGUI_ROOT_DIR}/bin/AllSolverlabGuiTestLauncher.sh')
+    filesh = os.path.expandvars('${SOLVERLAB_ROOT_DIR}/bin/AllSolverlabGuiTestLauncher.sh')
     if os.path.exists(filesh):
-      cmd = "cd ${SOLVERLABGUI_ROOT_DIR}; pwd ; ./bin/AllSolverlabGuiTestLauncher.sh"
+      cmd = "cd ${SOLVERLAB_ROOT_DIR}; pwd ; ./bin/AllSolverlabGuiTestLauncher.sh"
     else:
-      cmd = "cd ${SOLVERLABGUI_ROOT_DIR}; pwd ; ./bin/AllTestLauncher.sh"
+      cmd = "cd ${SOLVERLAB_ROOT_DIR}; pwd ; ./bin/AllTestLauncher.sh"
     logger.debug("LaunchAllTestsAction '%s'" % cmd)
     self.centralLogView.launchCmdIntoPopen(cmd)
     return True
@@ -425,7 +430,7 @@ class ControllerSvl(ControllerXyz):
   def SolverlabExampleAction(self):
     from widgetpy.salomeQFileDialog import SalomeQFileDialog
     aDialog = SalomeQFileDialog(parent=self._desktop)
-    aDir = os.getenv("SOLVERLABGUI_ROOT_DIR")
+    aDir = os.getenv("SOLVERLAB_ROOT_DIR")
     aDir = os.path.join(aDir, "example", "model")
     nameFile = aDialog.browseFileDialog('Load Solverlab file xml', aDir, "(*.xml *.XML)", [])
     logger.debug("LoadSolverlabModelXml %s" % nameFile)
@@ -725,7 +730,7 @@ class ControllerSvl(ControllerXyz):
     if os.path.isdir(dataDir):
       logger.info("use existing corteo data directory\n%s" % dataDir)
     else:
-      name = os.path.join(*"${SOLVERLABGUI_ROOT_DIR} solverlabCode data_4bit".split())
+      name = os.path.join(*"${SOLVERLAB_ROOT_DIR} solverlabCode data_4bit".split())
       origDir = os.path.realpath(os.path.expandvars(name))
       logger.warning("create user data corteo directory:\n%s ->\n%s" % (origDir, dataDir))
       UTW.copyDir(origDir, dataDir)
@@ -824,7 +829,7 @@ class ControllerSvl(ControllerXyz):
     # data Corteo in etudeDir/../data
     # logger.debug("current etude directory %s" % etudeDir)
 
-    code_exe = os.path.join(*"${SOLVERLABGUI_ROOT_DIR} solverlabCode solverlab_mingw64.exe".split())
+    code_exe = os.path.join(*"${SOLVERLAB_ROOT_DIR} solverlabCode solverlab_mingw64.exe".split())
     code_exe = os.path.realpath(os.path.expandvars(code_exe))
     data_dir = os.path.join(etudeDir, "..", "data")
     data_dir = os.path.realpath(os.path.expandvars(data_dir))
@@ -874,7 +879,7 @@ EXIT %solverlabExitCode%
     # logger.debug("current etude directory %s" % etudeDir)
 
     PACKAGESPY_ROOT_DIR = os.getenv("PACKAGESPY_ROOT_DIR")
-    SOLVERLABGUI_ROOT_DIR = os.getenv("SOLVERLABGUI_ROOT_DIR")
+    SOLVERLAB_ROOT_DIR = os.getenv("SOLVERLAB_ROOT_DIR")
     nbproc = int(self._model.Analysis.caseSolverlab.NumberOfProcessors)
     if nbproc == 0:
       nbproc = 1
@@ -882,7 +887,7 @@ EXIT %solverlabExitCode%
     if PACKAGESPY_ROOT_DIR is not None: # as salome_matix installation
       code_exe = os.path.join(*"${PACKAGESPY_ROOT_DIR} bin solverlab_cea.exe".split())
     else: # as default
-      code_exe = os.path.join(*"${SOLVERLABGUI_ROOT_DIR} solverlabCode solverlab_linux64.exe".split())
+      code_exe = os.path.join(*"${SOLVERLAB_ROOT_DIR} solverlabCode solverlab_linux64.exe".split())
     
     code_exe = os.path.realpath(os.path.expandvars(code_exe))
 
@@ -907,7 +912,7 @@ EXIT %solverlabExitCode%
 echo "########## START"
 
 export PACKAGESPY_ROOT_DIR={PACKAGESPY_ROOT_DIR}
-export SOLVERLABGUI_ROOT_DIR={SOLVERLABGUI_ROOT_DIR}
+export SOLVERLAB_ROOT_DIR={SOLVERLAB_ROOT_DIR}
 
 cd {etudeDir}
 
@@ -977,7 +982,7 @@ echo "########## END"
   def LoadSolverlabModelXmlAction(self):
     from widgetpy.salomeQFileDialog import SalomeQFileDialog
     aDialog = SalomeQFileDialog(parent=self._desktop)
-    aDir = USET.getExpandedVar("_SOLVERLABGUI_WORKDIR")
+    aDir = USET.getExpandedVar("_SOLVERLAB_WORKDIR")
     nameFile = aDialog.browseFileDialog('Load Solverlab file xml', aDir, "(*.xml *.XML)", [])
     logger.debug("LoadSolverlabModelXml %s" % nameFile)
     if nameFile == "": return True  # cancel

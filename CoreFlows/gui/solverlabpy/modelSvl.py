@@ -56,7 +56,7 @@ class ModelSvl(_XyzConstrainBase):
       logger.info("Equation %s selected" % i)
       return self.Model[i]
     except:
-      logger.info("No equation")
+      logger.info("ModelSvl without equation")
       return None
 
   def getEtudeWorkdirExpanded(self):

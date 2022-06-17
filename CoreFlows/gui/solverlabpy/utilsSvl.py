@@ -87,13 +87,10 @@ def replace_in_file(file_in, str_in, str_out):
       f.write(contents.replace(str_in, str_out))
 
 
-def get_solverlabGUI_version(config):
-    # CVW TODO
-    return version
-
 def get_tmp_filename(config, name):
     # CVW TODO
     return os.path.join(config.VARS.tmp_root, name)
+
 
 ##############################################################################
 # logger utilities
