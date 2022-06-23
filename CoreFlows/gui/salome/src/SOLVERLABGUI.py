@@ -119,7 +119,7 @@ def windows():
     log(" windows()")
     wm = {}
     wm[SalomePyQt.WT_ObjectBrowser] = Qt.LeftDockWidgetArea
-    # wm[SalomePyQt.WT_PyConsole] = Qt.BottomDockWidgetArea
+    wm[SalomePyQt.WT_PyConsole] = Qt.BottomDockWidgetArea
     return wm
 
 def views():
