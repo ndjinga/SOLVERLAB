@@ -12,7 +12,7 @@
 #================================================================================================================================
 
 
-from math import sin, cos, pi, sqrt
+from math import sqrt
 from numpy import sign
 from matplotlib import pyplot as plt
 import cdmath
@@ -139,24 +139,30 @@ def WaveSystemSpectrum( cfl, my_mesh, filename, num_scheme):
     divMat.viewNonZeroStructure( 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme)
     divMat.saveToFile( "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme,  True)
     X,Y=divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme)
+    plt.xlim((min(X)-50)*1.1, (max(X)+50)*1.1)
+    plt.ylim((min(Y)-10)*1.1, (max(Y)+10)*1.1)
+    plt.title('Eigenvalues of the '+num_scheme+ ' finite volume method \n for the wave system')
     plt.scatter(X,Y, label=num_scheme+' scheme')#
     plt.xlabel("Real part")
     plt.ylabel("Imaginary part")
     plt.axvline(x=0, color='black')
     plt.axhline(y=0, color='black')
     plt.legend()
-    plt.show(False)
+    plt.show(block=False)
     plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_WaveSystem.png")
 
     divMatSquare = divMat*divMat.transpose()
     X2,Y2=divMatSquare.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme+"_symmetrised")
+    plt.xlim((min(X2)-50)*1.1, (max(X2)+50)*1.1)
+    plt.ylim((min(Y2)-10)*1.1, (max(Y2)+10)*1.1)
+    plt.title('Eigenvalues of tAA for the '+num_scheme+ ' finite volume method \n for the wave system')
     plt.scatter(X2,Y2, label=num_scheme+' scheme'+" symmetrised")#
     plt.xlabel("Real part")
     plt.ylabel("Imaginary part")
     plt.axvline(x=0, color='black')
     plt.axhline(y=0, color='black')
     plt.legend()
-    plt.show(False)
+    plt.show(block=False)
     plt.savefig("FiniteVolumesEigenvaluesOn"+meshName+"_"+num_scheme+"Scheme"+"_WaveSystem_symmetrised.png")
 
     assert min(map(abs,Y2))<precision
