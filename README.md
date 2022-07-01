@@ -41,6 +41,23 @@ Examples of use
 - [Surface Finite elements for the Poisson-Beltrami problem on a sphere in 3D (by M. Nguemfouo, PhD student)](CDMATH/tests/doc/3DPoissonSphereEF/SynthesisConvergenceFESphere.pdf)
 - [Surface Finite elements for the Poisson-Beltrami problem on a torus in 3D (by M. Nguemfouo, PhD student)](CDMATH/tests/doc/3DPoissonTorusEF/SynthesisConvergenceFETorus.pdf)
 
+User guide of the CoreFlows module
+----------------------------------
+The user guide is organized as follows :
+- [The physical models](./Documentation/PhysicalModels.md)
+    - [The linear scalar problems](./Documentation/PhysicalModels/ScalarModelsPage.ipynb)
+        - [The transport equation](./Documentation/PhysicalModels/TransportEq.ipynb) for pure advection phenomena
+        - [The diffusion equation](./Documentation/PhysicalModels/DiffusionEq.ipynb) for pure diffusion phenomena
+    - [The compressible Navier-Stokes equations](./Documentation/PhysicalModels/NSModelsPage.ipynb)
+    - [The two-phase flow models](./Documentation/PhysicalModels/TwoPhasePage.ipynb)
+        - [The drift model](./Documentation/PhysicalModels/TwoPhase/DriftModelPage.ipynb) with two partial masses, one momentum and one energy equation
+        - [The isothermal two-fluid model](./Documentation/PhysicalModels/TwoPhase/IsothermalPage.ipynb) with two partial masses and two momentum equations (no energy equation)
+        - [The five equation two-fluid model](./Documentation/PhysicalModels/TwoPhase/FiveEqPage.ipynb) with two partial masses, two momentum equations and one energy equation
+- [Software structure](Documentation/software.md)
+- [The numerical methods](Documentation/numericalPage.ipynb)
+- [Summary of  available functionalities](Documentation/functionalities.ipynb)
+- [SOLVERLAB-CoreFlows example scripts](Documentation/examples.md)
+
 Download SOLVERLAB sources for compilation
 ----------------------------------
 The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15).

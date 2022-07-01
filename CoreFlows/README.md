@@ -21,8 +21,8 @@ SOLVERLAB-CoreFlows relies on the numerical toolbox [SOLVERLAB-Toolbox](https://
 You will need the packages 'doxygen' if you want to generate de documentation and 'swig' if you want to use python scripts.  
 The library is currently maintained and distributed by the SALOME developpement team on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows-10.
 
-User guide
-----------
+User guide of the CoreFlows module
+----------------------------------
 The user guide is organized as follows :
 - [The physical models](./Documentation/PhysicalModels.md)
     - [The linear scalar problems](./Documentation/PhysicalModels/ScalarModelsPage.ipynb)
