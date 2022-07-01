@@ -44,19 +44,19 @@ Examples of use
 User guide of the CoreFlows module
 ----------------------------------
 The user guide is organized as follows :
-- [The physical models](./Documentation/PhysicalModels.md)
-    - [The linear scalar problems](./Documentation/PhysicalModels/ScalarModelsPage.ipynb)
-        - [The transport equation](./Documentation/PhysicalModels/TransportEq.ipynb) for pure advection phenomena
-        - [The diffusion equation](./Documentation/PhysicalModels/DiffusionEq.ipynb) for pure diffusion phenomena
-    - [The compressible Navier-Stokes equations](./Documentation/PhysicalModels/NSModelsPage.ipynb)
-    - [The two-phase flow models](./Documentation/PhysicalModels/TwoPhasePage.ipynb)
-        - [The drift model](./Documentation/PhysicalModels/TwoPhase/DriftModelPage.ipynb) with two partial masses, one momentum and one energy equation
-        - [The isothermal two-fluid model](./Documentation/PhysicalModels/TwoPhase/IsothermalPage.ipynb) with two partial masses and two momentum equations (no energy equation)
-        - [The five equation two-fluid model](./Documentation/PhysicalModels/TwoPhase/FiveEqPage.ipynb) with two partial masses, two momentum equations and one energy equation
-- [Software structure](Documentation/software.md)
-- [The numerical methods](Documentation/numericalPage.ipynb)
-- [Summary of  available functionalities](Documentation/functionalities.ipynb)
-- [SOLVERLAB-CoreFlows example scripts](Documentation/examples.md)
+- [The physical models](./CoreFlows/Documentation/PhysicalModels.md)
+    - [The linear scalar problems](./CoreFlows/Documentation/PhysicalModels/ScalarModelsPage.ipynb)
+        - [The transport equation](./CoreFlows/Documentation/PhysicalModels/TransportEq.ipynb) for pure advection phenomena
+        - [The diffusion equation](./CoreFlows/Documentation/PhysicalModels/DiffusionEq.ipynb) for pure diffusion phenomena
+    - [The compressible Navier-Stokes equations](./CoreFlows/Documentation/PhysicalModels/NSModelsPage.ipynb)
+    - [The two-phase flow models](./CoreFlows/Documentation/PhysicalModels/TwoPhasePage.ipynb)
+        - [The drift model](./CoreFlows/Documentation/PhysicalModels/TwoPhase/DriftModelPage.ipynb) with two partial masses, one momentum and one energy equation
+        - [The isothermal two-fluid model](./CoreFlows/Documentation/PhysicalModels/TwoPhase/IsothermalPage.ipynb) with two partial masses and two momentum equations (no energy equation)
+        - [The five equation two-fluid model](./CoreFlows/Documentation/PhysicalModels/TwoPhase/FiveEqPage.ipynb) with two partial masses, two momentum equations and one energy equation
+- [Software structure](CoreFlows/Documentation/software.md)
+- [The numerical methods](CoreFlows/Documentation/numericalPage.ipynb)
+- [Summary of  available functionalities](CoreFlows/Documentation/functionalities.ipynb)
+- [SOLVERLAB-CoreFlows example scripts](CoreFlows/Documentation/examples.md)
 
 Download SOLVERLAB sources for compilation
 ----------------------------------
