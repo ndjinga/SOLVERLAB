@@ -89,7 +89,7 @@ $$
 $$
 
 where 
-- $D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U)\cdot n_{ij}$ is the matrix of the diffusion tensor.
+- $D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U) \cdot \vec{n}{ij}$ is the matrix of the diffusion tensor.
   *(\ref{eq:flux diff})* is not accurate for highly non structured or non conforming meshes. 
   However, since we are mainly interested in convection driven flows, we do not ask for a very precise scheme.
 
