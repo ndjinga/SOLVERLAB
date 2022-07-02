@@ -753,18 +753,13 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = @PROJECT_SOURCE_DIR@/README.md \
-                         @PROJECT_SOURCE_DIR@/CDMATH/README.md \
-                         @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/ \
-                         @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DPoissonEF/ \
+INPUT                  =@PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DPoissonEF/ \
                          @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DPoissonVF/ \
                          @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DDiffusion/ \
                          @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DPoisson_StiffBC/ \
-                         @PROJECT_SOURCE_DIR@/CoreFlows/README.md \
-                         @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/ \
+                          @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/ \
                          @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/PhysicalModels/\
-                         @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/PhysicalModels/TwoPhase/\
-                         @PROJECT_SOURCE_DIR@/CoreFlows/gui/doc/README.md 
+                         @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/PhysicalModels/TwoPhase/
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -784,7 +779,7 @@ INPUT_ENCODING         = UTF-8
 # *.md, *.mm, *.dox, *.py, *.f90, *.f, *.for, *.tcl, *.vhd, *.vhdl, *.ucf,
 # *.qsf, *.as and *.js.
 
-FILE_PATTERNS          = *.md 
+FILE_PATTERNS          = *.dox
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -853,7 +848,9 @@ EXAMPLE_RECURSIVE      = YES
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             =@PROJECT_SOURCE_DIR@/CoreFlows/Documentation/Figures
+IMAGE_PATH             =@PROJECT_SOURCE_DIR@/CoreFlows/Documentation/Figures\
+                        @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/NumericalResults\
+                        @PROJECT_SOURCE_DIR@/CDMATH/tests/doc
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -901,7 +898,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/README.md
+USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/intro.dox
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
