@@ -3,9 +3,9 @@ The two-phase flow models
 
 We present the homogeneised two phase flow models implemented in CoreFlows. 
 
-This models are obtained by averaging the balance equations for each separated phase or for the mixture, using space, time or ensemble averaged quantities (\ref ishii and \ref Drew ). 
+This models are obtained by averaging the balance equations for each separated phase or for the mixture, using space, time or ensemble averaged quantities (references ishii and Drew ). 
 
-\ref The drift model is used in the thermal hydraulics softwares \ref flica4 and \ref flocal, whilst the two-fluid models are used in \ref cathare , \ref neptuneCFD, \ref CobraTF , \ref relap5 .
+The drift model is used in the thermal hydraulics softwares flica4 and flocal, whilst the two-fluid models are used in cathare , neptuneCFD, CobraTF ,relap5 .
 
 
 The Drift model

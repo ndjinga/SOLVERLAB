@@ -1,7 +1,7 @@
 The Drift model
 ===============	
 
-The model consists in the steam mass balance equation together with the mixture mass conservation, the mixture momentum balance and mixture energy balance equations. The main unknowns are the steam mass concentration $c_v$, the pressure $P$, the mixture velocity $\vec{u}_m$, and the common temperature $T$. The model uses stiffened gas laws $p_g(\rho_g,T)$ and  $p_l(\rho_l,T)$ as well as  linearised internal energy law $e_k(T)$ valid around the saturation points $(P=1 bar, T=373K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum \ref pressureEstimate.
+The model consists in the steam mass balance equation together with the mixture mass conservation, the mixture momentum balance and mixture energy balance equations. The main unknowns are the steam mass concentration $c_v$, the pressure $P$, the mixture velocity $\vec{u}_m$, and the common temperature $T$. The model uses stiffened gas laws $p_g(\rho_g,T)$ and  $p_l(\rho_l,T)$ as well as  linearised internal energy law $e_k(T)$ valid around the saturation points $(P=1 bar, T=373K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
 
 The drift model is a system of four nonlinear equations taking the following conservative form
 
@@ -20,7 +20,9 @@ $$
 $$
          \partial_t\phi (\rho_m E_m)+\nabla\cdot\phi(m_g H_g{}^t\vec{u}_g+m_l H_l{}^t\vec{u}_l)=\Phi+\phi\rho_m\vec{g}\cdot\vec{u}_m- K_g\phi m_g||\vec{u}_g||^3- K_l\phi m_l||\vec{u}_l||^3- K_s\delta_s(x)\phi\rho_m||\vec{u}_m||^3
 $$
+
 where the mixture quantities are defined by
+
 $$
 \rho_m=\alpha_g\rho_g+\alpha_l\rho_l
 $$
@@ -55,7 +57,7 @@ Geometric and physical source terms are
 - $\phi(\vec x)$ the volumic porosity field ([DriftModel](../../../Models/inc/DriftModel.hxx)::setPorosityField),
 - $K_s(\vec x)$ the singular friction function, $\delta_s(\vec x)$ the Dirac delta function with support on the set $s$ ([DriftModel](../../../Models/inc/DriftModel.hxx)::setPressureLossField).
 
-We close the Drift-Model system with a stiffened gas law $p = (\gamma_k -1) \rho_k e_k -\gamma_k p_{0k}$ for each phase and a linearised enthalpy law $h_k(T)$ valid around the points $(P=1 bar, T=300K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum \ref pressureEstimate.
+We close the Drift-Model system with a stiffened gas law $p = (\gamma_k -1) \rho_k e_k -\gamma_k p_{0k}$ for each phase and a linearised enthalpy law $h_k(T)$ valid around the points $(P=1 bar, T=300K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
 
 For the sake of simplicity, for the moment we consider constant viscosity and conductivity, and neglect the contribution of viscous forces in the energy equation.
 
