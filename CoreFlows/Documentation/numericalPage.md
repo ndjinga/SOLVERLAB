@@ -14,7 +14,7 @@ The upwind scheme is the basic scheme but options are available to use a centere
 Our models can be written in generic form as a nonlinear system of balance laws:
 
 $$
-\frac{\partial U}{\partial t} + \nabla \cdot \left(\mathcal{F}^{conv}(U)\right)+\nabla \cdot \left(\mathcal{F}^{diff}(U)\right) = 0, 
+\frac{\partial U}{\partial t} + \nabla \cdot \left(\mathcal{F}^{conv}(U)\right)+\nabla \cdot \left(\mathcal{F}^{diff}(U)\right) = S(U,x), 
 $$
 
 where 
@@ -40,8 +40,8 @@ $$
 $$
 
 with: 
-- $$\overrightarrow{\Phi}^{con}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U).\vec n_{ij}ds$$,
-- $$\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U).\vec n_{ij}ds$$
+- the numerical convection flux $\overrightarrow{\Phi}^{conv}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U)\cdot\vec n_{ij}ds$,
+- the numerical diffusion flux $\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U)\cdot\vec n_{ij}ds$$
 
 To approximate the convection numerical flux $\overrightarrow{\Phi}^{conv}_{ij}$ we solve an  approximate Riemann problem 
 at the interface $\partial C_{ij}$. There are three possible formulations for the convection fluxes. 
@@ -69,7 +69,9 @@ where
 - $A(U_i,U_j)$ the Roe matrix
 - and $A^-= \frac{A - \mathcal{D}}{2}$.
 
- The choice $\mathcal{D}= 0$ gives the \ref centered upwinding, $\mathcal{D}= |A|$ for the \ref roe formulation and  $\mathcal{D}= sign(A)$ for the \ref vfroe and \ref vffc formulations give the full \ref upwind upwinding. The \ref lowMach, \ref pressureCorrection and \ref staggered upwindings allow more precision for  Mach number flows. 
+ The choice $\mathcal{D}= 0$ gives the \ref centered upwinding, 
+ $\mathcal{D}= |A|$ for the \ref roe formulation 
+ and  $\mathcal{D}= sign(A)$ for the \ref vfroe and \ref vffc formulations give the full \ref upwind upwinding. The \ref lowMach, \ref pressureCorrection and \ref staggered upwindings allow more precision for  Mach number flows. 
 
 The diffusion numerical flux $\overrightarrow\Phi_{ij}^{diff}$ is approximated on structured meshes using the formula:
 
@@ -78,10 +80,11 @@ $$
 $$
 
 where 
-- $D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U).\vec{n}_{ij}$ is the matrix of the diffusion tensor.
-*(\ref{eq:flux diff})* is not accurate for highly non structured or non conforming meshes. However, since we are mainly interested in convection driven flows, we do not ask for a very precise scheme.
+- $D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U)\cdot\vec{n}_{ij}$ is the matrix of the diffusion tensor.
+  *(\ref{eq:flux diff})* is not accurate for highly non structured or non conforming meshes. 
+  However, since we are mainly interested in convection driven flows, we do not ask for a very precise scheme.
 
-Finally, since $\sum_{j \in N(i)}\mathcal {F}^{conv}(U_i). \vec{n}_{ij}=0$, 
+Finally, since $\sum_{j \in N(i)}\mathcal {F}^{conv}(U_i)\cdot \vec{n}_{ij}=0$, 
 using *(\ref{eq:flux roe})* and *(\ref{eq:flux diff})* the equation *(\ref{eq:numer scheme})* of the semi-discrete scheme becomes:
 
 $$
@@ -97,8 +100,8 @@ $$
 or an
 
 $$
- \textrm{ Upwind source } S_i=\frac{1}{2}(Id-signe(A^{Roe}_{i,i+1}))\frac{S(U_i)+S(U_{i+1})}{2}
-			      +\frac{1}{2}(Id+signe(A^{Roe}_{i-1,i}))\frac{S(U_{i-1})+S(U_i)}{2}.
+ \textrm{ Upwind source } S_i=\frac{1}{2}(Id-sign(A^{Roe}_{i,i+1}))\frac{S(U_i)+S(U_{i+1})}{2}
+			      +\frac{1}{2}(Id+sign(A^{Roe}_{i-1,i}))\frac{S(U_{i-1})+S(U_i)}{2}.
 $$
 
 
@@ -113,7 +116,7 @@ and the source term $S(U,x)$ in *(\ref{eq:numer scheme})*
 are evaluated at time $n$ :
 
 $$
-\frac{U_{i}^{n+1} - U_{i}^{n}}{\Delta t} + \sum_{j\in N(i)} \frac{s_{ij}}{v_i}\left(\frac{1}{2}(\mathcal{F}^{conv}(U_i^n) + \mathcal{F}^{conv}(U_j^n)). \vec{n}_{ij}- \mathcal{D}(U_i^n,U_j^n,\vec{n}_{ij}) \frac{U_j^n-U_i^n}{2}\right)
+\frac{U_{i}^{n+1} - U_{i}^{n}}{\Delta t} + \sum_{j\in N(i)} \frac{s_{ij}}{v_i}\left(\frac{1}{2}(\mathcal{F}^{conv}(U_i^n) + \mathcal{F}^{conv}(U_j^n))\cdot \vec{n}_{ij}- \mathcal{D}(U_i^n,U_j^n,\vec{n}_{ij}) \frac{U_j^n-U_i^n}{2}\right)
 +\frac{s_{ij}}{v_i} D (\frac{U_i+U_j}{2},\vec{n}_{ij})(U_j-U_i)= S(U^n,x_i),
 $$
 
@@ -185,7 +188,7 @@ $$
 \vec{q} \otimes \frac{\vec{q}}{\rho} + p {I}_d \\
 \left( \rho E + p \right) \frac{\vec{q}}{\rho} 
 \end{array}
- \right) ,\;
+ \right) ,\quad
 \mathcal{F}^{diff}(U)=\left(\begin{array}{c}
 0\\
 -\nu \vec \nabla (\frac{\vec{q}}{\rho}) \\
