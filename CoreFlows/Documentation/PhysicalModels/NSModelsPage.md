@@ -30,11 +30,15 @@ where
 - $K_r$ the regular friction coefficient ([SinglePhase](../../Models/inc/SinglePhase.hxx)::setDragCoeffs),
 - $K_s(\vec x)$ the singular friction function, $\delta_s(\vec x)$ the Dirac delta function with support on the set $s$ ([SinglePhase](../../Models/inc/SinglePhase.hxx)::setPressureLossField).
 
-We close the Navier-Stokes system by the ideal gas law $p = (\gamma -1) \rho e$ for steam water and a stiffened gas law $p = (\gamma -1) \rho e -\gamma p_0$ for liquid water and a linearised internal energy law valid around the points $(P=1 bar, T=300K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum \ref pressureEstimate.
+We close the Navier-Stokes system by the ideal gas law $p = (\gamma -1) \rho e$ for steam water 
+and a stiffened gas law $p = (\gamma -1) \rho e -\gamma p_0$ for liquid water 
+and a linearised internal energy law valid around the points $(P=1 bar, T=300K)$ 
+or $(P=155 bars, T=618K)$ depending on the value of the enum \ref pressureEstimate.
 
 For the sake of simplicity, for the moment we consider constant viscosity and conductivity, and neglect the contribution of viscous forces in the energy equation.
 
-The constant parameters $\lambda, \nu,\vec g, K_r$ and the fields $\phi(\vec x), \Phi(\vec x), K_s(\vec x)$ can be set by the user.
+The constant parameters $\lambda, \nu,\vec g, K_r$ 
+and the fields $\phi(\vec x), \Phi(\vec x), K_s(\vec x)$ can be set by the user.
 
 
 The class : [SinglePhase](../../Models/inc/SinglePhase.hxx) implements the single phase model  
