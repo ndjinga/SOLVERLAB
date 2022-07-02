@@ -13,13 +13,19 @@ The Drift model
 
 The drift model is a system of four nonlinear equations taking the following conservative form
 $$
-\left\{\begin{array}{lll}
          \partial_t(\alpha_g\rho_g+\alpha_l\rho_l)&+\nabla\cdot(\alpha_g\rho_g{}^t\vec{u}_g+\alpha_l\rho_l{}^t\vec{u}_l)&=0\\
-         \partial_t(\alpha_g\rho_g)&+\nabla\cdot(\alpha_g\rho_g{}^t\vec{u}_g)&=\Gamma_g(h_m,\Phi)\\
-         \partial_t(\alpha_g\rho_g\vec{u}_g+\alpha_l\rho_l\vec{u}_l)&+\nabla\cdot(\alpha_g\rho_g\vec{u}_g\otimes\vec{u}_g+\alpha_l\rho_l\vec{u}_l\otimes\vec{u}_l+p {I}_d)&=\rho_m\vec{g}-K_g\alpha_g\rho_g||\vec{u}_g||\vec{u}_g-K_l\alpha_l\rho_l||\vec{u}_l||\vec{u}_l\\
+         \partial_t(\alpha_g\rho_g)&+\nabla\cdot(\alpha_g\rho_g{}^t\vec{u}_g)&=\Gamma_g(h_m,\Phi)
+$$
+
+$$
+         \partial_t(\alpha_g\rho_g\vec{u}_g+\alpha_l\rho_l\vec{u}_l)&+\nabla\cdot(\alpha_g\rho_g\vec{u}_g\otimes\vec{u}_g+\alpha_l\rho_l\vec{u}_l\otimes\vec{u}_l+p {I}_d)&=\rho_m\vec{g}-K_g\alpha_g\rho_g||\vec{u}_g||\vec{u}_g-K_l\alpha_l\rho_l||\vec{u}_l||\vec{u}_l
+$$
+
+$$
          \partial_t(\alpha_g\rho_g E_g+\alpha_l\rho_l E_l)&+\nabla\cdot(\alpha_g\rho_g H_g{}^t\vec{u}_g+\alpha_l\rho_l H_l{}^t\vec{u}_l)&=\Phi+\rho\vec{g}\cdot\vec{u}-K_g\alpha_g\rho_g||\vec{u}_g||^3-K_l\alpha_l\rho_l||\vec{u}_l||^3
         \end{array}\right.,
 $$
+
 where the total energy and total enthalpy are defined by
 $$
 E_k=e_k+\frac{1}{2}|\vec{u}_k|^2,\quad H_k=h_k+\frac{1}{2}|\vec{u}_k|^2,\qquad k=v,l,
