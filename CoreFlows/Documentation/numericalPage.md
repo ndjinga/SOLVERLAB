@@ -40,10 +40,10 @@ $$
 $$
 
 with: 
-- $\overrightarrow{\Phi}^{con}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U).\vec n_{ij}ds$,
-- $\overrightarrow \Phi^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U).\vec n_{ij}ds$
+- $$\overrightarrow{\Phi}^{con}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U).\vec n_{ij}ds$$,
+- $$\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U).\vec n_{ij}ds$$
 
-To approximate the convection numerical flux $\overrightarrow \Phi^{conv}_{ij}$ we solve an  approximate Riemann problem 
+To approximate the convection numerical flux $\overrightarrow{\Phi}^{conv}_{ij}$ we solve an  approximate Riemann problem 
 at the interface $\partial C_{ij}$. There are three possible formulations for the convection fluxes. 
 - Using the \ref roe local linearisation of the fluxes, we obtain the following formula:
 
