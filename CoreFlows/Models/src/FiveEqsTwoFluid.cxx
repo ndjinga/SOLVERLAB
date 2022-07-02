@@ -100,7 +100,7 @@ void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool 
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
 		for(int k =0; k<_nVar; k++)
@@ -146,7 +146,7 @@ void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool 
 			_idm[k] = _idm[k-1] + 1;
 		VecGetValues(_primitiveVars, _nVar, _idm, _r);
 	}
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"_l: "<<endl;
 		for(int k=0;k<_nVar; k++)
@@ -196,7 +196,7 @@ void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool 
 
 	//Fin du remplissage dans la fonction convectionMatrices
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Etat de Roe calcule: "<<endl;
 		for(int k=0;k<_nVar; k++)
@@ -321,7 +321,7 @@ void FiveEqsTwoFluid::sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar
 			_GravityImplicitationMatrix[i*_nVar+_nVar/2]=-_gravite[i];
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"FiveEqsTwoFluid::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
@@ -384,7 +384,7 @@ void FiveEqsTwoFluid::pressureLossVector(PetscScalar * pressureLoss, double K, P
 	}
 	pressureLoss[_nVar-1]=-K*(m1*norm_u1*norm_u1*norm_u1+m2*norm_u2*norm_u2*norm_u2);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"FiveEqsTwoFluid::pressureLossVector K= "<<K<<endl;
 		cout<<"Ui="<<endl;
@@ -894,7 +894,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 	for (int i=0; i<_nVar*_nVar; i++)
 		Aroe[i] = _Aroe[i];
 
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<endl<<"Matrice de Roe"<<endl;
 		for(int i=0; i<_nVar;i++)
@@ -934,7 +934,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		taille_vp =1;
 	}
 	else{
-		if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if (_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			for(int i=0; i<_nVar; i++)
 				cout<<" Vp real part " << egvaReal[i]<<", Imaginary part " << egvaImag[i]<<endl;
@@ -960,7 +960,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		valeurs_propres_dist=vector< complex< double > >(taille_vp);
 		for( int i=0 ; i<taille_vp ; i++)
 			valeurs_propres_dist[i] = valeurs_propres[i];
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<" Vp apres tri " << valeurs_propres_dist.size()<<endl;
 			for(int ct =0; ct<taille_vp; ct++)
@@ -1150,7 +1150,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 			}
 		}
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"valeurs propres"<<endl;
 			for( int i=0 ; i<taille_vp ; i++)
@@ -1231,7 +1231,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		for(int i=0; i<_nVar*_nVar;i++)
 			_AroeMinusImplicit[i] = _AroeMinus[i];
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Matrice de Roe"<<endl;
 		for(int i=0; i<_nVar;i++){
@@ -1369,7 +1369,7 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		u2_n+=_Vj[(k+2+_Ndim)]*normale[k];
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Boundary conditions for group "<< nameOfGroup<< ", inner cell j= "<<j << " face unit normal vector "<<endl;
 		for(k=0; k<_Ndim; k++){
@@ -1623,7 +1623,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " << i<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1649,7 +1649,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 		consToPrim(_phi,_Vj);
 	}
 
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " <<j <<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1673,7 +1673,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille " << i << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1693,7 +1693,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille  " << j << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1926,13 +1926,13 @@ void FiveEqsTwoFluid::entropicShift(double* n, double& vpcorr0, double& vpcorr1)
 		}
 		int sizeLeft =  Polynoms::new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
 		int sizeRight =  Polynoms::new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
-		if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if (_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<" Eigenvalue of JacoMat Left: " << endl;
 			for(int i=0; i<sizeLeft; i++)
 				cout<<eigValuesLeft[i] << ", "<<endl;
 		}
-		if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if (_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<" Eigenvalue of JacoMat Right: " << endl;
 			for(int i=0; i<sizeRight; i++)
@@ -2000,7 +2000,7 @@ void FiveEqsTwoFluid::entropicShift(double* n)
 	}
 	int sizeLeft =  Polynoms::new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
 	int sizeRight =  Polynoms::new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<" Eigenvalue of JacoMat Left: " << endl;
 		for(int i=0; i<sizeLeft; i++)
