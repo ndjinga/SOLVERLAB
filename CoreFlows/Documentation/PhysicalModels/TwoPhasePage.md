@@ -3,9 +3,9 @@ The two-phase flow models
 
 We present the homogeneised two phase flow models implemented in CoreFlows. 
 
-This models are obtained by averaging the balance equations for each separated phase or for the mixture, using space, time or ensemble averaged quantities (references ishii and Drew ). 
+This models are obtained by averaging the balance equations for each separated phase or for the mixture, using space, time or ensemble averaged quantities (\ref ishii and \ref Drew ). 
 
-The drift model is used in the thermal hydraulics softwares flica4 and flocal, whilst the two-fluid models are used in cathare , neptuneCFD, CobraTF ,relap5 .
+\ref The drift model is used in the thermal hydraulics softwares \ref flica4 and \ref flocal, whilst the two-fluid models are used in \ref cathare , \ref neptuneCFD, \ref CobraTF , \ref relap5 .
 
 
 The Drift model
@@ -75,12 +75,14 @@ The isothermal two-fluid model
 
 The model consists in the phasic mass and momentum balance equations.
 
-The main unknowns are $\alpha$, $P$, $\vec{u}_g$, $\vec{u}_l$. The model uses stiffened gas laws $p_g(\rho_g)$ and  $p_l(\rho_l)$ for a contant temperature $T_0$ provided by the user.
+The main unknowns are $\alpha, P, \vec{u}_g, \vec{u}_l$. 
+The model uses stiffened gas laws $p_g(\rho_g)$ and  $p_l(\rho_l)$ for a contant temperature $T_0$ provided by the user.
 
 The subscript $k$ stands for $l$ for the liquid phase and $g$ for the gas phase. The common
 averaged pressure of the two phases is denoted by $p$. 
 
-In our model, pressure equilibrium between the two phases is postulated, and the resulting system to solve is:
+In this model, pressure equilibrium between the two phases is postulated, and the resulting system to solve is:
+
 $$
  \frac{\partial m_g}{\partial t} + \nabla \cdot \vec{q}_g = 0,
 $$
@@ -104,6 +106,7 @@ Here :
 - $\Delta p$ denotes the pressure default $p-p_k$ between the bulk average pressure and the interfacial average pressure.
 
 where 
+
 $$ 
 	\alpha_g +\alpha_l = 1,
 $$

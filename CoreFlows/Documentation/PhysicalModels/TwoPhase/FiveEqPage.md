@@ -64,9 +64,12 @@ Geometric and physical source terms are
 - $\Phi(\vec x)$ the heat power received by the fluid ([FiveEqsTwoFluid](../../../Models/inc/FiveEqsTwoFluid.hxx)::setHeatPowerField),
 - $K_s(\vec x)$ the singular friction function, $\delta_s(\vec x)$ the Dirac delta function with support on the set $s$ ([FiveEqsTwoFluid](../../../Models/inc/FiveEqsTwoFluid.hxx)::setPressureLossField).
 
-We close the Drift-Model system with a stiffened gas law $p = (\gamma_k -1) \rho_k e_k -\gamma_k p_{0k}$ for each phase and a linearised internal energy law $h_k(T)$ valid around the points $(P=1 bar, T=300K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
+We close the this system with two stiffened gas lasw $p = (\gamma_k -1) \rho_k e_k -\gamma_k p_{0k}$ for each phase 
+and a linearised internal energy law $h_k(T)$ valid around the points $(P=1 bar, T=300K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
 
-For the sake of simplicity, for the moment we consider constant viscosity and conductivity, and neglect the contribution of viscous forces in the energy equation. The constant parameters $\lambda_k, \nu_k,\vec g, K_k$ and the fields $\phi(\vec x), \Phi(\vec x), K_s(\vec x)$ can be set by the user. The default value for $\phi$ is $\phi=1$.
+For the sake of simplicity, for the moment we consider constant viscosity and conductivity, and neglect the contribution of viscous forces in the energy equation. The constant parameters $\lambda_k, \nu_k,\vec g, K_k$ 
+and the fields $\phi(\vec x), \Phi(\vec x), K_s(\vec x)$ can be set by the user. 
+The default value for $\phi$ is $\phi=1$.
 
 The phase change is modeled using the formula
 
