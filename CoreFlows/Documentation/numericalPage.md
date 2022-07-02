@@ -46,7 +46,11 @@ $$
 \overrightarrow{\Phi}^{conv}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U)\cdot\vec n_{ij}ds,
 $$
 
-- the numerical  diffusion flux $\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U)\cdot\vec n_{ij}ds$.
+- the numerical  diffusion flux 
+
+$$
+\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U)\cdot\vec n_{ij}ds.
+$$
 
 To approximate the convection numerical flux $\overrightarrow{\Phi}^{conv}_{ij}$ we solve an  approximate Riemann problem 
 at the interface $\partial C_{ij}$. There are three possible formulations for the convection fluxes. 
@@ -115,8 +119,8 @@ Explicit schemes
 ----------------
 
 In explicit schemes, in order to compute the values $U_i^{n+1}$, 
-the fluxes $\Phi^{conv}_{ij}$, 
-$\Phi^{diff}_{ij}$ 
+the convection flux $\overrightarrow\Phi_{ij}^{conv}$, 
+the diffusion flux $\overrightarrow\Phi_{ij}^{diff}$ 
 and the source term $S(U,x)$ in *(\ref{eq:numer scheme})* 
 are evaluated at time $n$ :
 
