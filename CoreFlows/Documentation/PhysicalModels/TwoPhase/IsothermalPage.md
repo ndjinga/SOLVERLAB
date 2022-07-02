@@ -1,11 +1,16 @@
 The isothermal two-fluid model
 ==============================
 
-The model consists in the phasic mass and momentum balance equations.
+The model consists in four balance laws :
+- the gas mass conservation
+- the liquid mass conservation
+- the gas momentum balance
+- the liquid momentum balance.
 
 The main unknowns are $\alpha, P, \vec{u}_g, \vec{u}_l$. 
 The model uses stiffened gas laws $p_g(\rho_g)$ and  $p_l(\rho_l)$
- valid around the saturation points $(P=1 bar, T=373K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
+valid around the saturation points $(P=1 bar, T=373K)$ 
+or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
 
 The subscript $k$ stands for $l$ for the liquid phase and $g$ for the gas phase. The common
 averaged pressure of the two phases is denoted by $p$. 

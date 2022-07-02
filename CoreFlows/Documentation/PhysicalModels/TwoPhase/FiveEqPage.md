@@ -1,7 +1,12 @@
 The five equation two-fluid model
 =================================
 
-The model consists in the phasic mass and momentum balance equations and one mixture total energy balance equation. 
+The model consists in five balance laws :
+- the gas mass balance
+- the liquid mass balance
+- the gas momentum balance
+- the liquid momentum balance
+- the mixture energy balance. 
 
 The main unknowns are $\alpha, P, \vec{u}_g, \vec{u}_l$ and $T=T_g=T_l$. 
 
@@ -65,7 +70,9 @@ Geometric and physical source terms are
 - $K_s(\vec x)$ the singular friction function, $\delta_s(\vec x)$ the Dirac delta function with support on the set $s$ ([FiveEqsTwoFluid](../../../Models/inc/FiveEqsTwoFluid.hxx)::setPressureLossField).
 
 We close the this system with two stiffened gas lasw $p = (\gamma_k -1) \rho_k e_k -\gamma_k p_{0k}$ for each phase 
-and a linearised internal energy law $h_k(T)$ valid around the points $(P=1 bar, T=300K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
+and a linearised internal energy law $h_k(T)$ 
+valid around the points $(P=1 bar, T=300K)$ 
+or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
 
 For the sake of simplicity, for the moment we consider constant viscosity and conductivity, and neglect the contribution of viscous forces in the energy equation. The constant parameters $\lambda_k, \nu_k,\vec g, K_k$ 
 and the fields $\phi(\vec x), \Phi(\vec x), K_s(\vec x)$ can be set by the user. 
@@ -81,7 +88,8 @@ $$
   \Gamma_g= 0 \textrm{ otherwise }
 $$
 
-The parameters $\lambda_k, \nu_k,\vec g, K$ and $\Phi$ can be set by the user.
+The parameters $\lambda_k, \nu_k,\vec g, K$ 
+and $\Phi$ can be set by the user.
 
 The class : [FiveEqsTwoFluid](../../../Models/inc/FiveEqsTwoFluid.hxx) implements the equal temperature two fluid model  
 

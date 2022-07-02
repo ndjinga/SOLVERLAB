@@ -1,7 +1,11 @@
 The Drift model
 ===============	
 
-The model consists in the steam mass balance equation together with the mixture mass conservation, the mixture momentum balance and mixture energy balance equations. 
+The model consists in four balance laws :
+- the steam mass balance
+- the mixture mass conservation
+- the mixture momentum balance 
+- the mixture energy balance. 
 
 The main unknowns are 
 - the steam mass concentration $c_v$, 
@@ -10,8 +14,9 @@ The main unknowns are
 - the common temperature $T$. 
 
 The model uses stiffened gas laws $p_g(\rho_g,T)$ and  $p_l(\rho_l,T)$
- as well as linearised internal energy law $e_k(T)$
- valid around the saturation points $(P=1 bar, T=373K)$ or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
+as well as linearised internal energy law $e_k(T)$
+valid around the saturation points $(P=1 bar, T=373K)$ 
+or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
 
 The drift model is a system of four nonlinear equations taking the following conservative form
 
@@ -68,14 +73,16 @@ Geometric and physical source terms are
 - $K_s(\vec x)$ the singular friction function, $\delta_s(\vec x)$ the Dirac delta function with support on the set $s$ ([DriftModel](../../../Models/inc/DriftModel.hxx)::setPressureLossField).
 
 We close the Drift-Model system with a stiffened gas law $p = (\gamma_k -1) \rho_k e_k -\gamma_k p_{0k}$ for each phase 
-and a linearised enthalpy law $h_k(T)$ valid around the points $(P=1 bar, T=300K)$ 
+and a linearised enthalpy law $h_k(T)$ 
+valid around the points $(P=1 bar, T=300K)$ 
 or $(P=155 bars, T=618K)$ depending on the value of the enum pressureEstimate.
 
 For the sake of simplicity, for the moment we consider constant viscosity and conductivity, and neglect the contribution of viscous forces in the energy equation.
 
 The constant parameters $\lambda_k, \nu_k,\vec g, K_k$ 
 and the fields $\phi(\vec x), \Phi(\vec x), K_s(\vec x)$ can be set by the user. 
-The default value for $\phi$ is $\phi=1$.
+The default value for $\phi$ 
+is $\phi=1$.
 
 
 To close the system we need a drift correlation for the relative velocity:
@@ -83,6 +90,7 @@ To close the system we need a drift correlation for the relative velocity:
 $$
 \vec{u}_r=\vec{u}_g-\vec{u}_l=\vec{f}_r(c_g,\vec{u}_m,\rho_m).
 $$
+
 For the moment the only drift correlation available is $\vec{u}_g=\vec{u}_l$.
 
 The phase change is modeled using the formula
