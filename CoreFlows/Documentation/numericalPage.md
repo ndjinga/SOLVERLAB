@@ -43,13 +43,13 @@ with:
 - the numerical convection flux 
 
 $$
-\overrightarrow{\Phi}^{conv}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U)\cdot\vec n_{ij}ds,
+\overrightarrow{\Phi}_{ij}^{conv}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U)\cdot\vec n_{ij}ds,
 $$
 
 - the numerical  diffusion flux 
 
 $$
-\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U)\cdot\vec n_{ij}ds.
+\overrightarrow{\Phi}_{ij}^{diff}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U)\cdot\vec n_{ij}ds.
 $$
 
 To approximate the convection numerical flux $\overrightarrow{\Phi}^{conv}_{ij}$ we solve an  approximate Riemann problem 
@@ -89,7 +89,7 @@ $$
 $$
 
 where 
-- $D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U)\cdot\vec{n}_{ij}$ is the matrix of the diffusion tensor.
+- $D(U,\vec{n}_{ij})$ is the matrix of the diffusion tensor.
   *(\ref{eq:flux diff})* is not accurate for highly non structured or non conforming meshes. 
   However, since we are mainly interested in convection driven flows, we do not ask for a very precise scheme.
 
@@ -122,7 +122,7 @@ In explicit schemes, in order to compute the values $U_i^{n+1}$,
 the convection flux $\overrightarrow\Phi_{ij}^{conv}$, 
 the diffusion flux $\overrightarrow\Phi_{ij}^{diff}$ 
 and the source term $S(U,x)$ in *(\ref{eq:numer scheme})* 
-are evaluated at time $n$ :
+are evaluated at time $n$ as :
 
 $$
 \frac{U_{i}^{n+1} - U_{i}^{n}}{\Delta t} + \sum_{j\in N(i)} \frac{s_{ij}}{v_i}\left(\frac{1}{2}(\mathcal{F}^{conv}(U_i^n) + \mathcal{F}^{conv}(U_j^n))\cdot \vec{n}_{ij}- \mathcal{D}(U_i^n,U_j^n,\vec{n}_{ij}) \frac{U_j^n-U_i^n}{2}\right)
