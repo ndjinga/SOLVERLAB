@@ -12,6 +12,7 @@ The Drift model
 ---------------
 
 The drift model is a system of four nonlinear equations taking the following conservative form
+
 $$
          \partial_t(\alpha_g\rho_g+\alpha_l\rho_l)+\nabla\cdot(\alpha_g\rho_g{}^t\vec{u}_g+\alpha_l\rho_l{}^t\vec{u}_l)=0
 $$
