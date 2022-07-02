@@ -652,9 +652,13 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
     message (FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly.")
   endif(NOT DOXYGEN_FOUND)
   
-  configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
-  add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)			                                            #
-  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION share/doc/solverlab-dev-doc OPTIONAL)                  #
+  configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  @ONLY IMMEDIATE)
+  add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc)			                                            #
+  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/dev-doc/html DESTINATION share/doc/solverlab-dev-doc OPTIONAL)                  #
+  
+  configure_file (Doxyfile-user-guide.in ${PROJECT_BINARY_DIR}/Doxyfile-user-guide  @ONLY IMMEDIATE)
+  add_custom_target (doc-user COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-user-guide  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-user-guide)			                                            #
+  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/user-doc/html DESTINATION share/doc/solverlab-user-guide OPTIONAL)                  #
   
   if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
     find_package(Sphinx)
