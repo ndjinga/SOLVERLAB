@@ -67,7 +67,7 @@ $$
 
 The parameters $\lambda_k, \nu_k,\vec g, K_k $ and $\Phi$ can be set by the user.
 
-[More details about the drift model are available here](TwoPhase/DriftModelPage.ipynb)
+[More details about the drift model are available here](TwoPhase/DriftModelPage.md)
 
 	
 The isothermal two-fluid model
@@ -118,7 +118,7 @@ $$
 
 The parameters $\lambda_k, \nu_k,\vec g, K_k $ and $\Phi$ can be set by the user.
 
-[More details about the isothermal two-fluid model are available here](IsothermalPage.ipynb)
+[More details about the isothermal two-fluid model are available here](IsothermalPage.md)
 
 
 The five equation two-fluid model
@@ -170,5 +170,5 @@ $$
 
 The parameters $\lambda_k, \nu_k,\vec g, K_k $ and $\Phi$ can be set by the user.
 
-[More details about the five equation two-fluid model are available here](TwoPhase/FiveEqPage.ipynb)
+[More details about the five equation two-fluid model are available here](TwoPhase/FiveEqPage.md)
 
