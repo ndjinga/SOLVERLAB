@@ -10,16 +10,21 @@ averaged pressure of the two phases is denoted by $p$.
 
 In our model, pressure equilibrium between the two phases is postulated, and the resulting system to solve is:
 $$
-\left\{
-\begin{array}{ccll}
- \frac{\partial m_g}{\partial t}& +& \nabla \cdot \vec{q}_g &= 0,\\[1.5ex]
-\frac{\partial m_l}{\partial t} &+ &\nabla \cdot \vec{q}_l &= 0,\\[1.5ex]
-\frac{\partial \vec{q}_g}{\partial t}& +& \nabla \cdot (\vec{q}_g\otimes\frac{\vec{q}_g}{m_g})+ \alpha_g \vec\nabla p&\\[1.5ex] 
- &+&\Delta p \nabla \alpha_g -\nu_g\Delta \vec{u}_g &= m_g\vec{g}-K\rho_m||\vec{u}_g-\vec{u}_l||(\vec{u}_g-\vec{u}_l)-K_s\delta(x)m_g||\vec{u}_g||\vec{u}_g\\[1.5ex]
-\frac{\partial \vec{q}_l}{\partial t}& +& \nabla \cdot (\vec{q}_l\otimes\frac{\vec{q}_l}{m_l})+ \alpha_l \vec\nabla p&\\[1.5ex]
-&+&\Delta p \nabla \alpha_l -\nu_l\Delta \vec{u}_l &= m_l\vec{g}-K\rho_m||\vec{u}_l-\vec{u}_g||(\vec{u}_l-\vec{u}_g)-K_s\delta(x)m_l||\vec{u}_l||\vec{u}_l\\
-\end{array}
-\right.
+ \frac{\partial m_g}{\partial t} + \nabla \cdot \vec{q}_g = 0,
+$$
+
+$$
+\frac{\partial m_l}{\partial t} + \nabla \cdot \vec{q}_l = 0,
+$$
+
+$$
+\frac{\partial \vec{q}_g}{\partial t} + \nabla \cdot (\vec{q}_g\otimes\frac{\vec{q}_g}{m_g})+ \alpha_g \vec\nabla p
++\Delta p \nabla \alpha_g -\nu_g\Delta \vec{u}_g = m_g\vec{g}-K\rho_m||\vec{u}_g-\vec{u}_l||(\vec{u}_g-\vec{u}_l)-K_s\delta(x)m_g||\vec{u}_g||\vec{u}_g
+$$
+
+$$
+\frac{\partial \vec{q}_l}{\partial t} + \nabla \cdot (\vec{q}_l\otimes\frac{\vec{q}_l}{m_l})+ \alpha_l \vec\nabla p
++\Delta p \nabla \alpha_l -\nu_l\Delta \vec{u}_l = m_l\vec{g}-K\rho_m||\vec{u}_l-\vec{u}_g||(\vec{u}_l-\vec{u}_g)-K_s\delta(x)m_l||\vec{u}_l||\vec{u}_l
 $$
 
 Here :
@@ -31,11 +36,15 @@ Here :
 
 where 
 $$ 
- \left\{\begin{array}{clc}
-	\alpha_g +\alpha_l &=& 1 \\[1.5ex]
-	m_k &=& \alpha_k \rho_k \\[1.5ex]
-	\vec{q}_k &=& \alpha_k \rho_k \vec{u}_k
-	\end{array}\right..
+	\alpha_g +\alpha_l = 1
+$$
+
+$$
+	m_k = \alpha_k \rho_k
+$$
+
+$$
+	\vec{q}_k = \alpha_k \rho_k \vec{u}_k
 $$
 
 

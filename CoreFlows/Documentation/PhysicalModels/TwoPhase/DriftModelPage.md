@@ -5,20 +5,31 @@ The model consists in the steam mass balance equation together with the mixture 
 
 The drift model is a system of four nonlinear equations taking the following conservative form
 $$
-\left\{\begin{array}{lll}
-         \partial_t(\phi \rho_m) &+\nabla\cdot(\phi\rho_m\vec{u}_m)&=0\\
-         \partial_t(\phi m_g)&+\nabla\cdot\phi(m_g\vec{u}_g)&=\phi\Gamma_g(h_m,\Phi)\\
-         \partial_t(\phi\rho_m\vec{u}_m)&+\nabla\cdot\phi(m_g\vec{u}_g\otimes\vec{u}_g+ m_l\vec{u}_l\otimes\vec{u}_l)+\vec{\nabla}(p\phi)&=p\vec{\nabla}\phi+\phi\rho_m\vec{g}- K_g\phi m_g||\vec{u}_g||\vec{u}_g- K_l\phi m_l||\vec{u}_l||\vec{u}_l- K_s\delta_s(x)\phi\rho_m||\vec{u}_m||\vec{u}_m\\
-         \partial_t\phi (\rho_m E_m)&+\nabla\cdot\phi(m_g H_g{}^t\vec{u}_g+m_l H_l{}^t\vec{u}_l)&=\Phi+\phi\rho_m\vec{g}\cdot\vec{u}_m- K_g\phi m_g||\vec{u}_g||^3- K_l\phi m_l||\vec{u}_l||^3- K_s\delta_s(x)\phi\rho_m||\vec{u}_m||^3
-        \end{array}\right.,
+         \partial_t(\phi \rho_m) +\nabla\cdot(\phi\rho_m\vec{u}_m)=0
+$$
+ 
+$$
+         \partial_t(\phi m_g)+\nabla\cdot\phi(m_g\vec{u}_g)=\phi\Gamma_g(h_m,\Phi)
+$$
+ 
+$$
+         \partial_t(\phi\rho_m\vec{u}_m)+\nabla\cdot\phi(m_g\vec{u}_g\otimes\vec{u}_g+ m_l\vec{u}_l\otimes\vec{u}_l)+\vec{\nabla}(p\phi)=p\vec{\nabla}\phi+\phi\rho_m\vec{g}- K_g\phi m_g||\vec{u}_g||\vec{u}_g- K_l\phi m_l||\vec{u}_l||\vec{u}_l- K_s\delta_s(x)\phi\rho_m||\vec{u}_m||\vec{u}_m
+$$
+ 
+$$
+         \partial_t\phi (\rho_m E_m)+\nabla\cdot\phi(m_g H_g{}^t\vec{u}_g+m_l H_l{}^t\vec{u}_l)=\Phi+\phi\rho_m\vec{g}\cdot\vec{u}_m- K_g\phi m_g||\vec{u}_g||^3- K_l\phi m_l||\vec{u}_l||^3- K_s\delta_s(x)\phi\rho_m||\vec{u}_m||^3
 $$
 where the mixture quantities are defined by
 $$
-\begin{array}{lll}
-\rho_m&=&\alpha_g\rho_g+\alpha_l\rho_l\\
-\vec{u}_m&=&\frac{\alpha_g\rho_g\vec{u}_g+\alpha_l\rho_l\vec{u}_l}{\alpha_g\rho_g+\alpha_l\rho_l}\\
-E_m&=&\alpha_g\rho_g E_g+\alpha_l\rho_l E_l,
-\end{array}
+\rho_m=\alpha_g\rho_g+\alpha_l\rho_l
+$$
+ 
+$$
+\vec{u}_m=\frac{\alpha_g\rho_g\vec{u}_g+\alpha_l\rho_l\vec{u}_l}{\alpha_g\rho_g+\alpha_l\rho_l}
+$$
+ 
+$$
+E_m=\alpha_g\rho_g E_g+\alpha_l\rho_l E_l,
 $$
 
 whereas the quantities associated to each to phase $k=g,l$ are defined as
@@ -58,10 +69,11 @@ For the moment the only drift correlation available is $\vec{u}_g=\vec{u}_l$.
 
 The phase change is modeled using the formula
 $$
- \Gamma_g=\left\{\begin{array}{cc}
-         \frac{\Phi}{\mathcal{L}}&\textrm{ if } T^{sat}\leq T \textrm{ and } 0<\alpha_g<1\\[1.5ex]
-         0& \textrm{ otherwise }
-        \end{array}\right..
+ \Gamma_g=\frac{\Phi}{\mathcal{L}}\textrm{ if } T^{sat}\leq T \textrm{ and } 0<\alpha_g<1
+$$
+ 
+$$
+ \Gamma_g=   0 \textrm{ otherwise }.
 $$
 
 For the moment the boiling temperature $T^{sat}$ is constant and can be changed using the function DriftModell::setSatTemp.

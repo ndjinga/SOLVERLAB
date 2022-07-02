@@ -118,7 +118,7 @@ $$
 
 The parameters $\lambda_k, \nu_k,\vec g, K_k $ and $\Phi$ can be set by the user.
 
-[More details about the isothermal two-fluid model are available here](IsothermalPage.md)
+[More details about the isothermal two-fluid model are available here](TwoPhase/IsothermalPage.md)
 
 
 The five equation two-fluid model
