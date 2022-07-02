@@ -90,9 +90,11 @@ $$
 
 where 
 - the numerical diffusion tensor is 
+
   $$
-  D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U) \cdot \vec{n}_{ij}$.
+  D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U) \cdot \vec{n}_{ij}.
   $$
+  
   The expression of $\Phi_{ij}^{diff}$ above is not accurate for highly non structured or non conforming meshes. 
   However, since we are mainly interested in convection driven flows, we do not ask for a very precise scheme.
 
