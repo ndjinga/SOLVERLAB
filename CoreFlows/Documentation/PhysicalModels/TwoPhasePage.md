@@ -26,7 +26,6 @@ $$
 
 $$
          \partial_t(\alpha_g\rho_g E_g+\alpha_l\rho_l E_l)+\nabla\cdot(\alpha_g\rho_g H_g{}^t\vec{u}_g+\alpha_l\rho_l H_l{}^t\vec{u}_l)=\Phi+\rho\vec{g}\cdot\vec{u}-K_g\alpha_g\rho_g||\vec{u}_g||^3-K_l\alpha_l\rho_l||\vec{u}_l||^3
-        \end{array}\right.,
 $$
 
 where the total energy and total enthalpy are defined by
@@ -91,17 +90,11 @@ $$
 
 $$
 \frac{\partial \vec{q}_g}{\partial t} + \nabla \cdot (\vec{q}_g\otimes\frac{\vec{q}_g}{m_g})+ \alpha_g \vec\nabla p
-$$
-
-$$
  +\Delta p \nabla \alpha_g -\nu_g\Delta \vec{u}_g = m_g\vec{g}-K_gm_g||\vec{u}_g||\vec{u}_g
 $$
 
 $$
 \frac{\partial \vec{q}_l}{\partial t} + \nabla \cdot (\vec{q}_l\otimes\frac{\vec{q}_l}{m_l})+ \alpha_l \vec\nabla p
-$$
-
-$$
 +\Delta p \nabla \alpha_l -\nu_l\Delta \vec{u}_l = m_l\vec{g}-K_lm_l||\vec{u}_l||\vec{u}_l,
 $$
 
@@ -144,17 +137,11 @@ $$
 
 $$
 \frac{\partial \vec{q}_g}{\partial t} + \nabla \cdot (\vec{q}_g\otimes\frac{\vec{q}_g}{m_g})+ \alpha_g \nabla p
-$$
-
-$$
  +\Delta p \nabla \alpha_g -\nu_g(\Delta \frac{\vec{q}_g}{m_g}) = m_g\vec{g}-K_gm_g||\vec{u}_g||\vec{u}_g
 $$
 
 $$
 \frac{\partial \vec{q}_l}{\partial t} + \nabla \cdot (\vec{q}_l\otimes\frac{\vec{q}_l}{m_l})+ \alpha_l \nabla p
-$$
-
-$$
 +\Delta p \nabla \alpha_l -\nu_l(\Delta \frac{\vec{q}_l}{m_l}) = m_l\vec{g}-K_lm_l||\vec{u}_l||\vec{u}_l,
 $$
 
