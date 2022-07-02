@@ -40,8 +40,13 @@ $$
 $$
 
 with: 
-- the numerical convection flux $\overrightarrow{\Phi}^{conv}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U)\cdot\vec n_{ij}ds$,
-- the numerical diffusion flux $\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U)\cdot\vec n_{ij}ds$$
+- the numerical convection flux 
+
+$$
+\overrightarrow{\Phi}^{conv}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal F^{conv}(U)\cdot\vec n_{ij}ds,
+$$
+
+- the numerical  diffusion flux $\overrightarrow{\Phi}^{diff}_{ij}= \frac{1}{s_{ij}}\int_{\partial C_{ij}}\mathcal {F}^{diff}(U)\cdot\vec n_{ij}ds$.
 
 To approximate the convection numerical flux $\overrightarrow{\Phi}^{conv}_{ij}$ we solve an  approximate Riemann problem 
 at the interface $\partial C_{ij}$. There are three possible formulations for the convection fluxes. 
