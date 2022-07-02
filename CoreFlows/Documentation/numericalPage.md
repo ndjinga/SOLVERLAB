@@ -48,8 +48,8 @@ at the interface $\partial C_{ij}$. There are three possible formulations for th
 - Using the \ref roe local linearisation of the fluxes, we obtain the following formula:
 
 $$
-\overrightarrow{\Phi}^{conv, Roe}_{ij}&= &\frac{\mathcal{F}^{conv}(U_i) + \mathcal{F}^{conv}(U_j)}{2} \vec{n}_{ij}- \mathcal{D}(U_i,U_j) \frac{U_j-U_i}{2}\\
-&=&\mathcal{F}^{conv}(U_i) \vec{n}_{ij} + A^-(U_i,U_j) (U_j - U_i),
+\overrightarrow{\Phi}^{conv, Roe}_{ij}= \frac{\mathcal{F}^{conv}(U_i) + \mathcal{F}^{conv}(U_j)}{2} \vec{n}_{ij}- \mathcal{D}(U_i,U_j) \frac{U_j-U_i}{2}\\
+=\mathcal{F}^{conv}(U_i) \vec{n}_{ij} + A^-(U_i,U_j) (U_j - U_i),
 $$
 
 - Using the \ref vfroe local linearisation of the fluxes, we obtain the following formula:
@@ -79,16 +79,16 @@ $$
 
 where 
 - $D(U,\vec{n}_{ij})=\nabla\mathcal{F}^{diff}(U).\vec{n}_{ij}$ is the matrix of the diffusion tensor.
-$(\ref{eq:flux diff})$ is not accurate for highly non structured or non conforming meshes. However, since we are mainly interested in convection driven flows, we do not ask for a very precise scheme.
+*(\ref{eq:flux diff})* is not accurate for highly non structured or non conforming meshes. However, since we are mainly interested in convection driven flows, we do not ask for a very precise scheme.
 
 Finally, since $\sum_{j \in N(i)}\mathcal {F}^{conv}(U_i). \vec{n}_{ij}=0$, 
-using $(\ref{eq:flux roe})$ and $(\ref{eq:flux diff})$ the equation $(\ref{eq:numer scheme})$ of the semi-discrete scheme becomes:
+using *(\ref{eq:flux roe})* and *(\ref{eq:flux diff})* the equation *(\ref{eq:numer scheme})* of the semi-discrete scheme becomes:
 
 $$
 \frac{\mathrm{d} U_{i}}{\mathrm{d} t} + \sum_{j\in N(i)} {\frac{s_{ij}}{v_i}\{(A^-+ D)(U_i,U_j)\}(U_j-U_i)} = S_i(U,x), 
 $$
 
-The source term in $(\ref{eq:reduced scheme})$ can be approximated using either a 
+The source term in *(\ref{eq:reduced scheme})* can be approximated using either a 
 
 $$
  \textrm{ Centered source } S_i=S(U_i)\nonumber
@@ -106,20 +106,25 @@ $$
 Explicit schemes
 ----------------
 
-In explicit schemes, in order to compute the values $U_i^{n+1}$, the fluxes $\Phi^{conv}_{ij}$, $\Phi^{diff}_{ij}$ and the source term $S(U,x)$ in $(\ref{eq:numer scheme})$ are evaluated at time $n$ :
+In explicit schemes, in order to compute the values $U_i^{n+1}$, 
+the fluxes $\Phi^{conv}_{ij}$, 
+$\Phi^{diff}_{ij}$ 
+and the source term $S(U,x)$ in *(\ref{eq:numer scheme})* 
+are evaluated at time $n$ :
 
 $$
 \frac{U_{i}^{n+1} - U_{i}^{n}}{\Delta t} + \sum_{j\in N(i)} \frac{s_{ij}}{v_i}\left(\frac{1}{2}(\mathcal{F}^{conv}(U_i^n) + \mathcal{F}^{conv}(U_j^n)). \vec{n}_{ij}- \mathcal{D}(U_i^n,U_j^n,\vec{n}_{ij}) \frac{U_j^n-U_i^n}{2}\right)
 +\frac{s_{ij}}{v_i} D (\frac{U_i+U_j}{2},\vec{n}_{ij})(U_j-U_i)= S(U^n,x_i),
 $$
-or equivalently using $(\ref{eq:flux roe})$ 
-and $(\ref{eq:flux diff})$
+
+or equivalently using *(\ref{eq:flux roe})*$ 
+and *(\ref{eq:flux diff})*
 
 $$
 \frac{U_{i}^{n+1} - U_{i}^{n}}{\Delta t} + \sum_{j\in N(i)} {\frac{s_{ij}}{v_i}\{(A^-+ D)(U_i^{n},U_j^{n},\vec{n}_{ij})\}(U^{n}_j-U^{n}_i)} =  S(U^n,x_i). 
 $$
 
-From the system $(\ref{explicitscheme})$ 
+From the system *(\ref{explicitscheme})* 
 we can obtain $U_i^{n+1}$ easily using matrix-vector products and vector sum. 
 However the time step of explicit methods is constrained by the CFL condition for stability reasons.
 
@@ -130,7 +135,7 @@ In implicit schemes, in order to compute the values $U_i^{n+1}$,
 the fluxes $\Phi^{conv}_{ij}$, 
 $\Phi^{diff}_{ij}$ 
 and the source term $S(U,x)$ 
-in $(\ref{eq:numer scheme})$ 
+in *(\ref{eq:numer scheme})* 
 are evaluated at time $n+1$ :
 
 $$
@@ -138,13 +143,13 @@ $$
 +\frac{s_{ij}}{v_i} D (\frac{U_i+U_j}{2},\vec{n}_{ij})(U_j-U_i) = S(U^{n+1},x_i),
 $$
 
-or equivalently using $(\ref{eq:flux roe})$ and $(\ref{eq:flux diff})$
+or equivalently using *(\ref{eq:flux roe})* and *(\ref{eq:flux diff})*
 
 $$
 \frac{U_{i}^{n+1} - U_{i}^{n}}{\Delta t} + \sum_{j\in N(i)} {\frac{s_{ij}}{v_i}\{(A^-+ D)(U_i^{n+1},U_j^{n+1},\vec{n}_{ij})\}(U^{n+1}_j-U^{n+1}_i)} =  S(U^{n+1},x_i). 
 $$
 
-The system $(\ref{implicitscheme})$ is nonlinear. The computation of $U_i^n$ is more expensive but we can expect to use larger time steps than would be allowed with the explicit scheme.
+The system *(\ref{implicitscheme})* is nonlinear. The computation of $U_i^n$ is more expensive but we can expect to use larger time steps than would be allowed with the explicit scheme.
 
 We use the following Newton iterative method to obtain the required solutions:
 
@@ -172,7 +177,7 @@ Numerical scheme for the Navier-Stokes equations
 ------------------------------------------------
 
 For the Navier-Stokes equations $U=(\rho, \vec q, \rho E)^t$ and the fluxes 
-in $(\ref{Navierstokes})$ write
+in *(\ref{Navierstokes})* write
 
 $$
 \mathcal{F}^{conv}(U)= \left(\begin{array}{c}
@@ -189,7 +194,7 @@ $$
  \right).
 $$
 
-For the Euler equations, we can build the \ref roe matrix $A(U_i,U_j)$ explicitly using the Roe averaged state $U_{Roe}(U_i,U_j)=(\tilde\rho, \tilde \rho\tilde u, \tilde\rho \tilde E=\tilde \rho\tilde H-\tilde p)^t$ defined by
+For the Euler equations, we can build the \ref roe matrix $A(U_i,U_j)* explicitly using the Roe averaged state $U_{Roe}(U_i,U_j)=(\tilde\rho, \tilde \rho\tilde u, \tilde\rho \tilde E=\tilde \rho\tilde H-\tilde p)^t$ defined by
 
 $$
 \tilde{\rho}=\sqrt{\rho_{i}\rho_{j}}
