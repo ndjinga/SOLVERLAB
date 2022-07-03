@@ -19,10 +19,8 @@ The following package list is sufficient on Ubuntu 20.04 :
 
 Download SOLVERLAB sources
 --------------------------
-However the SALOME binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
-
 Download SOLVERLAB sources from GitHub
-* click on the following link : `https://github.com/ndjinga/SOLVERLAB/archive/master.zip`, then unzip the file in a directory SOLVERLAB-master
+* use the following url in a browser : `https://github.com/ndjinga/SOLVERLAB/archive/master.zip`, then download and unzip the file in a directory SOLVERLAB-master
 * or type the following in a terminal : `wget https://github.com/ndjinga/SOLVERLAB/archive/master.zip`, then unzip the file in a directory SOLVERLAB-master
 * or clone the git repository to a folder SOLVERLAB-master:  `git clone https://github.com/ndjinga/SOLVERLAB.git SOLVERLAB-master`
 
@@ -31,7 +29,8 @@ Compile and install SOLVERLAB from source files
 -----------------------------------------------
 First create a directory named 'build' where the compilation will take place and open a terminal in that directory.
 
-**Simpler build for a minimum version:**
+**Simple configuration for a minimum version:**  
+Type the following cmake instruction in a terminal for a minimal version
 * `cmake /path/to/SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON `  
 > This will download and build the following dependencies
 > - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
@@ -41,18 +40,19 @@ First create a directory named 'build' where the compilation will take place and
 > - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
 > - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
 
-**Advanced build for a complete version:**
-If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:
+**Advanced configuration for a complete version:**  
+If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by typing the following cmake instruction in a terminal :
 * `cmake /path/to/SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON`  
 > This assumes that you have an existing 
-> - installation of PETSc (with submodules SLEPC and HDF5) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
+> - installation of PETSc (with submodule SLEPC) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
 > See the instructions given in [the official documentation](https://petsc.org/release/install/)
 > - installation of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
 > - installation of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
 
 The 3 dependencies PETSC, MED and MEDCOUPLING should have been compiled with the same version of HDF5  
 Warning : the linux package libhdf5-dev is generally not compatible with the libraries MED and MEDCoupling  
-Compile and install:
+
+**Compile and install:**
 * `make`
 * `make install`
 
