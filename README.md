@@ -8,7 +8,7 @@
 
 Introduction
 ------------
-SOLVERLAB is a geometrical and numerical C++/Python library designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The goal is to provide simple MATLAB style functions for the generation and manipulation of meshes, fields and matrices. The library is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of matrices and linear solvers. 
+SOLVERLAB is a geometrical and numerical C++/Python library designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The goal is to provide simple MATLAB style functions for the generation and manipulation of meshes, fields and matrices. The library is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://petsc.org/release/) for the handling of matrices and linear solvers. 
 
 SOLVERLAB includes PDE systems
 arising from the modeling of nuclear reactor cores which involves fluid dynamics, heat and neutron diffusion as well as solid elasticity. It
@@ -60,7 +60,7 @@ The user guide is organized as follows :
 
 Download SOLVERLAB sources for compilation
 ----------------------------------
-The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15).
+The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/).
 However the binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a better alternative using less disk and memory space.
 
 To compile SOLVERLAB source, first create a source directory, for instance with:
@@ -99,18 +99,18 @@ Compile and install SOLVERLAB
 Simpler build for a minimum version:
 * `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON `  
 > This will download and build the following dependencies
-> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
-> - F2CBLASLAPACK from http://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
+> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
+> - F2CBLASLAPACK from https://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
 > - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
-> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
+> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
 > - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
 
 If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:
 * `cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON`  
 > This assumes that you have an existing 
 > - installation of PETSc (with submodules SLEPC and HDF5) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
-> See the instructions given in [the official documentation](http://www.mcs.anl.gov/petsc/documentation/installation.html)
+> See the instructions given in [the official documentation](https://petsc.org/release/install/)
 > - installation of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
 > - installation of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
 
@@ -126,11 +126,11 @@ Run unit and example tests:
 Run validation tests:
 * make validation
 
-Generate documentation of CDMATH module
-* make docCDMATH
+Generate html user guide 
+* make doc-user
 
-Generate documentation of CoreFlows module
-* make docCoreFlows
+Generate html developer guide
+* make doc
 
 Use of SOLVERLAB
 ----------------

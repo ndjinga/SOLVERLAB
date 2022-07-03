@@ -32,23 +32,23 @@ set (MPI4PY_ROOT_DIR      OFF CACHE STRING "MPI4PY library path" )
 set (PACKAGESPY_ROOT_DIR  OFF CACHE STRING "PACKAGESPY library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz 
+set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz 
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
 set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz  
      CACHE STRING           "HDF5 tarball path/url" )
-set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
+set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
      CACHE STRING           "MED tarball path/url")
 set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
      CACHE STRING           "MEDCoupling tarball path/url" )
 set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
      CACHE STRING           "OPENMPI tarball path/url" )
-set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.23.0.zip
+set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.25.0.zip
      CACHE STRING           "HYPRE tarball path/url" )
-set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.2.tar.gz
+set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.3.tar.gz
      CACHE STRING           "MPY4PY tarball path/url" )
 set (DOWNLOAD_PACKAGESPY    https://github.com/ndjinga/PACKAGESPYGUI/archive/refs/heads/main.zip
      CACHE STRING           "PACKAGESPY zip file path/url" )
