@@ -49,7 +49,7 @@ If you already have an installation of PETSC, MED and MEDCoupling, you may save 
 > - installation of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
 > - installation of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
 
-The 3 dependencies PETSC, MED and MEDCOUPLING should have been compiled with the same version of HDF5  
+The 2 dependencies MED and MEDCOUPLING should have been compiled with the same version of HDF5  
 Warning : the linux package libhdf5-dev is generally not compatible with the libraries MED and MEDCoupling  
 
 **Compile and install:**
@@ -59,16 +59,16 @@ Warning : the linux package libhdf5-dev is generally not compatible with the lib
 Run tests and documentation
 ---------------------------
 Run unit and example tests:
-* make examples
+* `make examples`
 
 Run validation tests:
-* make validation
+* `make validation`
 
 Generate html user guide 
-* make doc-user
+* `make doc-user`
 
 Generate html developer guide
-* make doc
+* `make doc`
 
 Parallel version
 ---------------------

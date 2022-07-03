@@ -72,7 +72,7 @@ Standalone compilation from sources
 -----------------------------------
 However the SALOME binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
 
-In order to build SOLVERLAB on your system you will need the 
+In order to build SOLVERLAB on your system you will need
 - the package [CMAKE](https://cmake.org/),
 - a C++  compiler such as  [g++](https://gcc.gnu.org/) 
 - optionally [Python3](https://www.python.org/downloads/) to run python language scripts 
