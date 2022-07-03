@@ -60,30 +60,40 @@ The user guide is organized as follows :
 
 Run SOLVERLAB from SALOME
 --------------------------
-The easiest way to run SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15). After downloading the appropriate tar.gz archive, untar it in a folder mySALOME and run the file 'mySALOME/salome' in a terminal ro launch SALOME. In the SALOME windows, click on the SOLVERLAB icon or use the python shell to run SOLVERLAB.
+The easiest way to run SOLVERLAB is to launch the SOLVERLA module of the SALOME platform :
+- download the binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15). 
+- after downloading the appropriate tar.gz archive, untar it in a folder mySALOME
+- run the file 'mySALOME/salome' in a terminal to launch SALOME
+- In the SALOME window, either 
+    - click on the SOLVERLAB icon to launch SOLVERLAB module window
+    - or use the SALOME python shell to run SOLVERLAB python scripts.
 
 Standalone compilation from sources
 -----------------------------------
-In order to build SOLVERLAB on your system you will need the package [CMAKE](https://cmake.org/) , a C++  compiler such as  [g++](https://gcc.gnu.org/) and optionally [python3](https://www.python.org/downloads/) to run python language scripts and [ParaView](https://www.paraview.org/) for data visualisation.  
+In order to build SOLVERLAB on your system you will need the 
+- package [CMAKE](https://cmake.org/),
+- a C++  compiler such as  [g++](https://gcc.gnu.org/) 
+- optionally [python3](https://www.python.org/downloads/) to run python language scripts 
+- optionally [ParaView](https://www.paraview.org/) for data visualisation.  
 
-Detailed instructions for compilation and use of SOLVERLAB can be found in the page [Standalone compilation from sources](CoreFlows/Documentation/installation.md).
+Detailed instructions for compilation and use of standalone SOLVERLAB can be found in the page [Standalone compilation from sources](CoreFlows/Documentation/install.md).
 
 Use of SOLVERLAB in a terminal/console
 --------------------------------------
-**Running Python scripts**
+**Running Python scripts**  
 If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
- * source `/path/to//SOLVERLAB_install/env_SOLVERLAB.sh`
-To run SOLVERLAB with your Python code `main.py `, simply type in your terminal or your SALOME console
+ * source `/path/to//SOLVERLAB_install/env_SOLVERLAB.sh`  
+Then to run SOLVERLAB with your Python code `main.py `, simply type in your terminal or your SALOME console
 - `python3 main.py `
 
-**Launching SOLVERLAB graphic interface from a terminal**
+**Launching SOLVERLAB graphic interface from a terminal**  
 If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
  * source `/path/to//SOLVERLAB_install/env_SOLVERLAB.sh`
 Then to use the Graphical User Interface of SOLVERLAB, simply type in your terminal
 - `python3 $SOLVERLABGUI -g`
 
-**Running C++ scripts**
-If performance or parallelism is an issue for your simulations, you can link SOLVERLAB librairies with your C++ code :
+**Running C++ scripts**  
+If performance or parallelism is an issue for your simulations and python is too slow for your needs, you can link your C++ or Fortran code with SOLVERLAB librairies :
  * C++ libraries path: `export LD_LIBRARY_PATH=/path/to/SOLVERLAB_install/lib`
  * To know how to include the right libraries for compilation, see the makefiles of the examples. They include the list ` -lmedC -lmedloader -lmedcoupling -lbase -lmesh -llinearsolver` plus mpi if you are using a parallel version of SOLVERLAB.
 
