@@ -58,105 +58,44 @@ The user guide is organized as follows :
 - [Summary of  available functionalities](CoreFlows/Documentation/functionalities.md)
 - [SOLVERLAB-CoreFlows example scripts](CoreFlows/Documentation/examples.md)
 
-Download SOLVERLAB sources for compilation
-----------------------------------
-The easiest way to use SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/).
-However the binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a better alternative using less disk and memory space.
-
-To compile SOLVERLAB source, first create a source directory, for instance with:
-* `mkdir ~/workspace/SOLVERLAB`
-* `cd ~/workspace/SOLVERLAB`
-
-Download SOLVERLAB source from GitHub
-* click on the following link : `https://github.com/ndjinga/SOLVERLAB/archive/master.zip`, then unzip the file in a directory SOLVERLAB-master
-* or type the following in a terminal : `wget https://github.com/ndjinga/SOLVERLAB/archive/master.zip`, then unzip the file in a directory SOLVERLAB-master
-* or clone the git repository to a folder SOLVERLAB-master:  `git clone https://github.com/ndjinga/SOLVERLAB.git SOLVERLAB-master`
-
-
-Set the environment for the compilation of SOLVERLAB
----------------------------------------------
-Dependencies. The following package list is sufficient on Ubuntu 20.04 :
-
- - `cmake3` (mandatory)
- - `g++` or another C++ compiler (mandatory)
- - `python3-dev`, `python3-numpy` and `swig3`for python scripts (mandatory)
- - `pyqt5-dev-tools` to generate the Graphical User Interface (optional)
- - `python3-matplotlib`, `paraview-dev`, `libnetcdf-dev` (on Ubuntu 20.04) and `python3-paraview` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (optional)
- - `ffmpeg` and `ffmpeg-devel` to generate an animation from a set of curves (optional)
- - `python3-sphinx` for the GUI documentation, and `doxygen`, `graphviz` and `mscgen` to generate a developper documentation. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
- - `libcppunit-dev`, if you want to generate unit tests. Use the compilation option `-DSOLVERLAB_WITH_TESTS=ON` (optional).
- - `rpm`, if you want to generate RPM installation packages. Use the compilation option `-DSOLVERLAB_WITH_PACKAGE=ON` (optional).
-
-Directories. Create the suggested build and installation folders:
-* `cd ~/workspace/SOLVERLAB`
-* `mkdir SOLVERLAB_build`
-* `mkdir SOLVERLAB_install`
-* `cd SOLVERLAB_build`
-
-
-Compile and install SOLVERLAB
+Run SOLVERLAB from SALOME
 --------------------------
-Simpler build for a minimum version:
-* `cmake ../SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON `  
-> This will download and build the following dependencies
-> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
-> - F2CBLASLAPACK from https://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
-> - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
-> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
-> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
+The easiest way to run SOLVERLAB is to download the SALOME binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15). After downloading the appropriate tar.gz archive, untar it in a folder mySALOME and run the file 'mySALOME/salome' in a terminal ro launch SALOME. In the SALOME windows, click on the SOLVERLAB icon or use the python shell to run SOLVERLAB.
 
-If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:
-* `cmake ../SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON`  
-> This assumes that you have an existing 
-> - installation of PETSc (with submodules SLEPC and HDF5) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
-> See the instructions given in [the official documentation](https://petsc.org/release/install/)
-> - installation of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
-> - installation of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
+Standalone compilation from sources
+-----------------------------------
+In order to build SOLVERLAB on your system you will need the package [CMAKE](https://cmake.org/) , a C++  compiler such as  [g++](https://gcc.gnu.org/) and optionally [python3](https://www.python.org/downloads/) to run python language scripts and [ParaView](https://www.paraview.org/) for data visualisation.  
 
-The 3 dependencies PETSC, MED and MEDCOUPLING should have been compiled with the same version of HDF5  
-Warning : the linux package libhdf5-dev is generally not compatible with the libraries MED and MEDCoupling  
-Compile and install:
-* `make`
-* `make install`
+Detailed instructions for compilation and use of SOLVERLAB can be found in the page [Standalone compilation from sources](CoreFlows/Documentation/installation.md).
 
-Run unit and example tests:
-* make examples
-
-Run validation tests:
-* make validation
-
-Generate html user guide 
-* make doc-user
-
-Generate html developer guide
-* make doc
-
-Use of SOLVERLAB
-----------------
-
-To use SOLVERLAB in your Python code `main.py `, you can load the SOLVERLAB environment in your terminal using the command
- * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
-Then in your terminal simply type
+Use of SOLVERLAB in a terminal/console
+--------------------------------------
+**Running Python scripts**
+If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
+ * source `/path/to//SOLVERLAB_install/env_SOLVERLAB.sh`
+To run SOLVERLAB with your Python code `main.py `, simply type in your terminal or your SALOME console
 - `python3 main.py `
 
-To use the Graphical User Interface of SOLVERLAB, you can load the SOLVERLAB environment in your terminal using the command
- * source `~/workspace/SOLVERLAB/SOLVERLAB_install/env_SOLVERLAB.sh`
-Then in your terminal simply type
+**Launching SOLVERLAB graphic interface from a terminal**
+If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
+ * source `/path/to//SOLVERLAB_install/env_SOLVERLAB.sh`
+Then to use the Graphical User Interface of SOLVERLAB, simply type in your terminal
 - `python3 $SOLVERLABGUI -g`
 
-If performance or parallelism is an issue for your simulations, you can use SOLVERLAB librairies with your C++ code :
- * C++ libraries: `export LD_LIBRARY_PATH=~/workspace/SOLVERLAB/SOLVERLAB_install/lib`
- * To know how to include the right libraries for compilation, see the makefiles of the examples. They include the list ` -lmedC -lmedloader -lmedcoupling -lbase -lmesh -llinearsolver`.
+**Running C++ scripts**
+If performance or parallelism is an issue for your simulations, you can link SOLVERLAB librairies with your C++ code :
+ * C++ libraries path: `export LD_LIBRARY_PATH=/path/to/SOLVERLAB_install/lib`
+ * To know how to include the right libraries for compilation, see the makefiles of the examples. They include the list ` -lmedC -lmedloader -lmedcoupling -lbase -lmesh -llinearsolver` plus mpi if you are using a parallel version of SOLVERLAB.
 
+**SOLVERLAB environment variables**
 The SOLVERLAB environment variables consist in :
- * SOLVERLAB C++ library path: `~/workspace/SOLVERLAB/SOLVERLAB_install/lib`
- * SOLVERLAB Python library paths: `~/workspace/SOLVERLAB/SOLVERLAB_install/lib/SOLVERLAB:~/workspace/SOLVERLAB/SOLVERLAB_install/bin/SOLVERLAB`
+ * SOLVERLAB C++ library path: `/path/to/SOLVERLAB_install/lib`
+ * SOLVERLAB Python library paths: `/path/to/SOLVERLAB_install/lib/SOLVERLAB:/path/to/SOLVERLAB_install/bin/SOLVERLAB`
  * PETSc, SLEPc and HDF5 library path: `${PETSC_DIR}/${PETSC_ARCH}/lib`
  * MED library path: `${MEDFILE_ROOT_DIR}/lib`
  * MEDCOUPLING library path: `${MEDCOUPLING_ROOT_DIR}/lib`
 
-Use of SOLVERLAB
-----------------
+New of SOLVERLAB GUI
+--------------------
 A new GUI based on the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) is being developped for SOLVERLAB. In order to use the new GUI use the cmake option `-DSOLVERLAB_WITH_PACKAGESPY=ON` that will download the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) from github.
 If you have a local copy of the library PACKAGESPY, give the to solverlab using the cmake option `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`.

@@ -1,8 +1,8 @@
-/*!
-\page install Standalone compilation of SOLVERLAB from sources
+Standalone compilation of SOLVERLAB from sources
+================================================
 
-\section prerequisites Prerequisites for the compilation of SOLVERLAB
-
+Prerequisites for the compilation of SOLVERLAB
+---------------------------------------------
 The following package list is sufficient on Ubuntu 20.04 :
 
  - `cmake3` (mandatory)
@@ -17,8 +17,8 @@ The following package list is sufficient on Ubuntu 20.04 :
  - `rpm`, if you want to generate RPM installation packages. Use the compilation option `-DSOLVERLAB_WITH_PACKAGE=ON` (optional).
 
 
-\section downloadSources Download SOLVERLAB sources
-
+Download SOLVERLAB sources
+--------------------------
 However the SALOME binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
 
 Download SOLVERLAB sources from GitHub
@@ -27,8 +27,8 @@ Download SOLVERLAB sources from GitHub
 * or clone the git repository to a folder SOLVERLAB-master:  `git clone https://github.com/ndjinga/SOLVERLAB.git SOLVERLAB-master`
 
 
-\section compileAndInstall Compile and install SOLVERLAB from source files
-
+Compile and install SOLVERLAB from source files
+-----------------------------------------------
 First create a directory named 'build' where the compilation will take place and open a terminal in that directory.
 
 **Simpler build for a minimum version:**
@@ -56,8 +56,8 @@ Compile and install:
 * `make`
 * `make install`
 
-\section runTests Run tests and documentation
-
+Run tests and documentation
+---------------------------
 Run unit and example tests:
 * make examples
 
@@ -70,8 +70,8 @@ Generate html user guide
 Generate html developer guide
 * make doc
 
-\section parallelVersion Parallel version
-
+Parallel version
+---------------------
 To compile a parallel version of SOLVERLAB, you first need parallel C and C++ compilers and a parallel installation of the packages PETSc, MED and MEDCoupling.  
 
 Then you need to add the following extra CMAKE parameters to the configuration step :  
