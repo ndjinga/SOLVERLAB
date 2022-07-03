@@ -113,6 +113,8 @@ void StationaryDiffusionEquation::initialize()
 {
 	if(_mpi_rank==0)
 	{
+		/**************** Affichages par le proc 0 (on évite affichages redondants) *********************/
+	
 		_runLogFile->open((_fileName+".log").c_str(), ios::out | ios::trunc);;//for creation of a log file to save the history of the simulation
 	
 		if(!_meshSet)
@@ -133,7 +135,7 @@ void StationaryDiffusionEquation::initialize()
 	        }
 	    }
 	    
-		/**************** Field creation *********************/
+		/**************** Field creation par le proc 0 (le seul à connaitre le maillage) *********************/
 	
 		if(!_heatPowerFieldSet){
 			_heatPowerField=Field("Heat power",_VV.getTypeOfField(),_mesh,1);
@@ -148,7 +150,7 @@ void StationaryDiffusionEquation::initialize()
 	        _fluidTemperatureFieldSet=true;
 		}
 	
-	    /* Détection des noeuds frontière avec une condition limite de Dirichlet */
+	    /******** Détection par le proc 0 (le seul à connaitre le maillage) des noeuds frontière avec une condition limite de Dirichlet ********/
 	    if(_FECalculation)
 	    {
 	        if(_NboundaryNodes==_Nnodes)
@@ -201,7 +203,7 @@ void StationaryDiffusionEquation::initialize()
 		_globalNbUnknowns = _NunknownNodes*_nVar;
 	}
 	
-	/* Vectors creations */
+	/* Parallel vectors creations (all procs) */
 	VecCreate(PETSC_COMM_WORLD, &_Tk);//main unknown
     VecSetSizes(_Tk,PETSC_DECIDE,_globalNbUnknowns);
 	VecSetFromOptions(_Tk);
@@ -211,17 +213,17 @@ void StationaryDiffusionEquation::initialize()
 	VecDuplicate(_Tk, &_deltaT);
 	VecDuplicate(_Tk, &_b);//RHS of the linear system: _b=Tn/dt + _b0 + puisance volumique + couplage thermique avec le fluide
 
-	/* Matrix creation */
+	/* Parallel matrix creation (all procs) */
    	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
 	
-	/* Local sequential vector creation */
+	/* Local sequential vector creation (all procs) */
 	if(_mpi_size>1 && _mpi_rank == 0)
 		VecCreateSeq(PETSC_COMM_SELF,_globalNbUnknowns,&_Tk_seq);//For saving results on proc 0
 	if(_mpi_size==0)
 		_Tk_seq=_Tk;
 	VecScatterCreateToZero(_Tk,&_scat,&_Tk_seq);
 
-	//PETSc Linear solver
+	/* PETSc Linear solver (all procs) */
 	KSPCreate(PETSC_COMM_WORLD, &_ksp);
 	KSPSetType(_ksp, _ksptype);
 	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
@@ -255,7 +257,7 @@ void StationaryDiffusionEquation::initialize()
 		}
 	}
 
-    //Checking whether all boundary conditions are Neumann boundary condition
+    //Checking on all procs whether all boundary conditions are Neumann boundary condition
     //if(_FECalculation) _onlyNeumannBC = _NdirichletNodes==0;
     if(!_neumannValuesSet)//Boundary conditions set via LimitField structure
     {
@@ -273,13 +275,15 @@ void StationaryDiffusionEquation::initialize()
     //If only Neumann BC, then matrix is singular and solution should be sought in space of mean zero vectors
     if(_onlyNeumannBC)
     {
-        std::cout<<"### Warning : all boundary conditions are Neumann. System matrix is not invertible since constant vectors are in the kernel."<<std::endl;
-        std::cout<<"### Check the compatibility condition between the right hand side and the boundary data. For homogeneous Neumann BCs, the right hand side must have integral equal to zero."<<std::endl;
-        std::cout<<"### The system matrix being singular, we seek a zero sum solution, and exact (LU and CHOLESKY) and incomplete factorisations (ILU and ICC) may fail."<<std::endl<<endl;
-        *_runLogFile<<"### Warning : all boundary condition are Neumann. System matrix is not invertible since constant vectors are in the kernel."<<std::endl;
-        *_runLogFile<<"### The system matrix being singular, we seek a zero sum solution, and exact (LU and CHOLESKY) and incomplete factorisations (ILU and ICC) may fail."<<std::endl<<endl;
-        *_runLogFile<<"### Check the compatibility condition between the right hand side and the boundary data. For homogeneous Neumann BCs, the right hand side must have integral equal to zero."<<std::endl;
-
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+	        std::cout<<"### Warning : all boundary conditions are Neumann. System matrix is not invertible since constant vectors are in the kernel."<<std::endl;
+	        std::cout<<"### Check the compatibility condition between the right hand side and the boundary data. For homogeneous Neumann BCs, the right hand side must have integral equal to zero."<<std::endl;
+	        std::cout<<"### The system matrix being singular, we seek a zero sum solution, and exact (LU and CHOLESKY) and incomplete factorisations (ILU and ICC) may fail."<<std::endl<<endl;
+	        *_runLogFile<<"### Warning : all boundary condition are Neumann. System matrix is not invertible since constant vectors are in the kernel."<<std::endl;
+	        *_runLogFile<<"### The system matrix being singular, we seek a zero sum solution, and exact (LU and CHOLESKY) and incomplete factorisations (ILU and ICC) may fail."<<std::endl<<endl;
+	        *_runLogFile<<"### Check the compatibility condition between the right hand side and the boundary data. For homogeneous Neumann BCs, the right hand side must have integral equal to zero."<<std::endl;
+		}
 		MatNullSpace nullsp;
 		MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, PETSC_NULL, &nullsp);
 		MatSetNullSpace(_A, nullsp);
@@ -433,7 +437,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 		MatIsSymmetric(_A,_precision,&isSymetric);
 		if(!isSymetric)
 		{
-			cout<<"Singular matrix is not symmetric, tolerance= "<< _precision<<endl;
+			PetscPrintf(PETSC_COMM_WORLD,"\n Singular matrix is not symmetric, tolerance= %.2f \n",_precision);
 			throw CdmathException("Singular matrix should be symmetric with kernel composed of constant vectors");
 		}
 	}
@@ -630,10 +634,13 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
         PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.");
         PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2e, précision demandée= %1.2e",_maxPetscIts,residu,_precision);
         PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d",_ksptype,_pctype,_PetscIts);
-		*_runLogFile<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
-        *_runLogFile<<"!!!!!!!!!!!!! Itérations maximales "<<_maxPetscIts<<" atteintes, résidu="<<residu<<", précision demandée= "<<_precision<<endl;
-        *_runLogFile<<"Solver used "<<  _ksptype<<", preconditioner "<<_pctype<<", Final number of iteration= "<<_PetscIts<<endl;
-		_runLogFile->close();
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+			*_runLogFile<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
+	        *_runLogFile<<"!!!!!!!!!!!!! Itérations maximales "<<_maxPetscIts<<" atteintes, résidu="<<residu<<", précision demandée= "<<_precision<<endl;
+	        *_runLogFile<<"Solver used "<<  _ksptype<<", preconditioner "<<_pctype<<", Final number of iteration= "<<_PetscIts<<endl;
+			_runLogFile->close();
+		}
         converged = false;
         stop = true;
     }
@@ -641,7 +648,8 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
         if( _MaxIterLinearSolver < _PetscIts)
             _MaxIterLinearSolver = _PetscIts;
         PetscPrintf(PETSC_COMM_WORLD,"## Système linéaire résolu en %d itérations par le solveur %s et le preconditioneur %s, précision demandée = %1.2e",_PetscIts,_ksptype,_pctype,_precision);
-		*_runLogFile<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<endl<<endl;
+		if(_mpi_rank==0)//Avoid redundant printing
+			*_runLogFile<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<endl<<endl;
         VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
         VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
 
@@ -764,9 +772,12 @@ void StationaryDiffusionEquation::setLinearSolver(linearSolver kspType, precondi
 	else if (kspType==BCGS)
 		_ksptype = (char*)&KSPBCGS;
 	else {
-		cout << "!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!" << endl;
-		*_runLogFile << "!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!" << endl;
-		_runLogFile->close();
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+			cout << "!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!" << endl;
+			*_runLogFile << "!!! Error : only 'GMRES', 'CG' or 'BCGS' is acceptable as a linear solver !!!" << endl;
+			_runLogFile->close();
+		}
 		throw CdmathException("!!! Error : only 'GMRES', 'CG' or 'BCGS' algorithm is acceptable !!!");
 	}
 	// set preconditioner
@@ -781,9 +792,12 @@ void StationaryDiffusionEquation::setLinearSolver(linearSolver kspType, precondi
 	else if (pcType == ICC)
 		_pctype = (char*)&PCICC;
 	else {
-		cout << "!!! Error : only 'NOPC', 'LU', 'ILU', 'CHOLESKY' or 'ICC' preconditioners are acceptable !!!" << endl;
-		*_runLogFile << "!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" << endl;
-		_runLogFile->close();
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+			cout << "!!! Error : only 'NOPC', 'LU', 'ILU', 'CHOLESKY' or 'ICC' preconditioners are acceptable !!!" << endl;
+			*_runLogFile << "!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" << endl;
+			_runLogFile->close();
+		}
 		throw CdmathException("!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" );
 	}
 }
@@ -792,45 +806,61 @@ bool StationaryDiffusionEquation::solveStationaryProblem()
 {
 	if(!_initializedMemory)
 	{
-		*_runLogFile<< "ProblemCoreFlows::run() call initialize() first"<< _fileName<<endl;
-		_runLogFile->close();
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+			*_runLogFile<< "ProblemCoreFlows::run() call initialize() first"<< _fileName<<endl;
+			_runLogFile->close();
+		}
 		throw CdmathException("ProblemCoreFlows::run() call initialize() first");
 	}
 	bool stop=false; // Does the Problem want to stop (error) ?
 	bool converged=false; // has the newton scheme converged (end) ?
 
 	PetscPrintf(PETSC_COMM_WORLD,"!!! Running test case %s using ",_fileName);
-	*_runLogFile<< "!!! Running test case "<< _fileName<< " using ";
+	if(_mpi_rank==0)//Avoid redundant printing
+		*_runLogFile<< "!!! Running test case "<< _fileName<< " using ";
 
     if(!_FECalculation)
     {
         PetscPrintf(PETSC_COMM_WORLD,"Finite volumes method\n\n");
-		*_runLogFile<< "Finite volumes method"<<endl<<endl;
+		if(_mpi_rank==0)//Avoid redundant printing
+			*_runLogFile<< "Finite volumes method"<<endl<<endl;
 	}
     else
 	{
         PetscPrintf(PETSC_COMM_WORLD,"Finite elements method\n\n");
-		*_runLogFile<< "Finite elements method"<< endl<<endl;
+		if(_mpi_rank==0)//Avoid redundant printing
+			*_runLogFile<< "Finite elements method"<< endl<<endl;
 	}
 
     computeDiffusionMatrix( stop);//For the moment the conductivity does not depend on the temperature (linear LHS)
     if (stop){
         PetscPrintf(PETSC_COMM_WORLD,"Error : failed computing diffusion matrix, stopping calculation\n");
-        *_runLogFile << "Error : failed computing diffusion matrix, stopping calculation"<< endl;
- 		_runLogFile->close();
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+	        *_runLogFile << "Error : failed computing diffusion matrix, stopping calculation"<< endl;
+	 		_runLogFile->close();
+		}
        throw CdmathException("Failed computing diffusion matrix");
     }
     computeRHS(stop);//For the moment the heat power does not depend on the unknown temperature (linear RHS)
     if (stop){
         PetscPrintf(PETSC_COMM_WORLD,"Error : failed computing right hand side, stopping calculation\n");
-        *_runLogFile << "Error : failed computing right hand side, stopping calculation"<< endl;
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+			*_runLogFile << "Error : failed computing right hand side, stopping calculation"<< endl;
+			_runLogFile->close();
+		}
         throw CdmathException("Failed computing right hand side");
     }
     stop = iterateNewtonStep(converged);
     if (stop){
         PetscPrintf(PETSC_COMM_WORLD,"Error : failed solving linear system, stopping calculation\n");
-        *_runLogFile << "Error : failed linear system, stopping calculation"<< endl;
-		_runLogFile->close();
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+	        *_runLogFile << "Error : failed linear system, stopping calculation"<< endl;
+			_runLogFile->close();
+		}
         throw CdmathException("Failed solving linear system");
     }
     
@@ -863,15 +893,19 @@ bool StationaryDiffusionEquation::solveStationaryProblem()
     }
     */
     
-    *_runLogFile<< "!!!!!! Computation successful !!!!!!"<< endl;
-	_runLogFile->close();
+	if(_mpi_rank==0)//Avoid redundant printing
+	{
+	    *_runLogFile<< "!!!!!! Computation successful !!!!!!"<< endl;
+		_runLogFile->close();
+	}
 
 	return !stop;
 }
 
 void StationaryDiffusionEquation::save(){
     PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results\n\n");
-    *_runLogFile<< "Saving numerical results"<< endl<<endl;
+	if(_mpi_rank==0)//Avoid redundant printing
+		*_runLogFile<< "Saving numerical results"<< endl<<endl;
 
 	string resultFile(_path+"/StationaryDiffusionEquation");//Results
 
@@ -1067,7 +1101,12 @@ StationaryDiffusionEquation::getOutputField(const string& nameField )
 		return getRodTemperatureField();
     else
     {
-        cout<<"Error : Field name "<< nameField << " does not exist, call getOutputFieldsNames first" << endl;
+		PetscPrintf(PETSC_COMM_WORLD,"\n Error : Field name %s is not an input field name, call getOutputFieldsNames first", nameField);
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+		    *_runLogFile<< "Error : Field name "<< nameField << " does not exist, call getOutputFieldsNames first"<< endl;
+			_runLogFile->close();
+		}
         throw CdmathException("DiffusionEquation::getOutputField error : Unknown Field name");
     }
 }
@@ -1084,7 +1123,12 @@ StationaryDiffusionEquation::setInputField(const string& nameField, Field& input
 		return setHeatPowerField( inputField );
 	else
     {
-        cout<<"Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first" << endl;
+		PetscPrintf(PETSC_COMM_WORLD,"\n Error : Field name %s is not an input field name, call getInputFieldsNames first", nameField);
+		if(_mpi_rank==0)//Avoid redundant printing
+		{
+		    *_runLogFile<< "Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first"<< endl;
+			_runLogFile->close();
+		}
         throw CdmathException("StationaryDiffusionEquation::setInputField error : Unknown Field name");
     }
 }
@@ -1122,9 +1166,17 @@ StationaryDiffusionEquation::setHeatPowerField(string fileName, string fieldName
 void 
 StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type){
 	if(_FECalculation && field_support_type != NODES)
-		cout<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"\n Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type \n");
+		if(_mpi_rank==0)//Avoid redundant printing
+			*_runLogFile<< "Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<< endl;
+	}
 	else if(!_FECalculation && field_support_type == NODES)
-		cout<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"\n Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type \n");
+		if(_mpi_rank==0)//Avoid redundant printing
+			*_runLogFile<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
+	}
 
 	Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
 
@@ -1135,9 +1187,17 @@ StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, str
 void 
 StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type){
 	if(_FECalculation && field_support_type != NODES)
-		cout<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"\n Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type \n");
+		if(_mpi_rank==0)//Avoid redundant printing
+			*_runLogFile<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite element simulation should have boundary field on nodes!!! Change parameter field_support_type"<< endl;
+	}
 	else if(!_FECalculation && field_support_type == NODES)
-		cout<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<<endl;
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"\n Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type \n");
+		if(_mpi_rank==0)//Avoid redundant printing
+			*_runLogFile<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
+	}
 
 	Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
 	
