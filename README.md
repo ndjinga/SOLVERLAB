@@ -68,6 +68,8 @@ The easiest way to run SOLVERLAB is to launch the SOLVERLAB module of the SALOME
     - click on the SOLVERLAB icon to launch SOLVERLAB module window
     - or use the SALOME python shell to run SOLVERLAB python scripts.
 
+More details on the SOLVERLAB module of SALOME can be found [here](CoreFlows/gui/doc/index.rst).
+
 Standalone compilation from sources
 -----------------------------------
 However the SALOME binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
