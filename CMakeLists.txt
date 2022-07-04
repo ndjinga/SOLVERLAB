@@ -9,7 +9,7 @@ ENDIF()
 # Project name
 project (SOLVERLAB C CXX)
 set (SOLVERLAB_VERSION_MAJOR 9)
-set (SOLVERLAB_VERSION_MINOR 8)
+set (SOLVERLAB_VERSION_MINOR 9)
 set (SOLVERLAB_VERSION_SUBMINOR 0)
 
 option (SOLVERLAB_WITH_DOCUMENTATION "Generate SOLVERLAB documentation" ON)
@@ -636,7 +636,7 @@ IF   ( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
 ENDIF( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
 find_package (SWIG 3.0 REQUIRED)
 
-# Find Doxygen
+# Find Doxygen and Sphinx for documentation
 if (SOLVERLAB_WITH_DOCUMENTATION)                                                                           #
  IF   ( DEFINED DOXYGEN_ROOT_DIR OR DEFINED ENV{DOXYGEN_ROOT_DIR})
    IF   ( DEFINED DOXYGEN_ROOT_DIR )
@@ -660,9 +660,11 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   add_custom_target (doc-user COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-user-guide  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-user-guide)			                                            #
   install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/user-doc/html DESTINATION share/doc/solverlab-user-guide OPTIONAL)                  #
   
+  find_package(Sphinx)
+  add_custom_target (doc-sphinx COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/Documentation"  "${PROJECT_BINARY_DIR}/doc/sphinx-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/Documentation)                                            #
+
   if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
-    find_package(Sphinx)
-    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/CoreFlows/gui/doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
+    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/doc/gui-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
     install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
   endif( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)			

@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Project name
 project (CoreFlows C CXX)
 set (COREFLOWS_VERSION_MAJOR 9)
-set (COREFLOWS_VERSION_MINOR 8)
+set (COREFLOWS_VERSION_MINOR 9)
 
 # CDMATH project options (deprecated, see SOLVERLAB options)
 set (COREFLOWS_WITH_DOCUMENTATION ON CACHE STRING "Generate documentation for CoreFlows use")
