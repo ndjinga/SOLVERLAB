@@ -13,7 +13,7 @@ INCLUDE_DIRECTORIES(
 )
 
 IF(    ${SOLVERLAB_WITH_MPI} )
-  if(EXISTS ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py/mpi4py.i)
+  if(     EXISTS ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py/mpi4py.i)
     INCLUDE_DIRECTORIES( ${MPI4PY_ROOT_DIR}/mpi4py/include
                          ${MPI4PY_ROOT_DIR}/mpi4py/include/mpi4py )
   elseif (EXISTS ${MPI4PY_ROOT_DIR}/include/mpi4py/mpi4py.i )
