@@ -28,9 +28,13 @@
     <parameter name="icon"            value="icon.png"/>
     <parameter name="library"         value="SalomePyQtGUILight"/>
     <parameter name="version"         value="@SALOMESOLVERLAB_VERSION@"/>
+    <parameter name="documentation"   value="solverlab_help"/>
   </section>
   <section name="resources">
     <!-- Module resources -->
     <parameter name="SOLVERLAB"    value="%SOLVERLAB_ROOT_DIR%/share/salome/resources/solverlab"/>
+  </section>
+  <section name="solverlab_help" >
+    <parameter name="Developer's Guide/SOLVERLAB module/Developer's Guide" value="%SOLVERLAB_ROOT_DIR%/share/doc/coreflows-dev-doc/html/index.html"/>
   </section>
 </document>
