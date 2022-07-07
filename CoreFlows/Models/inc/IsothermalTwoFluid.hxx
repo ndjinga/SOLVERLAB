@@ -1,8 +1,7 @@
 //============================================================================
 /**
- * \file DriftModel.hxx
+ * \file IsothermalTwoFluid.hxx
  * \author Michael NDJINGA, Kieu Nguyen
- * \version 1.0
  * \date 15 janv. 2015
  * \brief The isothermal two-fluid model
  * */
@@ -24,7 +23,7 @@ public :
 			 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 			 * \param [in] int : mesh dimension
 			 *  */
-	IsothermalTwoFluid(pressureEstimate pEstimate, int dim);
+	IsothermalTwoFluid(phaseType fluid, pressureEstimate pEstimate, int dim);
 	//initialisation du systeme
 	void initialize();
 
@@ -88,9 +87,9 @@ protected :
 	void convectionState( const long &i, const long &j, const bool &IsBord);
 	//!calcule la matrice de convection de l'etat interfacial entre deux cellules voisinnes
 	void convectionMatrices();
-	//!calcule la matrice de diffusion de l'etat interface pour la diffusion
 	//!Calcule le flux pour un état et une porosité et une normale donnés
 	Vector convectionFlux(Vector U,Vector V, Vector normale, double porosity);
+	//!calcule la matrice de diffusion de l'etat interface pour la diffusion
 	void diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord);
 	//!Ajoute au second membre la contribution de la gravite, chgt phase, chauffage et frottement
 	void sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar * Vi, int i);
@@ -104,7 +103,7 @@ protected :
 	void jacobian(const int &j, string nameOfGroup,double * normale);
 	//!Calcule la jacobienne de la CL de diffusion
 	void jacobianDiff(const int &j, string nameOfGroup);
-	//!Calcule l'etat fictif a� la frontiere
+	//!Calcule l'etat fictif à la frontiere
 	void setBoundaryState(string nameOfGroup, const int &j,double *normale);
 	//!Ajoute au second membre la contribution de la diffusion
 	void addDiffusionToSecondMember(const int &i,const int &j,bool isBoundary);
