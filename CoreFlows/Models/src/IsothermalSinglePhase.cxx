@@ -893,7 +893,7 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 
 void IsothermalSinglePhase::getDensityDerivatives( double pressure)
 {
-	double rho=_fluides[0]->getDensity(pressure,temperature);
+	double rho=_fluides[0]->getDensity(pressure,_Temperature);
 	double gamma=_fluides[0]->constante("gamma");
 	double q=_fluides[0]->constante("q");
 

@@ -68,8 +68,11 @@ public :
 	};
 
 protected :
-	Field _Vitesse;
 	double _Temperature, _internalEnergy;
+	double  _drho_sur_dp;
+	Field _Pressure, _Density, _Momentum, _Vitesse, _VitesseX, _VitesseY, _VitesseZ, _MachNumber;
+	bool _saveAllFields;
+	
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);
 	//!calcule la matrice de convection de l'etat interfacial entre deux cellules voisinnes
@@ -118,8 +121,6 @@ protected :
 	*/
 	void getDensityDerivatives( double pressure);
 
-	bool _saveAllFields;
-	Field _Pressure, _Density, _Momentum, _Vitesse, _VitesseX, _VitesseY, _VitesseZ, _MachNumber;
 };
 
 #endif /* IsothermalSinglePhase_HXX_ */
