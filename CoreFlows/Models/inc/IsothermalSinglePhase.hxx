@@ -97,9 +97,9 @@ protected :
 	//matrice de gravite
 	// void gravityMatrix();
 	//!Calcule la jacobienne de la CL convection
-	void jacobian(const int &j, string nameOfGroup,double * normale);
+	void jacobianConvGhostState(const int &j, string nameOfGroup,double * normale);
 	//!Calcule la jacobienne de la CL de diffusion
-	void jacobianDiff(const int &j, string nameOfGroup);
+	void jacobianDiffGhostState(const int &j, string nameOfGroup);
 	//!Calcule l'etat fictif à la frontiere
 	void setBoundaryState(string nameOfGroup, const int &j,double *normale);
 	//!Ajoute au second membre la contribution de la diffusion

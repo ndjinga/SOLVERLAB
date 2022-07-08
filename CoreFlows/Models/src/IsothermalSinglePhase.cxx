@@ -940,7 +940,7 @@ void IsothermalSinglePhase::computeScaling(double maxvp)
 	}
 }
 
-void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * normale)
+void IsothermalSinglePhase::jacobianConvGhostState(const int &j, string nameOfGroup,double * normale)
 {
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite convection bord "<< nameOfGroup<<endl;
@@ -1133,11 +1133,11 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 		cout << "group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::jacobian: This boundary condition is not treated");
+		throw CdmathException("IsothermalSinglePhase::jacobianConvGhostState: This boundary condition is not treated");
 	}
 }
 
-void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
+void IsothermalSinglePhase::jacobianDiffGhostState(const int &j, string nameOfGroup)
 {
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite diffusion bord "<< nameOfGroup<<endl;
@@ -1203,7 +1203,7 @@ void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 		cout << "group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::jacobianDiff: This boundary condition is not recognised");
+		throw CdmathException("IsothermalSinglePhase::jacobianDiffGhostState: This boundary condition is not recognised");
 	}
 }
 
