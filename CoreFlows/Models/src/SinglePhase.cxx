@@ -2720,9 +2720,9 @@ void SinglePhase::getDensityDerivatives( double pressure, double temperature, do
 	}
 	else
 	{
-		*_runLogFile<< "SinglePhase::staggeredVFFCMatricesPrimitiveVariables: eos should be StiffenedGas or StiffenedGasDellacherie" << endl;
+		*_runLogFile<< "SinglePhase::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie" << endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::staggeredVFFCMatricesPrimitiveVariables: eos should be StiffenedGas or StiffenedGasDellacherie");
+		throw CdmathException("SinglePhase::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie");
 	}
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
