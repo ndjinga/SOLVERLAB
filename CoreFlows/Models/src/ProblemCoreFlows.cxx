@@ -69,7 +69,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	/* Monitoring of simulation */
 	_restartWithNewTimeScheme=false;
 	_restartWithNewFileName=false;
-	_fileName = "myCoreFlowsProblem";
+	_fileName = "mySolverLabProblem";
 	_freqSave = 1;
 	_verbose = false;
 	_system = false;

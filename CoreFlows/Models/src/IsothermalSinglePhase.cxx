@@ -45,7 +45,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			*_runLogFile<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
 			_Temperature=573;//Constant temperature of the model
 			_internalEnergy=1.3e6;//water internal energy at saturation at 155 bar
-			_fluides[0] = new StiffenedGas(726.82,1.55e7,_Temperature,_internalEnergy, 971.,5454.);  //stiffened gas law for water at pressure 155 bar and temperature 345°C:
+			_fluides[0] = new StiffenedGas(726.82,1.55e7,_Temperature,_internalEnergy, 971.,5454.);  //stiffened gas law for water at pressure 155 bar and temperature 300°C:
 		}
 	}
 
@@ -97,8 +97,8 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 	}
 	if(_Ui[0]<0||_Uj[0]<0)
 	{
-		cout<<"!!!!!!!!!!!!!!!!!!!!!!!!densite negative, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
-		*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!!densite negative, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+		cout<<"!!!!!!!!!!!!!!!!!!!!!!!! Densité negative, arrêt de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+		*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!! Densité negative, arrêt de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 		_runLogFile->close();
 		throw CdmathException("densite negative, arret de calcul");
 	}
@@ -1607,8 +1607,6 @@ void IsothermalSinglePhase::save(){
 			if (_Ndim>2)
 				_UU.setInfoOnComponent(3,"Momentum_z");// (kg/m^2/s)
 
-			_UU.setInfoOnComponent(_nVar-1,"Energy_(J/m^3)");
-
 			switch(_saveFormat)
 			{
 			case VTK :
@@ -1628,7 +1626,6 @@ void IsothermalSinglePhase::save(){
 			_VV.setInfoOnComponent(2,"Velocity_y_(m/s)");
 		if (_Ndim>2)
 			_VV.setInfoOnComponent(3,"Velocity_z_(m/s)");
-		_VV.setInfoOnComponent(_nVar-1,"Temperature_(K)");
 
 		switch(_saveFormat)
 		{
@@ -1727,8 +1724,6 @@ void IsothermalSinglePhase::save(){
 			VecGetValues(_conservativeVars,1,&Ii,&rho);
 			Ii = i*_nVar;
 			VecGetValues(_primitiveVars,1,&Ii,&p);
-			Ii = i*_nVar +_nVar-1;
-			VecGetValues(_primitiveVars,1,&Ii,&T);
 			Ii = i*_nVar + 1;
 			VecGetValues(_primitiveVars,1,&Ii,&vx);
 			if(_Ndim>1)
@@ -1740,8 +1735,6 @@ void IsothermalSinglePhase::save(){
 					VecGetValues(_primitiveVars,1,&Ii,&vz);
 				}
 			}
-
-			h   = _fluides[0]->getEnthalpy(T,rho);
 
 			_Density(i)=rho;
 			_Pressure(i)=p;
@@ -1757,6 +1750,7 @@ void IsothermalSinglePhase::save(){
 					v2+=vz*vz;
 				}
 			}
+			double h=0;
 			_MachNumber(i)=sqrt(v2)/_fluides[0]->vitesseSonEnthalpie(h);
 		}
 		_Density.setTime(_time,_nbTimeStep);
@@ -1909,4 +1903,3 @@ void IsothermalSinglePhase::save(){
 	if (_restartWithNewFileName)
 		_restartWithNewFileName=false;
 }
-
