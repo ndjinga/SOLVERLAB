@@ -2193,7 +2193,7 @@ void ProblemFluid::terminate(){
 vector<string> 
 ProblemFluid::getInputFieldsNames()
 {
-	vector<string> result(1);
+	vector<string> result(4);
 	
 	result[0]="HeatPower";
 	result[1]="Porosity";
