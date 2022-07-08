@@ -23,7 +23,7 @@ public :
 			 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 			 * \param [in] int : mesh dimension
 			 *  */
-	IsothermalTwoFluid(phaseType fluid, pressureEstimate pEstimate, int dim);
+	IsothermalTwoFluid(pressureEstimate pEstimate, int dim);
 	//initialisation du systeme
 	void initialize();
 
