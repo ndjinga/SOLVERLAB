@@ -46,7 +46,7 @@ SinglePhase::SinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, b
 			if(_useDellacherieEOS)
 				_fluides[0]= new StiffenedGasDellacherie(2.35,1e9,-1.167e6,1816); //stiffened gas law for water from S. Dellacherie
 			else
-				_fluides[0]= new StiffenedGas(726.82.,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
+				_fluides[0]= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
 	}
 

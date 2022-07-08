@@ -206,8 +206,6 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 		cout << endl;
 		cout << "porosite gauche= "<<_porosityi<< ", porosite droite= "<<_porosityj<<endl;
 	}
-	consToPrim(_Udiff,_phi,1);
-	_Udiff[_nVar-1]=_phi[_nVar-1];
 
 	if(_timeScheme==Implicit)
 	{
@@ -215,8 +213,6 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 		for (int i = 0; i<_Ndim;i++)
 			q_2+=_Udiff[i+1]*_Udiff[i+1];
 		double mu = _fluides[0]->getViscosity(_Udiff[_nVar-1]);
-		double lambda = _fluides[0]->getConductivity(_Udiff[_nVar-1]);
-		double Cv= _fluides[0]->constante("Cv");
 		for(int i=0; i<_nVar*_nVar;i++)
 			_Diffusion[i] = 0;
 		for(int i=1;i<(_nVar-1);i++)
@@ -224,13 +220,6 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 			_Diffusion[i*_nVar] =  mu*_Udiff[i]/(_Udiff[0]*_Udiff[0]);
 			_Diffusion[i*_nVar+i] = -mu/_Udiff[0];
 		}
-		int i = (_nVar-1)*_nVar;
-		_Diffusion[i]=lambda*(_Udiff[_nVar-1]/_Udiff[0]-q_2/(2*Cv*_Udiff[0]*_Udiff[0]*_Udiff[0]));
-		for(int k=1;k<(_nVar-1);k++)
-		{
-			_Diffusion[i+k]= lambda*_Udiff[k]/(_Udiff[0]*_Udiff[0]*Cv);
-		}
-		_Diffusion[_nVar*_nVar-1]=-lambda/(_Udiff[0]*Cv);
 	}
 }
 
@@ -439,8 +428,7 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 			_idm[k] = _idm[k-1] + 1;
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//L'état fantome contient à présent les variables primitives internes
 		double pression=_externalStates[0];
-		double T=_limitField[nameOfGroup].T;
-		double rho=_fluides[0]->getDensity(pression,T);
+		double rho=_fluides[0]->getDensity(pression,_Temperature);
 
 		_externalStates[0]=porosityj*rho;
 		_externalStates[1]=_externalStates[0]*_limitField[nameOfGroup].v_x[0];
@@ -456,7 +444,7 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 				v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
 			}
 		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
+
 		_idm[0] = 0;
 		for(int k=1; k<_nVar; k++)
 			_idm[k] = _idm[k-1] + 1;
@@ -513,7 +501,6 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 					v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
 				}
 			}
-			_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);//Composante fantome de l'nrj
 		}
 		else if(_nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid possibly going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
@@ -578,7 +565,6 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 					_externalStates[3]*=_externalStates[0];
 				}
 			}
-			_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
 		}
 		else if(_nbTimeStep%_freqSave ==0)
 		{
@@ -659,7 +645,7 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 			*/
 			if(_nbTimeStep%_freqSave ==0)
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Wall boundary condition."<<endl;
-			_externalStates[0]=porosityj*_fluides[0]->getDensity(_externalStates[0]+hydroPress, _externalStates[_nVar-1]);
+			_externalStates[0]=porosityj*_fluides[0]->getDensity(_externalStates[0]+hydroPress, _Temperature);
 			//Changing external state velocity
             for(int k=0; k<_Ndim; k++)
                 _externalStates[(k+1)]-=2*u_n*normale[k];
@@ -671,7 +657,6 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 			v2+=_externalStates[(k+1)]*_externalStates[(k+1)];
 			_externalStates[(k+1)]*=_externalStates[0] ;//qdm component
 		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy( _externalStates[_nVar-1],_externalStates[0]) + v2/2);//nrj component
 
 
 		_idm[0] = 0;
@@ -716,14 +701,12 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 			_idm[k] = _idm[k-1] + 1;
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
 
-		_externalStates[0]=porosityj*_fluides[0]->getDensity(_limitField[nameOfGroup].p+hydroPress, _externalStates[_nVar-1]);
 		double v2=0;
 		for(int k=0; k<_Ndim; k++)
 		{
 			v2+=_externalStates[(k+1)]*_externalStates[(k+1)];
 			_externalStates[(k+1)]*=_externalStates[0] ;
 		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy( _externalStates[_nVar-1],_externalStates[0]) + v2/2);
 		_idm[0] = 0;
 		for(int k=1; k<_nVar; k++)
 			_idm[k] = _idm[k-1] + 1;
@@ -771,8 +754,6 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 	//contribution visqueuse sur la quantite de mouvement
 	for(int k=1; k<_nVar-1; k++)
 		_phi[k] = _inv_dxi*2/(1/_inv_dxi+1/_inv_dxj)*mu*(_porosityj*_Vj[k] - _porosityi*_Vi[k]);
-	//contribution visqueuse sur l'energie
-	_phi[_nVar-1] = _inv_dxi*2/(1/_inv_dxi+1/_inv_dxj)*lambda*(_porosityj*_Vj[_nVar-1] - _porosityi*_Vi[_nVar-1]);
 	
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
@@ -822,17 +803,10 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 	for(int k=0; k<_Ndim; k++)
 		norm_u+=Vi[1+k]*Vi[1+k];
 	norm_u=sqrt(norm_u);
-	if(T>_Tsat)
-		Si[0]=_heatPowerField(i)/_latentHeat;
-	else
-		Si[0]=0;
+
+	Si[0]=0;
 	for(int k=1; k<_nVar-1; k++)
 		Si[k]  =(_gravite[k]-_dragCoeffs[0]*norm_u*Vi[1+k])*phirho;
-
-	Si[_nVar-1]=_heatPowerField(i);
-
-	for(int k=0; k<_Ndim; k++)
-		Si[_nVar-1] +=(_GravityField3d[k]-_dragCoeffs[0]*norm_u*Vi[1+k])*Vi[1+k]*phirho;
 
 	if(_timeScheme==Implicit)
 	{
@@ -948,7 +922,6 @@ void IsothermalSinglePhase::porosityGradientSourceVector()
 	pij=(pi+pj)/2+rhoi*rhoj/2/(rhoi+rhoj)*(u_ni-u_nj)*(u_ni-u_nj);
 	for(int i=0;i<_Ndim;i++)
 		_porosityGradientSourceVector[1+i]=pij*(_porosityi-_porosityj)*2/(1/_inv_dxi+1/_inv_dxj);
-	_porosityGradientSourceVector[_nVar-1]=0;
 }
 
 
@@ -989,8 +962,8 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 	{
 		for(k=0; k<_nVar;k++)
 			_Jcb[k*_nVar + k] = 1;
-		for(k=1; k<_nVar-1;k++)
-			for(int l=1; l<_nVar-1;l++)
+		for(k=1; k<_nVar;k++)
+			for(int l=1; l<_nVar;l++)
 				_Jcb[k*_nVar + l] -= 2*normale[k-1]*normale[l-1];
 	}
 	else if (_limitField[nameOfGroup].bcType==Inlet)
@@ -1021,26 +994,6 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 				ve2 += ve[2]*ve[2];
 				v2 = v[2]*v[2];
 			}
-			double internal_energy=_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,_Uj[0]);
-			double total_energy=internal_energy+ve2/2;
-
-			//Mass line
-			_Jcb[0]=v2/(2*internal_energy);
-			for(k=0; k<_Ndim;k++)
-				_Jcb[1+k]=-v[k]/internal_energy;
-			_Jcb[_nVar-1]=1/internal_energy;
-			//Momentum lines
-			for(int l =1;l<1+_Ndim;l++){
-				_Jcb[l*_nVar]=v2*ve[l-1]/(2*internal_energy);
-				for(k=0; k<_Ndim;k++)
-					_Jcb[l*_nVar+1+k]=-v[k]*ve[l-1]/internal_energy;
-				_Jcb[l*_nVar+_nVar-1]=ve[l-1]/internal_energy;
-			}
-			//Energy line
-			_Jcb[(_nVar-1)*_nVar]=v2*total_energy/(2*internal_energy);
-			for(k=0; k<_Ndim;k++)
-				_Jcb[(_nVar-1)*_nVar+1+k]=-v[k]*total_energy/internal_energy;
-			_Jcb[(_nVar-1)*_nVar+_nVar-1]=total_energy/internal_energy;
 		}
 		else
 			for(k=0;k<_nVar;k++)
@@ -1059,7 +1012,6 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 				v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
 			}
 		}
-		_Jcb[(_nVar-1)*_nVar]=_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2;
 		 */
 	}
 	else if (_limitField[nameOfGroup].bcType==InletPressure && q_n<0){
@@ -1103,10 +1055,10 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 			v2+=v[k]*v[k];
 		}
 
-		double rho_ext=_fluides[0]->getDensity(_limitField[nameOfGroup].p, _externalStates[_nVar-1]);
+		double rho_ext=_fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature);
 		double rho_int = _externalStates[0];
 		double density_ratio=rho_ext/rho_int;
-		double internal_energy=_fluides[0]->getInternalEnergy(_externalStates[_nVar-1],rho_int);
+		double internal_energy=_fluides[0]->getInternalEnergy(_Temperature,rho_int);
 		double total_energy=internal_energy+v2/2;
 
 		//Mass line
@@ -1494,73 +1446,6 @@ Vector IsothermalSinglePhase::convectionFlux(Vector U,Vector V, Vector normale, 
 	}
 
 	return F;
-}
-
-Vector IsothermalSinglePhase::staggeredVFFCFlux()
-{
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"IsothermalSinglePhase::staggeredVFFCFlux() start"<<endl;
-
-	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
-	{
-		*_runLogFile<< "IsothermalSinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding, pressure = "<<  endl;
-		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding");
-	}
-	else//_spaceScheme==staggered && _nonLinearFormulation==VFFC
-	{
-		Vector Fij(_nVar);
-
-		double uijn=0, phiqn=0, uin=0, ujn=0;
-		for(int idim=0;idim<_Ndim;idim++)
-		{
-			uijn+=_vec_normal[idim]*_Uroe[1+idim];//URoe = rho, u, H
-			uin +=_vec_normal[idim]*_Ui[1+idim];
-			ujn +=_vec_normal[idim]*_Uj[1+idim];
-		}
-		
-		if( (uin>0 && ujn >0) || (uin>=0 && ujn <=0 && uijn>0) ) // formerly (uijn>_precision)
-		{
-			for(int idim=0;idim<_Ndim;idim++)
-				phiqn+=_vec_normal[idim]*_Ui[1+idim];//phi rho u n
-			Fij(0)=phiqn;
-			for(int idim=0;idim<_Ndim;idim++)
-				Fij(1+idim)=phiqn*_Vi[1+idim]+_Vj[0]*_vec_normal[idim]*_porosityj;
-			Fij(_nVar-1)=phiqn/_Ui[0]*(_Ui[_nVar-1]+_Vj[0]*sqrt(_porosityj/_porosityi));
-		}
-		else if( (uin<0 && ujn <0) || (uin>=0 && ujn <=0 && uijn<0) ) // formerly (uijn<-_precision)
-		{
-			for(int idim=0;idim<_Ndim;idim++)
-				phiqn+=_vec_normal[idim]*_Uj[1+idim];//phi rho u n
-			Fij(0)=phiqn;
-			for(int idim=0;idim<_Ndim;idim++)
-				Fij(1+idim)=phiqn*_Vj[1+idim]+_Vi[0]*_vec_normal[idim]*_porosityi;
-			Fij(_nVar-1)=phiqn/_Uj[0]*(_Uj[_nVar-1]+_Vi[0]*sqrt(_porosityi/_porosityj));
-		}
-		else//case (uin<=0 && ujn >=0) or (uin>=0 && ujn <=0 && uijn==0), apply centered scheme
-		{
-			Vector Ui(_nVar), Uj(_nVar), Vi(_nVar), Vj(_nVar), Fi(_nVar), Fj(_nVar);
-			Vector normale(_Ndim);
-			for(int i1=0;i1<_Ndim;i1++)
-				normale(i1)=_vec_normal[i1];
-			for(int i1=0;i1<_nVar;i1++)
-			{
-				Ui(i1)=_Ui[i1];
-				Uj(i1)=_Uj[i1];
-				Vi(i1)=_Vi[i1];
-				Vj(i1)=_Vj[i1];
-			}
-			Fi=convectionFlux(Ui,Vi,normale,_porosityi);
-			Fj=convectionFlux(Uj,Vj,normale,_porosityj);
-			Fij=(Fi+Fj)/2;//+_maxvploc*(Ui-Uj)/2;
-		}
-		if(_verbose && _nbTimeStep%_freqSave ==0)
-		{
-			cout<<"IsothermalSinglePhase::staggeredVFFCFlux() endf uijn="<<uijn<<endl;
-			cout<<Fij<<endl;
-		}
-		return Fij;
-	}
 }
 
 void IsothermalSinglePhase::applyVFRoeLowMachCorrections(bool isBord, string groupname)

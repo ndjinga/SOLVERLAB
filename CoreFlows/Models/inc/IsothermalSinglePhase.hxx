@@ -104,8 +104,6 @@ protected :
 	void setBoundaryState(string nameOfGroup, const int &j,double *normale);
 	//!Ajoute au second membre la contribution de la diffusion
 	void addDiffusionToSecondMember(const int &i,const int &j,bool isBoundary);
-	//!Computes the interfacial flux for the VFFC formulation of the staggered upwinding
-	Vector staggeredVFFCFlux();
 	//!Compute the corrected interfacial state for lowMach, pressureCorrection and staggered versions of the VFRoe formulation
 	void applyVFRoeLowMachCorrections(bool isBord, string groupname="");
 	//!remplit les vecteurs de scaling
