@@ -8,6 +8,7 @@ INCLUDE_DIRECTORIES(
 SET(src_models_CXX
     DriftModel.cxx
     IsothermalTwoFluid.cxx
+    IsothermalSinglePhase.cxx
     SinglePhase.cxx
     FiveEqsTwoFluid.cxx
     ProblemCoreFlows.cxx

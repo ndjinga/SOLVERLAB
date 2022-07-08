@@ -28,7 +28,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			cout<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
 			*_runLogFile<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
 			_internalEnergy=1.12e5;//water internal energy at 1 bar, 300K
-			_fluides[0] = new StiffenedGas(996,1e5,_Temperature,_internalEnergy2,1501,4130);  //stiffened gas law for water at pressure 1 bar and temperature 27°C
+			_fluides[0] = new StiffenedGas(996,1e5,_Temperature,_internalEnergy,1501,4130);  //stiffened gas law for water at pressure 1 bar and temperature 27°C
 		}
 	}
 	else//EOS at 155 bars and 618K
@@ -38,13 +38,13 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			cout<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
 			*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
 			_internalEnergy=2.44e6;//Gas internal energy at saturation at 155 bar
-			_fluides[0] = new StiffenedGas(102,1.55e7,_Temperature,_internalEnergy1, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C:
+			_fluides[0] = new StiffenedGas(102,1.55e7,_Temperature,_internalEnergy, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C:
 		}
 		else{//To do : change to normal regime: 155 bars and 573K
 			cout<<"Fluid is water around saturation point 155 bars and 618 K (345°C)"<<endl;
 			*_runLogFile<<"Fluid is water around saturation point 155 bars and 618 K (345°C)"<<endl;
-			_internalEnergy2=1.6e6;//water internal energy at saturation at 155 bar
-			_fluides[0] = new StiffenedGas(594,1.55e7,_Temperature,_internalEnergy2, 621,3100);  //stiffened gas law for water at pressure 155 bar and temperature 345°C:
+			_internalEnergy=1.6e6;//water internal energy at saturation at 155 bar
+			_fluides[0] = new StiffenedGas(594,1.55e7,_Temperature,_internalEnergy, 621,3100);  //stiffened gas law for water at pressure 155 bar and temperature 345°C:
 		}
 	}
 
@@ -204,12 +204,12 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "SinglePhase::diffusionStateAndMatrices cellule gauche" << i << endl;
+		cout << "IsothermalSinglePhase::diffusionStateAndMatrices cellule gauche" << i << endl;
 		cout << "Ui = ";
 		for(int q=0; q<_nVar; q++)
 			cout << _Ui[q]  << "\t";
 		cout << endl;
-		cout << "SinglePhase::diffusionStateAndMatrices cellule droite" << j << endl;
+		cout << "IsothermalSinglePhase::diffusionStateAndMatrices cellule droite" << j << endl;
 		cout << "Uj = ";
 		for(int q=0; q<_nVar; q++)
 			cout << _Uj[q]  << "\t";
@@ -221,7 +221,7 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "SinglePhase::diffusionStateAndMatrices conservative diffusion state" << endl;
+		cout << "IsothermalSinglePhase::diffusionStateAndMatrices conservative diffusion state" << endl;
 		cout << "_Udiff = ";
 		for(int q=0; q<_nVar; q++)
 			cout << _Udiff[q]  << "\t";
@@ -262,7 +262,7 @@ void IsothermalSinglePhase::convectionMatrices()
 	//sortie: matrices Roe+  et Roe-
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"SinglePhase::convectionMatrices()"<<endl;
+		cout<<"IsothermalSinglePhase::convectionMatrices()"<<endl;
 
 	double u_n=0, u_2=0;//vitesse normale et carré du module
 
@@ -274,119 +274,111 @@ void IsothermalSinglePhase::convectionMatrices()
 
 	vector<complex<double> > vp_dist(3,0);
 
-	if(_spaceScheme==staggered && _nonLinearFormulation==VFFC)//special case
-	{
-		staggeredVFFCMatricesConservativeVariables(u_n);//Computation of classical upwinding matrices
-		if(_timeScheme==Implicit && _usePrimitiveVarsInNewton)//For use in implicit matrix
-			staggeredVFFCMatricesPrimitiveVariables(u_n);
-	}
-	else
-	{
-		Vector vitesse(_Ndim);
-		for(int idim=0;idim<_Ndim;idim++)
-			vitesse[idim]=_Uroe[1+idim];
+	Vector vitesse(_Ndim);
+	for(int idim=0;idim<_Ndim;idim++)
+		vitesse[idim]=_Uroe[1+idim];
 
-		double  c, H, K, k;
-		/***********Calcul des valeurs propres ********/
-		H = _Uroe[_nVar-1];
-		c = _fluides[0]->vitesseSonEnthalpie(H-u_2/2);//vitesse du son a l'interface
-		k = _fluides[0]->constante("gamma") - 1;//A generaliser pour porosite et stephane gas law
-		K = u_2*k/2; //g-1/2 *|u|²
+	double  c, H, K, k;
+	/***********Calcul des valeurs propres ********/
+	H = _Uroe[_nVar-1];
+	c = _fluides[0]->vitesseSonEnthalpie(H-u_2/2);//vitesse du son a l'interface
+	k = _fluides[0]->constante("gamma") - 1;//A generaliser pour porosite et stephane gas law
+	K = u_2*k/2; //g-1/2 *|u|²
 
-		vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
+	vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
 
-		_maxvploc=fabs(u_n)+c;
-		if(_maxvploc>_maxvp)
-			_maxvp=_maxvploc;
+	_maxvploc=fabs(u_n)+c;
+	if(_maxvploc>_maxvp)
+		_maxvp=_maxvploc;
 
-		if(_verbose && _nbTimeStep%_freqSave ==0)
-			cout<<"SinglePhase::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+		cout<<"IsothermalSinglePhase::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
 
-		RoeMatrixConservativeVariables( u_n, H,vitesse,k,K);
+	RoeMatrixConservativeVariables( u_n, H,vitesse,k,K);
 
-		/******** Construction des matrices de decentrement ********/
-		if( _spaceScheme ==centered){
-			if(_entropicCorrection)
-			{
-				*_runLogFile<<"SinglePhase::convectionMatrices: entropy scheme not available for centered scheme"<<endl;
-				_runLogFile->close();
-				throw CdmathException("SinglePhase::convectionMatrices: entropy scheme not available for centered scheme");
-			}
-
-			for(int i=0; i<_nVar*_nVar;i++)
-				_absAroe[i] = 0;
-		}
-		else if(_spaceScheme == upwind || _spaceScheme ==pressureCorrection || _spaceScheme ==lowMach){
-			if(_entropicCorrection)
-				entropicShift(_vec_normal);
-			else
-				_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
-
-			vector< complex< double > > y (3,0);
-			for( int i=0 ; i<3 ; i++)
-				y[i] = Polynoms::abs_generalise(vp_dist[i])+_entropicShift[i];
-			Polynoms::abs_par_interp_directe(3,vp_dist, _Aroe, _nVar,_precision, _absAroe,y);
-
-			if( _spaceScheme ==pressureCorrection)
-				for( int i=0 ; i<_Ndim ; i++)
-					for( int j=0 ; j<_Ndim ; j++)
-						_absAroe[(1+i)*_nVar+1+j]-=(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
-			else if( _spaceScheme ==lowMach){
-				double M=sqrt(u_2)/c;
-				for( int i=0 ; i<_Ndim ; i++)
-					for( int j=0 ; j<_Ndim ; j++)
-						_absAroe[(1+i)*_nVar+1+j]-=(1-M)*(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
-			}
-		}
-		else if( _spaceScheme ==staggered ){
-			if(_entropicCorrection)//To do: study entropic correction for staggered
-			{
-				*_runLogFile<<"SinglePhase::convectionMatrices: entropy scheme not available for staggered scheme"<<endl;
-				_runLogFile->close();
-				throw CdmathException("SinglePhase::convectionMatrices: entropy scheme not available for staggered scheme");
-			}
-
-			staggeredRoeUpwindingMatrixConservativeVariables( u_n, H, vitesse, k, K);
-		}
-		else
+	/******** Construction des matrices de decentrement ********/
+	if( _spaceScheme ==centered){
+		if(_entropicCorrection)
 		{
-			*_runLogFile<<"SinglePhase::convectionMatrices: scheme not treated"<<endl;
+			*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: entropy scheme not available for centered scheme"<<endl;
 			_runLogFile->close();
-			throw CdmathException("SinglePhase::convectionMatrices: scheme not treated");
+			throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for centered scheme");
 		}
 
 		for(int i=0; i<_nVar*_nVar;i++)
-		{
-			_AroeMinus[i] = (_Aroe[i]-_absAroe[i])/2;
-			_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
-		}
-		if(_timeScheme==Implicit)
-		{
-			if(_usePrimitiveVarsInNewton)//Implicitation using primitive variables
-			{
-				_Vij[0]=_fluides[0]->getPressureFromEnthalpy(_Uroe[_nVar-1]-u_2/2, _Uroe[0]);//pressure
-				_Vij[_nVar-1]=_fluides[0]->getTemperatureFromPressure( _Vij[0], _Uroe[0]);//Temperature
-				for(int idim=0;idim<_Ndim; idim++)
-					_Vij[1+idim]=_Uroe[1+idim];
-				primToConsJacobianMatrix(_Vij);
-				Polynoms::matrixProduct(_AroeMinus, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroeMinusImplicit);
-				Polynoms::matrixProduct(_AroePlus,  _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroePlusImplicit);
-			}
-			else
-				for(int i=0; i<_nVar*_nVar;i++)
-				{
-					_AroeMinusImplicit[i] = _AroeMinus[i];
-					_AroePlusImplicit[i]  = _AroePlus[i];
-				}
-		}
-		if(_verbose && _nbTimeStep%_freqSave ==0)
-		{
-			displayMatrix(_Aroe, _nVar,"Matrice de Roe");
-			displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
-			displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus");
-			displayMatrix(_AroePlus, _nVar,"Matrice _AroePlus");
+			_absAroe[i] = 0;
+	}
+	else if(_spaceScheme == upwind || _spaceScheme ==pressureCorrection || _spaceScheme ==lowMach){
+		if(_entropicCorrection)
+			entropicShift(_vec_normal);
+		else
+			_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
+
+		vector< complex< double > > y (3,0);
+		for( int i=0 ; i<3 ; i++)
+			y[i] = Polynoms::abs_generalise(vp_dist[i])+_entropicShift[i];
+		Polynoms::abs_par_interp_directe(3,vp_dist, _Aroe, _nVar,_precision, _absAroe,y);
+
+		if( _spaceScheme ==pressureCorrection)
+			for( int i=0 ; i<_Ndim ; i++)
+				for( int j=0 ; j<_Ndim ; j++)
+					_absAroe[(1+i)*_nVar+1+j]-=(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
+		else if( _spaceScheme ==lowMach){
+			double M=sqrt(u_2)/c;
+			for( int i=0 ; i<_Ndim ; i++)
+				for( int j=0 ; j<_Ndim ; j++)
+					_absAroe[(1+i)*_nVar+1+j]-=(1-M)*(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
 		}
 	}
+	else if( _spaceScheme ==staggered ){
+		if(_entropicCorrection)//To do: study entropic correction for staggered
+		{
+			*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: entropy scheme not available for staggered scheme"<<endl;
+			_runLogFile->close();
+			throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for staggered scheme");
+		}
+
+		staggeredRoeUpwindingMatrixConservativeVariables( u_n, H, vitesse, k, K);
+	}
+	else
+	{
+		*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: scheme not treated"<<endl;
+		_runLogFile->close();
+		throw CdmathException("IsothermalSinglePhase::convectionMatrices: scheme not treated");
+	}
+
+	for(int i=0; i<_nVar*_nVar;i++)
+	{
+		_AroeMinus[i] = (_Aroe[i]-_absAroe[i])/2;
+		_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
+	}
+	if(_timeScheme==Implicit)
+	{
+		if(_usePrimitiveVarsInNewton)//Implicitation using primitive variables
+		{
+			_Vij[0]=_fluides[0]->getPressureFromEnthalpy(_Uroe[_nVar-1]-u_2/2, _Uroe[0]);//pressure
+			_Vij[_nVar-1]=_fluides[0]->getTemperatureFromPressure( _Vij[0], _Uroe[0]);//Temperature
+			for(int idim=0;idim<_Ndim; idim++)
+				_Vij[1+idim]=_Uroe[1+idim];
+			primToConsJacobianMatrix(_Vij);
+			Polynoms::matrixProduct(_AroeMinus, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroeMinusImplicit);
+			Polynoms::matrixProduct(_AroePlus,  _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroePlusImplicit);
+		}
+		else
+			for(int i=0; i<_nVar*_nVar;i++)
+			{
+				_AroeMinusImplicit[i] = _AroeMinus[i];
+				_AroePlusImplicit[i]  = _AroePlus[i];
+			}
+	}
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		displayMatrix(_Aroe, _nVar,"Matrice de Roe");
+		displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
+		displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus");
+		displayMatrix(_AroePlus, _nVar,"Matrice _AroePlus");
+	}
+	
 
 	if(_verbose && _nbTimeStep%_freqSave ==0 && _timeScheme==Implicit)
 	{
@@ -423,9 +415,9 @@ void IsothermalSinglePhase::convectionMatrices()
 	}
 	else
 	{
-		*_runLogFile<<"SinglePhase::convectionMatrices: well balanced option not treated"<<endl;
+		*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: well balanced option not treated"<<endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::convectionMatrices: well balanced option not treated");
+		throw CdmathException("IsothermalSinglePhase::convectionMatrices: well balanced option not treated");
 	}
 }
 
@@ -874,17 +866,14 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 		else
 		{
 			double pression=Vi[0];
-			getDensityDerivatives( pression, T, norm_u*norm_u);
+			getDensityDerivatives( pression);
 			for(int k=0; k<_nVar;k++)
-			{
 				_GravityImplicitationMatrix[k*_nVar+0]      =-_gravite[k]*_drho_sur_dp;
-				_GravityImplicitationMatrix[k*_nVar+_nVar-1]=-_gravite[k]*_drho_sur_dT;
-			}
 		}
 	}
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<"SinglePhase::sourceVector"<<endl;
+		cout<<"IsothermalSinglePhase::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
 		for(int k=0;k<_nVar;k++)
 			cout<<Ui[k]<<", ";
@@ -901,6 +890,22 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 			displayMatrix(_GravityImplicitationMatrix, _nVar, "Gravity implicitation matrix");
 	}
 }
+
+void IsothermalSinglePhase::getDensityDerivatives( double pressure)
+{
+	double rho=_fluides[0]->getDensity(pressure,temperature);
+	double gamma=_fluides[0]->constante("gamma");
+	double q=_fluides[0]->constante("q");
+
+	StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
+	double e = fluide0->getInternalEnergy(_Temperature);
+
+	_drho_sur_dp=1/((gamma-1)*(e-q));
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+		cout<<"_drho_sur_dp= "<<_drho_sur_dp<<endl;	
+}
+
 void IsothermalSinglePhase::pressureLossVector(PetscScalar * pressureLoss, double K, PetscScalar * Ui, PetscScalar * Vi, PetscScalar * Uj, PetscScalar * Vj)
 {
 	double norm_u=0, u_n=0, rho;
@@ -928,7 +933,7 @@ void IsothermalSinglePhase::pressureLossVector(PetscScalar * pressureLoss, doubl
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<"SinglePhase::pressureLossVector K= "<<K<<endl;
+		cout<<"IsothermalSinglePhase::pressureLossVector K= "<<K<<endl;
 		cout<<"Ui="<<endl;
 		for(int k=0;k<_nVar;k++)
 			cout<<Ui[k]<<", ";
@@ -1198,7 +1203,7 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 		cout << "group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::jacobian: This boundary condition is not treated");
+		throw CdmathException("IsothermalSinglePhase::jacobian: This boundary condition is not treated");
 	}
 }
 
@@ -1268,12 +1273,12 @@ void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 		cout << "group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::jacobianDiff: This boundary condition is not recognised");
+		throw CdmathException("IsothermalSinglePhase::jacobianDiff: This boundary condition is not recognised");
 	}
 }
 
 void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W, const int &j){
-	//cout<<"SinglePhase::primToCons i="<<i<<", j="<<j<<", P[i*(_Ndim+2)]="<<P[i*(_Ndim+2)]<<", P[i*(_Ndim+2)+(_Ndim+1)]="<<P[i*(_Ndim+2)+(_Ndim+1)]<<endl;
+	//cout<<"IsothermalSinglePhase::primToCons i="<<i<<", j="<<j<<", P[i*(_Ndim+2)]="<<P[i*(_Ndim+2)]<<", P[i*(_Ndim+2)+(_Ndim+1)]="<<P[i*(_Ndim+2)+(_Ndim+1)]<<endl;
 
 	double rho=_fluides[0]->getDensity(P[i*(_Ndim+2)], P[i*(_Ndim+2)+(_Ndim+1)]);
 	W[j*(_Ndim+2)] =  _porosityField(j)*rho;//phi*rho
@@ -1305,57 +1310,28 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
 	for(int k=0;k<_nVar*_nVar; k++)
 		_primToConsJacoMat[k]=0;
 
-	if(		!_useDellacherieEOS)
+	StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
+	double h=fluide0->getEnthalpy(temperature);
+	double H=h+0.5*v2;
+	double cp=_fluides[0]->constante("cp");
+
+	_primToConsJacoMat[0]=gamma/((gamma-1)*(h-q));
+	_primToConsJacoMat[_nVar-1]=-rho*cp/(h-q);
+
+	for(int idim=0;idim<_Ndim;idim++)
 	{
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-		double e=fluide0->getInternalEnergy(temperature);
-		double E=e+0.5*v2;
-
-		_primToConsJacoMat[0]=1/((gamma-1)*(e-q));
-		_primToConsJacoMat[_nVar-1]=-rho*cv/(e-q);
-
-		for(int idim=0;idim<_Ndim;idim++)
-		{
-			_primToConsJacoMat[_nVar+idim*_nVar]=vitesse[idim]/((gamma-1)*(e-q));
-			_primToConsJacoMat[_nVar+idim*_nVar+1+idim]=rho;
-			_primToConsJacoMat[_nVar+idim*_nVar+_nVar-1]=-rho*vitesse[idim]*cv/(e-q);
-		}
-		_primToConsJacoMat[(_nVar-1)*_nVar]=E/((gamma-1)*(e-q));
-		for(int idim=0;idim<_Ndim;idim++)
-			_primToConsJacoMat[(_nVar-1)*_nVar+1+idim]=rho*vitesse[idim];
-		_primToConsJacoMat[(_nVar-1)*_nVar+_nVar-1]=rho*cv*(1-E/(e-q));
+		_primToConsJacoMat[_nVar+idim*_nVar]=gamma*vitesse[idim]/((gamma-1)*(h-q));
+		_primToConsJacoMat[_nVar+idim*_nVar+1+idim]=rho;
+		_primToConsJacoMat[_nVar+idim*_nVar+_nVar-1]=-rho*vitesse[idim]*cp/(h-q);
 	}
-	else if(	_useDellacherieEOS)
-	{
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-		double h=fluide0->getEnthalpy(temperature);
-		double H=h+0.5*v2;
-		double cp=_fluides[0]->constante("cp");
-
-		_primToConsJacoMat[0]=gamma/((gamma-1)*(h-q));
-		_primToConsJacoMat[_nVar-1]=-rho*cp/(h-q);
-
-		for(int idim=0;idim<_Ndim;idim++)
-		{
-			_primToConsJacoMat[_nVar+idim*_nVar]=gamma*vitesse[idim]/((gamma-1)*(h-q));
-			_primToConsJacoMat[_nVar+idim*_nVar+1+idim]=rho;
-			_primToConsJacoMat[_nVar+idim*_nVar+_nVar-1]=-rho*vitesse[idim]*cp/(h-q);
-		}
-		_primToConsJacoMat[(_nVar-1)*_nVar]=gamma*H/((gamma-1)*(h-q))-1;
-		for(int idim=0;idim<_Ndim;idim++)
-			_primToConsJacoMat[(_nVar-1)*_nVar+1+idim]=rho*vitesse[idim];
-		_primToConsJacoMat[(_nVar-1)*_nVar+_nVar-1]=rho*cp*(1-H/(h-q));
-	}
-	else
-	{
-		*_runLogFile<<"SinglePhase::primToConsJacobianMatrix: eos should be StiffenedGas or StiffenedGasDellacherie"<<endl;
-		_runLogFile->close();
-		throw CdmathException("SinglePhase::primToConsJacobianMatrix: eos should be StiffenedGas or StiffenedGasDellacherie");
-	}
+	_primToConsJacoMat[(_nVar-1)*_nVar]=gamma*H/((gamma-1)*(h-q))-1;
+	for(int idim=0;idim<_Ndim;idim++)
+		_primToConsJacoMat[(_nVar-1)*_nVar+1+idim]=rho*vitesse[idim];
+	_primToConsJacoMat[(_nVar-1)*_nVar+_nVar-1]=rho*cp*(1-H/(h-q));
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<" SinglePhase::primToConsJacobianMatrix" << endl;
+		cout<<" IsothermalSinglePhase::primToConsJacobianMatrix" << endl;
 		displayVector(_Vi,_nVar," _Vi " );
 		cout<<" Jacobienne primToCons: " << endl;
 		displayMatrix(_primToConsJacoMat,_nVar," Jacobienne primToCons: ");
@@ -1375,7 +1351,7 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 		cout << "pressure = "<< Wprim[0] << " < 0 " << endl;
 		*_runLogFile<< "pressure = "<< Wprim[0] << " < 0 " << endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::consToPrim: negative pressure");
+		throw CdmathException("IsothermalSinglePhase::consToPrim: negative pressure");
 	}
 	for(int k=1;k<=_Ndim;k++)
 		Wprim[k] = Wcons[k]/Wcons[0];//velocity u
@@ -1392,7 +1368,7 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 	}
 }
 
-void SinglePhase::RoeMatrixConservativeVariables(double u_n, double H,Vector velocity, double k, double K)
+void IsothermalSinglePhase::RoeMatrixConservativeVariables(double u_n, double H,Vector velocity, double k, double K)
 {
 	/******** Construction de la matrice de Roe *********/
 	//premiere ligne (masse)
@@ -1421,30 +1397,24 @@ void SinglePhase::RoeMatrixConservativeVariables(double u_n, double H,Vector vel
 		_Aroe[_nVar*(_nVar-1)+idim+1]=H*_vec_normal[idim] - k*u_n*_Uroe[idim+1];
 	_Aroe[_nVar*_nVar -1] = (1 + k)*u_n;
 }
-void SinglePhase::convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector vitesse)
+void IsothermalSinglePhase::convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector vitesse)
 {
 	//Not used. Suppress or use in alternative implicitation in primitive variable of the staggered-roe scheme
 	//On remplit la matrice de Roe en variables primitives : F(V_L)-F(V_R)=Aroe (V_L-V_R)
 	//EOS is more involved with primitive variables
-	// call to getDensityDerivatives(double concentration, double pression, double temperature,double v2) needed
+	//Prior call to getDensityDerivatives(double concentration) needed
 	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
 	for(int i=0;i<_Ndim;i++)
 		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
-	_AroeImplicit[0*_nVar+1+_Ndim]=_drho_sur_dT*u_n;
 	for(int i=0;i<_Ndim;i++)
 	{
 		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*vitesse[i]+_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
 			_AroeImplicit[(1+i)*_nVar+1+j]=rho*vitesse[i]*_vec_normal[j];
 		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
-		_AroeImplicit[(1+i)*_nVar+1+_Ndim]=_drho_sur_dT*u_n*vitesse[i];
 	}
-	_AroeImplicit[(1+_Ndim)*_nVar+0]=(_drhoE_sur_dp+1)*u_n;
-	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[(1+_Ndim)*_nVar+1+i]=rho*(H*_vec_normal[i]+u_n*vitesse[i]);
-	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim]=_drhoE_sur_dT*u_n;
 }
-void SinglePhase::staggeredRoeUpwindingMatrixConservativeVariables( double u_n, double H,Vector velocity, double k, double K)
+void IsothermalSinglePhase::staggeredRoeUpwindingMatrixConservativeVariables( double u_n, double H,Vector velocity, double k, double K)
 {
 	//Calcul de décentrement de type décalé pour formulation de Roe
 	if(fabs(u_n)>_precision)
@@ -1491,32 +1461,26 @@ void SinglePhase::staggeredRoeUpwindingMatrixConservativeVariables( double u_n, 
 	}
 }
 
-void SinglePhase::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n,double H, Vector vitesse)
+void IsothermalSinglePhase::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n,double H, Vector vitesse)
 {
 	//Not used. Suppress or use in alternative implicitation in primitive variable of the staggered-roe scheme
 	//Calcul de décentrement de type décalé pour formulation Roe
 	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
 	for(int i=0;i<_Ndim;i++)
 		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
-	_AroeImplicit[0*_nVar+1+_Ndim]=_drho_sur_dT*u_n;
 	for(int i=0;i<_Ndim;i++)
 	{
 		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*vitesse[i]-_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
 			_AroeImplicit[(1+i)*_nVar+1+j]=rho*vitesse[i]*_vec_normal[j];
 		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
-		_AroeImplicit[(1+i)*_nVar+1+_Ndim]=_drho_sur_dT*u_n*vitesse[i];
 	}
-	_AroeImplicit[(1+_Ndim)*_nVar+0]=(_drhoE_sur_dp+1)*u_n;
-	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[(1+_Ndim)*_nVar+1+i]=rho*(H*_vec_normal[i]+u_n*vitesse[i]);
-	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim]=_drhoE_sur_dT*u_n;
 }
 
 Vector IsothermalSinglePhase::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<"SinglePhase::convectionFlux start"<<endl;
+		cout<<"IsothermalSinglePhase::convectionFlux start"<<endl;
 		cout<<"Ucons"<<endl;
 		cout<<U<<endl;
 		cout<<"Vprim"<<endl;
@@ -1546,7 +1510,7 @@ Vector IsothermalSinglePhase::convectionFlux(Vector U,Vector V, Vector normale, 
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<"SinglePhase::convectionFlux end"<<endl;
+		cout<<"IsothermalSinglePhase::convectionFlux end"<<endl;
 		cout<<"Flux F(U,V)"<<endl;
 		cout<<F<<endl;
 	}
@@ -1557,13 +1521,13 @@ Vector IsothermalSinglePhase::convectionFlux(Vector U,Vector V, Vector normale, 
 Vector IsothermalSinglePhase::staggeredVFFCFlux()
 {
 	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"SinglePhase::staggeredVFFCFlux() start"<<endl;
+		cout<<"IsothermalSinglePhase::staggeredVFFCFlux() start"<<endl;
 
 	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
 	{
-		*_runLogFile<< "SinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding, pressure = "<<  endl;
+		*_runLogFile<< "IsothermalSinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding, pressure = "<<  endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding");
+		throw CdmathException("IsothermalSinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding");
 	}
 	else//_spaceScheme==staggered && _nonLinearFormulation==VFFC
 	{
@@ -1614,7 +1578,7 @@ Vector IsothermalSinglePhase::staggeredVFFCFlux()
 		}
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
-			cout<<"SinglePhase::staggeredVFFCFlux() endf uijn="<<uijn<<endl;
+			cout<<"IsothermalSinglePhase::staggeredVFFCFlux() endf uijn="<<uijn<<endl;
 			cout<<Fij<<endl;
 		}
 		return Fij;
@@ -1625,9 +1589,9 @@ void IsothermalSinglePhase::applyVFRoeLowMachCorrections(bool isBord, string gro
 {
 	if(_nonLinearFormulation!=VFRoe)
 	{
-		*_runLogFile<< "SinglePhase::applyVFRoeLowMachCorrections: applyVFRoeLowMachCorrections method should be called only for VFRoe formulation" << endl;
+		*_runLogFile<< "IsothermalSinglePhase::applyVFRoeLowMachCorrections: applyVFRoeLowMachCorrections method should be called only for VFRoe formulation" << endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::applyVFRoeLowMachCorrections: applyVFRoeLowMachCorrections method should be called only for VFRoe formulation");
+		throw CdmathException("IsothermalSinglePhase::applyVFRoeLowMachCorrections: applyVFRoeLowMachCorrections method should be called only for VFRoe formulation");
 	}
 	else//_nonLinearFormulation==VFRoe
 	{
@@ -1916,10 +1880,8 @@ void IsothermalSinglePhase::save(){
 
 			h   = _fluides[0]->getEnthalpy(T,rho);
 
-			_Enthalpy(i)=h;
 			_Density(i)=rho;
 			_Pressure(i)=p;
-			_Temperature(i)=T;
 			_VitesseX(i)=vx;
 			v2=vx*vx;
 			if(_Ndim>1)
@@ -1934,10 +1896,8 @@ void IsothermalSinglePhase::save(){
 			}
 			_MachNumber(i)=sqrt(v2)/_fluides[0]->vitesseSonEnthalpie(h);
 		}
-		_Enthalpy.setTime(_time,_nbTimeStep);
 		_Density.setTime(_time,_nbTimeStep);
 		_Pressure.setTime(_time,_nbTimeStep);
-		_Temperature.setTime(_time,_nbTimeStep);
 		_MachNumber.setTime(_time,_nbTimeStep);
 		_VitesseX.setTime(_time,_nbTimeStep);
 		if(_Ndim>1)
@@ -1950,10 +1910,8 @@ void IsothermalSinglePhase::save(){
 			switch(_saveFormat)
 			{
 			case VTK :
-				_Enthalpy.writeVTK(allFields+"_Enthalpy");
 				_Density.writeVTK(allFields+"_Density");
 				_Pressure.writeVTK(allFields+"_Pressure");
-				_Temperature.writeVTK(allFields+"_Temperature");
 				_MachNumber.writeVTK(allFields+"_MachNumber");
 				_VitesseX.writeVTK(allFields+"_VelocityX");
 				if(_Ndim>1)
@@ -1964,10 +1922,8 @@ void IsothermalSinglePhase::save(){
 				}
 				break;
 			case MED :
-				_Enthalpy.writeMED(allFields+"_Enthalpy");
 				_Density.writeMED(allFields+"_Density");
 				_Pressure.writeMED(allFields+"_Pressure");
-				_Temperature.writeMED(allFields+"_Temperature");
 				_MachNumber.writeMED(allFields+"_MachNumber");
 				_VitesseX.writeMED(allFields+"_VelocityX");
 				if(_Ndim>1)
@@ -1978,10 +1934,8 @@ void IsothermalSinglePhase::save(){
 				}
 				break;
 			case CSV :
-				_Enthalpy.writeCSV(allFields+"_Enthalpy");
 				_Density.writeCSV(allFields+"_Density");
 				_Pressure.writeCSV(allFields+"_Pressure");
-				_Temperature.writeCSV(allFields+"_Temperature");
 				_MachNumber.writeCSV(allFields+"_MachNumber");
 				_VitesseX.writeCSV(allFields+"_VelocityX");
 				if(_Ndim>1)
@@ -1997,10 +1951,8 @@ void IsothermalSinglePhase::save(){
 			switch(_saveFormat)
 			{
 			case VTK :
-				_Enthalpy.writeVTK(allFields+"_Enthalpy",false);
 				_Density.writeVTK(allFields+"_Density",false);
 				_Pressure.writeVTK(allFields+"_Pressure",false);
-				_Temperature.writeVTK(allFields+"_Temperature",false);
 				_MachNumber.writeVTK(allFields+"_MachNumber",false);
 				_VitesseX.writeVTK(allFields+"_VelocityX",false);
 				if(_Ndim>1)
@@ -2011,10 +1963,8 @@ void IsothermalSinglePhase::save(){
 				}
 				break;
 			case MED :
-				_Enthalpy.writeMED(allFields+"_Enthalpy",false);
 				_Density.writeMED(allFields+"_Density",false);
 				_Pressure.writeMED(allFields+"_Pressure",false);
-				_Temperature.writeMED(allFields+"_Temperature",false);
 				_MachNumber.writeMED(allFields+"_MachNumber",false);
 				_VitesseX.writeMED(allFields+"_VelocityX",false);
 				if(_Ndim>1)
@@ -2025,10 +1975,8 @@ void IsothermalSinglePhase::save(){
 				}
 				break;
 			case CSV :
-				_Enthalpy.writeCSV(allFields+"_Enthalpy");
 				_Density.writeCSV(allFields+"_Density");
 				_Pressure.writeCSV(allFields+"_Pressure");
-				_Temperature.writeCSV(allFields+"_Temperature");
 				_MachNumber.writeCSV(allFields+"_MachNumber");
 				_VitesseX.writeCSV(allFields+"_VelocityX");
 				if(_Ndim>1)

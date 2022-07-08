@@ -23,7 +23,7 @@ public :
 			 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 			 * \param [in] int : mesh dimension
 			 *  */
-	IsothermalSinglePhase(pressureEstimate pEstimate, int dim);
+	IsothermalSinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim);
 	//initialisation du systeme
 	void initialize();
 
@@ -112,6 +112,14 @@ protected :
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);
+	/** \fn getDensityDerivatives
+	 * \brief Computes the partial derivatives of rho, with regard to the primitive variables  p
+	 * @param pressure
+	*/
+	void getDensityDerivatives( double pressure);
+
+	bool _saveAllFields;
+	Field _Pressure, _Density, _Momentum, _Vitesse, _VitesseX, _VitesseY, _VitesseZ, _MachNumber;
 };
 
 #endif /* IsothermalSinglePhase_HXX_ */

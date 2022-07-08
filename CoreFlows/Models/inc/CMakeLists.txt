@@ -1,6 +1,7 @@
 SET(include_models_HXX
     DriftModel.hxx
     IsothermalTwoFluid.hxx
+    IsothermalSinglePhase.hxx
     SinglePhase.hxx
     FiveEqsTwoFluid.hxx
     ProblemCoreFlows.hxx
