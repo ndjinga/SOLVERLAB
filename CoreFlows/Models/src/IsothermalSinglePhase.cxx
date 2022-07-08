@@ -31,20 +31,21 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			_fluides[0] = new StiffenedGas(996,1e5,_Temperature,_internalEnergy,1501,4130);  //stiffened gas law for water at pressure 1 bar and temperature 27°C
 		}
 	}
-	else//EOS at 155 bars and 618K
+	else
 	{
-		_Temperature=618;//Constant temperature of the model
-		if(fluid==Gas){
+		if(fluid==Gas){//EOS at 155 bars and 618K
 			cout<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
 			*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
+			_Temperature=618;//Constant temperature of the model
 			_internalEnergy=2.44e6;//Gas internal energy at saturation at 155 bar
 			_fluides[0] = new StiffenedGas(102,1.55e7,_Temperature,_internalEnergy, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C:
 		}
-		else{//To do : change to normal regime: 155 bars and 573K
-			cout<<"Fluid is water around saturation point 155 bars and 618 K (345°C)"<<endl;
-			*_runLogFile<<"Fluid is water around saturation point 155 bars and 618 K (345°C)"<<endl;
-			_internalEnergy=1.6e6;//water internal energy at saturation at 155 bar
-			_fluides[0] = new StiffenedGas(594,1.55e7,_Temperature,_internalEnergy, 621,3100);  //stiffened gas law for water at pressure 155 bar and temperature 345°C:
+		else{//EOS at 155 bars and 573K
+			cout<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
+			*_runLogFile<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
+			_Temperature=573;//Constant temperature of the model
+			_internalEnergy=1.3e6;//water internal energy at saturation at 155 bar
+			_fluides[0] = new StiffenedGas(726.82,1.55e7,_Temperature,_internalEnergy, 971.,5454.);  //stiffened gas law for water at pressure 155 bar and temperature 345°C:
 		}
 	}
 
@@ -84,6 +85,7 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		VecGetValues(_Uext, _nVar, _idm, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
+
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
@@ -117,30 +119,6 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+1] << endl;
 	}
-	// H = (rho E + p)/rho
-	xi = _Ui[_nVar-1];//phi rho E
-	xj = _Uj[_nVar-1];
-	Ii = i*_nVar; // correct Kieu
-	VecGetValues(_primitiveVars, 1, &Ii, &pi);// _primitiveVars pour p
-	if(IsBord)
-	{
-		double q_2 = 0;
-		for(int k=1;k<=_Ndim;k++)
-			q_2 += _Uj[k]*_Uj[k];
-		q_2 /= _Uj[0];	//phi rho u²
-		pj =  _fluides[0]->getPressure((_Uj[(_Ndim+2)-1]-q_2/2)/_porosityj,_Uj[0]/_porosityj);
-	}
-	else
-	{
-		Ii = j*_nVar; // correct Kieu
-		VecGetValues(_primitiveVars, 1, &Ii, &pj);
-	}
-	xi = (xi + pi)/(ri*ri);
-	xj = (xj + pj)/(rj*rj);
-	_Uroe[_nVar-1] = (ri*xi + rj*xj)/(ri + rj);
-	//on se donne l enthalpie ici
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout << "Enthalpie totale de Roe H  gauche " << i << ": " << xi << ", droite " << j << ": " << xj << "->" << _Uroe[_nVar-1] << endl;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -188,7 +166,7 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 }
 
 void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord){
-	//sortie: matrices et etat de diffusion (rho, q, T)
+	//sortie: matrices et etat de diffusion (rho, q) ou (p, v) ?
 	_idm[0] = _nVar*i;
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
@@ -258,7 +236,7 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 
 void IsothermalSinglePhase::convectionMatrices()
 {
-	//entree: URoe = rho, u, H
+	//entree: URoe = rho, u
 	//sortie: matrices Roe+  et Roe-
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
