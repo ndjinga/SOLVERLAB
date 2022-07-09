@@ -1,11 +1,12 @@
 #include "StiffenedGas.hxx"
 #include <iostream>
+#include "EosException.hxx"
 
 //Perfect gas EOS with given gamma
 StiffenedGas::StiffenedGas( double gamma, double cv, double T_ref, double e_ref): Fluide()
 {
 	if(gamma -1<=0)
-		throw CdmathException("StiffenedGas::StiffenedGas: gamma<1");
+		throw EosException("StiffenedGas::StiffenedGas: gamma<1");
 	_gamma=gamma;
 	_Cv=cv;
 	_Cp=_gamma*_Cv;
@@ -25,7 +26,7 @@ StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_
 	_e_ref=e_ref;
 	_gamma=1+c_ref*c_ref/(_e_ref+p_ref/rho_ref);
 	if(_gamma -1<=0)
-		throw CdmathException("StiffenedGas error gamma<1");
+		throw EosException("StiffenedGas error gamma<1");
 	_Tref=T_ref;
 	_Cv=cv_ref;
 	_Cp=_gamma*_Cv;
@@ -39,7 +40,7 @@ StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_
 StiffenedGasDellacherie::StiffenedGasDellacherie( double gamma, double p0, double q, double cv_ref)
 {
 	if(gamma -1<=0)
-		throw CdmathException("StiffenedGas::StiffenedGas: gamma<1");
+		throw EosException("StiffenedGas::StiffenedGas: gamma<1");
 	_gamma=gamma;
 	_Cv=cv_ref;
 	_Cp=_gamma*_Cv;

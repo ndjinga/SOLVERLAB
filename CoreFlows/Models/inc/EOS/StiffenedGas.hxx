@@ -3,7 +3,6 @@
 
 #include <string>
 #include "math.h"
-#include "CdmathException.hxx"
 #include "Fluide.h"
 
 using namespace std;

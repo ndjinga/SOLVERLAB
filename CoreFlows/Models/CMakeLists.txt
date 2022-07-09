@@ -1,5 +1,13 @@
 # nom du projet models
 
+SET(EOS_INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/EOS
+  )
+
+SET(MODELS_INCLUDES
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+  )
+  
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(inc)
 

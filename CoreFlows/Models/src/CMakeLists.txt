@@ -1,8 +1,10 @@
+project(Models C CXX)
 
 INCLUDE_DIRECTORIES(
-  ${CoreFlows_INCLUDES}											    #
+  ${EOS_INCLUDES}
+  ${MODELS_INCLUDES}
+  ${CDMATH_INCLUDES}
   ${PETSC_INCLUDES}
-  ${SLEPC_INCLUDES}
   )
 
 SET(src_models_CXX
@@ -18,11 +20,11 @@ SET(src_models_CXX
 #    LinearElasticityModel.cxx
     ProblemFluid.cxx
     utilitaire_algebre.cxx
-    EOS/StiffenedGas.cxx
-#    EOS/IAPWS97.cxx
   )
 
 ADD_LIBRARY(CoreFlowsLibs SHARED ${src_models_CXX})
-target_link_libraries(CoreFlowsLibs ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES})
-
+target_link_libraries(CoreFlowsLibs ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES} EosLibs)
 INSTALL(TARGETS CoreFlowsLibs DESTINATION lib)
+
+ADD_SUBDIRECTORY(EOS)
+

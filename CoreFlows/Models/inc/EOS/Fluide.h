@@ -3,7 +3,7 @@
 
 #include <string>
 #include "math.h"
-#include "CdmathException.hxx"
+#include "EosException.hxx"
 
 /*! \class Fluide Fluide.hxx "Fluide.hxx"
  *  \brief Fluid thermodynamics properties
@@ -77,7 +77,7 @@ class Fluide{
   	else if (name == "cp"||name == "Cp")
   		return _Cp;
   	else
-		throw CdmathException("Unknown constant: "+name);
+		throw EosException("Unknown constant: "+name);
   }
   virtual double getDensity(double p, double T)=0;
   virtual double getTemperatureFromPressure(const double  p, const double rho)=0;
