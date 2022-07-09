@@ -200,18 +200,6 @@ public :
 			_fluides[i]->setViscosity(viscosite[i]);
 	};
 
-	/** \fn setConductivity
-	 * \brief sets the vector of conductivity coefficients
-	 * @param conductivite is a vector of size equal to the number of phases and containing the conductivity of each phase
-	 * @return throws an exception if the input vector size is not equal to the number of phases
-	 * */
-	void setConductivity(vector<double> conductivite){
-		if(_nbPhases!= conductivite.size())
-			throw CdmathException("ProblemFluid::setConductivity: incorrect vector size vs number of phases");
-		for(int i=0;i<_nbPhases;i++)
-			_fluides[i]->setConductivity(conductivite[i]);
-	};
-
 	/** \fn setGravity
 	 * \brief sets the gravity force in the model
 	 * @param gravite is a vector of size equal to the space dimension
