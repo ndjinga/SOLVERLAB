@@ -2,8 +2,6 @@ project(testC)
 
 INCLUDE_DIRECTORIES(
   ${CoreFlows_INCLUDES}											    #
-  ${PETSC_INCLUDES}
-  ${SLEPC_INCLUDES}
 )
 
 
@@ -41,7 +39,7 @@ function(CreateTestExecAndInstall SourceTestFile libList)
 endfunction(CreateTestExecAndInstall)
 
 
-set( libs_for_tests CoreFlowsLibs )
+set( libs_for_tests CoreFlowsLibs ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} ${SLEPC_LIBRARIES})
 
 # copy tests resources (med files etc.) into the build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
