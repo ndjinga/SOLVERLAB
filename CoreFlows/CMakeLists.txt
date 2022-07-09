@@ -41,7 +41,7 @@ set (CoreFlows_EXAMPLES ${CoreFlows_SOURCE_DIR}/examples)
 
 set( CoreFlows_INCLUDES 
   ${CDMATH_INCLUDES}											    #
-  ${PETSC_INCLUDES}											    #
+  ${PETSC_INCLUDES}#Contains SLEPC include files											    #
   ${CoreFlows_MODELS}/inc											    #    
   ${CoreFlows_MODELS}/inc/EOS   										    #    
   )													    #
@@ -97,8 +97,6 @@ endif(COREFLOWS_WITH_GUI)                                                       
 													    #
 INCLUDE_DIRECTORIES(						   					    #
   ${CoreFlows_INCLUDES}											    #
-  ${PETSC_INCLUDES}
-  ${SLEPC_INCLUDES}
   )													    #
 													    #
 SET(MAIN_SOURCES											    #
