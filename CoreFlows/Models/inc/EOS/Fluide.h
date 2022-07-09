@@ -14,10 +14,23 @@ using namespace std;
 
 class Fluide{
  protected:
-  double _mu, _lambda,_Cv, _Cp,_Tref,_gamma,  _p0, _q,_dragCoeff;
+  double _mu, _dragCoeff;
+  double _lambda,_Cv, _Cp,_Tref,_gamma,  _p0, _q;
  public:
-  Fluide(){_mu=0; _lambda=0;_Cv=0;_Cp=0;_Tref=0;_dragCoeff=0;_gamma=0;  _p0=0; _q=0;}
+  Fluide()
+  { 
+  _mu=0; _dragCoeff=0; 
+  _lambda=0; _Cv=0; _Cp=0; _Tref=0; _gamma=0;  _p0=0; _q=0;
+  }
   virtual ~Fluide(){};
+
+  double getViscosity(double T) {return _mu;};
+  double getDragCoeffs(double T) { return _dragCoeff;};
+  void setViscosity(double mu) { _mu=mu;};
+  void setDragCoeffs(double dragCoeff) {_dragCoeff=dragCoeff;};
+
+  double getConductivity(double T) {return _lambda;};
+  void setConductivity(double lambda) { _lambda= lambda;};
 
   //Stiffened gas equation of state
   double getPressure(double  rhoe,const double  rho) {
@@ -44,27 +57,27 @@ class Fluide{
   	return vitesseSonTemperature(T,rho);
   }
 
-  double getViscosity(double T) {return _mu;};
-  double getConductivity(double T) {return _lambda;};
-  double getDragCoeffs(double T) { return _dragCoeff;};
-  void setViscosity(double mu) { _mu=mu;};
-  void setConductivity(double lambda) { _lambda= lambda;};
-  void setDragCoeffs(double dragCoeff) {_dragCoeff=dragCoeff;};
-  //return constants gamma, cp, cv, p0, q
+  //return constants mu, lambda, dragCoeff, gamma, cp, cv, p0, q
   double constante(string name)
   {
-  	if(name== "gamma")
+  	if(name=="dragCoeff")
+  		return _dragCoeff;
+  	else if (name == "mu"||name == "viscosity")
+  		return _mu;
+  	else if(name== "gamma")
   		return _gamma;
-  	else if (name == "cv"||name == "Cv")
-  		return _Cv;
-  	else if (name == "cp"||name == "Cp")
-  		return _Cp;
   	else if(name=="p0")
   		return _p0;
   	else if(name=="q")
   		return _q;
+  	else if (name == "lambda"||name == "conductivity")
+  		return _lambda;
+  	else if (name == "cv"||name == "Cv")
+  		return _Cv;
+  	else if (name == "cp"||name == "Cp")
+  		return _Cp;
   	else
-  		throw CdmathException("Unknown constant: "+name);
+		throw CdmathException("Unknown constant: "+name);
   }
   virtual double getDensity(double p, double T)=0;
   virtual double getTemperatureFromPressure(const double  p, const double rho)=0;
