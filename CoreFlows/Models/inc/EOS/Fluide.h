@@ -7,7 +7,7 @@
 
 /*! \class Fluide Fluide.hxx "Fluide.hxx"
  *  \brief Fluid thermodynamics properties
- *  \details Provides pressure, density, temperature, internal energy, enthalpy, viscosity and conductivity 
+ *  \details Provides fluid density \f$\rho(P,T)\f$ and viscosity \f$\mu(P,T)\f$ laws 
  */
 
 using namespace std;
@@ -71,7 +71,6 @@ class Fluide{
   virtual double getTemperatureFromEnthalpy(const double  h, const double rho)=0;
   virtual double getInternalEnergy(double T, double rho)=0;
   virtual double getEnthalpy(double T, double rho)=0;
-
 };
 
 #endif

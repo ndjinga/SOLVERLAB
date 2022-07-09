@@ -6,18 +6,13 @@
 #include "CdmathException.hxx"
 #include "Fluide.h"
 
-/*! \class StiffenedGas StiffenedGas.hxx "StiffenedGas.hxx"
- *  \brief Stiffened Gas law approximating water and steam : P = (gamma - 1) * (rho * e - rho * q) - gamma * p0
- *  \details Provides pressure, density, temperature, internal energy, enthalpy, viscosity and conductivity 
- */
-
 using namespace std;
 
-// A standard stiffened gas class
+// A stiffened gas class
 
 /*! \class StiffenedGas Fluide.hxx "Fluide.hxx"
- *  \brief Class implementing a standard stiffened gas law between pressure, density and internal energy
- *  \details  
+ *  \brief Class implementing a generalised stiffened gas law between pressure, density and internal energy
+ *  \details Provides viscosity, conductivity laws as well as EOS  \f$P=(\gamma - 1) * rho (e(T)-q) - \gamma*p0 \f$
  */
 class StiffenedGas:public Fluide{
  private:
@@ -54,11 +49,11 @@ class StiffenedGas:public Fluide{
 
 /*! \class StiffenedGasDellacherie Fluide.hxx "Fluide.hxx"
  *  \brief Class implementing a particular stiffened gas law including saturation properties
- *  \details
+ *  \details \f$P=(\gamma - 1)/\gamma * rho (h(T)-q) - p0\f$
  */
 class StiffenedGasDellacherie:public Fluide{
  private:
-  double _h_ref;//Stiffened gas law according to S. Dellacherie : P=(gamma - 1) * rho (e(T)-q) - _gamma*_p0
+  double _h_ref;//Stiffened gas law according to S. Dellacherie : P=(gamma - 1)/gamma * rho (h(T)-q) - p0
  public:
   StiffenedGasDellacherie():Fluide(){_h_ref=0;};
   /* Loi des gaz raidis avec coefficients imposés suivant S. Dellacherie*/
@@ -69,7 +64,6 @@ class StiffenedGasDellacherie:public Fluide{
   double getTemperatureFromPressure(double  p, double rho);
   double getTemperatureFromEnthalpy(const double  h, const double rho=0);
   double getDensity(double p, double T);
-
- };
+};
 
 #endif
