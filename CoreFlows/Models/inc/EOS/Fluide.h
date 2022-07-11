@@ -14,22 +14,26 @@ using namespace std;
 
 class Fluide{
  protected:
-  double _mu, _dragCoeff;
-  double _lambda,_Cv, _Cp,_Tref,_gamma,  _p0, _q;
+  double _mu;/* Constant viscosity coeff */
+  double _lambda;/* Constant conductity coeff */
+  double _Cv;/* Constant specific heat at constant volume */
+  double _Cp;/* Constant specific heat at constant pressure */
+  double _dragCoeff;/* Constant drag coefficient */
+  double _Tref, _Pref;/* Reference value of the temperature and pressure */
+  double _gamma,  _p0, _q;
  public:
   Fluide()
   { 
-  _mu=0; _dragCoeff=0; 
-  _lambda=0; _Cv=0; _Cp=0; _Tref=0; _gamma=0;  _p0=0; _q=0;
+  _mu=0; _lambda=0; _Cv=0; _Cp=0; _dragCoeff=0; 
+  _Tref=0; _Pref=0; _gamma=0;  _p0=0; _q=0;
   }
   virtual ~Fluide(){};
 
   double getViscosity(double T) {return _mu;};
+  double getConductivity(double T) {return _lambda;};
   double getDragCoeffs(double T) { return _dragCoeff;};
   void setViscosity(double mu) { _mu=mu;};
   void setDragCoeffs(double dragCoeff) {_dragCoeff=dragCoeff;};
-
-  double getConductivity(double T) {return _lambda;};
   void setConductivity(double lambda) { _lambda= lambda;};
 
   //Stiffened gas equation of state
@@ -64,18 +68,18 @@ class Fluide{
   		return _dragCoeff;
   	else if (name == "mu"||name == "viscosity")
   		return _mu;
-  	else if(name== "gamma")
-  		return _gamma;
-  	else if(name=="p0")
-  		return _p0;
-  	else if(name=="q")
-  		return _q;
   	else if (name == "lambda"||name == "conductivity")
   		return _lambda;
   	else if (name == "cv"||name == "Cv")
   		return _Cv;
   	else if (name == "cp"||name == "Cp")
   		return _Cp;
+  	else if(name== "gamma")
+  		return _gamma;
+  	else if(name=="p0")
+  		return _p0;
+  	else if(name=="q")
+  		return _q;
   	else
 		throw EosException("Unknown constant: "+name);
   }
