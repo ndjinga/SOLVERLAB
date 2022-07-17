@@ -263,39 +263,25 @@ void IsothermalSinglePhase::convectionMatrices()
 
 	RoeMatrixConservativeVariables( u_n, H,vitesse,k,K);
 
+	if(_entropicCorrection)
+	{
+		*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: entropy scheme not available for IsothermalSinglePhase"<<endl;
+		_runLogFile->close();
+		throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for IsothermalSinglePhase");
+	}
+
 	/******** Construction des matrices de decentrement ********/
 	if( _spaceScheme ==centered){
-		if(_entropicCorrection)
-		{
-			*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: entropy scheme not available for centered scheme"<<endl;
-			_runLogFile->close();
-			throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for centered scheme");
-		}
-
 		for(int i=0; i<_nVar*_nVar;i++)
 			_absAroe[i] = 0;
 	}
-	else if(_spaceScheme == upwind || _spaceScheme ==pressureCorrection || _spaceScheme ==lowMach){
-		if(_entropicCorrection)
-			entropicShift(_vec_normal);
-		else
-			_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
-
+	else if(_spaceScheme == upwind )
+	{
 		vector< complex< double > > y (3,0);
 		for( int i=0 ; i<3 ; i++)
-			y[i] = Polynoms::abs_generalise(vp_dist[i])+_entropicShift[i];
+			y[i] = Polynoms::abs_generalise(vp_dist[i]);
 		Polynoms::abs_par_interp_directe(3,vp_dist, _Aroe, _nVar,_precision, _absAroe,y);
 
-		if( _spaceScheme ==pressureCorrection)
-			for( int i=0 ; i<_Ndim ; i++)
-				for( int j=0 ; j<_Ndim ; j++)
-					_absAroe[(1+i)*_nVar+1+j]-=(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
-		else if( _spaceScheme ==lowMach){
-			double M=sqrt(u_2)/c;
-			for( int i=0 ; i<_Ndim ; i++)
-				for( int j=0 ; j<_Ndim ; j++)
-					_absAroe[(1+i)*_nVar+1+j]-=(1-M)*(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
-		}
 	}
 	else if( _spaceScheme ==staggered ){
 		if(_entropicCorrection)//To do: study entropic correction for staggered
@@ -351,40 +337,6 @@ void IsothermalSinglePhase::convectionMatrices()
 	{
 		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinusImplicit");
 		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlusImplicit");
-	}
-
-	/*********Calcul de la matrice signe pour VFFC, VFRoe et décentrement des termes source*****/
-	if(_entropicCorrection)
-	{
-		InvMatriceRoe( vp_dist);
-		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
-	}
-	else if (_spaceScheme==upwind || (_spaceScheme ==pressureCorrection ) || (_spaceScheme ==lowMach ))//upwind sans entropic
-		SigneMatriceRoe( vp_dist);
-	else if (_spaceScheme==centered)//centre  sans entropic
-		for(int i=0; i<_nVar*_nVar;i++)
-			_signAroe[i] = 0;
-	else if( _spaceScheme ==staggered )//à tester
-	{
-		double signu;
-		if(u_n>0)
-			signu=1;
-		else if (u_n<0)
-			signu=-1;
-		else
-			signu=0;
-		for(int i=0; i<_nVar*_nVar;i++)
-			_signAroe[i] = 0;
-		_signAroe[0] = signu;
-		for(int i=1; i<_nVar-1;i++)
-			_signAroe[i*_nVar+i] = -signu;
-		_signAroe[_nVar*(_nVar-1)+_nVar-1] = signu;
-	}
-	else
-	{
-		*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: well balanced option not treated"<<endl;
-		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::convectionMatrices: well balanced option not treated");
 	}
 }
 
@@ -504,81 +456,6 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 		}
 		else if(_nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid possibly going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
-
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
-	}
-	else if (_limitField[nameOfGroup].bcType==InletRotationVelocity){
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-		double u_int_n=0;//u_int_n=composante normale de la vitesse intérieure à la face frontière;
-		for(int k=0; k<_Ndim; k++)
-			u_int_n+=_externalStates[(k+1)]*normale[k];
-
-		double u_ext_n=0;
-        //ghost velocity
-        if(_Ndim>1)
-        {
-            Vector omega(3);
-            omega[0]=_limitField[nameOfGroup].v_x[0];
-            omega[1]=_limitField[nameOfGroup].v_y[0];
-            
-            Vector Normale(3);
-            Normale[0]=normale[0];
-            Normale[1]=normale[1];
-
-            if(_Ndim==3)
-            {
-                omega[2]=_limitField[nameOfGroup].v_z[0];
-                Normale[2]=normale[2];
-            }
-            
-            Vector tangent_vel=omega%Normale;
-			u_ext_n=-0.01*tangent_vel.norm();
-			//Changing external state velocity
-            for(int k=0; k<_Ndim; k++)
-                _externalStates[(k+1)]=u_ext_n*normale[k] + tangent_vel[k];
-        }
-
-		if(u_ext_n + u_int_n <= 0){
-			double pression=_externalStates[0];
-			double T=_limitField[nameOfGroup].T;
-			double rho=_fluides[0]->getDensity(pression,T);
-
-			double v2=0;
-			v2 +=_externalStates[1]*_externalStates[1];//v_x*v_x
-			_externalStates[0]=porosityj*rho;
-			_externalStates[1]*=_externalStates[0];
-			if(_Ndim>1)
-			{
-				v2 +=_externalStates[2]*_externalStates[2];//+v_y*v_y
-				_externalStates[2]*=_externalStates[0];
-				if(_Ndim==3)
-				{
-					v2 +=_externalStates[3]*_externalStates[3];//+v_z*v_z
-					_externalStates[3]*=_externalStates[0];
-				}
-			}
-		}
-		else if(_nbTimeStep%_freqSave ==0)
-		{
-			/*
-			 * cout<< "Warning : fluid going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
-			 */ 
-			VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On définit l'état fantôme avec l'état interne
-			if(_nbTimeStep%_freqSave ==0)
-				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Wall boundary condition."<<endl;
-			
-			//Changing external state momentum
-            for(int k=0; k<_Ndim; k++)
-                _externalStates[(k+1)]-=2*_externalStates[0]*u_int_n*normale[k];
-		}
 
 		_idm[0] = 0;
 		for(int k=1; k<_nVar; k++)
