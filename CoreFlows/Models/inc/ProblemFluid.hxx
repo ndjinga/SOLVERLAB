@@ -477,7 +477,7 @@ protected :
 	int _pressureCorrectionOrder;
 
 	/** Fluid equation of state **/
-	vector<	Fluide* > _fluides;
+	vector<	CompressibleFluid* > _fluides;
 	//!Viscosity coefficients 
 	vector<double> _viscosite;
 	//!Conductivity coefficients 

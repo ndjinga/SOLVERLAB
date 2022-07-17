@@ -3,7 +3,7 @@
 #include "EosException.hxx"
 
 //Perfect gas EOS with given gamma
-StiffenedGas::StiffenedGas( double gamma, double cv, double T_ref, double e_ref): Fluide()
+StiffenedGas::StiffenedGas( double gamma, double cv, double T_ref, double e_ref): CompressibleFluid()
 {
 	if(gamma -1<=0)
 		throw EosException("StiffenedGas::StiffenedGas: gamma<1");
@@ -18,7 +18,7 @@ StiffenedGas::StiffenedGas( double gamma, double cv, double T_ref, double e_ref)
 	cout<<"Linearised internal energy law e(T)=  e_ref+ cv_ref (T-Tref), around temperature Tref= "<< _Tref<<" K, internal energy e_ref= "<<_e_ref<<" J/Kg, and specific heat cv_ref= "<< _Cv<<" J/Kg/K"<<endl;
 }
 //Stiffened gas fitted using sound speed (gamma computed from reference sound speed, pressure and internal energy
-StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_ref, double c_ref, double cv_ref): Fluide()
+StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_ref, double c_ref, double cv_ref): CompressibleFluid()
 {
 	//Old formula
 	//_gamma=(1+sqrt(1+4*c_ref*c_ref/(cv_ref*T_ref)))/2;
