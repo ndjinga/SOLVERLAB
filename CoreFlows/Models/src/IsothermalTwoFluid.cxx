@@ -1391,6 +1391,12 @@ void IsothermalTwoFluid::consToPrim(const double *Wcons, double* Wprim,double po
 			// 	      else
 			// 		_guessalpha=0;
 		}
+		if(_nbPhases==2 && fabs(_err_press_max) > _precision)//la pression n'a pu être calculée en diphasique à partir des variables conservatives
+		{
+			*_runLogFile<<"!!! consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
+			cout<<"!!! consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
+			throw CdmathException("!!! consToPrim: nbiter max atteint");
+		}
 		if(_guessalpha>0.5)
 			Wprim[1]=_fluides[0]->getPressure((m1/_guessalpha)*e1,m1/_guessalpha);
 		else
