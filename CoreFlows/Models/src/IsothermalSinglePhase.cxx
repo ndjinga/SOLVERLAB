@@ -1084,17 +1084,13 @@ void IsothermalSinglePhase::jacobianDiffGhostState(const int &j, string nameOfGr
 	}
 }
 
-void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W, const int &j){
-	//cout<<"IsothermalSinglePhase::primToCons i="<<i<<", j="<<j<<", P[i*(_Ndim+2)]="<<P[i*(_Ndim+2)]<<", P[i*(_Ndim+2)+(_Ndim+1)]="<<P[i*(_Ndim+2)+(_Ndim+1)]<<endl;
-
-	double rho=_fluides[0]->getDensity(P[i*(_Ndim+2)], P[i*(_Ndim+2)+(_Ndim+1)]);
-	W[j*(_Ndim+2)] =  _porosityField(j)*rho;//phi*rho
+void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W, const int &j)
+{   //We do not know the size of Wcons and Wprim 
+	//Sometimes they have _nVar components, sometimes they have _Nmailles*_nVar
+	double phi_rho =_porosityField(j)*_fluides[0]->getDensity(P[i*_nVar], _Temperature);
+	W[j*(_Ndim+2)] =  phi_rho;//phi*rho
 	for(int k=0; k<_Ndim; k++)
-		W[j*(_Ndim+2)+(k+1)] = W[j*(_Ndim+2)]*P[i*(_Ndim+2)+(k+1)];//phi*rho*u
-
-	W[j*(_Ndim+2)+(_Ndim+1)] = W[j*(_Ndim+2)]*_fluides[0]->getInternalEnergy(P[i*(_Ndim+2)+ (_Ndim+1)],rho);//rho*e
-	for(int k=0; k<_Ndim; k++)
-		W[j*(_Ndim+2)+(_Ndim+1)] += W[j*(_Ndim+2)]*P[i*(_Ndim+2)+(k+1)]*P[i*(_Ndim+2)+(k+1)]*0.5;//phi*rho*e+0.5*phi*rho*u^2
+		W[j*_nVar+(k+1)] = phi_rho*P[i*_nVar+(k+1)];//phi*rho*u
 }
 
 void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
@@ -1146,33 +1142,11 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
 }
 
 void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double porosity)//To do: treat porosity
-{
-	double q_2 = 0;
-	for(int k=1;k<=_Ndim;k++)
-		q_2 += Wcons[k]*Wcons[k];
-	q_2 /= Wcons[0];	//phi rho u²
-	double rhoe=(Wcons[(_Ndim+2)-1]-q_2/2)/porosity;
-	double rho=Wcons[0]/porosity;
-	Wprim[0] =  _fluides[0]->getPressure(rhoe,rho);//pressure p
-	if (Wprim[0]<0){
-		cout << "pressure = "<< Wprim[0] << " < 0 " << endl;
-		*_runLogFile<< "pressure = "<< Wprim[0] << " < 0 " << endl;
+{  //Wcons and Wprim are vectors with _nVar components
+	//Wcons has been extracted from the vector _conservativeVars which has _Nmailles*_nVar components
+		*_runLogFile<< "IsothermalSinglePhase::consToPrim should not be used" << endl;
 		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::consToPrim: negative pressure");
-	}
-	for(int k=1;k<=_Ndim;k++)
-		Wprim[k] = Wcons[k]/Wcons[0];//velocity u
-	Wprim[(_Ndim+2)-1] =  _fluides[0]->getTemperatureFromPressure(Wprim[0],Wcons[0]/porosity);
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<"ConsToPrim Vecteur conservatif"<<endl;
-		for(int k=0;k<_nVar;k++)
-			cout<<Wcons[k]<<endl;
-		cout<<"ConsToPrim Vecteur primitif"<<endl;
-		for(int k=0;k<_nVar;k++)
-			cout<<Wprim[k]<<endl;
-	}
+		throw CdmathException("IsothermalSinglePhase::consToPrim should not be used");
 }
 
 void IsothermalSinglePhase::RoeMatrixConservativeVariables(double u_n, double H,Vector velocity, double k, double K)
