@@ -57,7 +57,7 @@ void IsothermalSinglePhase::initialize(){
 	cout<<"\n Initialising the isothermal single phase model\n"<<endl;
 	*_runLogFile<<"\n Initialising the isothermal single phase model\n"<<endl;
 
-	_Uroe = new double[_nVar];//Deleted in ProblemFluid::terminate()
+	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
 
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
@@ -72,61 +72,6 @@ void IsothermalSinglePhase::initialize(){
 }
 
 void IsothermalSinglePhase::convectionState( const long &i, const long &j, const bool &IsBord){
-	//First conservative state then further down we will compute interface (Roe) state and then compute primitive state
-	_idm[0] = _nVar*i; 
-	for(int k=1; k<_nVar; k++)
-		_idm[k] = _idm[k-1] + 1;
-	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
-
-	_idm[0] = _nVar*j;
-	for(int k=1; k<_nVar; k++)
-		_idm[k] = _idm[k-1] + 1;
-	if(IsBord)
-		VecGetValues(_Uext, _nVar, _idm, _Uj);
-	else
-		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<"Convection Left state cell " << i<< ": "<<endl;
-		for(int k =0; k<_nVar; k++)
-			cout<< _Ui[k]<<endl;
-		cout<<"Convection Right state cell " << j<< ": "<<endl;
-		for(int k =0; k<_nVar; k++)
-			cout<< _Uj[k]<<endl;
-	}
-	if(_Ui[0]<0||_Uj[0]<0)
-	{
-		cout<<"!!!!!!!!!!!!!!!!!!!!!!!! Densité negative, arrêt de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
-		*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!! Densité negative, arrêt de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
-		_runLogFile->close();
-		throw CdmathException("densite negative, arret de calcul");
-	}
-	
-	//Computation of Roe state
-	PetscScalar ri, rj, xi, xj, pi, pj;
-	PetscInt Ii;
-	ri = sqrt(_Ui[0]);//racine carre de phi_i rho_i
-	rj = sqrt(_Uj[0]);
-	_Uroe[0] = ri*rj;	//moyenne geometrique des densites
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout << "Densité moyenne Roe  gauche " << i << ": " << ri*ri << ", droite " << j << ": " << rj*rj << "->" << _Uroe[0] << endl;
-	for(int k=0;k<_Ndim;k++){
-		xi = _Ui[k+1];
-		xj = _Uj[k+1];
-		_Uroe[1+k] = (xi/ri + xj/rj)/(ri + rj);
-		//"moyenne" des vitesses
-		if(_verbose && _nbTimeStep%_freqSave ==0)
-			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+1] << endl;
-	}
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<"Convection interfacial state"<<endl;
-		for(int k=0;k<_nVar;k++)
-			cout<< _Uroe[k]<<" , "<<endl;
-	}
-	
 	//Extraction of primitive states
 	_idm[0] = _nVar*i; // Kieu
 	for(int k=1; k<_nVar; k++)
@@ -152,8 +97,7 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		for(int k=0; k<_nVar; k++)
 			_idn[k] = k;
 
-		VecGetValues(_Uextdiff, _nVar, _idn, _phi);
-		consToPrim(_phi,_Vj,1);
+		VecGetValues(_Vext, _nVar, _idn,_Vj);
 	}
 
 	if (_verbose && _nbTimeStep%_freqSave ==0)
@@ -163,6 +107,37 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 			cout << _Vj[q] << endl;
 		cout << endl;
 	}
+	//Computation of conservative states Ui and Uj
+	primToCons(_Vi,0,_Ui,0);
+	primToCons(_Vj,0,_Uj,0);
+
+	//Computation of Roe density and velocity
+	PetscScalar ri, rj, xi, xj, pi, pj;
+	PetscInt Ii;
+	ri = sqrt(_Ui[0]);//racine carre de phi_i rho_i
+	rj = sqrt(_Uj[0]);
+	_Uroe[0] = ri*rj;	//moyenne geometrique des densites
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+		cout << "Densité moyenne Roe  gauche " << i << ": " << ri*ri << ", droite " << j << ": " << rj*rj << "->" << _Uroe[0] << endl;
+	for(int k=0;k<_Ndim;k++){
+		xi = _Ui[k+1];
+		xj = _Uj[k+1];
+		_Uroe[1+k] = (xi/ri + xj/rj)/(ri + rj);
+		//"moyenne" des vitesses
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+1] << endl;
+	}
+
+	//Computation of 1/c// Todo :  add porosity in the sound speed formula
+	_Uroe[_nVar] = sqrt((_Ui[0]-_Uj[0])/(_Vi[0]-_Vj[0]));//_Uroe has size _nVar+1 !!!
+	
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<"Convection interfacial state"<<endl;
+		for(int k=0;k<_nVar+1;k++)
+			cout<< _Uroe[k]<<" , "<<endl;
+	}
+	
 }
 
 void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord){
@@ -225,7 +200,7 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 
 void IsothermalSinglePhase::convectionMatrices()
 {
-	//entree: URoe = rho, u
+	//entree: URoe = rho, u, 1/c
 	//sortie: matrices Roe+  et Roe-
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
@@ -1094,43 +1069,18 @@ void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W,
 }
 
 void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
-{
+{//V vecteur primitif de taille _nVar
 	double pression=V[0];
-	double temperature=V[_nVar-1];
-	double vitesse[_Ndim];
-	for(int idim=0;idim<_Ndim;idim++)
-		vitesse[idim]=V[1+idim];
-	double v2=0;
-	for(int idim=0;idim<_Ndim;idim++)
-		v2+=vitesse[idim]*vitesse[idim];
-
-	double rho=_fluides[0]->getDensity(pression,temperature);
-	double gamma=_fluides[0]->constante("gamma");
-	double Pinf=_fluides[0]->constante("p0");
-	double q=_fluides[0]->constante("q");
-	double cv=_fluides[0]->constante("cv");
-
-	for(int k=0;k<_nVar*_nVar; k++)
-		_primToConsJacoMat[k]=0;
-
-	StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-	double h=fluide0->getEnthalpy(temperature);
-	double H=h+0.5*v2;
-	double cp=_fluides[0]->constante("cp");
-
-	_primToConsJacoMat[0]=gamma/((gamma-1)*(h-q));
-	_primToConsJacoMat[_nVar-1]=-rho*cp/(h-q);
+	double rho=_fluides[0]->getDensity(pression,_Temperature);
+	double invSoundSpeed = _fluides[0]->getInverseSoundSpeed(pression,_Temperature);
+	
+	_primToConsJacoMat[0] = invSoundSpeed;
 
 	for(int idim=0;idim<_Ndim;idim++)
 	{
-		_primToConsJacoMat[_nVar+idim*_nVar]=gamma*vitesse[idim]/((gamma-1)*(h-q));
-		_primToConsJacoMat[_nVar+idim*_nVar+1+idim]=rho;
-		_primToConsJacoMat[_nVar+idim*_nVar+_nVar-1]=-rho*vitesse[idim]*cp/(h-q);
+		_primToConsJacoMat[(idim+1)*_nVar]=V[1+idim]*invSoundSpeed;
+		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho*invSoundSpeed;
 	}
-	_primToConsJacoMat[(_nVar-1)*_nVar]=gamma*H/((gamma-1)*(h-q))-1;
-	for(int idim=0;idim<_Ndim;idim++)
-		_primToConsJacoMat[(_nVar-1)*_nVar+1+idim]=rho*vitesse[idim];
-	_primToConsJacoMat[(_nVar-1)*_nVar+_nVar-1]=rho*cp*(1-H/(h-q));
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
