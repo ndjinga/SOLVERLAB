@@ -34,6 +34,7 @@ class Fluide{
   void setConductivity(double lambda) { _lambda= lambda;};
 
   virtual double getDensity(double p, double T)=0;
+  virtual double getInverseSoundSpeed(double p, double T)=0;
 
   //return constants mu, lambda, dragCoeff
   double constante(string name)
@@ -96,7 +97,12 @@ class CompressibleFluid:public Fluide{
   	double rho=getDensity(P, T);
   	return vitesseSonTemperature(T,rho);
   }
-
+  
+  double getInverseSoundSpeed(double P, double T)
+  {
+  	return 1./vitesseSonPressure( P, T);
+  }
+  
   //return constants gamma, cp, cv, p0, q
   double constante(string name)
   {
@@ -111,7 +117,7 @@ class CompressibleFluid:public Fluide{
   	else if(name=="q")
   		return _q;
   	else
-		Fluide::constante(name);
+		return Fluide::constante(name);
   }
 
 };
