@@ -29,27 +29,27 @@ public :
 	 *  */
 	SinglePhase(phaseType fluid, pressureEstimate pEstimate,int dim,bool useDellacherieEOS=false);
 
-	/** \fn setViscosity
+	/** \fn setViscosityConstant
 	 * \brief sets the viscosity
 	 * @param viscosite : value of the dynamic viscosity
 	 * 	 * */
 	void setViscosityConstant( double viscosite ){
 		_fluides[0]->setViscosity(viscosite);
 	};
-	/** \fn setConductivity
+	/** \fn setConductivityConstant
 	 * \brief sets the conductivity of the fluid
-	 * @param conductivite is a vector of size equal to the number of phases and containing the conductivity of each phase
+	 * @param conductivite : value of the cnductivity
 	 * */
-	void setConductivity( double conductivite){
-			_fluides[0]->setConductivity(conductivite);
+	void setConductivityConstant( double conductivite){
+		_fluides[0]->setConductivity(conductivite);
 	};
-	void setConductivity(vector<double> conductivite){
-		if(_nbPhases!= conductivite.size())
-			throw CdmathException("SinglePhase::setConductivity: incorrect vector size vs number of phases");
-		for(int i=0;i<_nbPhases;i++)
-			_fluides[i]->setConductivity(conductivite[i]);
+	/** \fn setDragCoeffConstant
+	 * \brief Sets the drag coefficient
+	 * @param dragCoeff value of the drag coefficient
+	 * */
+	void setDragCoeffConstant(double dragCoeff){
+		_fluides[0]->setDragCoeffs(dragCoeff);
 	};
-
 
 	//! system initialisation
 	void initialize();

@@ -27,18 +27,6 @@ class FiveEqsTwoFluid : public ProblemFluid{
 			 *  */
 	FiveEqsTwoFluid(pressureEstimate pEstimate, int dim);
 
-	/** \fn setConductivity
-	 * \brief sets the vector of conductivity coefficients of the fluids
-	 * @param conductivite is a vector of size equal to the number of phases and containing the conductivity of each phase
-	 * @return throws an exception if the input vector size is not equal to the number of phases
-	 * */
-	void setConductivity(vector<double> conductivite){
-		if(_nbPhases!= conductivite.size())
-			throw CdmathException("FiveEqsTwoFluid::setConductivity: incorrect vector size vs number of phases");
-		for(int i=0;i<_nbPhases;i++)
-			_fluides[i]->setConductivity(conductivite[i]);
-	};
-
 	//initialisation du systeme
 	void initialize();
 

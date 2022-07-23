@@ -200,12 +200,16 @@ public :
 			_fluides[i]->setViscosity(viscosite[i]);
 	};
 
-	/** \fn setGravity
-	 * \brief sets the gravity force in the model
-	 * @param gravite is a vector of size equal to the space dimension
-	 * 				 * */
-	void setGravity(vector<double> gravite){
-		_GravityField3d = gravite;
+	/** \fn setConductivity
+	 * \brief sets the conductivity coefficients of each fluid
+	 * @param conductivite is a vector of size equal to the number of phases and containing the conductivity of each phase
+	 * @return throws an exception if the input vector size is not equal to the number of phases
+	 * */
+	void setConductivity(vector<double> conductivite){
+		if(_nbPhases!= conductivite.size())
+			throw CdmathException("ProblemFluid::setConductivity: incorrect vector size vs number of phases");
+		for(int i=0;i<_nbPhases;i++)
+			_fluides[i]->setConductivity(conductivite[i]);
 	};
 
 	/** \fn setDragCoeffs
@@ -221,6 +225,14 @@ public :
 			_fluides[i]->setDragCoeffs(dragCoeffs[i]);
 			_dragCoeffs[i]=dragCoeffs[i];
 		}
+	};
+
+	/** \fn setGravity
+	 * \brief sets the gravity force in the model
+	 * @param gravite is a vector of size equal to the space dimension
+	 * 				 * */
+	void setGravity(vector<double> gravite){
+		_GravityField3d = gravite;
 	};
 
 	/** \fn getNumberOfPhases
@@ -478,10 +490,6 @@ protected :
 
 	/** Fluid equation of state **/
 	vector<	CompressibleFluid* > _fluides;
-	//!Viscosity coefficients 
-	vector<double> _viscosite;
-	//!Conductivity coefficients 
-	vector<double> _conductivite;
 
 	/** Source terms **/
 	vector<double> _gravite, _GravityField3d, _gravityReferencePoint, _dragCoeffs;//_GravityField3d has size _Ndim whereas _gravite has size _Nvar and is usefull for dealing with source term and implicitation of gravity vector

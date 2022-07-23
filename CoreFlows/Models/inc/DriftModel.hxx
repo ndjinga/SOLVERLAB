@@ -33,18 +33,6 @@ public :
 	//	void getOutputField(const Vec &Flux, const string Champ, const int numBord)=0;//, PetscInt *indices_Flux, PetscInt *indices_Bord, const long range)=0;
 	//	double trace(const int &numBord, Vec &out)=0;
 
-	/** \fn setConductivity
-	 * \brief sets the vector of conductivity coefficients of the fluids
-	 * @param conductivite is a vector of size equal to the number of phases and containing the conductivity of each phase
-	 * @return throws an exception if the input vector size is not equal to the number of phases
-	 * */
-	void setConductivity(vector<double> conductivite){
-		if(_nbPhases!= conductivite.size())
-			throw CdmathException("DriftModel::setConductivity: incorrect vector size vs number of phases");
-		for(int i=0;i<_nbPhases;i++)
-			_fluides[i]->setConductivity(conductivite[i]);
-	};
-
 	void testConservation();
 	void save();
 
