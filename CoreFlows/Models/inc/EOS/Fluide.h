@@ -30,7 +30,7 @@ class Fluide{
   double getConductivity(double T=0) {return _lambda;};
   double getDragCoeffs(double T=0) { return _dragCoeff;};
   void setViscosity(double mu) { _mu=mu;};
-  void setDragCoeffs(double dragCoeff) {_dragCoeff=dragCoeff;};
+  void setDragCoeff(double dragCoeff) {_dragCoeff=dragCoeff;};
   void setConductivity(double lambda) { _lambda= lambda;};
 
   virtual double getDensity(double p, double T)=0;
