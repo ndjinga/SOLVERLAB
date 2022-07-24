@@ -9,7 +9,7 @@
 //============================================================================
 
 /*! \class FiveEqsTwoFluid FiveEqsTwoFluid.hxx "FiveEqsTwoFluid.hxx"
- *  \brief The model consists in the phasic mass and momentum balance equations and one mixture total energy balance equation.
+ *  \brief Class simulating a mixture of two compressible fluid sharing the same temperature. 
  *  \details The model consists in two phasic mass equations, two phasic momentum equations, one mixture energy equation, see \ref FiveEqPage for more details
  */
 
@@ -126,6 +126,7 @@ class FiveEqsTwoFluid : public ProblemFluid{
 	void entropicShift(double* n);
 
 	// Functions of equations of states
+	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids so the constructor will dynamic_cast the fluids defined in the parent class ProblemFluid
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);

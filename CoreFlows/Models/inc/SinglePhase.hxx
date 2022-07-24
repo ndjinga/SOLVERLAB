@@ -48,7 +48,7 @@ public :
 	 * @param dragCoeff value of the drag coefficient
 	 * */
 	void setDragCoeffConstant(double dragCoeff){
-		_fluides[0]->setDragCoeffs(dragCoeff);
+		_fluides[0]->setDragCoeff(dragCoeff);
 	};
 
 	//! system initialisation
@@ -225,6 +225,8 @@ protected :
 	//!Calcule les saut de valeurs propres pour la correction entropique
 	void entropicShift(double* n);
 	// Fonctions utilisant la loi d'etat
+	/** Fluid equation of state **/
+	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids so the constructor will dynamic_cast the fluids defined in the parent class ProblemFluid
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);

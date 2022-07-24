@@ -9,7 +9,7 @@
 //============================================================================
 
 /*! \class DriftModel DriftModel.hxx "DriftModel.hxx"
- *  \brief Four equation two phase flow drift model
+ *  \brief Class simulating a mixture of two compressible fluid sharing the same velocity.Four equation two phase flow drift model
  *  \details One total mass equation, one vapour mass equation, one total momentum equation, one total energy equation, see \ref DriftModelPage for more details
  */
 #ifndef DRIFTMODEL_HXX_
@@ -332,6 +332,8 @@ protected :
 	void computeScaling(double offset);
 
 	// Fonctions utilisant la loi d'etat 
+
+	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids so the constructor will dynamic_cast the fluids defined in the parent class ProblemFluid
 
 	/** \fn consToPrim
 	 * \brief computes the primitive vector state from a conservative vector state
