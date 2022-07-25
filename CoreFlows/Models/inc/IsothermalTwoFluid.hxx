@@ -31,6 +31,13 @@ public :
 
 	void save();
 
+	/** \fn iterateTimeStep
+	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence of the Newton scheme
+	 * @param
+	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
+	 * */
+	bool iterateTimeStep(bool &ok);
+
 	// Boundary conditions
 	/** \fn setIntletBoundaryCondition
 			 * \brief adds a new boundary condition of type Inlet

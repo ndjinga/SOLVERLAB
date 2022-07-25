@@ -51,6 +51,8 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 
 	_fileName = "SolverlabIsothermalSinglePhase";
     PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal single phase problem \n");
+    
+    _usePrimitiveVarsInNewton=true;//This class is designed only to solve linear system in primitive variables
 }
 
 void IsothermalSinglePhase::initialize(){
@@ -69,6 +71,14 @@ void IsothermalSinglePhase::initialize(){
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
 
 	ProblemFluid::initialize();
+}
+
+bool IsothermalSinglePhase::iterateTimeStep(bool &converged)
+{    //The class does not allow the use of conservative variables in Newton iterations
+	if(_timeScheme == Explicit || _usePrimitiveVarsInNewton)
+		return ProblemFluid::iterateTimeStep(converged);
+	else
+		throw CdmathException("IsothermalSinglePhase can not use conservative variables in Newton scheme for implicit in time discretisation");
 }
 
 void IsothermalSinglePhase::convectionState( const long &i, const long &j, const bool &IsBord){

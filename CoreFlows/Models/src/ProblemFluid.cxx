@@ -334,7 +334,7 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 			return false;
 		}
 		else{//solving the linear system succeeded
-			//Calcul de la variation relative Uk+1-Uk
+			//Calcul de la variation relative Uk+1-Uk ou Vkp1-Vk
 			_erreur_rel = 0.;
 			double x, dx;
 			int I;
@@ -344,7 +344,10 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 				{
 					I = (j-1)*_nVar + k;
 					VecGetValues(_newtonVariation, 1, &I, &dx);
-					VecGetValues(_conservativeVars, 1, &I, &x);
+					if( !_usePrimitiveVarsInNewton)
+						VecGetValues(_conservativeVars, 1, &I, &x);
+					else
+						VecGetValues(_primitiveVars, 1, &I, &x);
 					if (fabs(x)*fabs(x)< _precision)
 					{
 						if(_erreur_rel < fabs(dx))
@@ -358,38 +361,35 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 		converged = _erreur_rel <= _precision_Newton;
 	}
 
-	double relaxation=1;//Uk+1=Uk+relaxation*deltaU
+	//Change the relaxation coefficient to ease convergence
+	double relaxation=1;
 
-	VecAXPY(_conservativeVars,  relaxation, _newtonVariation);
-
-	//mise a jour du champ primitif
-	updatePrimitives();
-
-	if(_nbPhases==2 && fabs(_err_press_max) > _precision)//la pression n'a pu être calculée en diphasique à partir des variables conservatives
+	if( !_usePrimitiveVarsInNewton)
 	{
-		cout<<"Warning consToPrim/primToCons: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-		*_runLogFile<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-		converged=false;
-		return false;
-	}
-	if(_system)
-	{
-		cout<<"Vecteur Ukp1-Uk "<<endl;
-		VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
-		cout << "Nouvel etat courant Uk de l'iteration Newton: " << endl;
-		VecView(_conservativeVars,  PETSC_VIEWER_STDOUT_SELF);
-	}
-
-	if(_nbPhases==2 && _nbTimeStep%_freqSave ==0){
-		if(_minm1<-_precision || _minm2<-_precision)
+		VecAXPY(_conservativeVars,  relaxation, _newtonVariation);//Uk+1=Uk+relaxation*deltaU
+		//mise a jour du champ primitif
+		updatePrimitives();
+	
+		if(_system)
 		{
-			cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
-			*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+			cout<<"Vecteur Ukp1-Uk "<<endl;
+			VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
+			cout << "Nouvel etat courant Uk de l'iteration Newton: " << endl;
+			VecView(_conservativeVars,  PETSC_VIEWER_STDOUT_SELF);
 		}
+	}
+	else
+	{
+		VecAXPY(_primitiveVars,     relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+		//mise a jour du champ conservatif
+		updateConservatives();
 
-		if (_nbVpCplx>0){
-			cout << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
-			*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
+		if(_system)
+		{
+			cout<<"Vecteur Vkp1-Vk "<<endl;
+			VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
+			cout << "Nouvel etat courant Vk de l'iteration Newton: " << endl;
+			VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
 		}
 	}
 
@@ -780,11 +780,19 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 void ProblemFluid::computeNewtonVariation()
 {
 	if(_system)
-	{
-		cout<<"Vecteur courant Uk "<<endl;
-		VecView(_conservativeVars,PETSC_VIEWER_STDOUT_SELF);
-		cout << endl;
-	}
+		if( !_usePrimitiveVarsInNewton)
+		{
+			cout<<"Vecteur courant Uk "<<endl;
+			VecView(_conservativeVars,PETSC_VIEWER_STDOUT_SELF);
+			cout << endl;
+		}
+		else
+		{
+			cout<<"Vecteur courant Vk "<<endl;
+			VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
+			cout << endl;
+		}
+		
 	if(_timeScheme == Explicit)
 	{
 		VecCopy(_b,_newtonVariation);
@@ -796,7 +804,7 @@ void ProblemFluid::computeNewtonVariation()
 			cout << endl;
 		}
 	}
-	else
+	else//Implicit scheme
 	{
 		if(_system)
 		{
@@ -812,7 +820,24 @@ void ProblemFluid::computeNewtonVariation()
 
 		VecAXPY(_b, 1/_dt, _old);
 		VecAXPY(_b, -1/_dt, _conservativeVars);
-		MatShift(_A, 1/_dt);
+		if( !_usePrimitiveVarsInNewton)
+			MatShift(_A, 1/_dt);
+		else
+		{
+			MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+			for(int imaille = 0; imaille<_Nmailles; imaille++)
+			{
+				_idm[0] = _nVar*imaille;
+				for(int k=1; k<_nVar; k++)
+					_idm[k] = _idm[k-1] + 1;
+				VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
+				primToConsJacobianMatrix(_Vi);
+				for(int k=0; k<_nVar*_nVar; k++)
+					_primToConsJacoMat[k]*=1/_dt;
+				MatSetValuesBlocked(_A, 1, &imaille, 1, &imaille, _primToConsJacoMat, ADD_VALUES);
+			}
+			MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
+		}
 
 #if PETSC_VERSION_GREATER_3_5
 		KSPSetOperators(_ksp, _A, _A);
@@ -832,11 +857,11 @@ void ProblemFluid::computeNewtonVariation()
 
 		if(_conditionNumber)
 			KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
-		if(!_isScaling)
+		if(!_isScaling)//No scaling preconditioner
 		{
 			KSPSolve(_ksp, _b, _newtonVariation);
 		}
-		else
+		else//Use of a scaling preconditioner
 		{
 			computeScaling(_maxvp);
 			int indice;

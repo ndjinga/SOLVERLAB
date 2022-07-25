@@ -113,7 +113,7 @@ public :
 	void abortTimeStep();
 
 	/** \fn iterateTimeStep
-	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence
+	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence of the Newton scheme
 	 * @param
 	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
 	 * */
@@ -525,10 +525,10 @@ protected :
 	bool solveNewtonPETSc();//Use PETSc Newton methods to solve time step
 
 	/** \fn computeNewtonVariation
-	 * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk in a Newton scheme
+	 * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk (or Vkp1-Vk for primitive variables) in the Newton scheme
 	 * @param void
 	 * */
-	virtual void computeNewtonVariation();
+	void computeNewtonVariation();
 
 	/** \fn computeNewtonRHS
 	 * \brief Builds the right hand side F_X(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
@@ -711,7 +711,7 @@ protected :
 	 * \Details pure virtual, implemented by each model
 	 * @pram V : primitive vector state
 	 * 	 */
-	//void primToConsJacobianMatrix(double *V)=0;
+	virtual void primToConsJacobianMatrix(double *V)=0;
 
 	/** \fn getRacines
 	 * \brief Computes the roots of a polynomial

@@ -148,13 +148,6 @@ public :
 	 * */
 	void computeNewtonVariation();
 
-	/** \fn iterateTimeStep
-	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence
-	 * @param
-	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
-	 * */
-	bool iterateTimeStep(bool &ok);
-
 	//EOS functions
 	StiffenedGas getFluidEOS(){ return *dynamic_cast<StiffenedGas*>(_fluides[0]); }
 	double getReferencePressure()    { return _Pref; };

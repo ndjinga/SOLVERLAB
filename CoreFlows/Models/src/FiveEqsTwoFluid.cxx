@@ -48,6 +48,8 @@ FiveEqsTwoFluid::FiveEqsTwoFluid(pressureEstimate pEstimate, int dim){
 
 	_fileName = "SolverlabFiveEquationTwoFluid";
     PetscPrintf(PETSC_COMM_WORLD,"\n Five equation two-fluid problem for two phase flow\n");
+    
+    _usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
 }
 
 void FiveEqsTwoFluid::initialize()
@@ -81,6 +83,27 @@ void FiveEqsTwoFluid::initialize()
 		_entropicShift=vector<double>(_nVar);
 
 	ProblemFluid::initialize();
+}
+
+bool FiveEqsTwoFluid::iterateTimeStep(bool &converged)
+{   //The class does not allow the use of primitive variables in Newton iterations
+	if(_timeScheme == Explicit || !_usePrimitiveVarsInNewton)
+		return ProblemFluid::iterateTimeStep(converged);
+	else
+		throw CdmathException("FiveEqsTwoFluid can not use primitive variables in Newton scheme for implicit in time discretisation");
+
+	if( _nbTimeStep%_freqSave ==0)
+	{
+		if(_minm1<-_precision || _minm2<-_precision)
+		{
+			cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+			*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+		}
+		if (_nbVpCplx>0){
+			cout << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
+			*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
+		}
+	}
 }
 
 void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool &IsBord){
@@ -1793,6 +1816,11 @@ void FiveEqsTwoFluid::primToCons(const double *P, const int &i, double *W, const
 		u2_sq+=P[i*_nVar+(k+2)+_Ndim]*P[i*_nVar+(k+2)+_Ndim];
 	}
 	W[j*_nVar+_nVar-1] += (W[j*_nVar]*u1_sq+W[j*_nVar+1+_Ndim]*u2_sq)*0.5;
+}
+
+void FiveEqsTwoFluid::primToConsJacobianMatrix(double *V)
+{//Todo compute de jacobian matrix of constoprim
+	throw CdmathException("FiveEqsTwoFluid::primToConsJacobianMatrix not yet implemented");
 }
 
 void FiveEqsTwoFluid::consToPrim(const double *Wcons, double* Wprim,double porosity)//To do: treat porosity
