@@ -48,7 +48,7 @@ void IsothermalTwoFluid::initialize(){
 	cout<<"\n Initialising the isothermal two-fluid model\n"<<endl;
 	*_runLogFile<<"\n Initialising the isothermal two-fluid model\n"<<endl;
 
-	_Uroe = new double[_nVar+1];
+	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
 
 	_guessalpha = _VV(0,0);
 
@@ -58,7 +58,7 @@ void IsothermalTwoFluid::initialize(){
 		_gravite[i+1]=_GravityField3d[i];
 		_gravite[i+1 +_Ndim+1]=_GravityField3d[i];
 	}
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
 	if(_saveVelocity){
 		_Vitesse1=Field("Gas velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
@@ -558,8 +558,7 @@ void IsothermalTwoFluid::convectionMatrices()
 		_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
 	}
 	if(_timeScheme==Implicit && _usePrimitiveVarsInNewton)//Implicitation using primitive variables
-		for(int i=0; i<_nVar*_nVar;i++)
-			_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
+		throw CdmathException("IsothermalTwoFluid can not use primitive variables in Newton scheme for implicit in time discretisation");
 	else
 		for(int i=0; i<_nVar*_nVar;i++)
 			_AroeMinusImplicit[i] = _AroeMinus[i];

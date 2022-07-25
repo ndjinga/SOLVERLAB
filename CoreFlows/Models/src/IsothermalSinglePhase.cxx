@@ -53,6 +53,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
     PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal single phase problem \n");
     
     _usePrimitiveVarsInNewton=true;//This class is designed only to solve linear system in primitive variables
+     _Vdiff=NULL;
 }
 
 void IsothermalSinglePhase::initialize(){
@@ -67,10 +68,18 @@ void IsothermalSinglePhase::initialize(){
 
 	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
+	_Vdiff = new double[_nVar];
+	
 	if(_saveVelocity)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
 
 	ProblemFluid::initialize();
+}
+
+void IsothermalSinglePhase::terminate()
+{
+	delete _Vdiff;
+	ProblemFluid::terminate();
 }
 
 bool IsothermalSinglePhase::iterateTimeStep(bool &converged)
@@ -138,8 +147,8 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+1] << endl;
 	}
 
-	//Computation of 1/c// Todo :  add porosity in the sound speed formula
-	_Uroe[_nVar] = sqrt((_Ui[0]-_Uj[0])/(_Vi[0]-_Vj[0]));//_Uroe has size _nVar+1 !!!
+	//Computation of 1/c²// Todo :  add porosity in the sound speed formula
+	_Uroe[_nVar] = (_Ui[0]-_Uj[0])/(_Vi[0]-_Vj[0]);//_Uroe has size _nVar+1 !!!
 	
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -211,36 +220,36 @@ void IsothermalSinglePhase::convectionMatrices()
 		cout<<"IsothermalSinglePhase::convectionMatrices()"<<endl;
 
 	double u_n=0, u_2=0;//vitesse normale et carré du module
+	Vector vitesse(_Ndim);
 
-	for(int i=0;i<_Ndim;i++)
+	for(int idim=0;idim<_Ndim;idim++)
 	{
-		u_2 += _Uroe[1+i]*_Uroe[1+i];
-		u_n += _Uroe[1+i]*_vec_normal[i];
+		u_2 += _Uroe[1+idim]*_Uroe[1+idim];
+		u_n += _Uroe[1+idim]*_vec_normal[idim];
+		vitesse[idim]=_Uroe[1+idim];
 	}
 
-	vector<complex<double> > vp_dist(3,0);
-
-	Vector vitesse(_Ndim);
-	for(int idim=0;idim<_Ndim;idim++)
-		vitesse[idim]=_Uroe[1+idim];
-
-	double  c, H, K, k;
-	/***********Calcul des valeurs propres ********/
-	H = _Uroe[_nVar-1];
-	c = _fluides[0]->vitesseSonEnthalpie(H-u_2/2);//vitesse du son a l'interface
-	k = _fluides[0]->constante("gamma") - 1;//A generaliser pour porosite et stephane gas law
-	K = u_2*k/2; //g-1/2 *|u|²
-
+	//Todo : treat correctly the computation of eigenvalues for incompressible flows
+	double c;
+	if(_Uroe[_nVar]==0.)//infinite sound speed
+		if(_timeScheme==Explicit)
+			throw CdmathException("Explicit scheme cannot be used for incompressible fluids");
+		else
+			c=0.;
+	else
+		c=1./sqrt(_Uroe[_nVar]);
+		
+	vector<std::complex<double>>vp_dist(3);
 	vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
-
-	_maxvploc=fabs(u_n)+c;
+	
+	_maxvploc=fabs(u_n);
 	if(_maxvploc>_maxvp)
 		_maxvp=_maxvploc;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"IsothermalSinglePhase::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
+		cout<<"IsothermalSinglePhase::convectionMatrices Eigenvalues "<<u_n<<" , "<<u_n<<" , "<<u_n<<endl;
 
-	RoeMatrixConservativeVariables( u_n, H,vitesse,k,K);
+	convectionMatrixPrimitiveVariables(u_n);
 
 	if(_entropicCorrection)
 	{
@@ -270,7 +279,7 @@ void IsothermalSinglePhase::convectionMatrices()
 			throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for staggered scheme");
 		}
 
-		staggeredRoeUpwindingMatrixConservativeVariables( u_n, H, vitesse, k, K);
+		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);
 	}
 	else
 	{
@@ -286,22 +295,11 @@ void IsothermalSinglePhase::convectionMatrices()
 	}
 	if(_timeScheme==Implicit)
 	{
-		if(_usePrimitiveVarsInNewton)//Implicitation using primitive variables
+		for(int i=0; i<_nVar*_nVar;i++)
 		{
-			_Vij[0]=_fluides[0]->getPressureFromEnthalpy(_Uroe[_nVar-1]-u_2/2, _Uroe[0]);//pressure
-			_Vij[_nVar-1]=_fluides[0]->getTemperatureFromPressure( _Vij[0], _Uroe[0]);//Temperature
-			for(int idim=0;idim<_Ndim; idim++)
-				_Vij[1+idim]=_Uroe[1+idim];
-			primToConsJacobianMatrix(_Vij);
-			Polynoms::matrixProduct(_AroeMinus, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroeMinusImplicit);
-			Polynoms::matrixProduct(_AroePlus,  _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroePlusImplicit);
+			_AroeMinusImplicit[i] = _AroeMinus[i];
+			_AroePlusImplicit[i]  = _AroePlus[i];
 		}
-		else
-			for(int i=0; i<_nVar*_nVar;i++)
-			{
-				_AroeMinusImplicit[i] = _AroeMinus[i];
-				_AroePlusImplicit[i]  = _AroePlus[i];
-			}
 	}
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -309,13 +307,6 @@ void IsothermalSinglePhase::convectionMatrices()
 		displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
 		displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus");
 		displayMatrix(_AroePlus, _nVar,"Matrice _AroePlus");
-	}
-	
-
-	if(_verbose && _nbTimeStep%_freqSave ==0 && _timeScheme==Implicit)
-	{
-		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinusImplicit");
-		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlusImplicit");
 	}
 }
 
@@ -1103,111 +1094,39 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 		throw CdmathException("IsothermalSinglePhase::consToPrim should not be used");
 }
 
-void IsothermalSinglePhase::RoeMatrixConservativeVariables(double u_n, double H,Vector velocity, double k, double K)
+void IsothermalSinglePhase::convectionMatrixPrimitiveVariables(double u_n )
 {
-	/******** Construction de la matrice de Roe *********/
-	//premiere ligne (masse)
-	_Aroe[0]=0;
-	for(int idim=0; idim<_Ndim;idim++)
-		_Aroe[1+idim]=_vec_normal[idim];
-	_Aroe[_nVar-1]=0;
-
-	//lignes intermadiaires(qdm)
-	for(int idim=0; idim<_Ndim;idim++)
-	{
-		//premiere colonne
-		_Aroe[(1+idim)*_nVar]=K*_vec_normal[idim] - u_n*_Uroe[1+idim];
-		//colonnes intermediaires
-		for(int jdim=0; jdim<_Ndim;jdim++)
-			_Aroe[(1+idim)*_nVar + jdim + 1] = _Uroe[1+idim]*_vec_normal[jdim]-k*_vec_normal[idim]*_Uroe[1+jdim];
-		//matrice identite
-		_Aroe[(1+idim)*_nVar + idim + 1] += u_n;
-		//derniere colonne
-		_Aroe[(1+idim)*_nVar + _nVar-1]=k*_vec_normal[idim];
-	}
-
-	//derniere ligne (energie)
-	_Aroe[_nVar*(_nVar-1)] = (K - H)*u_n;
-	for(int idim=0; idim<_Ndim;idim++)
-		_Aroe[_nVar*(_nVar-1)+idim+1]=H*_vec_normal[idim] - k*u_n*_Uroe[idim+1];
-	_Aroe[_nVar*_nVar -1] = (1 + k)*u_n;
-}
-void IsothermalSinglePhase::convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector vitesse)
-{
-	//Not used. Suppress or use in alternative implicitation in primitive variable of the staggered-roe scheme
 	//On remplit la matrice de Roe en variables primitives : F(V_L)-F(V_R)=Aroe (V_L-V_R)
-	//EOS is more involved with primitive variables
-	//Prior call to getDensityDerivatives(double concentration) needed
+	double rho = _Uroe[0 ];
+	_drho_sur_dp = _Uroe[_nVar];
+	
 	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
+		_AroeImplicit[0*_nVar+1+i]= rho*_vec_normal[i];
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*vitesse[i]+_vec_normal[i];
+		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*_Uroe[1+i]+_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j]=rho*vitesse[i]*_vec_normal[j];
+			_AroeImplicit[(1+i)*_nVar+1+j]=rho*_vec_normal[j];
 		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
 	}
 }
-void IsothermalSinglePhase::staggeredRoeUpwindingMatrixConservativeVariables( double u_n, double H,Vector velocity, double k, double K)
-{
-	//Calcul de décentrement de type décalé pour formulation de Roe
-	if(fabs(u_n)>_precision)
-	{
-		//premiere ligne (masse)
-		_absAroe[0]=0;
-		for(int idim=0; idim<_Ndim;idim++)
-			_absAroe[1+idim]=_vec_normal[idim];
-		_absAroe[_nVar-1]=0;
 
-		//lignes intermadiaires(qdm)
-		for(int idim=0; idim<_Ndim;idim++)
-		{
-			//premiere colonne
-			_absAroe[(1+idim)*_nVar]=-K*_vec_normal[idim] - u_n*_Uroe[1+idim];
-			//colonnes intermediaires
-			for(int jdim=0; jdim<_Ndim;jdim++)
-				_absAroe[(1+idim)*_nVar + jdim + 1] = _Uroe[1+idim]*_vec_normal[jdim]+k*_vec_normal[idim]*_Uroe[1+jdim];
-			//matrice identite
-			_absAroe[(1+idim)*_nVar + idim + 1] += u_n;
-			//derniere colonne
-			_absAroe[(1+idim)*_nVar + _nVar-1]=-k*_vec_normal[idim];
-		}
-
-		//derniere ligne (energie)
-		_absAroe[_nVar*(_nVar-1)] = (-K - H)*u_n;
-		for(int idim=0; idim<_Ndim;idim++)
-			_absAroe[_nVar*(_nVar-1)+idim+1]=H*_vec_normal[idim] + k*u_n*_Uroe[idim+1];
-		_absAroe[_nVar*_nVar -1] = (1 - k)*u_n;
-
-		double signu;
-		if(u_n>0)
-			signu=1;
-		else if (u_n<0)
-			signu=-1;
-
-		for(int i=0; i<_nVar*_nVar;i++)
-			_absAroe[i] *= signu;
-	}
-	else//umn=0 ->centered scheme
-	{
-		for(int i=0; i<_nVar*_nVar;i++)
-			_absAroe[i] =0;
-	}
-}
-
-void IsothermalSinglePhase::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n,double H, Vector vitesse)
+void IsothermalSinglePhase::staggeredRoeUpwindingMatrixPrimitiveVariables( double u_n)
 {
 	//Not used. Suppress or use in alternative implicitation in primitive variable of the staggered-roe scheme
 	//Calcul de décentrement de type décalé pour formulation Roe
+	double rho = _Uroe[ 0 ];
+	_drho_sur_dp = _Uroe[_nVar];
+	
 	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
 	for(int i=0;i<_Ndim;i++)
 		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*vitesse[i]-_vec_normal[i];
+		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*_Uroe[1+i]-_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j]=rho*vitesse[i]*_vec_normal[j];
+			_AroeImplicit[(1+i)*_nVar+1+j]=rho*_Uroe[1+i]*_vec_normal[j];
 		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
 	}
 }

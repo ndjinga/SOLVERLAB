@@ -80,12 +80,12 @@ void DriftModel::initialize(){
 	cout<<"\n Initialising the drift model"<<endl;
 	*_runLogFile<<"\n Initialising the drift model"<<endl;
 
-	_Uroe = new double[_nVar];
+	_Uroe = new double[_nVar];//Deleted in ProblemFluid::terminate()
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
 		_gravite[i+2]=_GravityField3d[i];
 
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
 	if(_saveVelocity)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 (3 composantes) pour le posttraitement des lignes de courant

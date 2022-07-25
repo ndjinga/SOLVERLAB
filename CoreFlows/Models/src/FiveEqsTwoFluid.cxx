@@ -60,10 +60,8 @@ void FiveEqsTwoFluid::initialize()
 	if(static_cast<StiffenedGas*>(_fluides[0])==NULL || static_cast<StiffenedGas*>(_fluides[1])==NULL)
 		throw CdmathException("!!!!!!!!FiveEqsTwoFluid::initialize: both phase must have stiffened gas EOS");
 
-	_Uroe = new double[_nVar+1];
+	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
 
-	_lCon = new PetscScalar[_nVar];//should be deleted in ::terminate
-	_rCon = new PetscScalar[_nVar];//should be deleted in ::terminate
 	_JacoMat = new PetscScalar[_nVar*_nVar];//should be deleted in ::terminate
 
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
@@ -72,7 +70,7 @@ void FiveEqsTwoFluid::initialize()
 		_gravite[i+1]=_GravityField3d[i];
 		_gravite[i+1 +_Ndim+1]=_GravityField3d[i];
 	}
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
 	if(_saveVelocity){
 		_Vitesse1=Field("Gas velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
@@ -83,6 +81,12 @@ void FiveEqsTwoFluid::initialize()
 		_entropicShift=vector<double>(_nVar);
 
 	ProblemFluid::initialize();
+}
+
+void FiveEqsTwoFluid::terminate()
+{
+	delete _JacoMat;
+	ProblemFluid::terminate();
 }
 
 bool FiveEqsTwoFluid::iterateTimeStep(bool &converged)
@@ -1248,8 +1252,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
 	}
 	if(_timeScheme==Implicit && _usePrimitiveVarsInNewton)//Implicitation using primitive variables
-		for(int i=0; i<_nVar*_nVar;i++)
-			_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
+		throw CdmathException("FiveEqsTwoFluid can not use primitive variables in Newton scheme for implicit in time discretisation");
 	else
 		for(int i=0; i<_nVar*_nVar;i++)
 			_AroeMinusImplicit[i] = _AroeMinus[i];

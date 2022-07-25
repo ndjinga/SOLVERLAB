@@ -53,16 +53,17 @@ SinglePhase::SinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, b
 	_fileName = "SolverlabSinglePhase";
     PetscPrintf(PETSC_COMM_WORLD,"\n Navier-Stokes equations for single phase flow\n");
 }
+
 void SinglePhase::initialize(){
 	cout<<"\n Initialising the Navier-Stokes model\n"<<endl;
 	*_runLogFile<<"\n Initialising the Navier-Stokes model\n"<<endl;
 
-	_Uroe = new double[_nVar];
+	_Uroe = new double[_nVar];//Deleted in ProblemFluid::terminate()
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
 		_gravite[i+1]=_GravityField3d[i];
 
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 	if(_saveVelocity || _saveAllFields)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
 
