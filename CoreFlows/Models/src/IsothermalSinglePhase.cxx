@@ -150,61 +150,55 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 	
 }
 
-void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord){
+void IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices(const long &i,const long &j, const bool &IsBord){
 	//sortie: matrices et etat de diffusion (rho, q) ou (p, v) ?
 	_idm[0] = _nVar*i;
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
 
-	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
+	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
 	for(int k=0; k<_nVar; k++)
 		_idn[k] = k;
 
 	if(IsBord)
-		VecGetValues(_Uextdiff, _nVar, _idn, _Uj);
+		VecGetValues(_Vextdiff, _nVar, _idn, _Vj);
 	else
-		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
+		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "IsothermalSinglePhase::diffusionStateAndMatrices cellule gauche" << i << endl;
-		cout << "Ui = ";
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule gauche" << i << endl;
+		cout << "Vi = ";
 		for(int q=0; q<_nVar; q++)
-			cout << _Ui[q]  << "\t";
+			cout << _Vi[q]  << "\t";
 		cout << endl;
-		cout << "IsothermalSinglePhase::diffusionStateAndMatrices cellule droite" << j << endl;
-		cout << "Uj = ";
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule droite" << j << endl;
+		cout << "Vj = ";
 		for(int q=0; q<_nVar; q++)
-			cout << _Uj[q]  << "\t";
+			cout << _Vj[q]  << "\t";
 		cout << endl;
 	}
 
 	for(int k=0; k<_nVar; k++)
-		_Udiff[k] = (_Ui[k]/_porosityi+_Uj[k]/_porosityj)/2;
+		_Vdiff[k] = (_Vi[k]/_porosityi+_Vj[k]/_porosityj)/2;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "IsothermalSinglePhase::diffusionStateAndMatrices conservative diffusion state" << endl;
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices conservative diffusion state" << endl;
 		cout << "_Udiff = ";
 		for(int q=0; q<_nVar; q++)
-			cout << _Udiff[q]  << "\t";
+			cout << _Vdiff[q]  << "\t";
 		cout << endl;
 		cout << "porosite gauche= "<<_porosityi<< ", porosite droite= "<<_porosityj<<endl;
 	}
 
 	if(_timeScheme==Implicit)
 	{
-		double q_2=0;
-		for (int i = 0; i<_Ndim;i++)
-			q_2+=_Udiff[i+1]*_Udiff[i+1];
-		double mu = _fluides[0]->getViscosity(_Udiff[_nVar-1]);
+		double mu = _fluides[0]->getViscosity(_Vdiff[_nVar-1]);
 		for(int i=0; i<_nVar*_nVar;i++)
 			_Diffusion[i] = 0;
 		for(int i=1;i<(_nVar-1);i++)
-		{
-			_Diffusion[i*_nVar] =  mu*_Udiff[i]/(_Udiff[0]*_Udiff[0]);
-			_Diffusion[i*_nVar+i] = -mu/_Udiff[0];
-		}
+			_Diffusion[i*_nVar+i] = mu;
 	}
 }
 

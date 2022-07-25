@@ -80,6 +80,10 @@ protected :
 	Field _Pressure, _Density, _Momentum, _Vitesse, _VitesseX, _VitesseY, _VitesseZ, _MachNumber;
 	bool _saveAllFields;
 	
+	//Vecteurs nécessaires si variables primitives dans schéma de Newton
+	Vec _Vextdiff;
+	double *_Vdiff;
+	
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);
 	//!calcule la matrice de convection de l'etat interfacial entre deux cellules voisinnes
@@ -89,12 +93,13 @@ protected :
 	//!Computation of the Roe matrix
 	void RoeMatrixConservativeVariables(double u_n, double total_enthalpy,Vector velocity, double k, double K);
 	void convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector velocity);
+	//void RoeMatrixPrimitiveVariables();
 	//!Computation of the staggered Roe upwinding matrix in conservative variables
 	void staggeredRoeUpwindingMatrixConservativeVariables(  double u_n, double total_enthalpy, Vector velocity, double k, double K);
 	//!Computation of the staggered Roe upwinding matrix in primitive variables
 	void staggeredRoeUpwindingMatrixPrimitiveVariables(double density, double u_n,double total_enthalpy, Vector velocity);
 	//!calcule la matrice de diffusion de l'etat interface pour la diffusion
-	void diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord);
+	void diffusionPrimitiveStateAndMatrices(const long &i,const long &j, const bool &IsBord);
 	//!Ajoute au second membre la contribution de la gravite et du frottement
 	void sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar * Vi, int i);
 	//!Computes the pressure loss associated to the face ij
