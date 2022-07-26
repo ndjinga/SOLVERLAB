@@ -150,7 +150,6 @@ void ProblemFluid::initialize()
 
 	//creation des vecteurs
 	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Uext);
-	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Uextdiff);
 	//	  VecCreateSeq(PETSC_COMM_SELF, _nVar*_Nmailles, &_conservativeVars);
 	VecCreate(PETSC_COMM_SELF, &_conservativeVars);//Current conservative variables at Newton iteration k between time steps n and n+1
@@ -2202,7 +2201,6 @@ void ProblemFluid::terminate(){
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
 	VecDestroy(&_Uext);
-	VecDestroy(&_Vext);
 	VecDestroy(&_Uextdiff);
 
 	// 	PCDestroy(_pc);

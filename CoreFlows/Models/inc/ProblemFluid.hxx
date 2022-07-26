@@ -506,7 +506,7 @@ protected :
 	bool _usePrimitiveVarsInNewton;
 
 	// Variables du schema numerique 
-	Vec _conservativeVars, _newtonVariation, _bScaling,_old, _primitiveVars, _Uext,_Uextdiff ,_vecScaling,_invVecScaling, _Vext;
+	Vec _conservativeVars, _newtonVariation, _bScaling,_old, _primitiveVars, _Uext,_Uextdiff ,_vecScaling,_invVecScaling;
 	//courant state vector, vector computed at next time step, second member of the equation
 	PetscScalar *_AroePlus, *_AroeMinus,*_Jcb,*_JcbDiff, *_a, *_blockDiag,  *_invBlockDiag,*_Diffusion, *_GravityImplicitationMatrix;
 	PetscScalar *_Aroe, *_absAroe, *_signAroe, *_invAroe;

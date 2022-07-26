@@ -59,11 +59,14 @@ void SinglePhase::initialize(){
 	*_runLogFile<<"\n Initialising the Navier-Stokes model\n"<<endl;
 
 	_Uroe = new double[_nVar];//Deleted in ProblemFluid::terminate()
+	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
+
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
 		_gravite[i+1]=_GravityField3d[i];
 
 	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
+
 	if(_saveVelocity || _saveAllFields)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
 
@@ -87,6 +90,12 @@ void SinglePhase::initialize(){
 		_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
 
 	ProblemFluid::initialize();
+}
+
+void SinglePhase::terminate()
+{
+	VecDestroy(&_Vext);
+	ProblemFluid::terminate();
 }
 
 void SinglePhase::convectionState( const long &i, const long &j, const bool &IsBord){

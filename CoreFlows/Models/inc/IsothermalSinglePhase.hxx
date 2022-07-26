@@ -24,9 +24,9 @@ public :
 			 * \param [in] int : mesh dimension
 			 *  */
 	IsothermalSinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim);
-	//initialisation du systeme (allocations mémoire)
+	//!initialisation du systeme (allocations mémoire)
 	void initialize();
-	//libération de la mémoire
+	//!libération de la mémoire
 	void terminate();
 
 	void testConservation();
@@ -83,7 +83,7 @@ protected :
 	bool _saveAllFields;
 	
 	//Vecteurs nécessaires pour utilisation variables primitives dans schéma de Newton
-	Vec _Vextdiff;
+	Vec _Vextdiff, _Vext;
 	double *_Vdiff;
 	
 	//!calcule l'etat de Roe de deux etats

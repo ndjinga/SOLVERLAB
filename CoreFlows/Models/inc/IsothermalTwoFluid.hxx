@@ -24,8 +24,10 @@ public :
 			 * \param [in] int : mesh dimension
 			 *  */
 	IsothermalTwoFluid(pressureEstimate pEstimate, int dim);
-	//initialisation du systeme
+	//!initialisation du systeme
 	void initialize();
+	//!libération de la mémoire
+	void terminate();
 
 	void testConservation();
 
@@ -90,6 +92,9 @@ protected :
 	double _Temperature, _internalEnergy1, _internalEnergy2, _guessalpha;
 	bool _afficheg2press, _afficheg2alpha;
 	double _intPressCoeff;
+
+    Vec _Vext;
+    
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);
 	//!calcule la matrice de convection de l'etat interfacial entre deux cellules voisinnes

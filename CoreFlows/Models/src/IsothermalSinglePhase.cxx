@@ -62,6 +62,7 @@ void IsothermalSinglePhase::initialize(){
 
 	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
 	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vextdiff);
+	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
@@ -80,6 +81,7 @@ void IsothermalSinglePhase::initialize(){
 void IsothermalSinglePhase::terminate(){
 	delete[] _Vdiff;
 	VecDestroy(&_Vextdiff);
+	VecDestroy(&_Vext);
 	ProblemFluid::terminate();
 }
 

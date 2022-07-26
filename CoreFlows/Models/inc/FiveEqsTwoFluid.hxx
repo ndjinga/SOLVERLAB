@@ -27,9 +27,9 @@ class FiveEqsTwoFluid : public ProblemFluid{
 			 *  */
 	FiveEqsTwoFluid(pressureEstimate pEstimate, int dim);
 
-	//initialisation du systeme (allocations mémoire)
+	//!initialisation du systeme (allocations mémoire)
 	void initialize();
-	//libération de la mémoire
+	//!libération de la mémoire
 	void terminate();
 
 	void testConservation();
@@ -98,6 +98,9 @@ class FiveEqsTwoFluid : public ProblemFluid{
 	Field _Vitesse1,_Vitesse2;
 	PetscScalar * _JacoMat; //Jacobian matrix of the convection fluxes, used to compute the entropic corrections for the 5eqs two-fluid model
 	PetscReal *_realPart, *_imagPart;
+
+    Vec _Vext;
+    
 	double _intPressCoeff;
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);

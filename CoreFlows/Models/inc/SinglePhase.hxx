@@ -53,6 +53,8 @@ public :
 
 	//! system initialisation
 	void initialize();
+	//!libération de la mémoire
+	void terminate();
 
 	//fonctions d'echange de flux
 	//	void getOutputField(const Vec &Flux, const string Champ, const int numBord)=0;//, PetscInt *indices_Flux, PetscInt *indices_Bord, const long range)=0;
@@ -175,6 +177,8 @@ protected :
 	double _Tref; //EOS reference temperature
 	double _Pref; //EOS reference pressure
 
+    Vec _Vext;
+    
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);
 	//!calcule la matrice de convection de l'etat interfacial entre deux cellules voisinnes

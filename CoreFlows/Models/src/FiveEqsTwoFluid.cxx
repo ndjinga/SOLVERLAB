@@ -61,6 +61,7 @@ void FiveEqsTwoFluid::initialize()
 		throw CdmathException("!!!!!!!!FiveEqsTwoFluid::initialize: both phase must have stiffened gas EOS");
 
 	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
+	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 
 	_JacoMat = new PetscScalar[_nVar*_nVar];//should be deleted in ::terminate
 
@@ -86,6 +87,7 @@ void FiveEqsTwoFluid::initialize()
 void FiveEqsTwoFluid::terminate()
 {
 	delete _JacoMat;
+	VecDestroy(&_Vext);
 	ProblemFluid::terminate();
 }
 

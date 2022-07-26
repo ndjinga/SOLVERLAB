@@ -49,6 +49,7 @@ void IsothermalTwoFluid::initialize(){
 	*_runLogFile<<"\n Initialising the isothermal two-fluid model\n"<<endl;
 
 	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
+	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 
 	_guessalpha = _VV(0,0);
 
@@ -68,6 +69,12 @@ void IsothermalTwoFluid::initialize(){
 		_entropicShift=vector<double>(3,0);
 
 	ProblemFluid::initialize();
+}
+
+void IsothermalTwoFluid::terminate()
+{
+	VecDestroy(&_Vext);
+	ProblemFluid::terminate();
 }
 
 bool IsothermalTwoFluid::iterateTimeStep(bool &converged)

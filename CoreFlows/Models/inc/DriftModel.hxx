@@ -26,8 +26,10 @@ public :
 	 * \param [in] bool : There are two possible equations of state for each phase
 	 *  */
 	DriftModel( pressureEstimate pEstimate, int dim, bool useDellacherieEOS=true);
-	//! system initialisation
+	//! system initialisation (allocations mémoire)
 	void initialize();
+	//!libération de la mémoire
+	void terminate();
 
 	//fonctions d'echange de flux
 	//	void getOutputField(const Vec &Flux, const string Champ, const int numBord)=0;//, PetscInt *indices_Flux, PetscInt *indices_Bord, const long range)=0;
@@ -204,6 +206,8 @@ protected :
 	bool _saveAllFields;
 	bool _useDellacherieEOS;
 
+    Vec _Vext;
+    
 	/** \fn convectionState
 	 * \brief calcule l'etat de Roe de deux etats
 	 * @param i,j sont des entiers qui correspondent aux numeros des cellules à gauche et à droite de l'interface

@@ -81,6 +81,7 @@ void DriftModel::initialize(){
 	*_runLogFile<<"\n Initialising the drift model"<<endl;
 
 	_Uroe = new double[_nVar];//Deleted in ProblemFluid::terminate()
+	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
 		_gravite[i+2]=_GravityField3d[i];
@@ -115,6 +116,12 @@ void DriftModel::initialize(){
 		_entropicShift=vector<double>(3);//at most 3 distinct eigenvalues
 
 	ProblemFluid::initialize();
+}
+
+void DriftModel::terminate()
+{
+	VecDestroy(&_Vext);
+	ProblemFluid::terminate();
 }
 
 bool DriftModel::iterateTimeStep(bool &converged)
