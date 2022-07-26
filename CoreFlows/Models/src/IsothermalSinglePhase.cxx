@@ -91,8 +91,12 @@ bool IsothermalSinglePhase::iterateTimeStep(bool &converged)
 }
 
 void IsothermalSinglePhase::convectionState( const long &i, const long &j, const bool &IsBord){
+	//entree: indices des cellules Vi et Vj.
+	//Attention : Vj peut être un état fantôme
+	//sortie: URoe = rho, u, 1/c^2
+
 	//Extraction of primitive states
-	_idm[0] = _nVar*i; // Kieu
+	_idm[0] = _nVar*i; 
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
 
@@ -108,14 +112,12 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 	if(!IsBord ){
 		for(int k=0; k<_nVar; k++)
 			_idn[k] = _nVar*j + k;
-
 		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
 	}
 	else
 	{
 		for(int k=0; k<_nVar; k++)
 			_idn[k] = k;
-
 		VecGetValues(_Vext, _nVar, _idn,_Vj);
 	}
 
@@ -160,6 +162,8 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 }
 
 void IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices(const long &i,const long &j, const bool &IsBord){
+	//entree: indices des cellules Vi et Vj.
+	//Attention : Vj peut être un état fantôme
 	//sortie: matrices et etat de diffusion (rho, q) ou (p, v) ?
 	_idm[0] = _nVar*i;
 	for(int k=1; k<_nVar; k++)
@@ -203,7 +207,7 @@ void IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices(const long &i,con
 
 	if(_timeScheme==Implicit)
 	{
-		double mu = _fluides[0]->getViscosity(_Vdiff[_nVar-1]);
+		double mu = _fluides[0]->getViscosity(_Temperature);
 		for(int i=0; i<_nVar*_nVar;i++)
 			_Diffusion[i] = 0;
 		for(int i=1;i<(_nVar-1);i++)
@@ -213,7 +217,7 @@ void IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices(const long &i,con
 
 void IsothermalSinglePhase::convectionMatrices()
 {
-	//entree: URoe = rho, u, 1/c
+	//entree: URoe = rho, u, 1/c^2
 	//sortie: matrices Roe+  et Roe-
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
@@ -578,21 +582,14 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 		bool isBord)
 
 {
-	double lambda = _fluides[0]->getConductivity(_Udiff[_nVar-1]);
-	double mu     = _fluides[0]->getViscosity(_Udiff[_nVar-1]);
-
-	if(isBord )
-		lambda=max(lambda,_heatTransfertCoeff);//wall nucleate boing -> larger heat transfer
-
-	if(lambda==0 && mu ==0 && _heatTransfertCoeff==0)
-		return;
+	double mu     = _fluides[0]->getViscosity(_Temperature);
 
 	_idm[0] = 0;
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
 	if(isBord)
 	{
-		VecGetValues(_Uextdiff, _nVar, _idm, _Uj);
+		VecGetValues(_Vextdiff, _nVar, _idm, _Vj);
 		_inv_dxj=_inv_dxi;
 	}
 
