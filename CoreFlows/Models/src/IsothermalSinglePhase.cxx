@@ -167,8 +167,6 @@ void IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices(const long &i,con
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	for(int k=0; k<_nVar; k++)
-		_idn[k] = k;
 
 	if(IsBord)
 		_Vj=_Vextdiff;
@@ -470,9 +468,6 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 {
 	double mu     = _fluides[0]->getViscosity(_Temperature);
 
-	_idm[0] = 0;
-	for(int k=1; k<_nVar; k++)
-		_idm[k] = _idm[k-1] + 1;
 	if(isBord)
 	{
 		_Vj = _Vextdiff;
