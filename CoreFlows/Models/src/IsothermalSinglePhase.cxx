@@ -61,8 +61,8 @@ void IsothermalSinglePhase::initialize(){
 	*_runLogFile<<"\n Initialising the isothermal single phase model\n"<<endl;
 
 	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
-	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vextdiff);
-	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
+	_Vextdiff= new double[_nVar];
+	_Vext= new double[_nVar];
 
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
@@ -79,9 +79,7 @@ void IsothermalSinglePhase::initialize(){
 }
 
 void IsothermalSinglePhase::terminate(){
-	delete[] _Vdiff;
-	VecDestroy(&_Vextdiff);
-	VecDestroy(&_Vext);
+	delete[] _Vdiff,_Vextdiff,_Vext;
 	ProblemFluid::terminate();
 }
 
@@ -118,11 +116,7 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
 	}
 	else
-	{
-		for(int k=0; k<_nVar; k++)
-			_idn[k] = k;
-		VecGetValues(_Vext, _nVar, _idn,_Vj);
-	}
+		_Vj=_Vext;
 
 	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -177,7 +171,7 @@ void IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices(const long &i,con
 		_idn[k] = k;
 
 	if(IsBord)
-		VecGetValues(_Vextdiff, _nVar, _idn, _Vj);
+		_Vj=_Vextdiff;
 	else
 		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 
@@ -464,12 +458,8 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 	_idm[0] = 0;
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
-	VecAssemblyBegin(_Vext);
-	VecAssemblyBegin(_Vextdiff);
-	VecSetValues(_Vext, _nVar, _idm, _externalStates, INSERT_VALUES);
-	VecSetValues(_Vextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-	VecAssemblyEnd(_Vext);
-	VecAssemblyEnd(_Vextdiff);
+	_Vext = _externalStates;
+	_Vextdiff = _externalStates;
 }
 
 void IsothermalSinglePhase::addDiffusionToSecondMember
@@ -485,7 +475,7 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 		_idm[k] = _idm[k-1] + 1;
 	if(isBord)
 	{
-		VecGetValues(_Vextdiff, _nVar, _idm, _Vj);
+		_Vj = _Vextdiff;
 		_inv_dxj=_inv_dxi;
 	}
 

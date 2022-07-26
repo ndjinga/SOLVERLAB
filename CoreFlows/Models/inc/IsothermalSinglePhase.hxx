@@ -83,8 +83,7 @@ protected :
 	bool _saveAllFields;
 	
 	//Vecteurs nécessaires pour utilisation variables primitives dans schéma de Newton
-	Vec _Vextdiff, _Vext;
-	double *_Vdiff;
+	double * _Vextdiff, *_Vext, *_Vdiff;
 	
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);
