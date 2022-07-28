@@ -138,6 +138,8 @@ def WaveSystemSpectrum( cfl, my_mesh, filename, num_scheme):
     divMat.diagonalShift(1/dt)#only after  filling all coefficients
     divMat.viewNonZeroStructure( 0, "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme)
     divMat.saveToFile( "FiniteVolumesMatrixOn"+meshName+"_WaveSystem"+num_scheme,  True)
+    
+    #Plot the spectrum of the linear system matrix
     X,Y=divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_WaveSystem"+num_scheme)
     plt.xlim((min(X)-50)*1.1, (max(X)+50)*1.1)
     plt.ylim((min(Y)-10)*1.1, (max(Y)+10)*1.1)

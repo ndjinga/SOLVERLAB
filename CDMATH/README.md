@@ -1,20 +1,7 @@
-CDMATH
-======
+SOLVERLAB-CDMATH
+================
 
-CDMATH is a geometrical and numerical toolbox designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The library originates from [CDMATH](http://cdmath.jimdo.com), a collaborative workgroup with the same name. It is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of matrices and linear solvers. The library is currently developed for linux distributions and is maintained on Ubuntu 14.04 LTS, 16.04 LTS, 18.04 LTS and 20.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
-
-- [The physical models](./Documentation/PhysicalModels.md)
-    - [The linear scalar problems](./Documentation/PhysicalModels/ScalarModelsPage.ipynb)
-        - [The transport equation](./Documentation/PhysicalModels/TransportEq.ipynb) for pure advection phenomena
-        - [The diffusion equation](./Documentation/PhysicalModels/DiffusionEq.ipynb) for pure diffusion phenomena
-    - [The compressible Navier-Stokes equations](./Documentation/PhysicalModels/NSModelsPage.ipynb)
-    - [The two-phase flow models](./Documentation/PhysicalModels/TwoPhasePage.ipynb)
-        - [The drift model](./Documentation/PhysicalModels/TwoPhase/DriftModelPage.ipynb) with two partial masses, one momentum and one energy equation
-        - [The isothermal two-fluid model](./Documentation/PhysicalModels/TwoPhase/IsothermalPage.ipynb) with two partial masses and two momentum equations (no energy equation)
-        - [The five equation two-fluid model](./Documentation/PhysicalModels/TwoPhase/FiveEqPage.ipynb) with two partial masses, two momentum equations and one energy equation
-- [Software structure](Documentation/software.md)
-- [Summary of  available functionalities](Documentation/functionalities.ipynb)
-- [Some example scripts](Documentation/examples.md)
+SOLVERLAB-CDMATH is a geometrical and numerical toolbox designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The library originates from [CDMATH](http://cdmath.jimdo.com), a collaborative workgroup with the same name. It is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://petsc.org/release/) for the handling of matrices and linear solvers. The library is currently developed for linux distributions and is maintained on Ubuntu 14.04 LTS, 16.04 LTS, 18.04 LTS and 20.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
 
 Examples of use
 ---------------
@@ -73,17 +60,17 @@ Compile and install CDMATH
 Simpler build for a minimum version:
 * `cmake ../cdmath-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PETSC=ON -DCDMATH_WITH_PYTHON=ON `  
 > This will download and build the following dependencies
-> - PETSc from http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.15.0.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.15.0.tar.gz
+> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
 > - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
-> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
-> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.7.0.tar.gz
+> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
+> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
 
 Advanced build for an all-options version:
 * `cmake ../cdmath-master -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DCDMATH_WITH_PETSC=ON -DCDMATH_WITH_PYTHON=ON  -DCDMATH_WITH_POSTPRO=ON -DCDMATH_WITH_TESTS=ON -DCDMATH_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}`  
 > This assumes that you have an existing 
 > - install of PETSc (with submodules SLEPC and HDF5) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
-> See the instructions given in [the official documentation](http://www.mcs.anl.gov/petsc/documentation/installation.html)
+> See the instructions given in [the official documentation](https://petsc.org/release/install/)
 > - install of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
 > - install of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
 

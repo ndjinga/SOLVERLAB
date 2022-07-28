@@ -113,7 +113,7 @@ public :
 	void abortTimeStep();
 
 	/** \fn iterateTimeStep
-	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence
+	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence of the Newton scheme
 	 * @param
 	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
 	 * */
@@ -201,7 +201,7 @@ public :
 	};
 
 	/** \fn setConductivity
-	 * \brief sets the vector of conductivity coefficients
+	 * \brief sets the conductivity coefficients of each fluid
 	 * @param conductivite is a vector of size equal to the number of phases and containing the conductivity of each phase
 	 * @return throws an exception if the input vector size is not equal to the number of phases
 	 * */
@@ -210,14 +210,6 @@ public :
 			throw CdmathException("ProblemFluid::setConductivity: incorrect vector size vs number of phases");
 		for(int i=0;i<_nbPhases;i++)
 			_fluides[i]->setConductivity(conductivite[i]);
-	};
-
-	/** \fn setGravity
-	 * \brief sets the gravity force in the model
-	 * @param gravite is a vector of size equal to the space dimension
-	 * 				 * */
-	void setGravity(vector<double> gravite){
-		_GravityField3d = gravite;
 	};
 
 	/** \fn setDragCoeffs
@@ -230,9 +222,17 @@ public :
 			throw CdmathException("ProblemFluid::setDragCoeffs: incorrect vector size vs number of phases");
 		for(int i=0;i<_nbPhases;i++)
 		{
-			_fluides[i]->setDragCoeffs(dragCoeffs[i]);
+			_fluides[i]->setDragCoeff(dragCoeffs[i]);
 			_dragCoeffs[i]=dragCoeffs[i];
 		}
+	};
+
+	/** \fn setGravity
+	 * \brief sets the gravity force in the model
+	 * @param gravite is a vector of size equal to the space dimension
+	 * 				 * */
+	void setGravity(vector<double> gravite){
+		_GravityField3d = gravite;
 	};
 
 	/** \fn getNumberOfPhases
@@ -489,11 +489,7 @@ protected :
 	int _pressureCorrectionOrder;
 
 	/** Fluid equation of state **/
-	vector<	Fluide* > _fluides;
-	//!Viscosity coefficients 
-	vector<double> _viscosite;
-	//!Conductivity coefficients 
-	vector<double> _conductivite;
+	vector<	CompressibleFluid* > _fluides;//ToDo replace this by a vector of Fluide once the classes needing compressible fluids have been modified adequately
 
 	/** Source terms **/
 	vector<double> _gravite, _GravityField3d, _gravityReferencePoint, _dragCoeffs;//_GravityField3d has size _Ndim whereas _gravite has size _Nvar and is usefull for dealing with source term and implicitation of gravity vector
@@ -510,7 +506,7 @@ protected :
 	bool _usePrimitiveVarsInNewton;
 
 	// Variables du schema numerique 
-	Vec _conservativeVars, _newtonVariation, _bScaling,_old, _primitiveVars, _Uext,_Uextdiff ,_vecScaling,_invVecScaling, _Vext;
+	Vec _conservativeVars, _newtonVariation, _bScaling,_old, _primitiveVars, _Uext,_Uextdiff ,_vecScaling,_invVecScaling;
 	//courant state vector, vector computed at next time step, second member of the equation
 	PetscScalar *_AroePlus, *_AroeMinus,*_Jcb,*_JcbDiff, *_a, *_blockDiag,  *_invBlockDiag,*_Diffusion, *_GravityImplicitationMatrix;
 	PetscScalar *_Aroe, *_absAroe, *_signAroe, *_invAroe;
@@ -529,10 +525,10 @@ protected :
 	bool solveNewtonPETSc();//Use PETSc Newton methods to solve time step
 
 	/** \fn computeNewtonVariation
-	 * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk in a Newton scheme
+	 * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk (or Vkp1-Vk for primitive variables) in the Newton scheme
 	 * @param void
 	 * */
-	virtual void computeNewtonVariation();
+	void computeNewtonVariation();
 
 	/** \fn computeNewtonRHS
 	 * \brief Builds the right hand side F_X(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
@@ -715,7 +711,7 @@ protected :
 	 * \Details pure virtual, implemented by each model
 	 * @pram V : primitive vector state
 	 * 	 */
-	//void primToConsJacobianMatrix(double *V)=0;
+	virtual void primToConsJacobianMatrix(double *V)=0;
 
 	/** \fn getRacines
 	 * \brief Computes the roots of a polynomial

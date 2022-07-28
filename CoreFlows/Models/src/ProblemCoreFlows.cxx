@@ -69,7 +69,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	/* Monitoring of simulation */
 	_restartWithNewTimeScheme=false;
 	_restartWithNewFileName=false;
-	_fileName = "myCoreFlowsProblem";
+	_fileName = "mySolverLabProblem";
 	_freqSave = 1;
 	_verbose = false;
 	_system = false;
@@ -526,8 +526,8 @@ bool ProblemCoreFlows::run()
 		// Guess the next time step length
 		_dt=computeTimeStep(stop);
 		if (stop){
-			PetscPrintf(PETSC_COMM_WORLD,"Failed computing time step %d, time = %.2f, dt= %.2e, stopping calculation",_nbTimeStep,_time,_dt);
-			*_runLogFile << "Failed computing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
+			PetscPrintf(PETSC_COMM_WORLD,"Failed computing dt (computeTimeStep) for time step %d, current time = %.2f, returned dt= %.2e, stopping calculation",_nbTimeStep+1,_time,_dt);
+			*_runLogFile << "Failed computing (computeTimeStep) dt for time step "<<_nbTimeStep+1<<", current time = " << _time <<", returned dt= "<<_dt<<", stopping calculation"<< endl;
 			break;
 		}
 		// Loop on the time interval tries
@@ -536,8 +536,8 @@ bool ProblemCoreFlows::run()
 			stop=!initTimeStep(_dt);
 			// Prepare the next time step
 			if (stop){
-				PetscPrintf(PETSC_COMM_WORLD,"Failed initializing time step %d, time = %.2f, dt= %.2e, stopping calculation",_nbTimeStep,_time,_dt);
-				*_runLogFile << "Failed initializing time step "<<_nbTimeStep<<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
+				PetscPrintf(PETSC_COMM_WORLD,"Failed initializing dt (initTimeStep) for time step %d, time = %.2f, dt= %.2e, stopping calculation",_nbTimeStep+1,_time,_dt);
+				*_runLogFile << "Failed initializing dt for time step (initTimeStep) "<<_nbTimeStep+1 <<", time = " << _time <<", dt= "<<_dt<<", stopping calculation"<< endl;
 				break;
 			}
 			// Solve the next time step
@@ -556,19 +556,19 @@ bool ProblemCoreFlows::run()
 					//_dt=computeTimeStep(stop);
 				}
 				else{*/
-					PetscPrintf(PETSC_COMM_WORLD,"Failed solving time step %d, time = %.2f, dt= %.2e, cfl = %.2f, stopping calculation \n",_nbTimeStep,_time,_dt,_cfl);
-					*_runLogFile << "Failed solving time step "<<_nbTimeStep<<", _time = " << _time<<" _dt= "<<_dt<<", cfl= "<<_cfl <<", stopping calculation"<< endl;
+					PetscPrintf(PETSC_COMM_WORLD,"Failed solving time step %d (solveTimeStep), time = %.2f, dt= %.2e, cfl = %.2f, stopping calculation \n",_nbTimeStep+1,_time,_dt,_cfl);
+					*_runLogFile << "Failed solving time step "<<_nbTimeStep+1<<" (solveTimeStep), _time = " << _time<<" _dt= "<<_dt<<", cfl= "<<_cfl <<", stopping calculation"<< endl;
 					stop=true; // Impossible to solve the next time step, the Problem has given up
 					break;
 				//}
 			}
 			else // The resolution was successful, validate and go to the next time step.
 			{
-				validateTimeStep();
-				if ((_nbTimeStep-1)%_freqSave ==0){
-					PetscPrintf(PETSC_COMM_WORLD,"Time step = %d, dt = %.2e, time = %.2f, ||Un+1-Un||= %.2e\n\n",_nbTimeStep,_dt,_time,_erreur_rel);
-					*_runLogFile << "Time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
+				if (_nbTimeStep%_freqSave ==0){
+					PetscPrintf(PETSC_COMM_WORLD,"Solved time step = %d, dt = %.2e, time = %.2f, ||Un+1-Un||= %.2e\n\n",_nbTimeStep+1,_dt,_time,_erreur_rel);
+					*_runLogFile << "Solved time step = "<< _nbTimeStep+1 << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
 				}
+				validateTimeStep();
 			}
 		}
 	}
@@ -588,7 +588,7 @@ bool ProblemCoreFlows::run()
 		PetscPrintf(PETSC_COMM_WORLD,"Error problem wants to stop!\n");
 		*_runLogFile<<"Error problem wants to stop!"<<endl;
 	}
-	PetscPrintf(PETSC_COMM_WORLD,"End of calculation at time t = %.2f and time step number %d\n",_time,_nbTimeStep);
+	PetscPrintf(PETSC_COMM_WORLD,"End of calculation at time t = %.2f and time step number %d\n",_time,_nbTimeStep+1);
 	*_runLogFile << "End of calculation time t= " << _time << " at time step number "<< _nbTimeStep << endl;
 
 	_runLogFile->close();
@@ -634,7 +634,7 @@ bool ProblemCoreFlows::solveTimeStep(){
 	while(!converged && ok && _NEWTON_its < _maxNewtonIts){
 		ok=iterateTimeStep(converged);//resolution du systeme lineaire si schema implicite
 
-		if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)//To monitor the convergence of the newton scheme
+		if(_timeScheme == Implicit && _nbTimeStep%_freqSave ==0)//To monitor the convergence of the newton scheme
 		{
 			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %s iterations : %d maximum variation ||Uk+1-Uk||: %.2e\n",_NEWTON_its,_ksptype,_PetscIts,_erreur_rel);
 			*_runLogFile<< " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< " maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
@@ -659,7 +659,7 @@ bool ProblemCoreFlows::solveTimeStep(){
 			*_runLogFile<<"iterateTimeStep: solving Newton iteration "<<_NEWTON_its<<" Failed"<<endl;
 		}
 	}
-	else if(_timeScheme == Implicit && (_nbTimeStep-1)%_freqSave ==0)
+	else if(_timeScheme == Implicit && _nbTimeStep%_freqSave ==0)
 	{
 		PetscPrintf(PETSC_COMM_WORLD,"Nombre d'iterations de Newton %d, Nombre max d'iterations %s : %d\n\n",_NEWTON_its, _ksptype, _MaxIterLinearSolver);
 		*_runLogFile <<endl;

@@ -40,13 +40,15 @@ IsothermalTwoFluid::IsothermalTwoFluid(pressureEstimate pEstimate, int dim){
 
 	_fileName = "SolverlabIsothermalTwoFluid";
     PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal two-fluid problem for two phase flow\n");
+    
+    _usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
 }
 
 void IsothermalTwoFluid::initialize(){
 	cout<<"\n Initialising the isothermal two-fluid model\n"<<endl;
 	*_runLogFile<<"\n Initialising the isothermal two-fluid model\n"<<endl;
 
-	_Uroe = new double[_nVar+1];
+	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
 
 	_guessalpha = _VV(0,0);
 
@@ -56,7 +58,7 @@ void IsothermalTwoFluid::initialize(){
 		_gravite[i+1]=_GravityField3d[i];
 		_gravite[i+1 +_Ndim+1]=_GravityField3d[i];
 	}
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
 	if(_saveVelocity){
 		_Vitesse1=Field("Gas velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
@@ -66,6 +68,33 @@ void IsothermalTwoFluid::initialize(){
 		_entropicShift=vector<double>(3,0);
 
 	ProblemFluid::initialize();
+}
+
+bool IsothermalTwoFluid::iterateTimeStep(bool &converged)
+{   //The class does not allow the use of primitive variables in Newton iterations
+	if(_timeScheme == Explicit || !_usePrimitiveVarsInNewton)
+		return ProblemFluid::iterateTimeStep(converged);
+	else
+		throw CdmathException("IsothermalTwoFluid can not use primitive variables in Newton scheme for implicit in time discretisation");
+
+	if( fabs(_err_press_max) > _precision)//la pression n'a pu être calculée en diphasique à partir des variables conservatives
+	{
+		cout<<"Warning consToPrim/primToCons: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
+		*_runLogFile<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
+		converged=false;
+		return false;
+	}
+	if( _nbTimeStep%_freqSave ==0){
+		if(_minm1<-_precision || _minm2<-_precision)
+		{
+			cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+			*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+		}
+		if (_nbVpCplx>0){
+			cout << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
+			*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
+		}
+	}
 }
 
 void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bool &IsBord){
@@ -88,7 +117,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		VecGetValues(_Uext, _nVar, _idm, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
 		for(int k =0; k<_nVar; k++)
@@ -117,7 +146,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		_idm[k] = _idm[k-1] + 1;
 	VecGetValues(_primitiveVars, _nVar, _idm, _l);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Etat de Roe, etat primitif gauche: "<<endl;
 		for(int i =0; i<_nVar; i++)
@@ -139,7 +168,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		VecGetValues(_primitiveVars, _nVar, _idm, _r);
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Etat de Roe, etat primitif droite: "<<endl;
 		for(int i =0; i<_nVar; i++)
@@ -186,7 +215,7 @@ void IsothermalTwoFluid::convectionState( const long &i, const long &j, const bo
 		else
 			_Uroe[2+k+_Ndim] = (xi/ri1 + xj/rj1)/(ri1 + rj1);
 	}
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Etat de Roe calcule: "<<endl;
 		for(int k=0;k<_nVar; k++)//At this point _Uroe[_nVar] is not yet set
@@ -277,7 +306,7 @@ void IsothermalTwoFluid::convectionMatrices()
 		if (abs(pol_car[ct])<_precision*_precision)
 			pol_car[ct]=0;
 	}
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"pol caract= "<<endl;
 		for(int i =0; i<5; i++)
@@ -346,7 +375,7 @@ void IsothermalTwoFluid::convectionMatrices()
 		valeurs_propres[1]=tmp;
 	}
 	 */
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<" Vp apres tri " << valeurs_propres.size()<<endl;
 		for(int ct =0; ct<taille_vp; ct++)
@@ -529,13 +558,12 @@ void IsothermalTwoFluid::convectionMatrices()
 		_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
 	}
 	if(_timeScheme==Implicit && _usePrimitiveVarsInNewton)//Implicitation using primitive variables
-		for(int i=0; i<_nVar*_nVar;i++)
-			_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
+		throw CdmathException("IsothermalTwoFluid can not use primitive variables in Newton scheme for implicit in time discretisation");
 	else
 		for(int i=0; i<_nVar*_nVar;i++)
 			_AroeMinusImplicit[i] = _AroeMinus[i];
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<endl<<"Matrice de Roe"<<endl;
 		for(int i=0; i<_nVar;i++)
@@ -581,7 +609,7 @@ void IsothermalTwoFluid::setBoundaryState(string nameOfGroup, const int &j,doubl
 		q2_n+=_externalStates[(k+1+1+_Ndim)]*normale[k];
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Boundary conditions for group "<< nameOfGroup<< ", inner cell j= "<<j << " face unit normal vector "<<endl;
 		for(k=0; k<_Ndim; k++){
@@ -709,7 +737,7 @@ void IsothermalTwoFluid::setBoundaryState(string nameOfGroup, const int &j,doubl
 		VecAssemblyEnd(_Uext);
 		VecAssemblyEnd(_Uextdiff);
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"Etat fantôme InletPressure"<<endl;
 			for(int k=0;k<_nVar;k++)
@@ -781,7 +809,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " << i<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -805,7 +833,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 		consToPrim(_phi,_Vj);
 	}
 
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " <<j <<endl;
 		for(int q=0; q<_nVar; q++)
@@ -830,7 +858,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille " << i << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -850,7 +878,7 @@ void IsothermalTwoFluid::addDiffusionToSecondMember
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille  " << j << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -914,7 +942,7 @@ void IsothermalTwoFluid::sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscSca
 			_GravityImplicitationMatrix[i*_nVar+_nVar/2]=-_gravite[i];
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"IsothermalTwoFluid::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
@@ -974,7 +1002,7 @@ void IsothermalTwoFluid::pressureLossVector(PetscScalar * pressureLoss, double K
 		for(int i=0;i<_Ndim;i++)
 			pressureLoss[2+i+_Ndim]=-K*m2*norm_u2*Vj[2+i+_Ndim];
 	}
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"IsothermalTwoFluid::pressureLossVector K= "<<K<<endl;
 		cout<<"Ui="<<endl;
@@ -1096,7 +1124,7 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	vector< complex<double> > vp_left = getRacines(pol_car);
 	int taille_vp_left = Polynoms::new_tri_selectif(vp_left,vp_left.size(),_precision);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Entropic shift left eigenvalues: "<<endl;
 		for(unsigned int ct =0; ct<vp_left.size(); ct++)
@@ -1135,7 +1163,7 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	vector< complex<double> > vp_right = getRacines(pol_car);
 	int taille_vp_right = Polynoms::new_tri_selectif(vp_right,vp_right.size(),_precision);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Entropic shift right eigenvalues: "<<endl;
 		for(unsigned int ct =0; ct<vp_right.size(); ct++)
@@ -1147,7 +1175,7 @@ void IsothermalTwoFluid::entropicShift(double* n)
 	_entropicShift[1]=0;
 	for(int i=1;i<min(taille_vp_right-1,taille_vp_left-1);i++)
 		_entropicShift[1] = max(_entropicShift[1],abs(vp_left[i]-vp_right[i]));
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"eigenvalue jumps "<<endl;
 		cout<< _entropicShift[0] << ", " << _entropicShift[1] << ", "<< _entropicShift[2] <<endl;
@@ -1295,6 +1323,11 @@ void IsothermalTwoFluid::primToCons(const double *P, const int &i, double *W, co
 
 }
 
+void IsothermalTwoFluid::primToConsJacobianMatrix(double *V)
+{//Todo compute de jacobian matrix of constoprim
+	throw CdmathException("FiveEqsTwoFluid::primToConsJacobianMatrix not yet implemented");
+}
+
 void IsothermalTwoFluid::consToPrim(const double *Wcons, double* Wprim,double porosity)//To do: treat porosity
 {
 	//P=alpha,p,u1,u2
@@ -1373,14 +1406,14 @@ void IsothermalTwoFluid::consToPrim(const double *Wcons, double* Wprim,double po
 				_guessalpha=alphanewton;
 
 
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+			if(_verbose && _nbTimeStep%_freqSave ==0)
 				cout<<"consToPrim diphasique iter= " <<iter<<" dp= " << dp<<" dpprim= " << dpprim<< " _guessalpha= " << _guessalpha<<endl;
 			dp=ecartPression( m1, m2, _guessalpha, e1, e2);
 			dpprim=ecartPressionDerivee( m1, m2, _guessalpha, e1, e2);
 
 			iter++;
 		}
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout<<endl;
 
 		if(iter>=iterMax)
@@ -1390,6 +1423,12 @@ void IsothermalTwoFluid::consToPrim(const double *Wcons, double* Wprim,double po
 			// 		_guessalpha=1;
 			// 	      else
 			// 		_guessalpha=0;
+		}
+		if(_nbPhases==2 && fabs(_err_press_max) > _precision)//la pression n'a pu être calculée en diphasique à partir des variables conservatives
+		{
+			*_runLogFile<<"!!! consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
+			cout<<"!!! consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
+			throw CdmathException("!!! consToPrim: nbiter max atteint");
 		}
 		if(_guessalpha>0.5)
 			Wprim[1]=_fluides[0]->getPressure((m1/_guessalpha)*e1,m1/_guessalpha);

@@ -1,23 +1,24 @@
 #include "StiffenedGas.hxx"
 #include <iostream>
+#include "EosException.hxx"
 
-//Perfect gas EOS Loi d'etat gaz parfait
-StiffenedGas::StiffenedGas( double gamma, double cv, double T_ref, double e_ref): Fluide()
+//Perfect gas EOS with given gamma
+StiffenedGas::StiffenedGas( double gamma, double cv, double T_ref, double e_ref): CompressibleFluid()
 {
 	if(gamma -1<=0)
-		throw CdmathException("StiffenedGas::StiffenedGas: gamma<1");
+		throw EosException("StiffenedGas::StiffenedGas: gamma<1");
 	_gamma=gamma;
 	_Cv=cv;
 	_Cp=_gamma*_Cv;
-	_p0=0;
 	_Tref=T_ref;
 	_e_ref=e_ref;
+	_p0=0;
 	_q=0;
 	cout<<"Perfect gas EOS P=(gamma - 1) * rho e with parameter"<< " gamma= " << _gamma<<endl;
-	cout<<"Linearised internal energy law e(T)=  e_ref+ cv_ref (T-Tref), around temperature Tref= "<< _Tref<<" K, internal energy e_ref= "<<_e_ref<<" J/Kg, with specific heat cv_ref= "<< _Cv<<" J/Kg/K"<<endl;
+	cout<<"Linearised internal energy law e(T)=  e_ref+ cv_ref (T-Tref), around temperature Tref= "<< _Tref<<" K, internal energy e_ref= "<<_e_ref<<" J/Kg, and specific heat cv_ref= "<< _Cv<<" J/Kg/K"<<endl;
 }
-//Stiffened gas fitted using sound speed
-StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_ref, double c_ref, double cv_ref): Fluide()
+//Stiffened gas fitted using sound speed (gamma computed from reference sound speed, pressure and internal energy
+StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_ref, double c_ref, double cv_ref): CompressibleFluid()
 {
 	//Old formula
 	//_gamma=(1+sqrt(1+4*c_ref*c_ref/(cv_ref*T_ref)))/2;
@@ -25,7 +26,7 @@ StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_
 	_e_ref=e_ref;
 	_gamma=1+c_ref*c_ref/(_e_ref+p_ref/rho_ref);
 	if(_gamma -1<=0)
-		throw CdmathException("StiffenedGas::setEOS: gamma<1");
+		throw EosException("StiffenedGas error gamma<1");
 	_Tref=T_ref;
 	_Cv=cv_ref;
 	_Cp=_gamma*_Cv;
@@ -39,7 +40,7 @@ StiffenedGas::StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_
 StiffenedGasDellacherie::StiffenedGasDellacherie( double gamma, double p0, double q, double cv_ref)
 {
 	if(gamma -1<=0)
-		throw CdmathException("StiffenedGas::StiffenedGas: gamma<1");
+		throw EosException("StiffenedGas::StiffenedGas: gamma<1");
 	_gamma=gamma;
 	_Cv=cv_ref;
 	_Cp=_gamma*_Cv;

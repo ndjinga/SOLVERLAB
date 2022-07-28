@@ -40,29 +40,32 @@ SinglePhase::SinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, b
 			*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
 			_fluides[0] = new StiffenedGas(102,_Pref,_Tref,2.44e6, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C
 		}
-		else{//To do : change to normal regime: 155 bars and 573K
-			cout<<"Fluid is water around saturation point 155 bars and 618 K (345°C)"<<endl;
-			*_runLogFile<<"Fluid is water around saturation point 155 bars and 618 K (345°C)"<<endl;
+		else{
+			cout<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
+			*_runLogFile<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
 			if(_useDellacherieEOS)
 				_fluides[0]= new StiffenedGasDellacherie(2.35,1e9,-1.167e6,1816); //stiffened gas law for water from S. Dellacherie
 			else
-				_fluides[0]= new StiffenedGas(594.,_Pref,_Tref,1.6e6, 621.,3100.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
+				_fluides[0]= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
 	}
 
 	_fileName = "SolverlabSinglePhase";
     PetscPrintf(PETSC_COMM_WORLD,"\n Navier-Stokes equations for single phase flow\n");
 }
+
 void SinglePhase::initialize(){
 	cout<<"\n Initialising the Navier-Stokes model\n"<<endl;
 	*_runLogFile<<"\n Initialising the Navier-Stokes model\n"<<endl;
 
-	_Uroe = new double[_nVar];
+	_Uroe = new double[_nVar];//Deleted in ProblemFluid::terminate()
+
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
 		_gravite[i+1]=_GravityField3d[i];
 
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
+
 	if(_saveVelocity || _saveAllFields)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
 
@@ -88,231 +91,6 @@ void SinglePhase::initialize(){
 	ProblemFluid::initialize();
 }
 
-bool SinglePhase::iterateTimeStep(bool &converged)
-{
-	if(_timeScheme == Explicit || !_usePrimitiveVarsInNewton)
-		return ProblemFluid::iterateTimeStep(converged);
-	else
-	{
-		bool stop=false;
-
-		if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
-			_maxvp=0;
-			computeTimeStep(stop);
-		}
-		if(stop){//Le compute time step ne s'est pas bien passé
-			cout<<"ComputeTimeStep failed"<<endl;
-			converged=false;
-			return false;
-		}
-
-		computeNewtonVariation();
-
-		//converged=convergence des iterations
-		if(_timeScheme == Explicit)
-			converged=true;
-		else{//Implicit scheme
-
-			KSPGetIterationNumber(_ksp, &_PetscIts);
-			if( _MaxIterLinearSolver < _PetscIts)//save the maximum number of iterations needed during the newton scheme
-				_MaxIterLinearSolver = _PetscIts;
-			if(_PetscIts>=_maxPetscIts)//solving the linear system failed
-			{
-				cout<<"Systeme lineaire : pas de convergence de Petsc. Itérations maximales "<<_maxPetscIts<<" atteintes"<<endl;
-				*_runLogFile<<"Systeme lineaire : pas de convergence de Petsc. Itérations maximales "<<_maxPetscIts<<" atteintes"<<endl;
-				converged=false;
-				return false;
-			}
-			else{//solving the linear system succeeded
-				//Calcul de la variation relative Uk+1-Uk
-				_erreur_rel = 0.;
-				double x, dx;
-				int I;
-				for(int j=1; j<=_Nmailles; j++)
-				{
-					for(int k=0; k<_nVar; k++)
-					{
-						I = (j-1)*_nVar + k;
-						VecGetValues(_newtonVariation, 1, &I, &dx);
-						VecGetValues(_primitiveVars, 1, &I, &x);
-						if (fabs(x)*fabs(x)< _precision)
-						{
-							if(_erreur_rel < fabs(dx))
-								_erreur_rel = fabs(dx);
-						}
-						else if(_erreur_rel < fabs(dx/x))
-							_erreur_rel = fabs(dx/x);
-					}
-				}
-			}
-			converged = _erreur_rel <= _precision_Newton;
-		}
-
-		double relaxation=1;//Vk+1=Vk+relaxation*deltaV
-
-		VecAXPY(_primitiveVars,  relaxation, _newtonVariation);
-
-		//mise a jour du champ primitif
-		updateConservatives();
-
-		if(_nbPhases==2 && fabs(_err_press_max) > _precision)//la pression n'a pu être calculée en diphasique à partir des variables conservatives
-		{
-			cout<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-			*_runLogFile<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-			converged=false;
-			return false;
-		}
-		if(_system)
-		{
-			cout<<"Vecteur Vkp1-Vk "<<endl;
-			VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
-			cout << "Nouvel etat courant Vk de l'iteration Newton: " << endl;
-			VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
-		}
-
-		if(_nbPhases==2 && (_nbTimeStep-1)%_freqSave ==0){
-			if(_minm1<-_precision || _minm2<-_precision)
-			{
-				cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
-				*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
-			}
-
-			if (_nbVpCplx>0){
-				cout << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
-				*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
-			}
-		}
-		_minm1=1e30;
-		_minm2=1e30;
-		_nbMaillesNeg=0;
-		_nbVpCplx =0;
-		_part_imag_max=0;
-
-		return true;
-	}
-}
-void SinglePhase::computeNewtonVariation()
-{
-	if(!_usePrimitiveVarsInNewton)
-		ProblemFluid::computeNewtonVariation();
-	else
-	{
-		if(_verbose)
-		{
-			cout<<"Vecteur courant Vk "<<endl;
-			VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-			cout << "Matrice du système linéaire avant contribution delta t" << endl;
-			MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-			cout << "Second membre du système linéaire avant contribution delta t" << endl;
-			VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-		}
-		if(_timeScheme == Explicit)
-		{
-			VecCopy(_b,_newtonVariation);
-			VecScale(_newtonVariation, _dt);
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-			{
-				cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
-				VecView(_newtonVariation,PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-		}
-		else
-		{
-			MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-
-			VecAXPY(_b, 1/_dt, _old);
-			VecAXPY(_b, -1/_dt, _conservativeVars);
-
-			for(int imaille = 0; imaille<_Nmailles; imaille++){
-				_idm[0] = _nVar*imaille;
-				for(int k=1; k<_nVar; k++)
-					_idm[k] = _idm[k-1] + 1;
-				VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-				primToConsJacobianMatrix(_Vi);
-				for(int k=0; k<_nVar*_nVar; k++)
-					_primToConsJacoMat[k]*=1/_dt;
-				MatSetValuesBlocked(_A, 1, &imaille, 1, &imaille, _primToConsJacoMat, ADD_VALUES);
-			}
-			MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-
-#if PETSC_VERSION_GREATER_3_5
-			KSPSetOperators(_ksp, _A, _A);
-#else
-			KSPSetOperators(_ksp, _A, _A,SAME_NONZERO_PATTERN);
-#endif
-
-			if(_verbose)
-			{
-				cout << "Matrice du système linéaire" << endl;
-				MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-				cout << "Second membre du système linéaire" << endl;
-				VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-
-			if(_conditionNumber)
-				KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
-			if(!_isScaling)
-			{
-				KSPSolve(_ksp, _b, _newtonVariation);
-			}
-			else
-			{
-				computeScaling(_maxvp);
-				int indice;
-				VecAssemblyBegin(_vecScaling);
-				VecAssemblyBegin(_invVecScaling);
-				for(int imaille = 0; imaille<_Nmailles; imaille++)
-				{
-					indice = imaille;
-					VecSetValuesBlocked(_vecScaling,1 , &indice, _blockDiag, INSERT_VALUES);
-					VecSetValuesBlocked(_invVecScaling,1,&indice,_invBlockDiag, INSERT_VALUES);
-				}
-				VecAssemblyEnd(_vecScaling);
-				VecAssemblyEnd(_invVecScaling);
-
-				if(_system)
-				{
-					cout << "Matrice avant le preconditionneur des vecteurs propres " << endl;
-					MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-					cout << "Second membre avant le preconditionneur des vecteurs propres " << endl;
-					VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-				}
-				MatDiagonalScale(_A,_vecScaling,_invVecScaling);
-				if(_system)
-				{
-					cout << "Matrice apres le preconditionneur des vecteurs propres " << endl;
-					MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-				}
-				VecCopy(_b,_bScaling);
-				VecPointwiseMult(_b,_vecScaling,_bScaling);
-				if(_system)
-				{
-					cout << "Produit du second membre par le preconditionneur bloc diagonal  a gauche" << endl;
-					VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-				}
-
-				KSPSolve(_ksp,_b, _bScaling);
-				VecPointwiseMult(_newtonVariation,_invVecScaling,_bScaling);
-			}
-			if(_system)
-			{
-				cout << "solution du systeme lineaire local:" << endl;
-				VecView(_newtonVariation, PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-		}
-	}
-}
 void SinglePhase::convectionState( const long &i, const long &j, const bool &IsBord){
 	//First conservative state then further down we will compute interface (Roe) state and then compute primitive state
 	_idm[0] = _nVar*i; 
@@ -327,7 +105,7 @@ void SinglePhase::convectionState( const long &i, const long &j, const bool &IsB
 		VecGetValues(_Uext, _nVar, _idm, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
 		for(int k =0; k<_nVar; k++)
@@ -350,14 +128,14 @@ void SinglePhase::convectionState( const long &i, const long &j, const bool &IsB
 	ri = sqrt(_Ui[0]);//racine carre de phi_i rho_i
 	rj = sqrt(_Uj[0]);
 	_Uroe[0] = ri*rj;	//moyenne geometrique des densites
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout << "Densité moyenne Roe  gauche " << i << ": " << ri*ri << ", droite " << j << ": " << rj*rj << "->" << _Uroe[0] << endl;
 	for(int k=0;k<_Ndim;k++){
 		xi = _Ui[k+1];
 		xj = _Uj[k+1];
 		_Uroe[1+k] = (xi/ri + xj/rj)/(ri + rj);
 		//"moyenne" des vitesses
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+1] << endl;
 	}
 	// H = (rho E + p)/rho
@@ -382,10 +160,10 @@ void SinglePhase::convectionState( const long &i, const long &j, const bool &IsB
 	xj = (xj + pj)/(rj*rj);
 	_Uroe[_nVar-1] = (ri*xi + rj*xj)/(ri + rj);
 	//on se donne l enthalpie ici
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout << "Enthalpie totale de Roe H  gauche " << i << ": " << xi << ", droite " << j << ": " << xj << "->" << _Uroe[_nVar-1] << endl;
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection interfacial state"<<endl;
 		for(int k=0;k<_nVar;k++)
@@ -398,7 +176,7 @@ void SinglePhase::convectionState( const long &i, const long &j, const bool &IsB
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Convection state: variables primitives maille " << i<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -421,7 +199,7 @@ void SinglePhase::convectionState( const long &i, const long &j, const bool &IsB
 		consToPrim(_phi,_Vj,1);
 	}
 
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Convection state: variables primitives maille " <<j <<endl;
 		for(int q=0; q<_nVar; q++)
@@ -445,7 +223,7 @@ void SinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const b
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "SinglePhase::diffusionStateAndMatrices cellule gauche" << i << endl;
 		cout << "Ui = ";
@@ -462,7 +240,7 @@ void SinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const b
 	for(int k=0; k<_nVar; k++)
 		_Udiff[k] = (_Ui[k]/_porosityi+_Uj[k]/_porosityj)/2;
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "SinglePhase::diffusionStateAndMatrices conservative diffusion state" << endl;
 		cout << "_Udiff = ";
@@ -505,7 +283,7 @@ void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *norm
 
 	double porosityj=_porosityField(j);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< " face unit normal vector "<<endl;
 		for(int k=0; k<_Ndim; k++){
@@ -614,7 +392,7 @@ void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *norm
 			}
 			_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);//Composante fantome de l'nrj
 		}
-		else if((_nbTimeStep-1)%_freqSave ==0)
+		else if(_nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid possibly going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
 
 		_idm[0] = 0;
@@ -679,13 +457,13 @@ void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *norm
 			}
 			_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
 		}
-		else if((_nbTimeStep-1)%_freqSave ==0)
+		else if(_nbTimeStep%_freqSave ==0)
 		{
 			/*
 			 * cout<< "Warning : fluid going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
 			 */ 
 			VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On définit l'état fantôme avec l'état interne
-			if((_nbTimeStep-1)%_freqSave ==0)
+			if(_nbTimeStep%_freqSave ==0)
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Wall boundary condition."<<endl;
 			
 			//Changing external state momentum
@@ -752,11 +530,11 @@ void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *norm
 		}
 		else{
 			/*
-			if((_nbTimeStep-1)%_freqSave ==0)
+			if(_nbTimeStep%_freqSave ==0)
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Neumann boundary condition for velocity and temperature (only pressure value is imposed as in outlet BC)."<<endl;
 			_externalStates[0]=porosityj*_fluides[0]->getDensity(_limitField[nameOfGroup].p+hydroPress, _externalStates[_nVar-1]);
 			*/
-			if((_nbTimeStep-1)%_freqSave ==0)
+			if(_nbTimeStep%_freqSave ==0)
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Wall boundary condition."<<endl;
 			_externalStates[0]=porosityj*_fluides[0]->getDensity(_externalStates[0]+hydroPress, _externalStates[_nVar-1]);
 			//Changing external state velocity
@@ -789,7 +567,7 @@ void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *norm
 		for(int k=0; k<_Ndim; k++)
 			q_n+=_externalStates[(k+1)]*normale[k];
 
-		if(q_n < -_precision &&  (_nbTimeStep-1)%_freqSave ==0)
+		if(q_n < -_precision &&  _nbTimeStep%_freqSave ==0)
         {
 			cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<" with flow rate "<< q_n<<endl;
             cout<< "Applying Neumann boundary condition for velocity and temperature"<<endl;
@@ -804,7 +582,7 @@ void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *norm
 		}
 		hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"Cond lim outlet densite= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
 			cout<<"Cond lim outlet pression ref= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
@@ -846,7 +624,7 @@ void SinglePhase::convectionMatrices()
 	//entree: URoe = rho, u, H
 	//sortie: matrices Roe+  et Roe-
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"SinglePhase::convectionMatrices()"<<endl;
 
 	double u_n=0, u_2=0;//vitesse normale et carré du module
@@ -884,7 +662,7 @@ void SinglePhase::convectionMatrices()
 		if(_maxvploc>_maxvp)
 			_maxvp=_maxvploc;
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout<<"SinglePhase::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
 
 		RoeMatrixConservativeVariables( u_n, H,vitesse,k,K);
@@ -964,7 +742,7 @@ void SinglePhase::convectionMatrices()
 					_AroePlusImplicit[i]  = _AroePlus[i];
 				}
 		}
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			displayMatrix(_Aroe, _nVar,"Matrice de Roe");
 			displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
@@ -973,7 +751,7 @@ void SinglePhase::convectionMatrices()
 		}
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0 && _timeScheme==Implicit)
+	if(_verbose && _nbTimeStep%_freqSave ==0 && _timeScheme==Implicit)
 	{
 		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinusImplicit");
 		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlusImplicit");
@@ -1061,7 +839,7 @@ void SinglePhase::addDiffusionToSecondMember
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille " << i << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1077,7 +855,7 @@ void SinglePhase::addDiffusionToSecondMember
 
 		_idn[0] = j;
 		VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout << "Contribution diffusion au 2nd membre pour la maille  " << j << ": "<<endl;
 			for(int q=0; q<_nVar; q++)
@@ -1086,7 +864,7 @@ void SinglePhase::addDiffusionToSecondMember
 		}
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0 && _timeScheme==Implicit)
+	if(_verbose && _nbTimeStep%_freqSave ==0 && _timeScheme==Implicit)
 	{
 		cout << "Matrice de diffusion D, pour le couple (" << i << "," << j<< "):" << endl;
 		for(int i=0; i<_nVar; i++)
@@ -1136,7 +914,7 @@ void SinglePhase::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar *
 			}
 		}
 	}
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"SinglePhase::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
@@ -1181,7 +959,7 @@ void SinglePhase::pressureLossVector(PetscScalar * pressureLoss, double K, Petsc
 	}
 	pressureLoss[_nVar-1]=-1/2*K*rho*norm_u*norm_u*norm_u;
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"SinglePhase::pressureLossVector K= "<<K<<endl;
 		cout<<"Ui="<<endl;
@@ -1225,7 +1003,7 @@ void SinglePhase::porosityGradientSourceVector()
 
 void SinglePhase::jacobian(const int &j, string nameOfGroup,double * normale)
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite convection bord "<< nameOfGroup<<endl;
 
 	int k;
@@ -1444,7 +1222,7 @@ void SinglePhase::jacobian(const int &j, string nameOfGroup,double * normale)
 //calcule la jacobienne pour une CL de diffusion
 void  SinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite diffusion bord "<< nameOfGroup<<endl;
 
 	int k;
@@ -1593,7 +1371,7 @@ void SinglePhase::primToConsJacobianMatrix(double *V)
 		throw CdmathException("SinglePhase::primToConsJacobianMatrix: eos should be StiffenedGas or StiffenedGasDellacherie");
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<" SinglePhase::primToConsJacobianMatrix" << endl;
 		displayVector(_Vi,_nVar," _Vi " );
@@ -1621,7 +1399,7 @@ void SinglePhase::consToPrim(const double *Wcons, double* Wprim,double porosity)
 		Wprim[k] = Wcons[k]/Wcons[0];//velocity u
 	Wprim[(_Ndim+2)-1] =  _fluides[0]->getTemperatureFromPressure(Wprim[0],Wcons[0]/porosity);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"ConsToPrim Vecteur conservatif"<<endl;
 		for(int k=0;k<_nVar;k++)
@@ -1651,7 +1429,7 @@ void SinglePhase::entropicShift(double* n)//TO do: make sure _Vi and _Vj are wel
 	_entropicShift[1]=fabs(ul_n     - ur_n);
 	_entropicShift[2]=fabs(ul_n+cl - (ur_n+cr));
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Entropic shift left eigenvalues: "<<endl;
 		cout<<"("<< ul_n-cl<< ", " <<ul_n<<", "<<ul_n+cl << ")";
@@ -1665,7 +1443,7 @@ void SinglePhase::entropicShift(double* n)//TO do: make sure _Vi and _Vj are wel
 }
 
 Vector SinglePhase::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"SinglePhase::convectionFlux start"<<endl;
 		cout<<"Ucons"<<endl;
@@ -1695,7 +1473,7 @@ Vector SinglePhase::convectionFlux(Vector U,Vector V, Vector normale, double por
 		F(1+i)=phirho*vitessen*vitesse(i)+pression*normale(i)*porosity;
 	F(1+_Ndim)=phirho*(e_int+0.5*vitesse*vitesse+pression/rho)*vitessen;
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"SinglePhase::convectionFlux end"<<endl;
 		cout<<"Flux F(U,V)"<<endl;
@@ -1827,7 +1605,7 @@ void SinglePhase::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, doub
 
 Vector SinglePhase::staggeredVFFCFlux()
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"SinglePhase::staggeredVFFCFlux() start"<<endl;
 
 	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
@@ -1883,7 +1661,7 @@ Vector SinglePhase::staggeredVFFCFlux()
 			Fj=convectionFlux(Uj,Vj,normale,_porosityj);
 			Fij=(Fi+Fj)/2;//+_maxvploc*(Ui-Uj)/2;
 		}
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"SinglePhase::staggeredVFFCFlux() endf uijn="<<uijn<<endl;
 			cout<<Fij<<endl;
@@ -1894,7 +1672,7 @@ Vector SinglePhase::staggeredVFFCFlux()
 
 void SinglePhase::staggeredVFFCMatricesConservativeVariables(double un)//vitesse normale de Roe en entrée
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"SinglePhase::staggeredVFFCMatrices()"<<endl;
 
 	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
@@ -1947,7 +1725,7 @@ void SinglePhase::staggeredVFFCMatricesConservativeVariables(double un)//vitesse
 			if(_maxvploc>_maxvp)
 				_maxvp=_maxvploc;
 
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+			if(_verbose && _nbTimeStep%_freqSave ==0)
 				cout<<"Valeurs propres "<<ui_n-cj<<" , "<<ui_n<<" , "<<ui_n+cj<<endl;
 
 			/******** Construction de la matrice A^+ *********/
@@ -2014,7 +1792,7 @@ void SinglePhase::staggeredVFFCMatricesConservativeVariables(double un)//vitesse
 			if(_maxvploc>_maxvp)
 				_maxvp=_maxvploc;
 
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+			if(_verbose && _nbTimeStep%_freqSave ==0)
 				cout<<"Valeurs propres "<<uj_n-ci<<" , "<<uj_n<<" , "<<uj_n+ci<<endl;
 
 			/******** Construction de la matrice A^+ *********/
@@ -2188,7 +1966,7 @@ void SinglePhase::staggeredVFFCMatricesConservativeVariables(double un)//vitesse
 
 void SinglePhase::staggeredVFFCMatricesPrimitiveVariables(double un)//vitesse normale de Roe en entrée
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"SinglePhase::staggeredVFFCMatricesPrimitiveVariables()"<<endl;
 
 	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
@@ -2212,7 +1990,7 @@ void SinglePhase::staggeredVFFCMatricesPrimitiveVariables(double un)//vitesse no
 			uj_n += _Vj[1+i]*_vec_normal[i];
 		}
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0){
+		if(_verbose && _nbTimeStep%_freqSave ==0){
 			cout <<"SinglePhase::staggeredVFFCMatricesPrimitiveVariables " << endl;
 			cout<<"Vecteur primitif _Vi" << endl;
 			for(int i=0;i<_nVar;i++)
@@ -2253,7 +2031,7 @@ void SinglePhase::staggeredVFFCMatricesPrimitiveVariables(double un)//vitesse no
 					if(_maxvploc>_maxvp)
 						_maxvp=_maxvploc;
 
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"Valeurs propres "<<ui_n-cj<<" , "<<ui_n<<" , "<<ui_n+cj<<endl;
 
 					/******** Construction de la matrice A^+ *********/
@@ -2329,7 +2107,7 @@ void SinglePhase::staggeredVFFCMatricesPrimitiveVariables(double un)//vitesse no
 					if(_maxvploc>_maxvp)
 						_maxvp=_maxvploc;
 
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"Valeurs propres "<<uj_n-ci<<" , "<<uj_n<<" , "<<uj_n+ci<<endl;
 
 					/******** Construction de la matrice A^+ *********/
@@ -2418,7 +2196,7 @@ void SinglePhase::staggeredVFFCMatricesPrimitiveVariables(double un)//vitesse no
 					if(_maxvploc>_maxvp)
 						_maxvp=_maxvploc;
 
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"Valeurs propres "<<ui_n-cj<<" , "<<ui_n<<" , "<<ui_n+cj<<endl;
 
 					/******** Construction de la matrice A^+ *********/
@@ -2495,7 +2273,7 @@ void SinglePhase::staggeredVFFCMatricesPrimitiveVariables(double un)//vitesse no
 					if(_maxvploc>_maxvp)
 						_maxvp=_maxvploc;
 
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"Valeurs propres "<<uj_n-ci<<" , "<<uj_n<<" , "<<uj_n+ci<<endl;
 
 					/******** Construction de la matrice A^+ *********/
@@ -2720,12 +2498,12 @@ void SinglePhase::getDensityDerivatives( double pressure, double temperature, do
 	}
 	else
 	{
-		*_runLogFile<< "SinglePhase::staggeredVFFCMatricesPrimitiveVariables: eos should be StiffenedGas or StiffenedGasDellacherie" << endl;
+		*_runLogFile<< "SinglePhase::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie" << endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::staggeredVFFCMatricesPrimitiveVariables: eos should be StiffenedGas or StiffenedGasDellacherie");
+		throw CdmathException("SinglePhase::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie");
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"_drho_sur_dp= "<<_drho_sur_dp<<", _drho_sur_dT= "<<_drho_sur_dT<<endl;
 		cout<<"_drhoE_sur_dp= "<<_drhoE_sur_dp<<", _drhoE_sur_dT= "<<_drhoE_sur_dT<<endl;

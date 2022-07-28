@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Project name
 project (CoreFlows C CXX)
 set (COREFLOWS_VERSION_MAJOR 9)
-set (COREFLOWS_VERSION_MINOR 8)
+set (COREFLOWS_VERSION_MINOR 9)
 
 # CDMATH project options (deprecated, see SOLVERLAB options)
 set (COREFLOWS_WITH_DOCUMENTATION ON CACHE STRING "Generate documentation for CoreFlows use")
@@ -41,7 +41,7 @@ set (CoreFlows_EXAMPLES ${CoreFlows_SOURCE_DIR}/examples)
 
 set( CoreFlows_INCLUDES 
   ${CDMATH_INCLUDES}											    #
-  ${PETSC_INCLUDES}											    #
+  ${PETSC_INCLUDES}#Contains SLEPC include files											    #
   ${CoreFlows_MODELS}/inc											    #    
   ${CoreFlows_MODELS}/inc/EOS   										    #    
   )													    #
@@ -97,8 +97,6 @@ endif(COREFLOWS_WITH_GUI)                                                       
 													    #
 INCLUDE_DIRECTORIES(						   					    #
   ${CoreFlows_INCLUDES}											    #
-  ${PETSC_INCLUDES}
-  ${SLEPC_INCLUDES}
   )													    #
 													    #
 SET(MAIN_SOURCES											    #

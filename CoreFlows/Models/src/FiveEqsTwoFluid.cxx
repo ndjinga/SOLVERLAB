@@ -48,6 +48,8 @@ FiveEqsTwoFluid::FiveEqsTwoFluid(pressureEstimate pEstimate, int dim){
 
 	_fileName = "SolverlabFiveEquationTwoFluid";
     PetscPrintf(PETSC_COMM_WORLD,"\n Five equation two-fluid problem for two phase flow\n");
+    
+    _usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
 }
 
 void FiveEqsTwoFluid::initialize()
@@ -58,10 +60,9 @@ void FiveEqsTwoFluid::initialize()
 	if(static_cast<StiffenedGas*>(_fluides[0])==NULL || static_cast<StiffenedGas*>(_fluides[1])==NULL)
 		throw CdmathException("!!!!!!!!FiveEqsTwoFluid::initialize: both phase must have stiffened gas EOS");
 
-	_Uroe = new double[_nVar+1];
+	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
+	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 
-	_lCon = new PetscScalar[_nVar];//should be deleted in ::terminate
-	_rCon = new PetscScalar[_nVar];//should be deleted in ::terminate
 	_JacoMat = new PetscScalar[_nVar*_nVar];//should be deleted in ::terminate
 
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
@@ -70,7 +71,7 @@ void FiveEqsTwoFluid::initialize()
 		_gravite[i+1]=_GravityField3d[i];
 		_gravite[i+1 +_Ndim+1]=_GravityField3d[i];
 	}
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
 	if(_saveVelocity){
 		_Vitesse1=Field("Gas velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
@@ -81,6 +82,34 @@ void FiveEqsTwoFluid::initialize()
 		_entropicShift=vector<double>(_nVar);
 
 	ProblemFluid::initialize();
+}
+
+void FiveEqsTwoFluid::terminate()
+{
+	delete _JacoMat;
+	VecDestroy(&_Vext);
+	ProblemFluid::terminate();
+}
+
+bool FiveEqsTwoFluid::iterateTimeStep(bool &converged)
+{   //The class does not allow the use of primitive variables in Newton iterations
+	if(_timeScheme == Explicit || !_usePrimitiveVarsInNewton)
+		return ProblemFluid::iterateTimeStep(converged);
+	else
+		throw CdmathException("FiveEqsTwoFluid can not use primitive variables in Newton scheme for implicit in time discretisation");
+
+	if( _nbTimeStep%_freqSave ==0)
+	{
+		if(_minm1<-_precision || _minm2<-_precision)
+		{
+			cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+			*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+		}
+		if (_nbVpCplx>0){
+			cout << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
+			*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
+		}
+	}
 }
 
 void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool &IsBord){
@@ -100,7 +129,7 @@ void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool 
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection Left state cell " << i<< ": "<<endl;
 		for(int k =0; k<_nVar; k++)
@@ -146,7 +175,7 @@ void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool 
 			_idm[k] = _idm[k-1] + 1;
 		VecGetValues(_primitiveVars, _nVar, _idm, _r);
 	}
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"_l: "<<endl;
 		for(int k=0;k<_nVar; k++)
@@ -196,7 +225,7 @@ void FiveEqsTwoFluid::convectionState( const long &i, const long &j, const bool 
 
 	//Fin du remplissage dans la fonction convectionMatrices
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Etat de Roe calcule: "<<endl;
 		for(int k=0;k<_nVar; k++)
@@ -321,7 +350,7 @@ void FiveEqsTwoFluid::sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar
 			_GravityImplicitationMatrix[i*_nVar+_nVar/2]=-_gravite[i];
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"FiveEqsTwoFluid::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
@@ -384,7 +413,7 @@ void FiveEqsTwoFluid::pressureLossVector(PetscScalar * pressureLoss, double K, P
 	}
 	pressureLoss[_nVar-1]=-K*(m1*norm_u1*norm_u1*norm_u1+m2*norm_u2*norm_u2*norm_u2);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"FiveEqsTwoFluid::pressureLossVector K= "<<K<<endl;
 		cout<<"Ui="<<endl;
@@ -894,7 +923,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 	for (int i=0; i<_nVar*_nVar; i++)
 		Aroe[i] = _Aroe[i];
 
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<endl<<"Matrice de Roe"<<endl;
 		for(int i=0; i<_nVar;i++)
@@ -934,7 +963,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		taille_vp =1;
 	}
 	else{
-		if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if (_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			for(int i=0; i<_nVar; i++)
 				cout<<" Vp real part " << egvaReal[i]<<", Imaginary part " << egvaImag[i]<<endl;
@@ -960,7 +989,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 		valeurs_propres_dist=vector< complex< double > >(taille_vp);
 		for( int i=0 ; i<taille_vp ; i++)
 			valeurs_propres_dist[i] = valeurs_propres[i];
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<" Vp apres tri " << valeurs_propres_dist.size()<<endl;
 			for(int ct =0; ct<taille_vp; ct++)
@@ -1150,7 +1179,7 @@ void FiveEqsTwoFluid::convectionMatrices()
 			}
 		}
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"valeurs propres"<<endl;
 			for( int i=0 ; i<taille_vp ; i++)
@@ -1225,13 +1254,12 @@ void FiveEqsTwoFluid::convectionMatrices()
 		_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
 	}
 	if(_timeScheme==Implicit && _usePrimitiveVarsInNewton)//Implicitation using primitive variables
-		for(int i=0; i<_nVar*_nVar;i++)
-			_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
+		throw CdmathException("FiveEqsTwoFluid can not use primitive variables in Newton scheme for implicit in time discretisation");
 	else
 		for(int i=0; i<_nVar*_nVar;i++)
 			_AroeMinusImplicit[i] = _AroeMinus[i];
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Matrice de Roe"<<endl;
 		for(int i=0; i<_nVar;i++){
@@ -1369,7 +1397,7 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		u2_n+=_Vj[(k+2+_Ndim)]*normale[k];
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Boundary conditions for group "<< nameOfGroup<< ", inner cell j= "<<j << " face unit normal vector "<<endl;
 		for(k=0; k<_Ndim; k++){
@@ -1623,7 +1651,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " << i<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1649,7 +1677,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 		consToPrim(_phi,_Vj);
 	}
 
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " <<j <<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1673,7 +1701,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille " << i << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1693,7 +1721,7 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille  " << j << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1793,6 +1821,11 @@ void FiveEqsTwoFluid::primToCons(const double *P, const int &i, double *W, const
 		u2_sq+=P[i*_nVar+(k+2)+_Ndim]*P[i*_nVar+(k+2)+_Ndim];
 	}
 	W[j*_nVar+_nVar-1] += (W[j*_nVar]*u1_sq+W[j*_nVar+1+_Ndim]*u2_sq)*0.5;
+}
+
+void FiveEqsTwoFluid::primToConsJacobianMatrix(double *V)
+{//Todo compute de jacobian matrix of constoprim
+	throw CdmathException("FiveEqsTwoFluid::primToConsJacobianMatrix not yet implemented");
 }
 
 void FiveEqsTwoFluid::consToPrim(const double *Wcons, double* Wprim,double porosity)//To do: treat porosity
@@ -1926,13 +1959,13 @@ void FiveEqsTwoFluid::entropicShift(double* n, double& vpcorr0, double& vpcorr1)
 		}
 		int sizeLeft =  Polynoms::new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
 		int sizeRight =  Polynoms::new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
-		if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if (_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<" Eigenvalue of JacoMat Left: " << endl;
 			for(int i=0; i<sizeLeft; i++)
 				cout<<eigValuesLeft[i] << ", "<<endl;
 		}
-		if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if (_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<" Eigenvalue of JacoMat Right: " << endl;
 			for(int i=0; i<sizeRight; i++)
@@ -2000,7 +2033,7 @@ void FiveEqsTwoFluid::entropicShift(double* n)
 	}
 	int sizeLeft =  Polynoms::new_tri_selectif(eigValuesLeft, eigValuesLeft.size(), _precision);
 	int sizeRight =  Polynoms::new_tri_selectif(eigValuesRight, eigValuesRight.size(), _precision);
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<" Eigenvalue of JacoMat Left: " << endl;
 		for(int i=0; i<sizeLeft; i++)

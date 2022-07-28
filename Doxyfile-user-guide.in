@@ -32,7 +32,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = SOLVERLAB-developer-guide
+PROJECT_NAME           = SOLVERLAB-user-guide
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -58,7 +58,7 @@ PROJECT_LOGO           = @PROJECT_SOURCE_DIR@/logoSOLVERLAB.png
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/doc/dev-doc
+OUTPUT_DIRECTORY       = @PROJECT_BINARY_DIR@/doc/user-doc
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -753,14 +753,11 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = @PROJECT_SOURCE_DIR@/README.md \
-                         @PROJECT_SOURCE_DIR@/CDMATH/base \
-                         @PROJECT_SOURCE_DIR@/CDMATH/mesh \
-                         @PROJECT_SOURCE_DIR@/CDMATH/linearsolver \
-                         @PROJECT_SOURCE_DIR@/CDMATH/README.md \
-                         @PROJECT_SOURCE_DIR@/CoreFlows/README.md \
-                         @PROJECT_SOURCE_DIR@/CoreFlows/Models \
-                         @PROJECT_SOURCE_DIR@/CoreFlows/Documentation \
+INPUT                  =@PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DPoissonEF/ \
+                         @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DPoissonVF/ \
+                         @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DDiffusion/ \
+                         @PROJECT_SOURCE_DIR@/CDMATH/tests/doc/2DPoisson_StiffBC/ \
+                          @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/ \
                          @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/PhysicalModels/\
                          @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/PhysicalModels/TwoPhase/
 
@@ -782,10 +779,7 @@ INPUT_ENCODING         = UTF-8
 # *.md, *.mm, *.dox, *.py, *.f90, *.f, *.for, *.tcl, *.vhd, *.vhdl, *.ucf,
 # *.qsf, *.as and *.js.
 
-FILE_PATTERNS          = *.cxx \
-                         *.hxx \
-			 *.h   \
-			 *.dox
+FILE_PATTERNS          = *.dox
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -800,7 +794,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/intro-user-guide.dox
+EXCLUDE                = @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/intro-dev-guide.dox
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -904,7 +898,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE =
+USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/CoreFlows/Documentation/intro-user-guide.dox
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing

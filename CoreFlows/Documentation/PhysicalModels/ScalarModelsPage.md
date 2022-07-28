@@ -7,6 +7,7 @@ The stationary diffusion equation
 $$
  -\lambda\triangle T = \Phi+\lambda_{sf}(T_f-T)
 $$
+
 where
 - $T$ the main unknown is the solid temperature field
 - $\lambda$ is the solid thermal conductivity possibly set by the user (default value is 1)
@@ -14,13 +15,15 @@ where
 - $\lambda_{sf}$ is the fluid-solid heat transfer coefficient set by the user (default value is 0)
 - $T_f$ is the fluid temperature field provided by the user
 
-See the [Stationary diffusion equation page](StationaryDiffusionEq.ipynb)
+See the [Stationary diffusion equation page](StationaryDiffusionEq.md)
 
 The diffusion equation	
 ----------------------
+
 $$
  \partial_t T =d\triangle T +\frac{ \Phi+\lambda_{sf}(T_f-T)}{\rho c_p}
 $$
+
 where
 - $T$ the main unknown is the rod temperature field
 - $\rho$ is the rod density assumed constant (default value 10000)
@@ -30,7 +33,7 @@ where
 - $\Phi$ is the heat source term if explicitely known (default value 0)
 - $T_f$ is the fluid temperature field provided by the user
 
-See the [Diffusion equation page](DiffusionEq.ipynb)
+See the [Diffusion equation page](DiffusionEq.md)
 
 The transport equation	
 ----------------------
@@ -49,6 +52,6 @@ where
 - $ \lambda_{sf}$ is the fluid-rod heat transfer coefficient provided by the user
 - $ c_p $ is the fluid specific heat, provided by the user and assumed constant
 
-See the [Transport equation page](TransportEq.ipynb)
+See the [Transport equation page](TransportEq.md)
 
 

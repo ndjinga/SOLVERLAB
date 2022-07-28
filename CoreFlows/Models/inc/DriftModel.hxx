@@ -9,7 +9,7 @@
 //============================================================================
 
 /*! \class DriftModel DriftModel.hxx "DriftModel.hxx"
- *  \brief Four equation two phase flow drift model
+ *  \brief Class simulating a mixture of two compressible fluid sharing the same velocity.Four equation two phase flow drift model
  *  \details One total mass equation, one vapour mass equation, one total momentum equation, one total energy equation, see \ref DriftModelPage for more details
  */
 #ifndef DRIFTMODEL_HXX_
@@ -26,8 +26,10 @@ public :
 	 * \param [in] bool : There are two possible equations of state for each phase
 	 *  */
 	DriftModel( pressureEstimate pEstimate, int dim, bool useDellacherieEOS=true);
-	//! system initialisation
+	//! system initialisation (allocations mémoire)
 	void initialize();
+	//!libération de la mémoire
+	void terminate();
 
 	//fonctions d'echange de flux
 	//	void getOutputField(const Vec &Flux, const string Champ, const int numBord)=0;//, PetscInt *indices_Flux, PetscInt *indices_Bord, const long range)=0;
@@ -204,6 +206,8 @@ protected :
 	bool _saveAllFields;
 	bool _useDellacherieEOS;
 
+    Vec _Vext;
+    
 	/** \fn convectionState
 	 * \brief calcule l'etat de Roe de deux etats
 	 * @param i,j sont des entiers qui correspondent aux numeros des cellules à gauche et à droite de l'interface
@@ -332,6 +336,8 @@ protected :
 	void computeScaling(double offset);
 
 	// Fonctions utilisant la loi d'etat 
+
+	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids so the constructor will dynamic_cast the fluids defined in the parent class ProblemFluid
 
 	/** \fn consToPrim
 	 * \brief computes the primitive vector state from a conservative vector state

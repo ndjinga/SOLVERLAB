@@ -76,7 +76,8 @@ enum saveFormat
 {
 	MED,/**< MED format is used  */
 	VTK,/**< VTK format is used */
-	CSV/**< CSV format is used */
+	CSV,/**< CSV format is used */
+	NOSAVING/**< Do not save results to hard disk */
 };
 
 //! enumeration TimeScheme

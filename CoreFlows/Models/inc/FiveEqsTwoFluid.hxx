@@ -9,7 +9,7 @@
 //============================================================================
 
 /*! \class FiveEqsTwoFluid FiveEqsTwoFluid.hxx "FiveEqsTwoFluid.hxx"
- *  \brief The model consists in the phasic mass and momentum balance equations and one mixture total energy balance equation.
+ *  \brief Class simulating a mixture of two compressible fluid sharing the same temperature. 
  *  \details The model consists in two phasic mass equations, two phasic momentum equations, one mixture energy equation, see \ref FiveEqPage for more details
  */
 
@@ -26,12 +26,22 @@ class FiveEqsTwoFluid : public ProblemFluid{
 			 * \param [in] int : mesh dimension
 			 *  */
 	FiveEqsTwoFluid(pressureEstimate pEstimate, int dim);
-	//initialisation du systeme
+
+	//!initialisation du systeme (allocations mémoire)
 	void initialize();
+	//!libération de la mémoire
+	void terminate();
 
 	void testConservation();
 
 	void save();
+
+	/** \fn iterateTimeStep
+	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence of the Newton scheme
+	 * @param
+	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
+	 * */
+	bool iterateTimeStep(bool &ok);
 
 	// Boundary conditions
 	/** \fn setIntletBoundaryCondition
@@ -86,9 +96,11 @@ class FiveEqsTwoFluid : public ProblemFluid{
 
   protected :
 	Field _Vitesse1,_Vitesse2;
-	PetscScalar *_lCon, *_rCon;	// left and right conservative vectors
 	PetscScalar * _JacoMat; //Jacobian matrix of the convection fluxes, used to compute the entropic corrections for the 5eqs two-fluid model
 	PetscReal *_realPart, *_imagPart;
+
+    Vec _Vext;
+    
 	double _intPressCoeff;
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);
@@ -125,6 +137,7 @@ class FiveEqsTwoFluid : public ProblemFluid{
 	void entropicShift(double* n);
 
 	// Functions of equations of states
+	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids so the constructor will dynamic_cast the fluids defined in the parent class ProblemFluid
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);

@@ -1,0 +1,114 @@
+/*!
+
+\mainpage SOLVERLAB user guide
+
+\section CFlows Presentation of SOLVERLAB
+
+SOLVERLAB is a geometrical and numerical C++/Python library designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The goal is to provide simple MATLAB style functions for the generation and manipulation of meshes, fields and matrices. The library is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://petsc.org/release/) for the handling of matrices and linear solvers. 
+
+SOLVERLAB includes PDE systems
+arising from the modeling of nuclear reactor cores which involves fluid dynamics, heat and neutron diffusion as well as solid elasticity. It
+is a simple environment meant at students and researchers for teachind and promote new numerical
+methods on general geometries with unstructured meshes.  
+
+The main research objectives of SOLVERLAB are the study of
+
+- Numerical schemes for compressible flows at low Mach numbers
+- Well balanced schemes for stiff source terms (heat source, phase change, pressure losses)
+- Flow inversion and counter-current two phase flows
+- Schemes that preserve the phasic volume fraction α ∈ [0, 1]
+- Convergence of finite volume methods
+- New preconditioners for implicit methods for two phase flows
+- The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
+
+
+\section Contents
+This document is the user guide of the SOLVERLAB library. It is organised as follows :
+
+- \subpage physicalmodels "The Physical Models" 
+	+ \subpage ScalarModelsPage "The linear scalar problems" 
+		-# \ref TransportEqPage 
+		-# \ref DiffusionEqPage 
+	+ \subpage NSModelsPage "The Navier-Stokes model" 
+	+ \subpage twophasePage "The two-phase flow models"
+		-# \subpage DriftModelPage "The Drift model"
+		-# \subpage IsothermalPage "The isothermal two-fluid model"
+		-# \subpage FiveEqPage "The five equation two-fluid model"	
+
+- \subpage software "Software structure"
+- \subpage numericalPage "The numerical methods"
+- Summary of available \subpage functionalities  "functionalities"
+- \subpage examples "SOLVERLAB example scripts"
+
+Examples of use
+---------------
+- [Examples of stable numerical methods for the 1D linear transport equation](../../../CDMATH/tests/share/doc/1DTransportEquation/RegularGrid/TransportEquation1D_RegularGrid.html)
+- [Shock formation and numerical capture issues for the 1D Burgers' equations](../../../CDMATH/tests/share/doc/1DBurgersEquation_ShockWave/BurgersEquation1D.html)
+- [Influence of the mesh on the convergence and low Mach precision for the UPWIND finite volume method applied to the 2D wave system](../../../CDMATH/tests/share/doc/2DWaveSystemVF_stationary/Convergence_WaveSystem_Upwind_SQUARE.html)
+- [Influence of the mesh on the convergence and low Mach precision  for the CENTERED finite volume method applied to the 2D wave system](../../../CDMATH/tests/share/doc/2DWaveSystemVF_stationary/Convergence_WaveSystem_Centered_SQUARE.html)
+- [Influence of the mesh on the convergence and low Mach precision  for the STAGGERED finite volume method applied to the 2D wave system](../../../CDMATH/tests/share/doc/2DWaveSystemVF_stationary/Convergence_WaveSystem_Staggered_SQUARE_squares.html)
+- [Influence of the mesh on the convergence and low Mach precision  for the PSEUDO-STAGGERED (colocated) finite volume method applied to the 2D wave system](../../../CDMATH/tests/share/doc/2DWaveSystemVF_stationary/Convergence_WaveSystem_PStag_SQUARE.html)
+- [Finite elements for the Poisson problem on a cube in 3D (by S. Kameni Ngwamou, PhD student)](../../../CDMATH/tests/share/doc/3DPoissonEF/FiniteElements3DPoisson_CUBE.html)
+- [Finite elements for the stationary diffusion of the temperature in a 3D room. Influence of the radiator position (by S. Kameni Ngwamou, PhD student)](../../../CDMATH/tests/share/doc/3DRoomCoolingEF/3DRoomCoolingEF.html)
+- [Surface Finite elements for the Poisson-Beltrami problem on a sphere in 3D (by M. Nguemfouo, PhD student)](../../../CDMATH/tests/share/doc/3DPoissonSphereEF/SynthesisConvergenceFESphere.pdf)
+- [Surface Finite elements for the Poisson-Beltrami problem on a torus in 3D (by M. Nguemfouo, PhD student)](../../../CDMATH/tests/share/doc/3DPoissonTorusEF/SynthesisConvergenceFETorus.pdf)
+
+\section runSolverlab Run SOLVERLAB from SALOME
+
+The easiest way to run SOLVERLAB is to launch the SOLVERLAB module of the SALOME platform :
+- download the binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15). 
+- after downloading the appropriate tar.gz archive, untar it in a folder mySALOME
+- run the file 'mySALOME/salome' in a terminal to launch SALOME
+- In the SALOME window, either 
+    - click on the SOLVERLAB icon to launch SOLVERLAB module window
+    - or use the SALOME python shell to run SOLVERLAB python scripts.
+
+\section installation Standalone compilation from sources
+However the SALOME binary file can be very large (up to 5GB). Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
+
+In order to build SOLVERLAB on your system you will need
+- the package [CMAKE](https://cmake.org/),
+- a C++  compiler such as  [g++](https://gcc.gnu.org/) 
+- optionally [Python3](https://www.python.org/downloads/) to run python language scripts 
+- optionally [ParaView](https://www.paraview.org/) for data visualisation.  
+
+Detailed instructions for compilation and use of standalone SOLVERLAB can be found here \subpage install "Standalone compilation of SOLVERLAB from sources".
+
+
+\section SolverlabInTerminal Use SOLVERLAB in a terminal
+
+<b>Running Python scripts</b>
+
+If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
+ - \verbatim source /path/to//SOLVERLAB_install/env_SOLVERLAB.sh\endverbatim
+To run SOLVERLAB with your Python code `main.py `, simply type in your terminal or your SALOME console
+ - \verbatim python3 main.py \endverbatim
+
+<b>Launching SOLVERLAB graphic interface from a terminal</b>
+
+If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
+ - \verbatim source /path/to//SOLVERLAB_install/env_SOLVERLAB.sh\endverbatim
+Then to use the Graphical User Interface of SOLVERLAB, simply type in your terminal
+ - \verbatim python3 $SOLVERLABGUI -g\endverbatim
+
+<b>Running C++ scripts</b>
+
+If performance or parallelism is an issue for your simulations, you can use SOLVERLAB librairies with your C++ code :
+ - C++ libraries: \verbatim export LD_LIBRARY_PATH=/path/to/SOLVERLAB_install/lib\endverbatim
+ - To know how to include the right libraries for compilation, see the makefiles of the examples. They include the list 
+  \verbatim -lmedC -lmedloader -lmedcoupling -lbase -lmesh -llinearsolver\endverbatim plus \em -lmpi if you are using a parallel version of SOLVERLAB.
+
+<b>SOLVERLAB environment variables</b>
+
+The SOLVERLAB environment variables consist in :
+ - SOLVERLAB C++ library path: `/path/to/SOLVERLAB_install/lib`
+ - SOLVERLAB Python library paths: `/path/to/SOLVERLAB_install/lib/SOLVERLAB:/path/to/SOLVERLAB_install/bin/SOLVERLAB`
+ - PETSc, SLEPc and HDF5 library path: `${PETSC_DIR}/${PETSC_ARCH}/lib`
+ - MED library path: `${MEDFILE_ROOT_DIR}/lib`
+ - MEDCOUPLING library path: `${MEDCOUPLING_ROOT_DIR}/lib`
+
+\section References 
+
+\subpage references "A specific page dedicated to references is available here".
+
+*/

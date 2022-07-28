@@ -1,123 +1,84 @@
 /*!
-\page install Installation and use of CoreFlows 
+\page install Standalone compilation of SOLVERLAB from sources
+
+\section prerequisites Prerequisites for the compilation of SOLVERLAB
+
+The following package list is sufficient on Ubuntu 20.04 :
+
+ - \em cmake3              (mandatory)
+ - \em g++                 or another C++ compiler (mandatory)
+ - \em python3-dev        , \em python3-numpy  and \em swig3  for python scripts (mandatory)
+ - \em pyqt5-dev-tools     to generate the Graphical User Interface (optional)
+ - \em python3-matplotlib , \em paraview-dev , \em libnetcdf-dev  (on Ubuntu 20.04) and \em python3-paraview  for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (optional)
+ - \em ffmpeg              and \em ffmpeg-devel  to generate an animation from a set of curves (optional)
+ - \em python3-sphinx      for the GUI documentation, and \em doxygen , \em graphviz  and \em mscgen  to generate a developper documentation. Use the compilation option \em -DSOLVERLAB_WITH_DOCUMENTATION=ON  (optional).
+ - \em libmpich-dev        or   libopenmpi-dev  for mpi parallelisation (optional)
+ - \em libcppunit-dev     , if you want to generate unit tests. Use the compilation option \em -DSOLVERLAB_WITH_TESTS=ON  (optional).
+ - \em rpm                , if you want to generate RPM installation packages. Use the compilation option \em -DSOLVERLAB_WITH_PACKAGE=ON  (optional).
 
 
-SOLVERLAB-CoreFlows is currently developped and maintained on Fedora and Ubuntu distributions.
-SOLVERLAB-CoreFlows relies on the numerical toolbox of the project [CDMATH]((http://cdmath.jimdo.com)) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
-You will need the packages  '\a cmake ', '\a gcc', '\a gfortran' and '\a hdf5', plus '\a doxygen' if you want to generate this documentation and '\a swig' if you want to use python scripts.
+\section downloadSources Download SOLVERLAB sources
 
-Download and compilation of CDMATH and PETSc
---------------------------------------------
-CDMATH can be downloaded and compiled together with PETSc in a single process, thanks to the cmake option -DCDMATH_WITH_PETSC=ON.
-First create and enter a working dir
-\verbatim 
- mkdir -p ~/workspace/cdmath
- cd ~/workspace/cdmath
-\endverbatim
+Download SOLVERLAB sources from GitHub
+- click on the following [link](https://github.com/ndjinga/SOLVERLAB/archive/master.zip), then unzip the file in a directory SOLVERLAB-master
+- or type the following in a terminal : \verbatim wget https://github.com/ndjinga/SOLVERLAB/archive/master.zip\endverbatim, then unzip the file in a directory SOLVERLAB-master
+- or clone the git repository to a folder SOLVERLAB-master:  \verbatim git clone https://github.com/ndjinga/SOLVERLAB.git SOLVERLAB-master\endverbatim
 
-In order to download the approriate branch of \ref cdmath either unzip the following file to a directory solverlab-master
-\verbatim 
- https://github.com/ndjinga/CDMATH/archive/master.zip
-\endverbatim
-or clone the git repository to a folder solverlab-master
-\verbatim 
-git clone https://github.com/ndjinga/CDMATH.git solverlab-master
-\endverbatim 
 
-In order to compile \ref cdmath you will need at least the libraries '\a cmake ', '\a gcc', '\a gfortran' , and '\a hdf5' plus optionally '\a swig' 'python-dev' and '\a numpy' if you intend to use \ref cdmath functions in your python scripts. 
+\section compileAndInstall Compile and install SOLVERLAB from source files
 
-Create build and install repositories:
-\verbatim 
- mkdir cdmath_build cdmath_install
-\endverbatim
+First create a directory named 'build' where the compilation will take place and open a terminal in that directory.
 
-Enter the build directory
-\verbatim 
- cd cdmath_build
-\endverbatim 
+<b> Simpler configuration for a minimum version:</b>
+- \verbatim cmake /path/to/SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON \endverbatim   
+> This will download and build the following dependencies
+> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
+> - F2CBLASLAPACK from https://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
+> - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
+> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
+> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
 
-Then run the commands
-\verbatim 
- cmake ../solverlab-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PYTHON=ON -DCDMATH_WITH_PETSC=ON
- make
- make install
-\endverbatim 
+<b>Advanced configuration for a complete version:</b>
+If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:
+- \verbatim cmake /path/to/SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON\endverbatim   
+> This assumes that you have an existing 
+> - installation of PETSc (with submodules SLEPC) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
+> See the instructions given in [the official documentation](https://petsc.org/release/install/)
+> - installation of MED                                    at the location given by the environment variable MEDFILE_ROOT_DIR
+> - installation of MEDCOUPLING                            at the location given by the environment variable MEDCOUPLING_ROOT_DIR
 
-By default, \ref cdmath will compile a new sequential installation of PETSc. If an installation of PETSc (version 3.4 or later) is already available in the system, it is possible to save time by first setting the environment variables PETSC_DIR and PETSC_ARCH to the appropriate values as can be found in petscconf.h, and then running the above cmake command.
+The 2 dependencies MED and MEDCOUPLING should have been compiled with the same version of HDF5  
+Warning : the linux package libhdf5-dev is generally not compatible with the libraries MED and MEDCoupling  
 
-Download and compilation of CoreFlows
----------------------------------------------
-First create and access a working directory :
-\verbatim
- mkdir -p ~/workspace/SOLVERLAB-CoreFlows
- cd ~/workspace/SOLVERLAB-CoreFlows
-\endverbatim
+<b>Compile and install:</b>
+- \verbatim make\endverbatim
+- \verbatim make install\endverbatim
 
-Now create build and install repositories:
-\verbatim
-mkdir SOLVERLAB-CoreFlows_build SOLVERLAB-CoreFlows_install
-\endverbatim
+\section runTests Run tests and documentation
 
-In order to download SOLVERLAB-CoreFlows either unzip the following file to a directory SOLVERLAB-CoreFlows-master
-\verbatim
- https://github.com/ndjinga/SOLVERLAB-CoreFlows/archive/master.zip
-\endverbatim
-or clone the git repository to a folder SOLVERLAB-CoreFlows-master
-\verbatim 
-git clone https://github.com/ndjinga/SOLVERLAB-CoreFlows.git SOLVERLAB-CoreFlows-master
-\endverbatim 
-Either of these latter commands results in the creation of a directory `~/workspace/SOLVERLAB-CoreFlows/SOLVERLAB-CoreFlows-master`  containing the source files.
+Run unit and example tests:
+- \verbatim make examples\endverbatim
 
-In the following steps we assume that 'PETSc' (version 3.4 or more recent) has been installed with 'CDMATH' with the process described above.
-You need to set the following variables 
-- `\a CDMATH_DIR`, the path to your CDMATH installation, for example  `~/workspace/cdmath/cdmath_install//share/petsc-3.8.3 `
-- `\a PETSC_DIR`, the path to your PETSc installation. If PETSc was installed by CDMATH then PETSC_DIR can be defined as `~/workspace/cdmath/cdmath_install`
-- `\a PETSC_ARCH`, the type of installation used (usually arch-linux2-c-opt or linux-gnu-c-opt)
-In order to do so, it is sufficient to source the 'CDMATH' environment file. Type in your linux terminal
-\verbatim
-source ~/workspace/cdmath/cdmath_install/env_CDMATH.sh
-\endverbatim
-Go to the build directory
-\verbatim
-cd SOLVERLAB-CoreFlows_build
-\endverbatim
+Run validation tests:
+- \verbatim make validation\endverbatim
 
-Then run the command
-\verbatim
-../SOLVERLAB-CoreFlows-master/configure  --prefix=../SOLVERLAB-CoreFlows_install/ --with-petsc-dir=$PETSC_DIR --with-petsc-arch=$PETSC_ARCH --with-cdmath-dir=$CDMATH_DIR --with-python --with-doc
-make doc install
-\endverbatim
-You can add the following optional commands
-- `--with-gui`, if you want to use SOLVERLAB-CoreFlows as a Salomé module (you will need to use a Salomé shell)
-- `--with-debug`, if you want to use SOLVERLAB-CoreFlows in debug mode instead of the default optimised mode
+Generate html user guide 
+- \verbatim make doc-user\endverbatim
 
-Use of CoreFlows
-----------------
-First load CoreFlows environment from the CoreFlows_install directory
-\verbatim
-source CoreFlows_install/env_CoreFlows.sh
-\endverbatim
+Generate html developer guide
+- \verbatim make doc\endverbatim
 
-- If you use C language: edit the file CoreFlows-master/main.cxx then in a terminal type
-\verbatim
-cd CoreFlows_build 
-make -j
-make install -j
-\endverbatim
-Then you can run the simulation in any directory with the command line
-\verbatim
-$CoreFlows
-\endverbatim
+\section parallelVersion Parallel version
 
-- If you use python language: edit your own python file my_file.py following for example the pattern of the file SOLVERLAB-CoreFlows-master/main.py. Then in a terminal type
-\verbatim
-python my_file.py
-\endverbatim
+To compile a parallel version of SOLVERLAB, you first need parallel C and C++ compilers and a parallel installation of the packages PETSc, MED and MEDCoupling.  
 
-- If you use the graphic interface, you need to run a Salomé Unix shell and type the command line
-\verbatim
-runSalome -mCOREFLOWS
-\verbatim
-then click on new study to open CoreFlows interface
+Then you need to add the following extra CMAKE parameters to the configuration step :  
+- \verbatim  -DMPI_HOME=${MPI_HOME} -DCMAKE_C_COMPILER=${MPI_C_COMPILER} -DCMAKE_CXX_COMPILER=${MPI_CXX_COMPILER} \endverbatim 
+
+where
+- MPI_HOME stores the location of the mpi library
+- MPI_C_COMPILER stores the location of the parallel C compiler
+- MPI_CXX_COMPILER stores the location of the parallel C++ compiler
 
 */

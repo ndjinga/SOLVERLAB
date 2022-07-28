@@ -9,6 +9,7 @@
 
 import cdmath
 import sys
+from matplotlib import pyplot as plt
 
 if len(sys.argv) >2 :#non rectangular mesh
     my_mesh = cdmath.Mesh(sys.argv[1])
@@ -75,7 +76,7 @@ for i in range(nbCells):
 
 print("Stiffness matrix construction done")
 Rigidite.viewNonZeroStructure( 0, "RigidityMatrix_FiniteVolumesOn"+mesh_name+"Laplace")
-Rigidite.plotEigenvalues("FiniteVolumesOn"+mesh_name+"Laplace")
+X,Y=Rigidite.plotEigenvalues("FiniteVolumesOn"+mesh_name+"Laplace")
 
 # Conditionnement de la matrice de rigidité
 #=================================
@@ -94,3 +95,16 @@ d.decrRef()
 # Sauvegarde du champ résultat
 #===========================
 my_eigenfield.writeVTK("spectrumFiniteVolumesOn"+mesh_name+"Laplace")
+
+#Plot the spectrum of the linear system matrix
+plt.xlim((min(X)-50)*1.1, (max(X)+50)*1.1)
+plt.ylim((min(Y)-10)*1.1, (max(Y)+10)*1.1)
+plt.title('Eigenvalues of the finite volume method \n for the Poisson equation')
+plt.scatter(X,Y)
+plt.xlabel("Real part")
+plt.ylabel("Imaginary part")
+plt.axvline(x=0, color='black')
+plt.axhline(y=0, color='black')
+plt.legend()
+plt.show(block=False)
+plt.savefig("FiniteVolumesEigenvaluesOn"+mesh_name+"_"+"_PoissonEquation.png")

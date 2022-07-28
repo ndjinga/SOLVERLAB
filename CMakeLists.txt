@@ -9,7 +9,7 @@ ENDIF()
 # Project name
 project (SOLVERLAB C CXX)
 set (SOLVERLAB_VERSION_MAJOR 9)
-set (SOLVERLAB_VERSION_MINOR 8)
+set (SOLVERLAB_VERSION_MINOR 9)
 set (SOLVERLAB_VERSION_SUBMINOR 0)
 
 option (SOLVERLAB_WITH_DOCUMENTATION "Generate SOLVERLAB documentation" ON)
@@ -32,23 +32,23 @@ set (MPI4PY_ROOT_DIR      OFF CACHE STRING "MPI4PY library path" )
 set (PACKAGESPY_ROOT_DIR  OFF CACHE STRING "PACKAGESPY library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.16.0.tar.gz 
+set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz 
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.16.0.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
 set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz  
      CACHE STRING           "HDF5 tarball path/url" )
-set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.0.tar.gz
+set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
      CACHE STRING           "MED tarball path/url")
 set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
      CACHE STRING           "MEDCoupling tarball path/url" )
 set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
      CACHE STRING           "OPENMPI tarball path/url" )
-set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.23.0.zip
+set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.25.0.zip
      CACHE STRING           "HYPRE tarball path/url" )
-set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.2.tar.gz
+set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.3.tar.gz
      CACHE STRING           "MPY4PY tarball path/url" )
 set (DOWNLOAD_PACKAGESPY    https://github.com/ndjinga/PACKAGESPYGUI/archive/refs/heads/main.zip
      CACHE STRING           "PACKAGESPY zip file path/url" )
@@ -636,7 +636,7 @@ IF   ( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
 ENDIF( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
 find_package (SWIG 3.0 REQUIRED)
 
-# Find Doxygen
+# Find Doxygen and Sphinx for documentation
 if (SOLVERLAB_WITH_DOCUMENTATION)                                                                           #
  IF   ( DEFINED DOXYGEN_ROOT_DIR OR DEFINED ENV{DOXYGEN_ROOT_DIR})
    IF   ( DEFINED DOXYGEN_ROOT_DIR )
@@ -652,13 +652,19 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
     message (FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly.")
   endif(NOT DOXYGEN_FOUND)
   
-  configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
-  add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)			                                            #
-  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html DESTINATION share/doc/solverlab-dev-doc OPTIONAL)                  #
+  configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  @ONLY IMMEDIATE)
+  add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc)			                                            #
+  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/dev-doc/html DESTINATION share/doc/solverlab-dev-doc OPTIONAL)                  #
   
+  configure_file (Doxyfile-user-guide.in ${PROJECT_BINARY_DIR}/Doxyfile-user-guide  @ONLY IMMEDIATE)
+  add_custom_target (doc-user COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-user-guide  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-user-guide)			                                            #
+  install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/user-doc/html DESTINATION share/doc/solverlab-user-guide OPTIONAL)                  #
+  
+  find_package(Sphinx)
+  add_custom_target (doc-sphinx COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/Documentation"  "${PROJECT_BINARY_DIR}/doc/sphinx-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/Documentation)                                            #
+
   if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
-    find_package(Sphinx)
-    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/CoreFlows/gui/doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
+    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/doc/gui-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
     install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
   endif( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)			

@@ -17,12 +17,12 @@ are the study of
 - New preconditioners for implicit methods for two phase flows
 - The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
 
-SOLVERLAB-CoreFlows relies on the numerical toolbox [SOLVERLAB-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) originating from the project [CDMATH](http://cdmath.jimdo.com) for the handling of meshes and fields, and on the library [PETSC](https://www.mcs.anl.gov/petsc/) for the handling of large sparse matrices.
+SOLVERLAB-CoreFlows relies on the numerical toolbox [SOLVERLAB-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) originating from the project [CDMATH](http://cdmath.jimdo.com) for the handling of meshes and fields, and on the library [PETSC](https://petsc.org/release/) for the handling of large sparse matrices.
 You will need the packages 'doxygen' if you want to generate de documentation and 'swig' if you want to use python scripts.  
 The library is currently maintained and distributed by the SALOME developpement team on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows-10.
 
-User guide
-----------
+User guide of the CoreFlows module
+----------------------------------
 The user guide is organized as follows :
 - [The physical models](./Documentation/PhysicalModels.md)
     - [The linear scalar problems](./Documentation/PhysicalModels/ScalarModelsPage.ipynb)
@@ -40,7 +40,7 @@ The user guide is organized as follows :
 
 Download and compilation of CDMATH and PETSc
 --------------------------------------------
-[CDMATH-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) can be downloaded and compiled together with [PETSC](https://www.mcs.anl.gov/petsc/) in a single process, thanks to the cmake option -DCDMATH_WITH_PETSC=ON.
+[CDMATH-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) can be downloaded and compiled together with [PETSC](https://petsc.org/release/) in a single process, thanks to the cmake option -DCDMATH_WITH_PETSC=ON.
 We summarise the installation procedure that you can find in detailed form here
 - https://github.com/ndjinga/CDMATH
 
@@ -67,7 +67,7 @@ Then run the commands
 - `make`
 - `make install`
 
-By default, [CDMATH-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) will compile a new sequential installation of [PETSC](https://www.mcs.anl.gov/petsc/). If an installation of [PETSC](https://www.mcs.anl.gov/petsc/) (version 3.4 or later) is already available in the system, it is possible to save time by first setting the environment variables PETSC_DIR and PETSC_ARCH to the appropriate values as can be found in petscconf.h, and then running the above cmake command.
+By default, [CDMATH-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) will compile a new sequential installation of [PETSC](https://petsc.org/release/). If an installation of [PETSC](https://petsc.org/release/) (version 3.4 or later) is already available in the system, it is possible to save time by first setting the environment variables PETSC_DIR and PETSC_ARCH to the appropriate values as can be found in petscconf.h, and then running the above cmake command.
 
 Download and compilation of CoreFlows
 ---------------------------------------------
@@ -83,10 +83,10 @@ or clone the git repository to a folder SOLVERLAB-CoreFlows-master
 - `git clone https://github.com/ndjinga/SOLVERLAB/CoreFlows/CoreFlows.git SOLVERLAB-CoreFlows-master`
 Either of these latter commands results in the creation of a directory `~/workspace/SOLVERLAB-CoreFlows/SOLVERLAB-CoreFlows-master`  containing the source files.
 
-In the following steps we assume that [PETSC](https://www.mcs.anl.gov/petsc/) (version 3.4 or more recent) has been installed with CDMATH with the process described above.
+In the following steps we assume that [PETSC](https://petsc.org/release/) (version 3.4 or more recent) has been installed with CDMATH with the process described above.
 You need to set the following variables 
-- `CDMATH_INSTALL`, the path to your CDMATH installation, for example  `~/workspace/cdmath/cdmath_install//share/petsc-3.15.0 `
-- `PETSC_DIR`, the path to your PETSc installation. If [PETSC](https://www.mcs.anl.gov/petsc/) was installed by CDMATH then [CDMATH-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) can be defined as `~/workspace/cdmath/cdmath_install`
+- `CDMATH_INSTALL`, the path to your CDMATH installation, for example  `~/workspace/cdmath/cdmath_install/`
+- `PETSC_DIR`, the path to your PETSc installation. If [PETSC](https://petsc.org/release/) was installed by CDMATH then [CDMATH-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) can be defined as `~/workspace/cdmath/cdmath_install`
 - `PETSC_ARCH`, the type of installation used (usually arch-linux2-c-opt or linux-gnu-c-opt)
 
 In order to do so, it is sufficient to source the 'CDMATH' environment file. Type in you linux terminal

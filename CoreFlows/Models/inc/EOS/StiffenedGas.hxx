@@ -3,31 +3,50 @@
 
 #include <string>
 #include "math.h"
-#include "CdmathException.hxx"
 #include "Fluide.h"
-
-/*! \class StiffenedGas StiffenedGas.hxx "StiffenedGas.hxx"
- *  \brief Stiffened Gas law approximating water and steam : P = (gamma - 1) * (rho * e - rho * q) - gamma * p0
- *  \details Provides pressure, density, temperature, internal energy, enthalpy, viscosity and conductivity 
- */
 
 using namespace std;
 
-// A standard stiffened gas class
+// A stiffened gas class
 
 /*! \class StiffenedGas Fluide.hxx "Fluide.hxx"
- *  \brief Class implementing a standard stiffened gas law between pressure, density and internal energy
- *  \details  
+ *  \brief Class implementing a generalised stiffened gas law between pressure, density and internal energy
+ *  \details Provides viscosity, conductivity laws as well as EOS  \f$P=(\gamma - 1) * rho (e(T)-q) - \gamma*p0 \f$
  */
-class StiffenedGas:public Fluide{
+class StiffenedGas:public CompressibleFluid{
  private:
   double  _e_ref;//Stiffened gas law : P=(gamma - 1) * rho e(T) - _gamma*_p0
  public:
-  StiffenedGas():Fluide(){_e_ref=0;};
+  StiffenedGas():CompressibleFluid(){_e_ref=0;};
   //Perfect gas EOS
   StiffenedGas( double gamma, double cv, double T_ref, double e_ref);
   //Stiffened gas law fitting reference pressure, density and sound speed
   StiffenedGas(double rho_ref, double p_ref, double T_ref, double e_ref, double soundSpeed_ref, double heatCap_ref);
+
+  //Stiffened gas equation of state
+  double getPressure(double  rhoe,const double  rho) {
+  	return (_gamma - 1) * (rhoe - rho*_q) - _gamma*_p0;
+  };
+  double getPressureFromEnthalpy(double  h,const double  rho) {
+  	return (_gamma - 1)/_gamma * rho * (h - _q) - _p0;
+  };
+  /*For the newton scheme in the IsothermalTwoFluid model */
+  double getPressureDerivativeRhoE()  { return _gamma - 1; }
+  double getDensityFromEnthalpy(double p, double h)
+  {
+  	return _gamma*(p+_p0)/((_gamma-1)*(h-_q));
+  }
+  double vitesseSonEnthalpie(double h) {  return sqrt((_gamma-1)*h);  };
+  double vitesseSonTemperature(const double T, const double rho)
+  {
+  	double h= getEnthalpy(T,rho);
+  	return vitesseSonEnthalpie(h);
+  }
+  double vitesseSonPressure(const double P, const double T)
+  {
+  	double rho=getDensity(P, T);
+  	return vitesseSonTemperature(T,rho);
+  }
 
   double getInternalEnergy(double T, double rho=0);
   double getEnthalpy(double T, double rho);
@@ -54,13 +73,13 @@ class StiffenedGas:public Fluide{
 
 /*! \class StiffenedGasDellacherie Fluide.hxx "Fluide.hxx"
  *  \brief Class implementing a particular stiffened gas law including saturation properties
- *  \details
+ *  \details \f$P=(\gamma - 1)/\gamma * rho (h(T)-q) - p0\f$
  */
-class StiffenedGasDellacherie:public Fluide{
+class StiffenedGasDellacherie:public CompressibleFluid{
  private:
-  double _h_ref;//Stiffened gas law according to S. Dellacherie : P=(gamma - 1) * rho (e(T)-q) - _gamma*_p0
+  double _h_ref;//Stiffened gas law according to S. Dellacherie : P=(gamma - 1)/gamma * rho (h(T)-q) - p0
  public:
-  StiffenedGasDellacherie():Fluide(){_h_ref=0;};
+  StiffenedGasDellacherie():CompressibleFluid(){_h_ref=0;};
   /* Loi des gaz raidis avec coefficients imposés suivant S. Dellacherie*/
   StiffenedGasDellacherie( double gamma, double p0, double q, double cv);
 
@@ -69,7 +88,6 @@ class StiffenedGasDellacherie:public Fluide{
   double getTemperatureFromPressure(double  p, double rho);
   double getTemperatureFromEnthalpy(const double  h, const double rho=0);
   double getDensity(double p, double T);
-
- };
+};
 
 #endif

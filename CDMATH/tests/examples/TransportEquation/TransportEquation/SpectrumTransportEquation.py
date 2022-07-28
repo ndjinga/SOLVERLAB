@@ -110,7 +110,12 @@ def solveSpectrum(my_mesh, meshName, meshType, cfl, test_bc, is_upwind):
     divMat.viewNonZeroStructure(0, "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme)
     divMat.saveToFile( "FiniteVolumesMatrixOn"+meshName+"_TransportEquation"+num_scheme, True)
     X,Y=divMat.plotEigenvalues("FiniteVolumesEigenvaluesOn"+meshName+"_TransportEquation"+num_scheme)
-    plt.scatter(X,Y, label=num_scheme+' scheme')#
+
+    plt.xlim((min(X)-50)*1.1, (max(X)+50)*1.1)
+    plt.ylim((min(Y)-10)*1.1, (max(Y)+10)*1.1)
+    plt.title('Eigenvalues of the '+num_scheme+ ' finite volume method \n for the transport equation')
+    #Plot the spectrum of the linear system matrix
+    plt.scatter(X,Y, label=num_scheme+' scheme')
     plt.xlabel("Real part")
     plt.ylabel("Imaginary part")
     plt.axvline(x=0, color='black')

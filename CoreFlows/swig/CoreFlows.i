@@ -7,8 +7,8 @@
 %include "Mesh.hxx" /* To include the enum EntityType */
 
 #ifdef MPI4PY_ROOT_DIR
-%include mpi4py.i
-%mpi4py_typemap(Comm, MPI_Comm);
+  %include mpi4py.i%include MPI4PY_ROOT_DIR/include/mpi4py/mpi4py.i
+  %mpi4py_typemap(Comm, MPI_Comm);
 #endif
 
 %apply bool& INOUT {bool &stop}

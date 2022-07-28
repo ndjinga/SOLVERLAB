@@ -80,12 +80,13 @@ void DriftModel::initialize(){
 	cout<<"\n Initialising the drift model"<<endl;
 	*_runLogFile<<"\n Initialising the drift model"<<endl;
 
-	_Uroe = new double[_nVar];
+	_Uroe = new double[_nVar];//Deleted in ProblemFluid::terminate()
+	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Vext);
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
 		_gravite[i+2]=_GravityField3d[i];
 
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];
+	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
 	if(_saveVelocity)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 (3 composantes) pour le posttraitement des lignes de courant
@@ -117,233 +118,28 @@ void DriftModel::initialize(){
 	ProblemFluid::initialize();
 }
 
+void DriftModel::terminate()
+{
+	VecDestroy(&_Vext);
+	ProblemFluid::terminate();
+}
+
 bool DriftModel::iterateTimeStep(bool &converged)
 {
-	if(_timeScheme == Explicit || !_usePrimitiveVarsInNewton)
-		return ProblemFluid::iterateTimeStep(converged);
-	else
-	{
-		bool stop=false;
+	bool result = ProblemFluid::iterateTimeStep(converged);
 
-		if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
-			_maxvp=0;
-			computeTimeStep(stop);
-		}
-		if(stop){//Le compute time step ne s'est pas bien passé
-			cout<<"ComputeTimeStep failed"<<endl;
-			converged=false;
-			return false;
-		}
-
-		computeNewtonVariation();
-
-		//converged=convergence des iterations
-		if(_timeScheme == Explicit)
-			converged=true;
-		else{//Implicit scheme
-
-			KSPGetIterationNumber(_ksp, &_PetscIts);
-			if( _MaxIterLinearSolver < _PetscIts)//save the maximum number of iterations needed during the newton scheme
-				_MaxIterLinearSolver = _PetscIts;
-			if(_PetscIts>=_maxPetscIts)//solving the linear system failed
-			{
-				cout<<"Systeme lineaire : pas de convergence de Petsc. Itérations maximales "<<_maxPetscIts<<" atteintes"<<endl;
-				//*_runLogFileogFile<<"Systeme lineaire : pas de convergence de Petsc. Itérations maximales "<<_maxPetscIts<<" atteintes"<<endl;
-				converged=false;
-				return false;
-			}
-			else{//solving the linear system succeeded
-				//Calcul de la variation relative Uk+1-Uk
-				_erreur_rel = 0.;
-				double x, dx;
-				int I;
-				for(int j=1; j<=_Nmailles; j++)
-				{
-					for(int k=0; k<_nVar; k++)
-					{
-						I = (j-1)*_nVar + k;
-						VecGetValues(_newtonVariation, 1, &I, &dx);
-						VecGetValues(_primitiveVars, 1, &I, &x);
-						if (fabs(x)*fabs(x)< _precision)
-						{
-							if(_erreur_rel < fabs(dx))
-								_erreur_rel = fabs(dx);
-						}
-						else if(_erreur_rel < fabs(dx/x))
-							_erreur_rel = fabs(dx/x);
-					}
-				}
-			}
-			converged = _erreur_rel <= _precision_Newton;
-		}
-
-		double relaxation=1;//Vk+1=Vk+relaxation*deltaV
-
-		VecAXPY(_primitiveVars,  relaxation, _newtonVariation);
-
-		//mise a jour du champ primitif
-		updateConservatives();
-
-		if(_nbPhases==2 && fabs(_err_press_max) > _precision)//la pression n'a pu être calculée en diphasique à partir des variables conservatives
+	if( _nbTimeStep%_freqSave ==0)
+		if(_minm1<-_precision || _minm2<-_precision)
 		{
-			cout<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-			*_runLogFile<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-			converged=false;
-			return false;
+			cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
+			*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
 		}
-		if(_system)
-		{
-			cout<<"Vecteur Vkp1-Vk "<<endl;
-			VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
-			cout << "Nouvel etat courant Vk de l'iteration Newton: " << endl;
-			VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
-		}
+	
+	_minm1=1e30;
+	_minm2=1e30;
+	_nbMaillesNeg=0;
 
-		if(_nbPhases==2 && (_nbTimeStep-1)%_freqSave ==0){
-			if(_minm1<-_precision || _minm2<-_precision)
-			{
-				cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
-				*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
-			}
-
-			if (_nbVpCplx>0){
-				cout << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
-				*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
-			}
-		}
-		_minm1=1e30;
-		_minm2=1e30;
-		_nbMaillesNeg=0;
-		_nbVpCplx =0;
-		_part_imag_max=0;
-
-		return true;
-	}
-}
-void DriftModel::computeNewtonVariation()
-{
-	if(_timeScheme==Explicit || !_usePrimitiveVarsInNewton)
-		ProblemFluid::computeNewtonVariation();
-	else
-	{
-		if(_verbose)
-		{
-			cout<<"Vecteur courant Vk "<<endl;
-			VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-		}
-		if(_timeScheme == Explicit)
-		{
-			VecCopy(_b,_newtonVariation);
-			VecScale(_newtonVariation, _dt);
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-			{
-				cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
-				VecView(_newtonVariation,PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-		}
-		else
-		{
-			if(_verbose)
-			{
-				cout << "Matrice du système linéaire avant contribution delta t" << endl;
-				MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-				cout << "Second membre du système linéaire avant contribution delta t" << endl;
-				VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-			MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-
-			VecAXPY(_b, 1/_dt, _old);
-			VecAXPY(_b, -1/_dt, _conservativeVars);
-
-			for(int imaille = 0; imaille<_Nmailles; imaille++){
-				_idm[0] = _nVar*imaille;
-				for(int k=1; k<_nVar; k++)
-					_idm[k] = _idm[k-1] + 1;
-				VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-				primToConsJacobianMatrix(_Vi);
-				for(int k=0; k<_nVar*_nVar; k++)
-					_primToConsJacoMat[k]*=1/_dt;
-				MatSetValuesBlocked(_A, 1, &imaille, 1, &imaille, _primToConsJacoMat, ADD_VALUES);
-			}
-			MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-
-#if PETSC_VERSION_GREATER_3_5
-			KSPSetOperators(_ksp, _A, _A);
-#else
-			KSPSetOperators(_ksp, _A, _A,SAME_NONZERO_PATTERN);
-#endif
-
-			if(_verbose)
-			{
-				cout << "Matrice du système linéaire après contribution delta t" << endl;
-				MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-				cout << "Second membre du système linéaire après contribution delta t" << endl;
-				VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-
-			if(_conditionNumber)
-				KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
-			if(!_isScaling)
-			{
-				KSPSolve(_ksp, _b, _newtonVariation);
-			}
-			else
-			{
-				computeScaling(_maxvp);
-				int indice;
-				VecAssemblyBegin(_vecScaling);
-				VecAssemblyBegin(_invVecScaling);
-				for(int imaille = 0; imaille<_Nmailles; imaille++)
-				{
-					indice = imaille;
-					VecSetValuesBlocked(_vecScaling,1 , &indice, _blockDiag, INSERT_VALUES);
-					VecSetValuesBlocked(_invVecScaling,1,&indice,_invBlockDiag, INSERT_VALUES);
-				}
-				VecAssemblyEnd(_vecScaling);
-				VecAssemblyEnd(_invVecScaling);
-
-				if(_system)
-				{
-					cout << "Matrice avant le preconditionneur des vecteurs propres " << endl;
-					MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-					cout << "Second membre avant le preconditionneur des vecteurs propres " << endl;
-					VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-				}
-				MatDiagonalScale(_A,_vecScaling,_invVecScaling);
-				if(_system)
-				{
-					cout << "Matrice apres le preconditionneur des vecteurs propres " << endl;
-					MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-				}
-				VecCopy(_b,_bScaling);
-				VecPointwiseMult(_b,_vecScaling,_bScaling);
-				if(_system)
-				{
-					cout << "Produit du second membre par le preconditionneur bloc diagonal  a gauche" << endl;
-					VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-					cout << endl;
-				}
-
-				KSPSolve(_ksp,_b, _bScaling);
-				VecPointwiseMult(_newtonVariation,_invVecScaling,_bScaling);
-			}
-			if(_verbose)
-			{
-				cout << "solution du systeme lineaire local:" << endl;
-				VecView(_newtonVariation, PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-		}
-	}
+	return result;
 }
 
 void DriftModel::convectionState( const long &i, const long &j, const bool &IsBord){
@@ -361,7 +157,7 @@ void DriftModel::convectionState( const long &i, const long &j, const bool &IsBo
 		VecGetValues(_Uext, _nVar, _idm, _Uj);
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"DriftModel::convectionState Left state cell " << i<< ": "<<endl;
 		for(int k =0; k<_nVar; k++)
@@ -383,20 +179,20 @@ void DriftModel::convectionState( const long &i, const long &j, const bool &IsBo
 	rj = sqrt(_Uj[0]);
 
 	_Uroe[0] = ri*rj/sqrt(_porosityi*_porosityj);	//moyenne geometrique des densites
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout << "Densité moyenne Roe gauche " << i << ": " << ri*ri << ", droite " << j << ": " << rj*rj << "->" << _Uroe[0] << endl;
 	xi = _Ui[1]/_Ui[0];//cm gauche
 	xj = _Uj[1]/_Uj[0];//cm droite
 
 	_Uroe[1] = (xi*ri + xj*rj)/(ri + rj);//moyenne de Roe des concentrations
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout << "Concentration de Roe  gauche " << i << ": " << xi << ", droite " << j << ": " << xj << "->" << _Uroe[1] << endl;
 	for(int k=0;k<_Ndim;k++){
 		xi = _Ui[k+2];//phi rho u gauche
 		xj = _Uj[k+2];//phi rho u droite
 		_Uroe[2+k] = (xi/ri + xj/rj)/(ri + rj);
 		//"moyenne" des vitesses
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+2] << endl;
 	}
 	// H = (rho E + p)/rho
@@ -417,7 +213,7 @@ void DriftModel::convectionState( const long &i, const long &j, const bool &IsBo
 	xi = (xi + pi)/_Ui[0];
 	xj = (xj + pj)/_Uj[0];
 	_Uroe[_nVar-1] = (ri*xi + rj*xj)/(ri + rj);
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout << "Enthalpie totale de Roe H  gauche " << i << ": " << xi << ", droite " << j << ": " << xj << "->" << _Uroe[_nVar-1] << endl;
 	// Moyenne de Roe de Tg et Td
 	Ii = i*_nVar+_nVar-1;
@@ -432,7 +228,7 @@ void DriftModel::convectionState( const long &i, const long &j, const bool &IsBo
 		Ii = j*_nVar+_nVar-1;
 		VecGetValues(_primitiveVars, 1, &Ii, &xj);
 	}
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Convection interfacial state"<<endl;
 		for(int k=0;k<_nVar;k++)
@@ -457,7 +253,7 @@ void DriftModel::diffusionStateAndMatrices(const long &i,const long &j, const bo
 	else
 		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "DriftModel::diffusionStateAndMatrices cellule gauche" << i << endl;
 		cout << "Ui = ";
@@ -473,7 +269,7 @@ void DriftModel::diffusionStateAndMatrices(const long &i,const long &j, const bo
 
 	for(int k=0; k<_nVar; k++)
 		_Udiff[k] = (_Ui[k]/_porosityi+_Uj[k]/_porosityj)/2;
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "DriftModel::diffusionStateAndMatrices conservative diffusion state" << endl;
 		cout << "_Udiff = ";
@@ -526,7 +322,7 @@ void DriftModel::diffusionStateAndMatrices(const long &i,const long &j, const bo
 		}
 		_Diffusion[_nVar*_nVar-1]=-lambda/(m_v*C_v+m_l*C_l);
 		/*Affichages */
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout << "Matrice de diffusion D, pour le couple (" << i << "," << j<< "):" << endl;
 			displayMatrix( _Diffusion,_nVar," Matrice de diffusion ");
@@ -546,7 +342,7 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 
 	double porosityj=_porosityField(j);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "setBoundaryState for group "<< nameOfGroup<< ", inner cell j= "<<j << " face unit normal vector "<<endl;
 		for(k=0; k<_Ndim; k++){
@@ -658,7 +454,7 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 			}
 			_externalStates[_nVar-1] = _externalStates[1]*_fluides[0]->getInternalEnergy(T,rho_v)+(_externalStates[0]-_externalStates[1])*_fluides[1]->getInternalEnergy(T,rho_l) + _externalStates[0]*v2/2;
 		}
-		else if((_nbTimeStep-1)%_freqSave ==0)
+		else if(_nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
 
 		_idm[0] = 0;
@@ -692,7 +488,7 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 			Tm=_limitField[nameOfGroup].T;
 		}
 		else{
-			if((_nbTimeStep-1)%_freqSave ==0)
+			if(_nbTimeStep%_freqSave ==0)
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Neumann boundary condition for concentration, velocity and temperature"<<endl;
 			concentration=_Vj[0];
 			Tm=_Vj[_nVar-1];
@@ -731,7 +527,7 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 		VecAssemblyEnd(_Uextdiff);
 	}
 	else if (_limitField[nameOfGroup].bcType==Outlet){
-		if(q_n<=0  &&  (_nbTimeStep-1)%_freqSave ==0)
+		if(q_n<=0  &&  _nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition for concentration, velocity and temperature"<<endl;
 
 		//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
@@ -796,7 +592,7 @@ void DriftModel::convectionMatrices()
 	//entree: URoe = rho, cm, u, H
 	//sortie: matrices Roe+  et Roe- +Roe si scheme centre
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"DriftModel::convectionMatrices()"<<endl;
 
 	double umn=0, u_2=0; //valeur de u.normale et |u|²
@@ -835,7 +631,7 @@ void DriftModel::convectionMatrices()
 
 		double pression= getMixturePressure(cm, rhom, Tm);
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout<<"Roe state rhom="<<rhom<<" cm= "<<cm<<" Hm= "<<Hm<<" Tm= "<<Tm<<" pression "<<pression<<endl;
 
 		getMixturePressureDerivatives( m_v, m_l, pression, Tm);//EOS is involved to express pressure jump and sound speed
@@ -845,7 +641,7 @@ void DriftModel::convectionMatrices()
 			throw CdmathException("Calcul matrice de Roe: vitesse du son complexe");
 		}
 		double am=sqrt(_kappa*hm+_khi+cm*_ksi);//vitesse du son du melange
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout<<"DriftModel::convectionMatrices, sound speed am= "<<am<<endl;
 
 		//On remplit la matrice de Roe
@@ -937,7 +733,7 @@ void DriftModel::convectionMatrices()
 					_AroePlusImplicit[i]  = _AroePlus[i];
 				}
 		}
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			displayMatrix(_Aroe, _nVar,"Matrice de Roe");
 			displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
@@ -946,7 +742,7 @@ void DriftModel::convectionMatrices()
 		}
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0 && _timeScheme==Implicit)
+	if(_verbose && _nbTimeStep%_freqSave ==0 && _timeScheme==Implicit)
 	{
 		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinusImplicit");
 		displayMatrix(_AroePlusImplicit, _nVar,"Matrice _AroePlusImplicit");
@@ -987,7 +783,7 @@ void DriftModel::convectionMatrices()
 		throw CdmathException("DriftModel::convectionMatrices: well balanced option not treated");
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0 && _timeScheme==Implicit)
+	if(_verbose && _nbTimeStep%_freqSave ==0 && _timeScheme==Implicit)
 		displayMatrix(_signAroe, _nVar,"Signe de la matrice de Roe");
 }
 
@@ -1010,7 +806,7 @@ void DriftModel::addDiffusionToSecondMember
 		_idm[k] = _nVar*i + k;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " << i<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1033,7 +829,7 @@ void DriftModel::addDiffusionToSecondMember
 		VecGetValues(_Uextdiff, _nVar, _idn, _Uj);
 		consToPrim(_Uj,_Vj,1);
 	}
-	if (_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion: variables primitives maille " <<j <<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1062,7 +858,7 @@ void DriftModel::addDiffusionToSecondMember
 	_idm[0] = i;
 	VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "Contribution diffusion au 2nd membre pour la maille " << i << ": "<<endl;
 		for(int q=0; q<_nVar; q++)
@@ -1079,7 +875,7 @@ void DriftModel::addDiffusionToSecondMember
 
 		VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
 
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout << "Contribution diffusion au 2nd membre pour la maille  " << j << ": "<<endl;
 			for(int q=0; q<_nVar; q++)
@@ -1134,7 +930,7 @@ void DriftModel::sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar * Vi
 		}
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"DriftModel::sourceVector"<<endl;
 		cout<<"Ui="<<endl;
@@ -1181,7 +977,7 @@ void DriftModel::pressureLossVector(PetscScalar * pressureLoss, double K, PetscS
 	pressureLoss[_nVar-1]=-K*phirho*norm_u*norm_u*norm_u;
 
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"DriftModel::pressureLossVector K= "<<K<<endl;
 		cout<<"pressure loss vector phirho= "<< phirho<<" norm_u= "<<norm_u<<endl;
@@ -1226,7 +1022,7 @@ void DriftModel::porosityGradientSourceVector()
 
 void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite convection bord "<< nameOfGroup<<endl;
 
 	int k;
@@ -1446,7 +1242,7 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 //calcule la jacobienne pour une CL de diffusion
 void  DriftModel::jacobianDiff(const int &j, string nameOfGroup)
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite diffusion bord "<< nameOfGroup<<endl;
 
 
@@ -1572,7 +1368,7 @@ void DriftModel::primToCons(const double *P, const int &i, double *W, const int 
 	for(int k=0; k<_Ndim; k++)
 		W[j*_nVar+_nVar-1] += W[j*_nVar]*P[i*_nVar+(k+2)]*P[i*_nVar+(k+2)]*0.5;//phi rhom e_m + phi rho u*u
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0){
+	if(_verbose && _nbTimeStep%_freqSave ==0){
 		cout<<"DriftModel::primToCons: T="<<temperature<<", pression= "<<pression<<endl;
 		cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<", rhom= "<<W[j*(_nVar)]<<" e_v="<<e_v<<" e_l="<<e_l<<endl;
 	}
@@ -1724,7 +1520,7 @@ void DriftModel::primToConsJacobianMatrix(double *V)
 		throw CdmathException("DriftModel::primToConsJacobianMatrix: eos should be StiffenedGas or StiffenedGasDellacherie");
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<" DriftModel::primToConsJacobianMatrix" << endl;
 		displayVector(_Vi,_nVar," _Vi " );
@@ -1799,7 +1595,7 @@ void DriftModel::consToPrim(const double *Wcons, double* Wprim,double porosity)
 	for(int k=0;k<_Ndim;k++)
 		Wprim[k+2] = Wcons[k+2]/Wcons[0];
 	Wprim[_nVar-1] =  Temperature;
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"ConsToPrim Vecteur conservatif"<<endl;
 		for(int k=0;k<_nVar;k++)
@@ -1849,7 +1645,7 @@ double DriftModel::getMixturePressure(double c_v, double rhom, double temperatur
 
 	double delta= b*b-4*a*c;
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"DriftModel::getMixturePressure: a= "<<a<<", b= "<<b<<", c= "<<c<<", delta= "<<delta<<endl;
 
 	if(delta<0){
@@ -1937,7 +1733,7 @@ void DriftModel::getMixturePressureAndTemperature(double c_v, double rhom, doubl
 	}
 
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0){
+	if(_verbose && _nbTimeStep%_freqSave ==0){
 		cout<<"DriftModel::getMixturePressureAndTemperature: a= "<<a<<", b= "<<b<<", c= "<<c<<", delta= "<<delta<<endl;
 		cout<<"pressure= "<<pression<<", temperature= "<<temperature<<endl;
 	}
@@ -2043,7 +1839,7 @@ void DriftModel::getMixturePressureDerivatives(double m_v, double m_l, double pr
 		_kappa=temp2/denom;
 	}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"rho_l= "<<rho_l<<", temp1= "<<temp1<<", temp2= "<<temp2<<", denom= "<<denom<<endl;
 		cout<<"khi= "<<_khi<<", ksi= "<<_ksi<<", kappa= "<<_kappa<<endl;
@@ -2068,7 +1864,7 @@ void DriftModel::entropicShift(double* n)//TO do: make sure _Vi and _Vj are well
 	double rhom=_Ui[0];
 	double cm=_Vi[0];
 	double Hm=(_Ui[_nVar-1]+_Vi[1])/rhom;
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Entropic shift left state rhom="<<rhom<<" cm= "<<cm<<"Hm= "<<Hm<<endl;
 	double Tm=_Vi[_nVar-1];
 	double hm=Hm-0.5*ul_2;
@@ -2091,7 +1887,7 @@ void DriftModel::entropicShift(double* n)//TO do: make sure _Vi and _Vj are well
 	rhom=_Uj[0];
 	cm=_Vj[0];
 	Hm=(_Uj[_nVar-1]+_Vj[1])/rhom;
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Entropic shift right state rhom="<<rhom<<" cm= "<<cm<<"Hm= "<<Hm<<endl;
 	Tm=_Vj[_nVar-1];
 	hm=Hm-0.5*ul_2;
@@ -2114,7 +1910,7 @@ void DriftModel::entropicShift(double* n)//TO do: make sure _Vi and _Vj are well
 	_entropicShift[1]=abs(umnl - umnr);
 	_entropicShift[2]=abs(umnl+aml - (umnr+amr));
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"Entropic shift left eigenvalues: "<<endl;
 		cout<<"("<< umnl-aml<< ", " <<umnl<<", "<<umnl+aml << ")";
@@ -2128,7 +1924,7 @@ void DriftModel::entropicShift(double* n)//TO do: make sure _Vi and _Vj are well
 }
 
 Vector DriftModel::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"DriftModel::convectionFlux start"<<endl;
 		cout<<"Ucons"<<endl;
@@ -2169,7 +1965,7 @@ Vector DriftModel::convectionFlux(Vector U,Vector V, Vector normale, double poro
 		F(2+i)=m_v*vitesse_vn*vitesse_v(i)+m_l*vitesse_ln*vitesse_l(i)+pression*normale(i)*porosity;
 	F(2+_Ndim)=m_v*(e_v+0.5*vitesse_v*vitesse_v+pression/rho_v)*vitesse_vn+m_l*(e_l+0.5*vitesse_l*vitesse_l+pression/rho_l)*vitesse_ln;
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"DriftModel::convectionFlux end"<<endl;
 		cout<<"Flux F(U,V)"<<endl;
@@ -2181,7 +1977,7 @@ Vector DriftModel::convectionFlux(Vector U,Vector V, Vector normale, double poro
 
 Vector DriftModel::staggeredVFFCFlux()
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"DriftModel::staggeredVFFCFlux()start"<<endl;
 
 	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
@@ -2261,7 +2057,7 @@ Vector DriftModel::staggeredVFFCFlux()
 			Fij=(1+theta)/2*F1+(1-theta)/2*F2;
 			 */
 		}
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"DriftModel::staggeredVFFCFlux() end uijn="<<uijn<<endl;
 			cout<<Fij<<endl;
@@ -2272,7 +2068,7 @@ Vector DriftModel::staggeredVFFCFlux()
 
 void DriftModel::staggeredVFFCMatricesConservativeVariables(double u_mn)
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"DriftModel::staggeredVFFCMatricesConservativeVariables()"<<endl;
 
 	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
@@ -2323,7 +2119,7 @@ void DriftModel::staggeredVFFCMatricesConservativeVariables(double u_mn)
 		if(u_mn>_precision)
 		{
 			Hm=Emi+pj/rhomi;
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+			if(_verbose && _nbTimeStep%_freqSave ==0)
 				cout<<"VFFC Staggered state rhomi="<<rhomi<<" cmi= "<<cmi<<" Hm= "<<Hm<<" Tmi= "<<Tmi<<" pj= "<<pj<<endl;
 
 			/***********Calcul des valeurs propres ********/
@@ -2336,7 +2132,7 @@ void DriftModel::staggeredVFFCMatricesConservativeVariables(double u_mn)
 			}
 			double amj=sqrt(_kappa*hmj+_khi+cmj*_ksi);//vitesse du son du melange
 
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+			if(_verbose && _nbTimeStep%_freqSave ==0)
 				cout<<"_khi= "<<_khi<<", _kappa= "<< _kappa << ", _ksi= "<<_ksi <<", amj= "<<amj<<endl;
 
 			//On remplit les valeurs propres
@@ -2403,7 +2199,7 @@ void DriftModel::staggeredVFFCMatricesConservativeVariables(double u_mn)
 		else if(u_mn<-_precision)
 		{
 			Hm=Emj+pi/rhomj;
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+			if(_verbose && _nbTimeStep%_freqSave ==0)
 				cout<<"VFFC Staggered state rhomj="<<rhomj<<" cmj= "<<cmj<<" Hm= "<<Hm<<" Tmj= "<<Tmj<<" pi= "<<pi<<endl;
 
 			/***********Calcul des valeurs propres ********/
@@ -2416,7 +2212,7 @@ void DriftModel::staggeredVFFCMatricesConservativeVariables(double u_mn)
 				throw CdmathException("staggeredVFFCMatricesConservativeVariables: vitesse du son complexe");
 			}
 			double ami=sqrt(_kappa*hmi+_khi+cmi*_ksi);//vitesse du son du melange
-			if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+			if(_verbose && _nbTimeStep%_freqSave ==0)
 				cout<<"_khi= "<<_khi<<", _kappa= "<< _kappa << ", _ksi= "<<_ksi <<", ami= "<<ami<<endl;
 
 			//On remplit les valeurs propres
@@ -2719,7 +2515,7 @@ void DriftModel::staggeredVFFCMatricesConservativeVariables(double u_mn)
 
 void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 {
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"DriftModel::staggeredVFFCMatricesPrimitiveVariables()"<<endl;
 
 	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
@@ -2791,7 +2587,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 
 				if(u_mn>_precision)
 				{
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"VFFC Staggered state rhomi="<<rhomi<<" cmi= "<<cmi<<" Emi= "<<Emi<<" Tmi= "<<Tmi<<" pj= "<<pj<<endl;
 
 					/***********Calcul des valeurs propres ********/
@@ -2805,7 +2601,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 					}
 					double amj=sqrt(_kappa*hmj+_khi+cmj*_ksi);//vitesse du son du melange
 
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"_khi= "<<_khi<<", _kappa= "<< _kappa << ", _ksi= "<<_ksi <<", amj= "<<amj<<endl;
 
 					//On remplit les valeurs propres
@@ -2872,7 +2668,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 				}
 				else if(u_mn<-_precision)
 				{
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"VFFC Staggered state rhomj="<<rhomj<<" cmj= "<<cmj<<" Emj= "<<Emj<<" Tmj= "<<Tmj<<" pi= "<<pi<<endl;
 
 					/***********Calcul des valeurs propres ********/
@@ -2884,7 +2680,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 						throw CdmathException("staggeredVFFCMatricesPrimitiveVariables: vitesse du son complexe");
 					}
 					double ami=sqrt(_kappa*hmi+_khi+cmi*_ksi);//vitesse du son du melange
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"_khi= "<<_khi<<", _kappa= "<< _kappa << ", _ksi= "<<_ksi <<", ami= "<<ami<<endl;
 
 					//On remplit les valeurs propres
@@ -2971,7 +2767,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 
 				if(u_mn>_precision)
 				{
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"VFFC Staggered state rhomi="<<rhomi<<" cmi= "<<cmi<<" Hmi= "<<Hmi<<" Tmi= "<<Tmi<<" pj= "<<pj<<endl;
 
 					/***********Calcul des valeurs propres ********/
@@ -2984,7 +2780,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 					}
 					double amj=sqrt(_kappa*hmj+_khi+cmj*_ksi);//vitesse du son du melange
 
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"_khi= "<<_khi<<", _kappa= "<< _kappa << ", _ksi= "<<_ksi <<", amj= "<<amj<<endl;
 
 					//On remplit les valeurs propres
@@ -3051,7 +2847,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 				}
 				else if(u_mn<-_precision)
 				{
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"VFFC Staggered state rhomj="<<rhomj<<" cmj= "<<cmj<<" Hmj= "<<Hmj<<" Tmj= "<<Tmj<<" pi= "<<pi<<endl;
 
 					/***********Calcul des valeurs propres ********/
@@ -3063,7 +2859,7 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 						throw CdmathException("staggeredVFFCMatricesPrimitiveVariables: vitesse du son complexe");
 					}
 					double ami=sqrt(_kappa*hmi+_khi+cmi*_ksi);//vitesse du son du melange
-					if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+					if(_verbose && _nbTimeStep%_freqSave ==0)
 						cout<<"_khi= "<<_khi<<", _kappa= "<< _kappa << ", _ksi= "<<_ksi <<", ami= "<<ami<<endl;
 
 					//On remplit les valeurs propres
@@ -3469,7 +3265,7 @@ void DriftModel::getDensityDerivatives(double concentration, double pression, do
 	else
 		throw CdmathException("DriftModel::primToConsJacobianMatrix: eos should be StiffenedGas or StiffenedGasDellacherie");
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
+	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout<<"_drho_sur_dcv= "<<_drho_sur_dcv<<", _drho_sur_dp= "<<_drho_sur_dp<<", _drho_sur_dT= "<<_drho_sur_dT<<endl;
 		cout<<"_drhocv_sur_dcv= "<<_drhocv_sur_dcv<<", _drhocv_sur_dp= "<<_drhocv_sur_dp<<", _drhocv_sur_dT= "<<_drhocv_sur_dT<<endl;
