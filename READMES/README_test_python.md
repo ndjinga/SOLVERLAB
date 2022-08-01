@@ -1,16 +1,13 @@
 
-QUICK TESTS
-============
+## QUICK TESTS
 
 
 Eazy tests *a mano*.
 
 
-quick test python 1
---------------------
+### quick test python-SALOME
 
 With a SALOME or MATIX configuration/installation
-
 
 ```
 matix context   # or ...
@@ -40,8 +37,8 @@ help(XYZ)
 ```
 
 
-tricks
-=======
+### tricks
+
 
 To explore and debug if import problems
 
@@ -63,15 +60,3 @@ find ${ADIR}/SOURCES/PACKAGESPY -name "helppy"
 
 cd ${ADIR}
 ${ADIR}/matix
-
-/*** http://patorjk.com/software/taag/#p=display&v=1&c=c&f=Big&t=SolverlabGUI%0A%0A%0A%0A
- *       _____       _                _       _      _____ _    _ _____ 
- *      / ____|     | |              | |     | |    / ____| |  | |_   _|
- *     | (___   ___ | |_   _____ _ __| | __ _| |__ | |  __| |  | | | |  
- *      \___ \ / _ \| \ \ / / _ \ '__| |/ _` | '_ \| | |_ | |  | | | |  
- *      ____) | (_) | |\ V /  __/ |  | | (_| | |_) | |__| | |__| |_| |_ 
- *     |_____/ \___/|_| \_/ \___|_|  |_|\__,_|_.__/ \_____|\____/|_____|
- *                                                                      
- *                                                                      
- */
-```

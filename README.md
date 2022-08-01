@@ -1,10 +1,10 @@
 ![logo](./images/logoSOLVERLAB.png)
 
 
-# SOLVERLAB
+## SOLVERLAB
 
 
-## Introduction
+### Introduction
 
 SOLVERLAB is a geometrical and numerical C++/Python library designed for numerical analysts
 who work on the discretisation of partial differential equations on general shapes and meshes
@@ -40,7 +40,7 @@ on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows-1
 The corresponding binary files can be found  [here](https://www.salome-platform.org/?page_id=15).
 
 
-## Examples of use
+### Examples of use
 
 - [Examples of stable numerical methods for the 1D linear transport equation](
   CDMATH/tests/doc/1DTransportEquation/RegularGrid/TransportEquation1D_RegularGrid.ipynb)
@@ -65,7 +65,7 @@ The corresponding binary files can be found  [here](https://www.salome-platform.
   CDMATH/tests/doc/3DPoissonTorusEF/SynthesisConvergenceFETorus.pdf)
 
 
-## User guide of the CoreFlows module
+### User guide of the CoreFlows module
 
 The user guide is organized as follows :
 - [The physical models](./CoreFlows/Documentation/PhysicalModels.md)
@@ -83,7 +83,7 @@ The user guide is organized as follows :
 - [SOLVERLAB-CoreFlows example scripts](CoreFlows/Documentation/examples.md)
 
 
-## Run SOLVERLAB from SALOME
+### Run SOLVERLAB from SALOME
 
 The easiest way to run SOLVERLAB is to launch the SOLVERLAB module of the SALOME platform :
 - download the binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15).
@@ -94,7 +94,7 @@ The easiest way to run SOLVERLAB is to launch the SOLVERLAB module of the SALOME
     - or use the SALOME python shell to run SOLVERLAB python scripts.
 
 
-## Standalone compilation from sources
+### Standalone compilation from sources
 
 However the SALOME binary file can be very large (up to 5GB).
 Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
@@ -109,10 +109,10 @@ Detailed instructions for compilation and use of standalone SOLVERLAB can be fou
 [Standalone compilation from sources](CoreFlows/Documentation/install.md).
 
 
-## Use of SOLVERLAB in a terminal/console
+### Use of SOLVERLAB in a terminal/console
 
 
-### Running Python scripts
+#### Running Python scripts
 
 If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
  * `source /path/to/SOLVERLAB_install/env_SOLVERLAB.sh`  
@@ -121,7 +121,7 @@ Then to run SOLVERLAB with your Python code `main.py `, simply type in your term
 - `python3 main.py`
 
 
-### Launching SOLVERLAB graphic interface from a terminal
+#### Launching SOLVERLAB graphic interface from a terminal
 
 If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
  * `source /path/to/SOLVERLAB_install/env_SOLVERLAB.sh`
@@ -130,7 +130,7 @@ Then to use the Graphical User Interface of SOLVERLAB, simply type in your termi
 - `python3 $SOLVERLABGUI -g`
 
 
-### Running C++ scripts
+#### Running C++ scripts
 
 If performance or parallelism is an issue for your simulations and python is too slow for your needs,
 you can link your C++ or Fortran code with SOLVERLAB librairies :
@@ -140,7 +140,7 @@ you can link your C++ or Fortran code with SOLVERLAB librairies :
   ` -lmedC -lmedloader -lmedcoupling -lbase -lmesh -llinearsolver`, plus `-lmpi` if you are using a parallel version of SOLVERLAB.
 
 
-### SOLVERLAB environment variables
+#### SOLVERLAB environment variables
 
 The SOLVERLAB environment variables consist in :
  * SOLVERLAB C++ library path: `/path/to/SOLVERLAB_install/lib`
