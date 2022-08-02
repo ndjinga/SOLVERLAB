@@ -232,9 +232,9 @@ void IsothermalSinglePhase::convectionMatrices()
 	double c;
 	if(_Uroe[_nVar]==0.)//infinite sound speed
 		if(_timeScheme==Explicit)
-			throw CdmathException("Explicit scheme cannot be used for incompressible fluids");
+			throw CdmathException("Explicit scheme cannot be used for incompressible fluids since dt=0");
 		else
-			c=0.;
+			c=0.;//The velocity will be used to determine the time step
 	else
 		c=1./sqrt(_Uroe[_nVar]);
 		
@@ -570,17 +570,22 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 
 void IsothermalSinglePhase::getDensityDerivatives( double pressure)
 {
-	double rho=_fluides[0]->getDensity(pressure,_Temperature);
-	double gamma=_fluides[0]->constante("gamma");
-	double q=_fluides[0]->constante("q");
-
-	StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-	double e = fluide0->getInternalEnergy(_Temperature);
-
-	_drho_sur_dp=1/((gamma-1)*(e-q));
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"_drho_sur_dp= "<<_drho_sur_dp<<endl;	
+	CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
+	
+	if(fluide0==NULL)
+		throw CdmathException("IsothermalSinglePhase::getDensityDerivatives should not be used with incompressible fluids");
+	else
+	{
+		double rho=fluide0->getDensity(pressure,_Temperature);
+		double gamma=fluide0->constante("gamma");
+		double q=fluide0->constante("q");
+		double e =fluide0->getInternalEnergy(_Temperature);
+	
+		_drho_sur_dp=1/((gamma-1)*(e-q));
+	
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+			cout<<"_drho_sur_dp= "<<_drho_sur_dp<<endl;	
+	}
 }
 
 void IsothermalSinglePhase::pressureLossVector(PetscScalar * pressureLoss, double K, PetscScalar * Ui, PetscScalar * Vi, PetscScalar * Uj, PetscScalar * Vj)
@@ -967,9 +972,39 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
 void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double porosity)//To do: treat porosity
 {  //Wcons and Wprim are vectors with _nVar components
 	//Wcons has been extracted from the vector _conservativeVars which has _Nmailles*_nVar components
-		*_runLogFile<< "IsothermalSinglePhase::consToPrim should not be used" << endl;
-		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::consToPrim should not be used");
+	CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
+	
+	if(fluide0==NULL)
+		throw CdmathException("IsothermalSinglePhase::consToPrim should not be used with incompressible fluids");
+	else
+	{
+		double q_2 = 0;
+		for(int k=1;k<=_Ndim;k++)
+			q_2 += Wcons[k]*Wcons[k];
+		q_2 /= Wcons[0];	//phi rho u²
+	
+		double rho=Wcons[0]/porosity;
+		double e =fluide0->getInternalEnergy(_Temperature);
+		Wprim[0] =fluide0->getPressure(rho*e,rho);//pressure p
+		if (Wprim[0]<0){
+			cout << "pressure = "<< Wprim[0] << " < 0 " << endl;
+			*_runLogFile<< "pressure = "<< Wprim[0] << " < 0 " << endl;
+			_runLogFile->close();
+			throw CdmathException("IsothermalSinglePhase::consToPrim: negative pressure");
+		}
+		for(int k=1;k<=_Ndim;k++)
+			Wprim[k] = Wcons[k]/Wcons[0];//velocity u
+	
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+		{
+			cout<<"ConsToPrim Vecteur conservatif"<<endl;
+			for(int k=0;k<_nVar;k++)
+				cout<<Wcons[k]<<endl;
+			cout<<"ConsToPrim Vecteur primitif"<<endl;
+			for(int k=0;k<_nVar;k++)
+				cout<<Wprim[k]<<endl;
+		}
+	}
 }
 
 void IsothermalSinglePhase::convectionMatrixPrimitiveVariables(double u_n )
