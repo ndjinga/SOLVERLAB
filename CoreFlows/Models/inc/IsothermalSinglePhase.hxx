@@ -96,7 +96,7 @@ protected :
 	//!Computation of the staggered Roe upwinding matrix in primitive variables
 	void staggeredRoeUpwindingMatrixPrimitiveVariables( double u_n);
 	//!calcule la matrice de diffusion de l'etat interface pour la diffusion
-	void diffusionPrimitiveStateAndMatrices(const long &i,const long &j, const bool &IsBord);
+	void diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord);
 	//!Ajoute au second membre la contribution de la gravite et du frottement
 	void sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar * Vi, int i);
 	//!Computes the pressure loss associated to the face ij
@@ -106,9 +106,9 @@ protected :
 	//matrice de gravite
 	// void gravityMatrix();
 	//!Calcule la jacobienne de la CL convection
-	void jacobianConvGhostState(const int &j, string nameOfGroup,double * normale);
+	void jacobian(const int &j, string nameOfGroup,double * normale);
 	//!Calcule la jacobienne de la CL de diffusion
-	void jacobianDiffGhostState(const int &j, string nameOfGroup);
+	void jacobianDiff(const int &j, string nameOfGroup);
 	//!Calcule l'etat fictif à la frontiere
 	void setBoundaryState(string nameOfGroup, const int &j,double *normale);
 	//!Ajoute au second membre la contribution de la diffusion
@@ -127,6 +127,10 @@ protected :
 	 * @param pressure
 	*/
 	void getDensityDerivatives( double pressure);
+	
+	//Functions not yet implemented (generate exceptions)
+	Vector staggeredVFFCFlux();
+	void entropicShift(double* n);
 
 };
 

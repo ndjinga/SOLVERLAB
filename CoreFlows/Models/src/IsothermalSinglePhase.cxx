@@ -158,7 +158,7 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 	
 }
 
-void IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices(const long &i,const long &j, const bool &IsBord){
+void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord){
 	//entree: indices des cellules Vi et Vj.
 	//Attention : Vj peut être un état fantôme
 	//sortie: matrices et etat de diffusion (rho, q) ou (p, v) ?
@@ -670,7 +670,7 @@ void IsothermalSinglePhase::computeScaling(double maxvp)
 	}
 }
 
-void IsothermalSinglePhase::jacobianConvGhostState(const int &j, string nameOfGroup,double * normale)
+void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * normale)
 {
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite convection bord "<< nameOfGroup<<endl;
@@ -863,11 +863,11 @@ void IsothermalSinglePhase::jacobianConvGhostState(const int &j, string nameOfGr
 		cout << "group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::jacobianConvGhostState: This boundary condition is not treated");
+		throw CdmathException("IsothermalSinglePhase::jacobian: This boundary condition is not treated");
 	}
 }
 
-void IsothermalSinglePhase::jacobianDiffGhostState(const int &j, string nameOfGroup)
+void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 {
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"Jacobienne condition limite diffusion bord "<< nameOfGroup<<endl;
@@ -933,7 +933,7 @@ void IsothermalSinglePhase::jacobianDiffGhostState(const int &j, string nameOfGr
 		cout << "group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::jacobianDiffGhostState: This boundary condition is not recognised");
+		throw CdmathException("IsothermalSinglePhase::jacobianDiff: This boundary condition is not recognised");
 	}
 }
 
@@ -1539,4 +1539,18 @@ void IsothermalSinglePhase::save(){
 	}
 	if (_restartWithNewFileName)
 		_restartWithNewFileName=false;
+}
+
+Vector IsothermalSinglePhase::staggeredVFFCFlux()
+{
+	*_runLogFile<< "IsothermalSinglePhase::staggeredVFFCFlux is not yet available "<<  endl;
+	_runLogFile->close();
+	throw CdmathException("IsothermalSinglePhase::staggeredVFFCFlux is not yet available");
+}
+
+void IsothermalSinglePhase::entropicShift(double* n)
+{
+	*_runLogFile<< "IsothermalSinglePhase::entropicShift is not yet available "<<  endl;
+	_runLogFile->close();
+	throw CdmathException("IsothermalSinglePhase::entropicShift is not yet available");
 }
