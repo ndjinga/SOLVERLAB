@@ -2,14 +2,14 @@
 ## QUICK TESTS
 
 
-Eazy tests *a mano*.
+Easy tests *a mano*.
 
 
 ### quick test python-SALOME
 
-With a SALOME or MATIX configuration/installation
+With a SALOME or MATIX configuration/installation.
 
-```
+```bash
 matix context   # or ...
 salome context
 
@@ -40,9 +40,9 @@ help(XYZ)
 ### tricks
 
 
-To explore and debug if import problems
+To explore and debug, if import problems.
 
-```
+```bash
 export ADIR=/volatile2/wambeke/TULEAP_MATIX3/MATIX_30-CO7
 
 ${ADIR}/matix context
@@ -60,3 +60,4 @@ find ${ADIR}/SOURCES/PACKAGESPY -name "helppy"
 
 cd ${ADIR}
 ${ADIR}/matix
+```
