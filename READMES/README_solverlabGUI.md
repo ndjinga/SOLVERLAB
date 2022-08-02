@@ -5,50 +5,51 @@
 
 ### Introduction
 
-- Is a new Graphical User Interface (GUI-IHM) based on the library PACKAGESPY,
-which is being developped for SOLVERLAB.
+- Is a new Graphical User Interface (GUI-IHM) developped for SOLVERLAB,
+  this GUI uses the library PACKAGESPY.
 
-- In order to use the new GUI use the cmake option `-DSOLVERLAB_WITH_PACKAGESPY=ON`.
-That will download the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) from github.
+- To use the GUI, use the cmake option `-DSOLVERLAB_WITH_PACKAGESPY=ON`.
+  That will download the library [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) from github.
 
-- If you have a local copy of the library PACKAGESPY,
-give the link to solverlab using the cmake option `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`.
+- **OR** if you have a local copy of the library
+  [PACKAGESPY](https://codev-tuleap.intra.cea.fr/plugins/git/matix/packagespy.git)
+  (as in SALOME tuleap contex), give the link to solverlab using the cmake option
+  `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`.
 
-- To use the Graphical User Interface of SOLVERLAB,
-you can load the SOLVERLAB environment **in your terminal**, type:
+- Finally, to launch the Graphical User Interface of SOLVERLAB,
+  you have to load the SOLVERLAB environment *in your terminal*, type:
 
-    ```
-    source .../SOLVERLAB_install/env_SOLVERLAB.sh`
-    $SOLVERLABGUI -h  # to get CLI help
-    $SOLVERLABGUI -g  # to get GUI
-    ```
+  ```bash
+  source .../SOLVERLAB_install/env_SOLVERLAB.sh
+  $SOLVERLABGUI -h  # help CLI
+  $SOLVERLABGUI -g  # lanch GUI
+  ```
 
-### PACKAGESPY prerequisite
 
-- PACKAGESPY is the *main* mandatory prerequisite for SOLVERLAB_**GUI**.
+### PACKAGESPY (Tuleap) *outside* SOLVERLAB_GUI prerequisite
 
-- The **reference** base git for PACKAGESPY is
-https://codev-tuleap.intra.cea.fr/plugins/git/matix/packagespy.git
+- PACKAGESPY is the *main* mandatory prerequisite for SOLVERLAB_GUI.
+
+- The *reference* (SALOME-MATIX) base git for PACKAGESPY is
+  `https://codev-tuleap.intra.cea.fr/plugins/git/matix/packagespy.git`
 
 - NOTE: This web site is not reacheable for everybody, unhappily.
 
 
-PACKAGESPY_*in*_SOLVERLAB_GUI prerequisite
------------------------------------------
 
-- To clone (get) **one version** of PACKAGESPY in SOLVERLAB_GUI,
-as prerequisite **customized and integrated**
-in base git SOLVERLAB, **advanced authorized user** may use
-bash script `...SOLVERLAB/scripts/get_packagespy.sh`.
+### PACKAGESPYGUI (Github) *inside* SOLVERLAB_GUI prerequisite
 
-- WARNING: it is a **lightened** version of reference base git matix-tuleap-packagespy
+- To clone-get *one version* of PACKAGESPY in SOLVERLAB_GUI, see
+  [PACKAGESPYGUI](https://github.com/ndjinga/PACKAGESPYGUI) from github.
 
-- If this script launched with success, **authorized user**
-may set the new PACKAGESPY-SOLVERLAB_**GUI**
-prerequisite reference in base git SOLVERLAB.
+- WARNING: it is a *lightened* version of reference base git tuleap-SALOME-MATIX packagespy
+
+- If this script launched with success, *authorized user*
+  may set the new PACKAGESPY-SOLVERLAB_GUI
+  prerequisite reference in base git SOLVERLAB.
 
 - Commiting his new tag (...or his new branch) in
-https://github.com/ndjinga/SOLVERLAB.git (for example),
-**authorized user** allows *every users* to get and use SOLVERLAB_**GUI**.
+  https://github.com/ndjinga/SOLVERLAB.git (for example),
+  *authorized user* allows *every users* to get and use SOLVERLAB_GUI.
 
 - WARNING: This is a **FORK!** (alas unhappily!) (TODO: *avoid fork!, ever!*)
