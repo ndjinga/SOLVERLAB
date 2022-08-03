@@ -847,12 +847,12 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 	_idm[0] = _nVar*j;
 	for(k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
-	VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);
-	double q_n=0;//quantité de mouvement normale à la paroi
+	VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
+	double u_n=0;//quantité de mouvement normale à la paroi
 	for(k=0; k<_Ndim; k++)
-		q_n+=_externalStates[(k+1)]*normale[k];
+		u_n+=_externalStates[(k+1)]*normale[k];
 
-	// loop of boundary types
+	// switch on boundary types
 	if (_limitField[nameOfGroup].bcType==Wall)
 	{
 		for(k=0; k<_nVar;k++)
@@ -863,165 +863,33 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 	}
 	else if (_limitField[nameOfGroup].bcType==Inlet)
 	{
-		return;
-		if(q_n<0){
-			double v[_Ndim], ve[_Ndim], v2, ve2;
-
-			_idm[0] = _nVar*j;
-			for(k=1; k<_nVar; k++)
-				_idm[k] = _idm[k-1] + 1;
-			VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
-			VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-
-			ve[0] = _limitField[nameOfGroup].v_x[0];
-			v[0]=_Vj[1];
-			ve2 = ve[0]*ve[0];
-			v2 = v[0]*v[0];
-			if (_Ndim >1){
-				ve[1] = _limitField[nameOfGroup].v_y[0];
-				v[1]=_Vj[2];
-				ve2 += ve[1]*ve[1];
-				v2 = v[1]*v[1];
-			}
-			if (_Ndim >2){
-				ve[2] = _limitField[nameOfGroup].v_z[0];
-				v[2]=_Vj[3];
-				ve2 += ve[2]*ve[2];
-				v2 = v[2]*v[2];
-			}
+		if(u_n<0){
+		for(k=0; k<_nVar;k++)
+			_Jcb[k*_nVar + k] = 0;
+		_Jcb[0] = 1;
 		}
-		else
+		else//Neumann BC
 			for(k=0;k<_nVar;k++)
 				_Jcb[k*_nVar+k]=1;
-		//Old jacobian
-		/*
-		 _Jcb[0] = 1;
-		_Jcb[_nVar]=_limitField[nameOfGroup].v_x[0];//Kieu
-		v2 +=(_limitField[nameOfGroup].v_x[0])*(_limitField[nameOfGroup].v_x[0]);
-		if(_Ndim>1)
-		{
-			_Jcb[2*_nVar]= _limitField[nameOfGroup].v_y[0];
-			v2 +=_limitField[nameOfGroup].v_y[0]*_limitField[nameOfGroup].v_y[0];
-			if(_Ndim==3){
-				_Jcb[3*_nVar]=_limitField[nameOfGroup].v_z[0];
-				v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
-			}
-		}
-		 */
 	}
-	else if (_limitField[nameOfGroup].bcType==InletPressure && q_n<0){
-		return;
-		double v[_Ndim], v2=0;
-		_idm[0] = _nVar*j;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
-
-		for(k=0; k<_Ndim;k++){
-			v[k]=_Vj[1+k];
-			v2+=v[k]*v[k];
+	else if (_limitField[nameOfGroup].bcType==InletPressure && u_n<0){
+		for(k=0; k<_nVar;k++)
+		{
+			_Jcb[0*_nVar + k] = 0;//First line
+			_Jcb[k*_nVar + 0] = 0;//First column
 		}
-
-		double rho_ext=_fluides[0]->getDensity(_limitField[nameOfGroup].p, _limitField[nameOfGroup].T);
-		double rho_int = _externalStates[0];
-		double density_ratio=rho_ext/rho_int;
-		//Momentum lines
-		for(int l =1;l<1+_Ndim;l++){
-			_Jcb[l*_nVar]=-density_ratio*v[l-1];
-			_Jcb[l*_nVar+l]=density_ratio;
-		}
-		//Energy lines
-		_Jcb[(_nVar-1)*_nVar]=-v2*density_ratio;
-		for(k=0; k<_Ndim;k++)
-			_Jcb[(_nVar-1)*_nVar+1+k]=density_ratio*v[k];
+		for(k=1; k<_nVar;k++)
+			for(int l=1; l<_nVar;l++)
+				_Jcb[k*_nVar + l] = normale[k-1]*normale[l-1];
 	}
 	// not wall, not inlet, not inletPressure
-	else if(_limitField[nameOfGroup].bcType==Outlet || (_limitField[nameOfGroup].bcType==InletPressure && q_n>=0))
+	else if(_limitField[nameOfGroup].bcType==Outlet || (_limitField[nameOfGroup].bcType==InletPressure && u_n>=0))
 	{
-		return;
-		double v[_Ndim], v2=0;
-		_idm[0] = _nVar*j;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
-
-		for(k=0; k<_Ndim;k++){
-			v[k]=_Vj[1+k];
-			v2+=v[k]*v[k];
-		}
-
-		double rho_ext=_fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature);
-		double rho_int = _externalStates[0];
-		double density_ratio=rho_ext/rho_int;
-		double internal_energy=_fluides[0]->getInternalEnergy(_Temperature,rho_int);
-		double total_energy=internal_energy+v2/2;
-
-		//Mass line
-		_Jcb[0]=density_ratio*(1-v2/(2*internal_energy));
-		for(k=0; k<_Ndim;k++)
-			_Jcb[1+k]=density_ratio*v[k]/internal_energy;
-		_Jcb[_nVar-1]=-density_ratio/internal_energy;
-		//Momentum lines
-		for(int l =1;l<1+_Ndim;l++){
-			_Jcb[l*_nVar]=density_ratio*v2*v[l-1]/(2*internal_energy);
-			for(k=0; k<_Ndim;k++)
-				_Jcb[l*_nVar+1+k]=density_ratio*v[k]*v[l-1]/internal_energy;
-			_Jcb[l*_nVar+1+k]-=density_ratio;
-			_Jcb[l*_nVar+_nVar-1]=-density_ratio*v[l-1]/internal_energy;
-		}
-		//Energy line
-		_Jcb[(_nVar-1)*_nVar]=density_ratio*v2*total_energy/(2*internal_energy);
-		for(k=0; k<_Ndim;k++)
-			_Jcb[(_nVar-1)*_nVar+1+k]=density_ratio*v[k]*total_energy/internal_energy;
-		_Jcb[(_nVar-1)*_nVar+_nVar-1]=density_ratio*(1-total_energy/internal_energy);
-		//Old jacobian
-		/*
-		int idim,jdim;
-		double cd = 1,cn=0,p0, gamma;
-		_idm[0] = j*_nVar;// Kieu
+		for(k=0; k<_nVar;k++)
+			for(int l=0; l<_nVar;l++)
+				_Jcb[k*_nVar + l] = 0;
 		for(k=1; k<_nVar;k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_conservativeVars, _nVar, _idm, _phi);
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-
-		// compute the common numerator and common denominator
-		p0=_fluides[0]->constante("p0");
-		gamma =_fluides[0]->constante("gamma");
-		cn =_limitField[nameOfGroup].p +p0;
-		cd = _phi[0]*_fluides[0]->getInternalEnergy(_externalStates[_nVar-1],rho)-p0;
-		cd*=cd;
-		cd*=(gamma-1);
-		//compute the v2
-		for(k=1; k<_nVar-1;k++)
-			v2+=_externalStates[k]*_externalStates[k];
-		// drho_ext/dU
-		_JcbDiff[0] = cn*(_phi[_nVar-1] -v2 -p0)/cd;
-		for(k=1; k<_nVar-1;k++)
-			_JcbDiff[k]=cn*_phi[k]/cd;
-		_JcbDiff[_nVar-1]= -cn*_phi[0]/cd;
-		//dq_ext/dU
-		for(idim=0; idim<_Ndim;idim++)
-		{
-			//premiere colonne
-			_JcbDiff[(1+idim)*_nVar]=-(v2*cn*_phi[idim+1])/(2*cd);
-			//colonnes intermediaire
-			for(jdim=0; jdim<_Ndim;jdim++)
-			{
-				_JcbDiff[(1+idim)*_nVar + jdim + 1] =_externalStates[idim+1]*_phi[jdim+1];
-				_JcbDiff[(1+idim)*_nVar + jdim + 1]*=cn/cd;
-			}
-			//matrice identite*cn*(rhoe- p0)
-			_JcbDiff[(1+idim)*_nVar + idim + 1] +=( cn*(_phi[0]*_fluides[0]->getInternalEnergy(_externalStates[_nVar-1],rho)-p0))/cd;
-
-			//derniere colonne
-			_JcbDiff[(1+idim)*_nVar + _nVar-1]=-_phi[idim+1]*cn/cd;
-		}
-		//drhoE/dU
-		_JcbDiff[_nVar*(_nVar-1)] = -(v2*_phi[_nVar -1]*cn)/(2*cd);
-		for(int idim=0; idim<_Ndim;idim++)
-			_JcbDiff[_nVar*(_nVar-1)+idim+1]=_externalStates[idim+1]*_phi[_nVar -1]*cn/cd;
-		_JcbDiff[_nVar*_nVar -1] = -(v2/2+p0)*cn/cd;
-		 */
+			_Jcb[k*_nVar + k] = 1;
 	}
 	else  if (_limitField[nameOfGroup].bcType!=Neumann)// not wall, not inlet, not outlet
 	{
