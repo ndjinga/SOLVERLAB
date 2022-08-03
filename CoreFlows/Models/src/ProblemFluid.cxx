@@ -1599,7 +1599,6 @@ void ProblemFluid::addConvectionToSecondMember
 		for(int k=0; k<_nVar; k++)
 			_idn[k] = k;
 		VecGetValues(_Uext, _nVar, _idn, _Uj);
-		displayVector(_Uj, _nVar, "Uj");
 		consToPrim(_Uj, _Vj,_porosityj);
 	}
 	_idm[0] = i;
