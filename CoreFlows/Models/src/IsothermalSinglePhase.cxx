@@ -53,7 +53,8 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
     PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal single phase problem \n");
     
     _usePrimitiveVarsInNewton=true;//This class is designed only to solve linear system in primitive variables
-     _Vdiff=NULL;
+    _Vdiff=NULL;
+    _saveAllFields = false;
 }
 
 void IsothermalSinglePhase::initialize(){
