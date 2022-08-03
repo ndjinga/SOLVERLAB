@@ -148,7 +148,17 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 	}
 
 	//Computation of 1/c²// Todo :  add porosity in the sound speed formula
-	_Uroe[_nVar] = (_Ui[0]-_Uj[0])/(_Vi[0]-_Vj[0]);//_Uroe has size _nVar+1 !!!
+	if(abs(_Vi[0]-_Vj[0])<_precision*max(_Vi[0],_Vj[0]))//need to use EOS
+	{
+		CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
+		
+		if(fluide0==NULL)//case of an incompressible fluid
+		    _Uroe[_nVar] = 0;
+		else
+		    _Uroe[_nVar] = fluide0->getInverseSoundSpeed(max(_Vi[0],_Vj[0]), _Temperature);
+    }    
+	else
+	    _Uroe[_nVar] = (_Ui[0]-_Uj[0])/(_Vi[0]-_Vj[0]);//_Uroe has size _nVar+1 !!!
 	
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -577,12 +587,7 @@ void IsothermalSinglePhase::getDensityDerivatives( double pressure)
 		throw CdmathException("IsothermalSinglePhase::getDensityDerivatives should not be used with incompressible fluids");
 	else
 	{
-		double rho=fluide0->getDensity(pressure,_Temperature);
-		double gamma=fluide0->constante("gamma");
-		double q=fluide0->constante("q");
-		double e =fluide0->getInternalEnergy(_Temperature);
-	
-		_drho_sur_dp=1/((gamma-1)*(e-q));
+		_drho_sur_dp=fluide0->getInverseSoundSpeed(pressure, _Temperature);
 	
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout<<"_drho_sur_dp= "<<_drho_sur_dp<<endl;	
