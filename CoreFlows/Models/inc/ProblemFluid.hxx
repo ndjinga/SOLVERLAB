@@ -586,7 +586,7 @@ protected :
 	 * @param boolean isBoundary is true for a boundary face (i,j) and false otherwise
 	 * @param double mesureFace the lenght or area of the face
 	 * */
-	void addSourceTermToSecondMember(const int i, int nbNeighboursi,const int j, int nbNeighboursj,bool isBoundary, int ij, double mesureFace);
+	virtual void addSourceTermToSecondMember(const int i, int nbNeighboursi,const int j, int nbNeighboursj,bool isBoundary, int ij, double mesureFace);
 
 	/** \fn sourceVector
 	 * \brief Computes the source term (at the exclusion of pressure loss terms)

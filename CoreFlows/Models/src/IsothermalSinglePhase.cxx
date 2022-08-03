@@ -117,7 +117,8 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
 	}
 	else
-		_Vj=_Vext;
+		for(int k=0; k<_nVar; k++)
+			_Vj[k]=_Vext[k];
 
 	if (_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -180,7 +181,8 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
 
 	if(IsBord)
-		_Vj=_Vextdiff;
+		for(int k=0; k<_nVar; k++)
+			_Vj[k]=_Vextdiff[k];
 	else
 		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 
@@ -458,10 +460,11 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 	}
 
 	_idm[0] = 0;
-	for(int k=1; k<_nVar; k++)
-		_idm[k] = _idm[k-1] + 1;
-	_Vext = _externalStates;
-	_Vextdiff = _externalStates;
+	for(int k=0; k<_nVar; k++){
+		//_idm[k] = _idm[k-1] + 1;
+		_Vext[k] = _externalStates[k];
+		_Vextdiff[k] = _externalStates[k];
+	}
 }
 
 void IsothermalSinglePhase::addDiffusionToSecondMember
@@ -474,9 +477,13 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 
 	if(isBord)
 	{
-		_Vj = _Vextdiff;
+		for(int k=0; k<_nVar; k++)
+			_Vj[k] = _Vextdiff[k];
 		_inv_dxj=_inv_dxi;
 	}
+	//J'ai remplacé toutes les égalités du type Vj = Vext 
+	//car si Vj pointe à la même adresse que Vext : lorsqu'on fait delete[] Vj on fait implicitement delete[] Vext => 
+	//donc dès qu'il voit plus tard dans le code delete[] Vext il essaie de désallouer une deuxième fois
 
 	//on n'a pas de contribution sur la masse
 	_phi[0]=0;
@@ -524,18 +531,177 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 		cout << endl;
 	}
 }
+void IsothermalSinglePhase::addSourceTermToSecondMember
+(	const int i, int nbVoisinsi,
+		const int j, int nbVoisinsj,
+		bool isBord, int ij, double mesureFace)//To do : generalise to unstructured meshes
+{
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+		cout<<"ProblemFluid::addSourceTerm cell i= "<<i<< " cell j= "<< j<< " isbord "<<isBord<<endl;
 
+	_idm[0] = i*_nVar;
+	for(int k=1; k<_nVar;k++)
+		_idm[k] = _idm[k-1] + 1;
+	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
+	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
+	sourceVector(_Si,_Ui,_Vi,i);
+
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "Terme source S(Ui), i= " << i<<endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Si[q] << endl;
+		cout << endl;
+	}
+	if(!isBord){
+		for(int k=0; k<_nVar; k++)
+			_idn[k] = _nVar*j + k;
+		VecGetValues(_conservativeVars, _nVar, _idn, _Uj);
+		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
+		sourceVector(_Sj,_Uj,_Vj,j);
+	}else
+	{
+		for(int k=0; k<_nVar; k++)
+			_Vj[k] = _Vext[k];
+		sourceVector(_Sj,_Uj,_Vj,i);
+	}
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		if(!isBord)
+			cout << "Terme source S(Uj), j= " << j<<endl;
+		else
+			cout << "Terme source S(Uj), cellule fantôme "<<endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Sj[q] << endl;
+		cout << endl;
+	}
+
+	//Compute pressure loss vector
+	double K;
+	if(_pressureLossFieldSet){
+		K=_pressureLossField(ij);
+		pressureLossVector(_pressureLossVector, K,_Ui, _Vi, _Uj, _Vj);	
+	}
+	else{
+		K=0;
+		for(int k=0; k<_nVar;k++)
+			_pressureLossVector[k]=0;
+	}
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<"interface i= "<<i<<", j= "<<j<<", ij="<<ij<<", K="<<K<<endl;
+		for(int k=0; k<_nVar;k++)
+			cout<< _pressureLossVector[k]<<", ";
+		cout<<endl;
+	}
+	//Contribution of the porosityField gradient:
+	if(!isBord)
+		porosityGradientSourceVector();
+	else{
+		for(int k=0; k<_nVar;k++)
+			_porosityGradientSourceVector[k]=0;
+	}
+
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		if(!isBord)
+			cout<<"interface i= "<<i<<", j= "<<j<<", ij="<<ij<<", dxi= "<<1/_inv_dxi<<", dxj= "<<1/_inv_dxj<<endl;
+		else
+			cout<<"interface frontière i= "<<i<<", ij="<<ij<<", dxi= "<<1/_inv_dxi<<endl;
+		cout<<"Gradient de porosite à l'interface"<<endl;
+		for(int k=0; k<_nVar;k++)
+			cout<< _porosityGradientSourceVector[k]<<", ";
+		cout<<endl;
+	}
+
+	if(!isBord){
+		if(_wellBalancedCorrection){
+			for(int k=0; k<_nVar;k++)
+				_phi[k]=(_Si[k]+_Sj[k])/2+_pressureLossVector[k]+_porosityGradientSourceVector[k];
+			Polynoms::matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
+			for(int k=0; k<_nVar;k++){
+				_Si[k]=(_phi[k]-_l[k])*mesureFace/_perimeters(i);///nbVoisinsi;
+				_Sj[k]=(_phi[k]+_l[k])*mesureFace/_perimeters(j);///nbVoisinsj;
+			}
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i= " << i<<" venant  (après décentrement) de la face (i,j), j="<<j<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout << "Contribution au terme source Sj de la cellule j= " << j<<" venant  (après décentrement) de la face (i,j), i="<<i<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Sj[q] << endl;
+				cout << endl;
+				cout<<"ratio surface sur volume i = "<<mesureFace/_perimeters(i)<<" perimeter = "<< _perimeters(i)<<endl;
+				cout<<"ratio surface sur volume j = "<<mesureFace/_perimeters(j)<<" perimeter = "<< _perimeters(j)<<endl;
+				cout << endl;
+			}
+		}
+		else{
+			for(int k=0; k<_nVar;k++){
+				_Si[k]=_Si[k]/nbVoisinsi+_pressureLossVector[k]/2+_porosityGradientSourceVector[k]/2;//mesureFace/_perimeters(i)
+				_Sj[k]=_Sj[k]/nbVoisinsj+_pressureLossVector[k]/2+_porosityGradientSourceVector[k]/2;//mesureFace/_perimeters(j)
+			}
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i = " << i<<" venant  de la face (i,j), j="<<j<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout << "Contribution au terme source Sj de la cellule j = " << j<<" venant  de la face (i,j), i="<<i <<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Sj[q] << endl;
+				cout << endl;
+			}
+		}
+		_idn[0] = j;
+		VecSetValuesBlocked(_b, 1, _idn, _Sj, ADD_VALUES);
+	}else{
+		if(_wellBalancedCorrection){
+			for(int k=0; k<_nVar;k++)
+				_phi[k]=(_Si[k]+_Sj[k])/2+_pressureLossVector[k]+_porosityGradientSourceVector[k];
+			Polynoms::matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
+			for(int k=0; k<_nVar;k++)
+				_Si[k]=(_phi[k]-_l[k])*mesureFace/_perimeters(i);///nbVoisinsi;
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i= " << i<<" venant  (après décentrement) de la face (i,bord)"<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout<<"ratio surface sur volume i ="<<mesureFace/_perimeters(i)<<" perimeter = "<< _perimeters(i)<<endl;
+				cout << endl;
+			}
+		}
+		else
+		{
+			for(int k=0; k<_nVar;k++)
+				_Si[k]=_Si[k]/nbVoisinsi+_pressureLossVector[k]/2+_porosityGradientSourceVector[k]/2;//mesureFace/_perimeters(i);//
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i = " << i<<" venant de la face (i,bord) "<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout << endl;
+			}
+		}
+	}
+	_idm[0] = i;
+	VecSetValuesBlocked(_b, 1, _idm, _Si, ADD_VALUES);
+
+	if(_verbose && _nbTimeStep%_freqSave ==0 && _wellBalancedCorrection)
+		displayMatrix( _signAroe,_nVar,"Signe matrice de Roe");
+}
 void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar * Vi, int i)
 {
-	double phirho=Ui[0], T=Vi[_nVar-1];
+	double phirho=Ui[0];
 	double norm_u=0;
 	for(int k=0; k<_Ndim; k++)
 		norm_u+=Vi[1+k]*Vi[1+k];
 	norm_u=sqrt(norm_u);
 
 	Si[0]=0;
-	for(int k=1; k<_nVar-1; k++)
-		Si[k]  =(_gravite[k]-_dragCoeffs[0]*norm_u*Vi[1+k])*phirho;
+	for(int k=1; k<_nVar; k++){
+		Si[k]  =(_gravite[k]-_dragCoeffs[0]*norm_u*Vi[k])*phirho;
+	}
 
 	if(_timeScheme==Implicit)
 	{
@@ -1003,6 +1169,89 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 			for(int k=0;k<_nVar;k++)
 				cout<<Wprim[k]<<endl;
 		}
+	}
+}
+
+void IsothermalSinglePhase::addConvectionToSecondMember
+(		const int &i,
+		const int &j, bool isBord, string groupname
+)
+{
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+		cout<<"ProblemFluid::addConvectionToSecondMember start"<<endl;
+
+	//extraction des valeurs
+	for(int k=0; k<_nVar; k++)
+		_idm[k] = _nVar*i + k;
+	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
+	VecGetValues(_primitiveVars,    _nVar, _idm, _Vi);
+
+	if(!isBord){
+		for(int k=0; k<_nVar; k++)
+			_idn[k] = _nVar*j + k;
+		VecGetValues(_conservativeVars, _nVar, _idn, _Uj);
+		VecGetValues(_primitiveVars,    _nVar, _idn, _Vj);
+	}
+	else{
+		for(int k=0; k<_nVar; k++)
+			_Vj[k]= _Vext[k];
+	
+
+	}
+	_idm[0] = i;
+	_idn[0] = j;
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "addConvectionToSecondMember : état i= " << i << ", _Vi=" << endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Vi[q] << endl;
+		cout << endl;
+		cout << "addConvectionToSecondMember : état j= " << j << ", _Vj=" << endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Vj[q] << endl;
+		cout << endl;
+	}
+	for(int k=0; k<_nVar; k++)
+			_temp[k]=(_Vi[k] - _Vj[k])*_inv_dxi;//(Vi-Vj)*_inv_dxi
+		Polynoms::matrixProdVec(_AroeMinusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^-(V_i-V_j)/dx
+		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
+
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+		{
+			cout << "Ajout convection au 2nd membre pour les etats " << i << "," << j << endl;
+			cout << "(Vi - Vj)*_inv_dxi= "<<endl;;
+			for(int q=0; q<_nVar; q++)
+				cout << _temp[q] << endl;
+			cout << endl;
+			cout << "Contribution convection à " << i << ", A^-*(Vi - Vj)*_inv_dxi= "<<endl;
+			for(int q=0; q<_nVar; q++)
+				cout << _phi[q] << endl;
+			cout << endl;
+		}
+
+		if(!isBord)
+		{
+			for(int k=0; k<_nVar; k++)
+				_temp[k]*=_inv_dxj/_inv_dxi;//(Vi-Vj)*_inv_dxj
+			Polynoms::matrixProdVec(_AroePlusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^+(V_i-Vs_j)/dx
+			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
+
+			if(_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution convection à  " << j << ", A^+*(Vi - Vj)*_inv_dxi= "<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _phi[q] << endl;
+				cout << endl;
+			}
+		}
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<"ProblemFluid::addConvectionToSecondMember end : matrices de décentrement cellules i= " << i << ", et j= " << j<< "):"<<endl;
+		displayMatrix(_absAroeImplicit,   _nVar,"Valeur absolue matrice de Roe en variables primitives");
+		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinus en variables primitives");
+		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlus en variables primitives");
+		displayMatrix(_AroeImplicit,  _nVar,"matrice de Roe en variables primitives");
 	}
 }
 
