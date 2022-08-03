@@ -942,7 +942,7 @@ void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W,
 {   //We do not know the size of Wcons and Wprim 
 	//Sometimes they have _nVar components, sometimes they have _Nmailles*_nVar
 	double phi_rho =_porosityField(j)*_fluides[0]->getDensity(P[i*_nVar], _Temperature);
-	W[j*(_Ndim+2)] =  phi_rho;//phi*rho
+	W[j*_nVar] =  phi_rho;//phi*rho
 	for(int k=0; k<_Ndim; k++)
 		W[j*_nVar+(k+1)] = phi_rho*P[i*_nVar+(k+1)];//phi*rho*u
 }
