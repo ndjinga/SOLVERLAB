@@ -271,14 +271,14 @@ void IsothermalSinglePhase::convectionMatrices()
 	/******** Construction des matrices de decentrement ********/
 	if( _spaceScheme ==centered){
 		for(int i=0; i<_nVar*_nVar;i++)
-			_absAroe[i] = 0;
+			_absAroeImplicit[i] = 0;
 	}
 	else if(_spaceScheme == upwind )
 	{
 		vector< complex< double > > y (3,0);
 		for( int i=0 ; i<3 ; i++)
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
-		Polynoms::abs_par_interp_directe(3,vp_dist, _Aroe, _nVar,_precision, _absAroe,y);
+		Polynoms::abs_par_interp_directe(3,vp_dist, _AroeImplicit, _nVar,_precision, _absAroeImplicit,y);
 
 	}
 	else if( _spaceScheme ==staggered ){
@@ -300,23 +300,16 @@ void IsothermalSinglePhase::convectionMatrices()
 
 	for(int i=0; i<_nVar*_nVar;i++)
 	{
-		_AroeMinus[i] = (_Aroe[i]-_absAroe[i])/2;
-		_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
+		_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
+		_AroePlusImplicit[i]  = (_AroeImplicit[i]+_absAroeImplicit[i])/2;
 	}
-	if(_timeScheme==Implicit)
-	{
-		for(int i=0; i<_nVar*_nVar;i++)
-		{
-			_AroeMinusImplicit[i] = _AroeMinus[i];
-			_AroePlusImplicit[i]  = _AroePlus[i];
-		}
-	}
+
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		displayMatrix(_Aroe, _nVar,"Matrice de Roe");
-		displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
-		displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus");
-		displayMatrix(_AroePlus, _nVar,"Matrice _AroePlus");
+		displayMatrix(_AroeImplicit,      _nVar,"Matrice de Roe en variables primitives");
+		displayMatrix(_absAroeImplicit,   _nVar,"Décentrement en variables primitives");
+		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinus en variables primitives");
+		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlus en variables primitives");
 	}
 }
 
