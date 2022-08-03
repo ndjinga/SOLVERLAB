@@ -1038,15 +1038,15 @@ void IsothermalSinglePhase::staggeredRoeUpwindingMatrixPrimitiveVariables( doubl
 	double rho = _Uroe[ 0 ];
 	_drho_sur_dp = _Uroe[_nVar];
 	
-	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
+	_absAroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
+		_absAroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*_Uroe[1+i]-_vec_normal[i];
+		_absAroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*_Uroe[1+i]-_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j]=rho*_Uroe[1+i]*_vec_normal[j];
-		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
+			_absAroeImplicit[(1+i)*_nVar+1+j]=rho*_Uroe[1+i]*_vec_normal[j];
+		_absAroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
 	}
 }
 
