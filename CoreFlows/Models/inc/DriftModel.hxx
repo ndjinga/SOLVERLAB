@@ -183,12 +183,6 @@ public :
 		_limitField[groupName]=LimitField(InnerWall,-1,vector<double>(1,v_x),vector<double>(1,v_y),vector<double>(1,v_z),Temperature,-1,-1,-1);
 	};
 
-	/** \fn computeNewtonVariation
-	 * \brief Builds and solves the linear system to obtain the variation Vkp1-Vk in a Newton scheme using primitive variables
-	 * @param
-	 * */
-	void computeNewtonVariation();
-
 	/** \fn iterateTimeStep
 	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence
 	 * @param

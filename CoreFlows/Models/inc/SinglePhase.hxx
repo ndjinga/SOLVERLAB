@@ -142,12 +142,6 @@ public :
 			_limitField[groupName]=LimitField(Wall,-1,vector<double>(1,v_x),vector<double>(1,v_y),vector<double>(1,v_z),getReferenceTemperature(),-1,-1,-1);
 	};
 
-	/** \fn computeNewtonVariation
-	 * \brief Builds and solves the linear system to obtain the variation Vkp1-Vk in a Newton scheme using primitive variables
-	 * @param
-	 * */
-	void computeNewtonVariation();
-
 	//EOS functions
 	StiffenedGas getFluidEOS(){ return *dynamic_cast<StiffenedGas*>(_fluides[0]); }
 	double getReferencePressure()    { return _Pref; };
