@@ -18,7 +18,8 @@ option (SOLVERLAB_WITH_GUI           "Compile a Graphic user Interface for SOLVE
 option (SOLVERLAB_WITH_PACKAGE       "Generate RPM, Debian and tarball packages" OFF)
 option (SOLVERLAB_WITH_COREFLOWS     "Generate COREFLOWS module" ON)
 option (SOLVERLAB_WITH_TESTS         "Generate SOLVERLAB example tests" ON)
-option (SOLVERLAB_WITH_MPI         "Generate a parallel version of SOLVERLAB" OFF)
+option (SOLVERLAB_WITH_MPI           "Generate a parallel version of SOLVERLAB" OFF)
+option (SOLVERLAB_WITH_TRACE         "Generate cmake trace variables in log (for cmake debug)" OFF)
 
 #Path to installed libraries
 set (PETSC_DIR            OFF CACHE STRING "PETSc library path" )
@@ -32,13 +33,13 @@ set (MPI4PY_ROOT_DIR      OFF CACHE STRING "MPI4PY library path" )
 set (PACKAGESPY_ROOT_DIR  OFF CACHE STRING "PACKAGESPY library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz 
+set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
      CACHE STRING           "PETSc tarball path/url" )
 set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
-set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz  
+set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
      CACHE STRING           "HDF5 tarball path/url" )
 set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
      CACHE STRING           "MED tarball path/url")
@@ -59,6 +60,10 @@ include(ExternalProject)#For PETSc, MED and MEDCoupling
 
 list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 
+include( TraceNewMacros )
+setcolors()  # to get log_info() colored green etc
+
+log_title( "SOLVERLAB cmake "${CMAKE_BUILD_TYPE} )
 
 #############################
 # Detection of MPI + MPI4PY #
@@ -166,7 +171,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       set(HDF5_LIBRARY_DIR  ${HDF5_ROOT}/lib)
       set(HDF5_INCLUDE_DIRS ${HDF5_ROOT}/include)
     endif( NOT HDF5_FOUND)
-  
+
   else ( DEFINED ENV{PETSC_DIR} OR PETSC_DIR )
     message ( STATUS "PETSC_DIR not set, searching PETSc and SLEPc in the system" )
 
@@ -203,8 +208,8 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       ENDFOREACH(line ${petscversion_file})
       set(PETSC_VERSION ${PETSC_VERSION_MAJOR}.${PETSC_VERSION_MINOR}) #3.8 for fedora 26 , 3.9 for fedora 29 , 3.10 for fedora 30 , 3.12 for fedora 32 , 3.14 for fedora 34 , 3.15 for fedora 35
       message(STATUS "PETSc detected, version is ${PETSC_VERSION_MAJOR}.${PETSC_VERSION_MINOR}" )
-      
-      set(CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES}, petsc-devel (>= 3.4)") # This is not fully working yet. 
+
+      set(CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES}, petsc-devel (>= 3.4)") # This is not fully working yet.
       set(PETSC_INSTALL ${PETSC_DIR})
 
       #Define and search slepc variables
@@ -240,7 +245,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
         ENDFOREACH(line ${slepcversion_file})
         set(SLEPC_VERSION ${SLEPC_VERSION_MAJOR}.${SLEPC_VERSION_MINOR}) #3.8 for fedora 26 , 3.9 for fedora 29 , 3.10 for fedora 30 , 3.12 for fedora 32 , 3.14 for fedora 34 , 3.15 for fedora 35
         message(STATUS "SLEPc detected, version is ${SLEPC_VERSION_MAJOR}.${SLEPC_VERSION_MINOR}" )
-        set (CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES}, slepc-devel (>= 3.4)") # This is not fully working yet. 
+        set (CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES}, slepc-devel (>= 3.4)") # This is not fully working yet.
       else ( IS_DIRECTORY "/usr/include/slepc/" AND EXISTS "/usr/lib64/libslepc.so" )
         message( FATAL_ERROR "SLEPc not found in the system" )
       endif( IS_DIRECTORY "/usr/include/slepc/" AND EXISTS "/usr/lib64/libslepc.so" )
@@ -261,7 +266,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
 
     #  find_package (PETSc 3.4 REQUIRED)
     #  petsc_get_version ()
-    #  set (CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, petsc-dev   (>= 3.4)") # This is not fully working yet. 
+    #  set (CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, petsc-dev   (>= 3.4)") # This is not fully working yet.
 
     #  Define and search slepc variables
     #  if   ( IS_DIRECTORY "/usr/lib/slepc/include" AND EXISTS "/usr/lib/slepc/lib/libslepc_real.so" )
@@ -270,7 +275,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
     #    set(SLEPC_DIR /usr/lib/slepc/)
     #    set(SLEPC_INCLUDES ${SLEPC_DIR}/include)
     #    set(SLEPC_LIBRARIES ${SLEPC_DIR}/lib/libslepc_real.so)
-    #    set (CPACK_DEBIAN_PACKAGE_REQUIRES   "${CPACK_DEBIAN_PACKAGE_REQUIRES}, slepc-devel (>= 3.4)") # This is not fully working yet. 
+    #    set (CPACK_DEBIAN_PACKAGE_REQUIRES   "${CPACK_DEBIAN_PACKAGE_REQUIRES}, slepc-devel (>= 3.4)") # This is not fully working yet.
     #  else ( IS_DIRECTORY "/usr/lib/slepc/include" AND EXISTS "/usr/lib/slepc/lib/libslepc_real.so" )
     #    message( FATAL_ERROR "SLEPc not found in the system" )
     #  endif( IS_DIRECTORY "/usr/lib/slepc/include" AND EXISTS "/usr/lib/slepc/lib/libslepc_real.so" )
@@ -290,12 +295,12 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       MATH(EXPR tarball_name_length "${tarball_url_length}-${start_tarball_name}-7")#name ends before .tar.gz that counts for 7 characters
       string(SUBSTRING ${DOWNLOAD_PETSC} ${start_tarball_name} ${tarball_name_length} PETSC_TARBALL_NAME)
 
-      set(PETSC_DIR ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${PETSC_TARBALL_NAME}) # Location of the final install 
+      set(PETSC_DIR ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${PETSC_TARBALL_NAME}) # Location of the final install
       set(PETSC_ARCH arch-linux-c-opt)
       set(PETSC_INSTALL ${CMAKE_INSTALL_PREFIX}/lib/petsc)#folder to copy petsc libraries and include files
 
       ExternalProject_Add (PETSc
-      URL               ${DOWNLOAD_PETSC}   
+      URL               ${DOWNLOAD_PETSC}
       SOURCE_DIR        ${PETSC_DIR}
       BUILD_IN_SOURCE   TRUE
       CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${PETSC_INSTALL} --with-debugging=0 --download-f2cblaslapack=${DOWNLOAD_F2CBLASLAPACK} --with-mpi=0 --with-fc=0 --download-slepc=${DOWNLOAD_SLEPC} --download-hdf5=${DOWNLOAD_HDF5}   --with-petsc4py=yes --download-slepc-configure-arguments="--with-slepc4py=yes" # --download-openmpi=${DOWNLOAD_OPENMPI} --download-hypre=${DOWNLOAD_HYPRE} --download-mpi4py=${DOWNLOAD_MPI4PY}
@@ -323,7 +328,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       set(PETSC_INCLUDES  ${PETSC_DIR}/${PETSC_ARCH}/include ${PETSC_DIR}/include)
       set(PETSC_LIBRARIES ${PETSC_DIR}/${PETSC_ARCH}/lib/libpetsc.so)
 
-      #extract slepc tarball name 
+      #extract slepc tarball name
       string(LENGTH "${DOWNLOAD_SLEPC}" tarball_url_length)#length of the tarball
       string(FIND   "${DOWNLOAD_SLEPC}" "/" start_tarball_name REVERSE )# last occurence of "/"
       MATH(EXPR start_tarball_name  "${start_tarball_name}+1")#start after the occurence of "/"
@@ -347,7 +352,7 @@ endif( DEFINED ENV{HDF5_ROOT_DIR} OR DEFINED HDF5_ROOT_DIR )
       if   ( NOT HDF5_ROOT )#hdf5 is not defined in cmake arguments
         if  ( DEFINED ENV{HDF5_ROOT} )#hdf5 is defined in the environment
           set(HDF5_ROOT $ENV{HDF5_ROOT})
-        else( DEFINED ENV{HDF5_ROOT} )#hdf5 is not defined in the environment          
+        else( DEFINED ENV{HDF5_ROOT} )#hdf5 is not defined in the environment
           set(HDF5_ROOT ${PETSC_INSTALL})#HDF5 to be found in petsc installation
         endif( DEFINED ENV{HDF5_ROOT} )
       endif( NOT HDF5_ROOT )
@@ -390,7 +395,7 @@ else( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
   set(MACHINE PCLINUX)
   set(MEDFILE_DEFINITIONS "-D${MACHINE} -DMEDFILE_INSTALL_DOC=OFF")#Comment ne pas compiler la doc ?
   set(MEDFILE_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/lib/med) # Location of the final install
-  
+
   #extraction of the tarball archive name
   string(LENGTH "${DOWNLOAD_MED}" tarball_url_length)#length of the name of the tarball
   string(FIND "${DOWNLOAD_MED}" "/" start_tarball_name REVERSE )# last occurence of "/"
@@ -414,7 +419,7 @@ else( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
         LOG_TEST          TRUE           # Wrap test in script to log output
         LOG_INSTALL       TRUE           # Wrap install in script to log output
   )
-  
+
   set(MEDFILE_INCLUDE_DIRS ${MEDFILE_ROOT_DIR}/include)# Nécessaire pour le medloader et les sous-dossiers mesh, et IJKMesh
   set(MEDFILE_LIBRARIES    ${MEDFILE_ROOT_DIR}/lib)# Nécessaire pour le env_SOLVERLAB.sh
   set(MEDFILE_C_LIBRARIES med medC)# Nécessaire pour le medloader
@@ -483,7 +488,7 @@ else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
 endif( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR} )
 
 set(MEDCOUPLING_INCLUDE_DIR ${MEDCOUPLING_ROOT_DIR}/include)
-set(MEDCOUPLING_LIBRARIES   ${MEDCOUPLING_ROOT_DIR}/lib    )#for environment file env_SOLVERLAB.sh 
+set(MEDCOUPLING_LIBRARIES   ${MEDCOUPLING_ROOT_DIR}/lib    )#for environment file env_SOLVERLAB.sh
 
 add_library(medcoupling SHARED IMPORTED )
 set_property(TARGET medcoupling PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libmedcoupling.so)
@@ -499,7 +504,7 @@ endif(TARGET MED AND TARGET PETSc)
 if   (TARGET MED AND TARGET MEDCoupling)
   ExternalProject_Add_StepDependencies( MEDCoupling build MED )#MED doit être compilé avant MEDCoupling
 endif(TARGET MED AND TARGET MEDCoupling)
- 
+
 if   (TARGET PETSc AND TARGET MEDCoupling)
   ExternalProject_Add_StepDependencies( MEDCoupling build PETSc )#PETSc doit être compilé avant MEDCoupling (car il contient hdf5)
 endif(TARGET PETSc AND TARGET MEDCoupling)
@@ -507,12 +512,12 @@ endif(TARGET PETSc AND TARGET MEDCoupling)
 IF(MEDCOUPLING_USE_64BIT_IDS)
   SET(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DMEDCOUPLING_USE_64BIT_IDS)
 ENDIF(MEDCOUPLING_USE_64BIT_IDS)
- 
+
 ####################
 # Final operations #
-####################                                  
+####################
 
-# Paraview variables to choose python version and for env_SOLVERLAB.sh  
+# Paraview variables to choose python version and for env_SOLVERLAB.sh
 if  ( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
   if  ( PARAVIEW_ROOT_DIR )
     set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
@@ -557,7 +562,7 @@ else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   ENDIF( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
 endif( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
 
-#Choose python 2 or 3  
+#Choose python 2 or 3
 IF   ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )#Use python 3, use VERSION_GREATER_EQUAL if cmake >=3.7
   SET(PYTHON2OR3 "3")
   message(STATUS "PARAVIEW_VERSION greater than 5.6. We need python3 for postprocessing scripts.")
@@ -569,9 +574,9 @@ ENDIF( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6
 # Find python
 IF   ( PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
   IF  ( PYTHON_ROOT_DIR )
-    set(Python_ROOT_DIR ${PYTHON_ROOT_DIR} ) 
+    set(Python_ROOT_DIR ${PYTHON_ROOT_DIR} )
   ELSE( PYTHON_ROOT_DIR )
-    set(Python_ROOT_DIR $ENV{PYTHON_ROOT_DIR} ) 
+    set(Python_ROOT_DIR $ENV{PYTHON_ROOT_DIR} )
   ENDIF( PYTHON_ROOT_DIR)
 ENDIF( PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
 
@@ -629,9 +634,9 @@ endif( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
 # Find SWIG
 IF   ( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
   IF   ( DEFINED SWIG_ROOT_DIR )
-    set(SWIG_EXECUTABLE    ${SWIG_ROOT_DIR}/bin/swig ) 
+    set(SWIG_EXECUTABLE    ${SWIG_ROOT_DIR}/bin/swig )
   ELSE ( DEFINED SWIG_ROOT_DIR )
-    set(SWIG_EXECUTABLE $ENV{SWIG_ROOT_DIR}/bin/swig ) 
+    set(SWIG_EXECUTABLE $ENV{SWIG_ROOT_DIR}/bin/swig )
   ENDIF( DEFINED SWIG_ROOT_DIR)
 ENDIF( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
 find_package (SWIG 3.0 REQUIRED)
@@ -640,9 +645,9 @@ find_package (SWIG 3.0 REQUIRED)
 if (SOLVERLAB_WITH_DOCUMENTATION)                                                                           #
  IF   ( DEFINED DOXYGEN_ROOT_DIR OR DEFINED ENV{DOXYGEN_ROOT_DIR})
    IF   ( DEFINED DOXYGEN_ROOT_DIR )
-     set(DOXYGEN_EXECUTABLE    ${DOXYGEN_ROOT_DIR}/bin/doxygen ) 
+     set(DOXYGEN_EXECUTABLE    ${DOXYGEN_ROOT_DIR}/bin/doxygen )
    ELSE ( DEFINED DOXYGEN_ROOT_DIR )
-     set(DOXYGEN_EXECUTABLE $ENV{DOXYGEN_ROOT_DIR}/bin/doxygen ) 
+     set(DOXYGEN_EXECUTABLE $ENV{DOXYGEN_ROOT_DIR}/bin/doxygen )
    ENDIF( DEFINED DOXYGEN_ROOT_DIR)
  ENDIF( DEFINED DOXYGEN_ROOT_DIR OR DEFINED ENV{DOXYGEN_ROOT_DIR})
   find_package (Doxygen)                                                                                    #
@@ -651,15 +656,15 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   if   (NOT DOXYGEN_FOUND)
     message (FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly.")
   endif(NOT DOXYGEN_FOUND)
-  
+
   configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  @ONLY IMMEDIATE)
   add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc)			                                            #
   install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/dev-doc/html DESTINATION share/doc/solverlab-dev-doc OPTIONAL)                  #
-  
+
   configure_file (Doxyfile-user-guide.in ${PROJECT_BINARY_DIR}/Doxyfile-user-guide  @ONLY IMMEDIATE)
   add_custom_target (doc-user COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-user-guide  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-user-guide)			                                            #
   install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/user-doc/html DESTINATION share/doc/solverlab-user-guide OPTIONAL)                  #
-  
+
   find_package(Sphinx)
   add_custom_target (doc-sphinx COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/Documentation"  "${PROJECT_BINARY_DIR}/doc/sphinx-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/Documentation)                                            #
 
@@ -667,23 +672,23 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
     add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/doc/gui-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
     install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
   endif( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
-endif(SOLVERLAB_WITH_DOCUMENTATION)			
+endif(SOLVERLAB_WITH_DOCUMENTATION)
 
 if (SOLVERLAB_WITH_TESTS)                                                                                  #
   enable_testing ()
  IF   ( DEFINED CPPUNIT_ROOT_DIR OR DEFINED ENV{CPPUNIT_ROOT_DIR})
    IF   ( DEFINED CPPUNIT_ROOT_DIR )
-     set(CPPUNIT_ROOT_USER    ${CPPUNIT_ROOT_DIR} ) 
+     set(CPPUNIT_ROOT_USER    ${CPPUNIT_ROOT_DIR} )
    ELSE ( DEFINED CPPUNIT_ROOT_DIR )
-     set(CPPUNIT_ROOT_USER $ENV{CPPUNIT_ROOT_DIR} ) 
+     set(CPPUNIT_ROOT_USER $ENV{CPPUNIT_ROOT_DIR} )
    ENDIF( DEFINED CPPUNIT_ROOT_DIR)
  ENDIF( DEFINED CPPUNIT_ROOT_DIR OR DEFINED ENV{CPPUNIT_ROOT_DIR})
   find_package (CPPUNIT REQUIRED)
-  
+
   add_custom_target (cpp COMMAND ctest -R .exe)# may be replace ctest -R with ctest -L
   add_custom_target (mpi COMMAND ctest -R Proc)# may be replace ctest -R with ctest -L
-endif(SOLVERLAB_WITH_TESTS)			
-				    
+endif(SOLVERLAB_WITH_TESTS)
+
 # Enter subdirectories
 
 set(CDMATH_WITH_POSTPRO ${SOLVERLAB_WITH_POSTPRO} )
@@ -724,3 +729,14 @@ configure_file(
     @ONLY
 )
 
+
+# resume TRACE log
+printCmakeTraceVariable( "COREFLOWS_." ) # "COREFLOWS_." is regExp
+printCmakeTraceVariable( "CDMATH_." ) # "COREFLOWS_." is regExp
+printCmakeTraceVariable( "SOLVERLAB_." )
+printCmakeTraceVariable( "DOWNLOAD_." )
+
+# optionally get trace of all cmake main variables in log (for debug)
+if( SOLVERLAB_WITH_TRACE )
+  printCmakeTrace()
+endif()
