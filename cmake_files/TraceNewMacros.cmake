@@ -4,23 +4,25 @@
 
 # function to print all current variables contents
 function(printCmakeTrace)
+  unset(_variableNames  PARENT_SCOPE)
   get_cmake_property(_variableNames VARIABLES)
+  list(REMOVE_DUPLICATES _variableNames)
   message( STATUS "${ColBlue}BEGIN TRACE" )
   foreach(_variableName ${_variableNames})
     # avoid multi-lines codes as too much
-    if ( "${${_variableName}}" MATCHES ".#?define ." )
+    if ( "${${_variableName}}" MATCHES ".#?define ." ) # too long anyway
       continue()
     endif()
-    if ( "${${_variableName}}" MATCHES ".#?include ." )
+    if ( "${${_variableName}}" MATCHES ".#?include ." ) # too long anyway
       continue()
     endif()
-    if ( "${${_variableName}}" MATCHES ".DOXYFILE_ENCODING." )
+    if ( "${${_variableName}}" MATCHES ".DOXYFILE_ENCODING." ) # illisible anyway
       continue()
     endif()
-    if ( _variableName MATCHES ".?_REGEX$" )
+    if ( _variableName MATCHES ".?_REGEX$" )  # illisible anyway
       continue()
     endif()
-    if ( _variableName MATCHES "Col." )
+    if ( _variableName MATCHES "Col." )  # avoid setcolors below
       continue()
     endif()
     message("TRACE:   ${_variableName}=${${_variableName}}")
@@ -30,7 +32,9 @@ endfunction()
 
 
 function(printCmakeTraceVariable regExp)
+  unset(_variableNames  PARENT_SCOPE)
   get_cmake_property(_variableNames VARIABLES)
+  list(REMOVE_DUPLICATES _variableNames)
   message( STATUS "${ColBlue}" )
   foreach(_variableName ${_variableNames})
     if ( _variableName MATCHES "${regExp}" )

@@ -6,11 +6,14 @@ IF(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
   CMAKE_POLICY(SET CMP0057 NEW)
 ENDIF()
 
+CMAKE_POLICY(SET CMP0074 NEW)
+
 # Project name
 project (SOLVERLAB C CXX)
-set (SOLVERLAB_VERSION_MAJOR 9)
+set (SOLVERLAB_VERSION_MAJOR 9)  # https://semver.org/
 set (SOLVERLAB_VERSION_MINOR 9)
-set (SOLVERLAB_VERSION_SUBMINOR 0)
+set (SOLVERLAB_VERSION_PATCH 0)
+set (SOLVERLAB_VERSION ${SOLVERLAB_VERSION_MAJOR}.${SOLVERLAB_VERSION_MINOR}.${SOLVERLAB_VERSION_PATCH})
 
 option (SOLVERLAB_WITH_DOCUMENTATION "Generate SOLVERLAB documentation" ON)
 option (SOLVERLAB_WITH_PYTHON        "Generate Python interface of SOLVERLAB using SWIG" ON)
@@ -54,7 +57,6 @@ set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4p
 set (DOWNLOAD_PACKAGESPY    https://github.com/ndjinga/PACKAGESPYGUI/archive/refs/heads/main.zip
      CACHE STRING           "PACKAGESPY zip file path/url" )
 
-set (CMAKE_BUILD_TYPE Release CACHE STRING "Installation mode")
 
 include(ExternalProject)#For PETSc, MED and MEDCoupling
 
@@ -63,7 +65,18 @@ list (APPEND CMAKE_MODULE_PATH "${SOLVERLAB_SOURCE_DIR}/cmake_files")
 include( TraceNewMacros )
 setcolors()  # to get log_info() colored green etc
 
-log_title( "SOLVERLAB cmake "${CMAKE_BUILD_TYPE} )
+if (NOT CMAKE_BUILD_TYPE)
+  log_warning( "CMAKE_BUILD_TYPE set Release BY DEFAULT" )
+  set( CMAKE_BUILD_TYPE Release CACHE STRING
+      "Choose the type of build, options are: None Debug Release."
+      FORCE )
+endif()
+
+log_title( "SOLVERLAB ${SOLVERLAB_VERSION} cmake ${CMAKE_VERSION} build ${CMAKE_BUILD_TYPE}" )
+
+# example debug
+# printCmakeTrace()
+# log_fatal("Stoooop")
 
 #############################
 # Detection of MPI + MPI4PY #
@@ -731,10 +744,12 @@ configure_file(
 
 
 # resume TRACE log
-printCmakeTraceVariable( "COREFLOWS_." ) # "COREFLOWS_." is regExp
-printCmakeTraceVariable( "CDMATH_." ) # "COREFLOWS_." is regExp
+# "COREFLOWS_." is regExp
+printCmakeTraceVariable( "COREFLOWS_." )
+printCmakeTraceVariable( "CDMATH_." )
 printCmakeTraceVariable( "SOLVERLAB_." )
 printCmakeTraceVariable( "DOWNLOAD_." )
+
 
 # optionally get trace of all cmake main variables in log (for debug)
 if( SOLVERLAB_WITH_TRACE )
