@@ -695,8 +695,8 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   add_custom_target (doc-sphinx COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/Documentation"  "${PROJECT_BINARY_DIR}/doc/sphinx-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/Documentation)                                            #
 
   if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
-    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/doc/gui-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
-    install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
+    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/gui-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
+    install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/gui-doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
   endif( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)
 
