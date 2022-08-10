@@ -18,7 +18,7 @@ are the study of
 - The coupling of fluid models or multiphysics coupling (eg thermal hydraulics and neutronics or thermal hydraulics and solid thermics)
 
 SOLVERLAB-CoreFlows relies on the numerical toolbox [SOLVERLAB-Toolbox](https://github.com/ndjinga/SOLVERLAB/tree/master/CDMATH) originating from the project [CDMATH](http://cdmath.jimdo.com) for the handling of meshes and fields, and on the library [PETSC](https://petsc.org/release/) for the handling of large sparse matrices.
-You will need the packages 'doxygen' if you want to generate de documentation and 'swig' if you want to use python scripts.  
+You will need the packages 'doxygen' and 'sphinx' if you want to generate de documentation and 'swig' if you want to use python scripts.  
 The library is currently maintained and distributed by the SALOME developpement team on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows-10.
 
 User guide of the CoreFlows module

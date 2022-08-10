@@ -664,11 +664,24 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
    ENDIF( DEFINED DOXYGEN_ROOT_DIR)
  ENDIF( DEFINED DOXYGEN_ROOT_DIR OR DEFINED ENV{DOXYGEN_ROOT_DIR})
   find_package (Doxygen)                                                                                    #
-  set (CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, doxygen, graphviz, mscgen")
-  set (CPACK_RPM_PACKAGE_REQUIRES "${CPACK_RPM_PACKAGE_REQUIRES}, doxygen, graphviz, mscgen")
   if   (NOT DOXYGEN_FOUND)
     message (FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly.")
   endif(NOT DOXYGEN_FOUND)
+
+ IF   ( DEFINED SPHINX_ROOT_DIR OR DEFINED ENV{SPHINX_ROOT_DIR})
+   IF   ( DEFINED SPHINX_ROOT_DIR )
+     set(SPHINX_DIR    ${SPHINX_ROOT_DIR}/bin )
+   ELSE ( DEFINED SPHINX_ROOT_DIR )
+     set(SPHINX_DIR $ENV{SPHINX_ROOT_DIR}/bin/ )
+   ENDIF( DEFINED SPHINX_ROOT_DIR)
+ ENDIF( DEFINED SPHINX_ROOT_DIR OR DEFINED ENV{SPHINX_ROOT_DIR})
+  find_package (Sphinx)                                                                                    #
+  if   (NOT SPHINX_FOUND)
+    message (FATAL_ERROR "Sphinx is needed to build the documentation. Please install it correctly.")
+  endif(NOT SPHINX_FOUND)
+
+  set (CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, python3-sphinx, doxygen, graphviz, mscgen")
+  set (CPACK_RPM_PACKAGE_REQUIRES   "${CPACK_RPM_PACKAGE_REQUIRES},   python3-sphinx, doxygen, graphviz, mscgen")
 
   configure_file (Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  @ONLY IMMEDIATE)
   add_custom_target (doc COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc  SOURCES ${PROJECT_BINARY_DIR}/Doxyfile-dev-doc)			                                            #
