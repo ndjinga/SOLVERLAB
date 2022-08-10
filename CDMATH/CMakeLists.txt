@@ -8,12 +8,12 @@ set (CDMATH_VERSION_MAJOR 9)
 set (CDMATH_VERSION_MINOR 9)
 
 # CDMATH project options (deprecated, see SOLVERLAB options)
-set (CDMATH_WITH_PETSC CACHE STRING ON "Compile CDMATH with PETSc linking")
-set (CDMATH_WITH_DOCUMENTATION ON CACHE STRING "Generate documentation with doxygen")
-set (CDMATH_WITH_PYTHON ON CACHE STRING "Compile Python interface for CDMATH")
-set (CDMATH_WITH_POSTPRO ON CACHE STRING "Install postprocessing Python modules")
-set (CDMATH_WITH_PACKAGE OFF CACHE STRING "Generate RPM, Debian and tarball packages")
-set (CDMATH_WITH_TESTS ON CACHE STRING "Compile unit testing")
+set (CDMATH_WITH_PETSC ${SOLVERLAB_WITH_PETSC} CACHE STRING "Compile CDMATH with PETSc linking")
+set (CDMATH_WITH_DOCUMENTATION ${SOLVERLAB_WITH_DOCUMENTATION} CACHE STRING "Generate documentation with doxygen")
+set (CDMATH_WITH_PYTHON ${SOLVERLAB_WITH_PYTHON} CACHE STRING "Compile Python interface for CDMATH")
+set (CDMATH_WITH_POSTPRO ${SOLVERLAB_WITH_POSTPRO} CACHE STRING "Install postprocessing Python modules")
+set (CDMATH_WITH_PACKAGE ${SOLVERLAB_WITH_PACKAGE} CACHE STRING "Generate RPM, Debian and tarball packages")
+set (CDMATH_WITH_TESTS ${SOLVERLAB_WITH_TESTS} CACHE STRING "Compile unit testing")
 
 #Path to installed libraries
 set (PETSC_DIR            OFF CACHE STRING "PETSc library path" )

@@ -614,12 +614,12 @@ IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
 ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
 
 #For GUI : PyQt5 root dir
-if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
+if   ( SOLVERLAB_WITH_GUI )
   IF   ( NOT DEFINED PYQT5_ROOT_DIR )
     set(PYQT5_ROOT_DIR $ENV{PYQT5_ROOT_DIR} )
   ENDIF( NOT DEFINED PYQT5_ROOT_DIR )
   find_package(PyQt5)
-endif   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
+endif   ( SOLVERLAB_WITH_GUI )
 
 #Paraview library paths
 set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
@@ -697,10 +697,10 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   find_package(Sphinx)
   add_custom_target (doc-sphinx COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/Documentation"  "${PROJECT_BINARY_DIR}/doc/sphinx-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/Documentation)                                            #
 
-  if   ( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
+  if   ( SOLVERLAB_WITH_GUI )
     add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/gui-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
     install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/gui-doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
-  endif( SOLVERLAB_WITH_GUI OR COREFLOWS_WITH_GUI )
+  endif( SOLVERLAB_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)
 
 if (SOLVERLAB_WITH_TESTS)                                                                                  #
@@ -719,14 +719,6 @@ if (SOLVERLAB_WITH_TESTS)                                                       
 endif(SOLVERLAB_WITH_TESTS)
 
 # Enter subdirectories
-
-set(CDMATH_WITH_POSTPRO ${SOLVERLAB_WITH_POSTPRO} )
-set(CDMATH_WITH_PETSC ${SOLVERLAB_WITH_PETSC} )
-set(CDMATH_WITH_DOCUMENTATION ${SOLVERLAB_WITH_DOCUMENTATION} )
-set(CDMATH_WITH_PYTHON ${SOLVERLAB_WITH_PYTHON} )
-set(CDMATH_WITH_PACKAGE ${SOLVERLAB_WITH_PACKAGE} )
-set(CDMATH_WITH_TESTS ${SOLVERLAB_WITH_TESTS} )
-
 add_subdirectory (images)
 add_subdirectory (scripts)
 add_subdirectory (READMES)
