@@ -4,6 +4,7 @@
  *  Created on: July 7 2022
  */
 
+#include<bits/stdc++.h>
 #include "IsothermalSinglePhase.hxx"
 #include "StiffenedGas.hxx"
 
@@ -1708,19 +1709,22 @@ vector<string> IsothermalSinglePhase::getOutputFieldsNames()
 
 Field& IsothermalSinglePhase::getOutputField(const string& nameField )
 {
-	if(nameField=="pressure" || nameField=="Pressure" || nameField=="PRESSURE" || nameField=="PRESSION" || nameField=="Pression"  || nameField=="pression" )
+	string nameField_lower_case=nameField;
+	transform(nameField_lower_case.begin(), nameField_lower_case.end(), nameField_lower_case.begin(), ::tolower);
+	
+	if(nameField_lower_case=="pressure" || nameField_lower_case=="pression" )
 		return getPressureField();
-	else if(nameField=="velocity" || nameField=="Velocity" || nameField=="VELOCITY" || nameField=="Vitesse" || nameField=="VITESSE" || nameField=="vitesse" )
+	else if(nameField_lower_case=="velocity" || nameField_lower_case=="vitesse" )
 		return getVelocityField();
-	else if(nameField=="velocityX" || nameField=="VelocityX" || nameField=="VELOCITYX" || nameField=="VitesseX" || nameField=="VITESSEX" || nameField=="vitesseX" )
+	else if(nameField_lower_case== "velocityx" || nameField_lower_case=="vitessex" )
 		return getVelocityXField();
-	else if(nameField=="velocityY" || nameField=="VelocityY" || nameField=="VELOCITYY" || nameField=="VitesseY" || nameField=="VITESSEY" || nameField=="vitesseY" )
+	else if(nameField_lower_case=="velocityy" || nameField_lower_case=="vitessey" )
 		return getVelocityYField();
-	else if(nameField=="velocityZ" || nameField=="VelocityZ" || nameField=="VELOCITYZ" || nameField=="VitesseZ" || nameField=="VITESSEZ" || nameField=="vitesseZ" )
+	else if(nameField_lower_case=="velocityz" || nameField_lower_case=="vitessez" )
 		return getVelocityZField();
-	else if(nameField=="density" || nameField=="Density" || nameField=="DENSITY" || nameField=="Densite" || nameField=="DENSITE" || nameField=="densite" )
+	else if(nameField_lower_case=="density" || nameField_lower_case=="densite" )
 		return getDensityField();
-	else if(nameField=="momentum" || nameField=="Momentum" || nameField=="MOMENTUM" || nameField=="Qdm" || nameField=="QDM" || nameField=="qdm" )
+	else if(nameField_lower_case=="momentum" || nameField_lower_case=="qdm" )
 		return getMomentumField();
     else
     {
