@@ -73,8 +73,28 @@ void IsothermalSinglePhase::initialize(){
 
 	_Vdiff = new double[_nVar];
 	
-	if(_saveVelocity)
+	if(_saveVelocity || _saveAllFields)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
+
+	if(_saveAllFields)
+	{
+		_Pressure=Field("Pressure",CELLS,_mesh,1);
+		_Pressure.setInfoOnComponent(0,"Pressure_(Pa)");
+		_Density=Field("Density",CELLS,_mesh,1);
+		_Density.setInfoOnComponent(0,"Density_(kg/m^3)");
+		_MachNumber=Field("MachNumber",CELLS,_mesh,1);
+		_MachNumber.setInfoOnComponent(0,"Mach number");
+		_VitesseX=Field("Velocity x",CELLS,_mesh,1);
+		_VitesseX.setInfoOnComponent(0,"Velocity_x_(m/s)");
+		if(_Ndim>1)
+		{
+			_VitesseY=Field("Velocity y",CELLS,_mesh,1);
+			_VitesseY.setInfoOnComponent(0,"Velocity_y_(m/s)");
+			if(_Ndim>2)
+				_VitesseZ=Field("Velocity z",CELLS,_mesh,1);
+				_VitesseZ.setInfoOnComponent(0,"Velocity_z_(m/s)");
+		}
+	}
 
 	ProblemFluid::initialize();
 }
@@ -1669,4 +1689,235 @@ void IsothermalSinglePhase::entropicShift(double* n)
 	*_runLogFile<< "IsothermalSinglePhase::entropicShift is not yet available "<<  endl;
 	_runLogFile->close();
 	throw CdmathException("IsothermalSinglePhase::entropicShift is not yet available");
+}
+
+vector<string> IsothermalSinglePhase::getOutputFieldsNames()
+{
+	vector<string> result(7);
+	
+	result[0]="Pressure";
+	result[1]="Velocity";
+	result[2]="Density";
+	result[3]="Momentum";
+	result[4]="VelocityX";
+	result[5]="VelocityY";
+	result[6]="VelocityZ";
+	
+	return result;
+}
+
+Field& IsothermalSinglePhase::getOutputField(const string& nameField )
+{
+	if(nameField=="pressure" || nameField=="Pressure" || nameField=="PRESSURE" || nameField=="PRESSION" || nameField=="Pression"  || nameField=="pression" )
+		return getPressureField();
+	else if(nameField=="velocity" || nameField=="Velocity" || nameField=="VELOCITY" || nameField=="Vitesse" || nameField=="VITESSE" || nameField=="vitesse" )
+		return getVelocityField();
+	else if(nameField=="velocityX" || nameField=="VelocityX" || nameField=="VELOCITYX" || nameField=="VitesseX" || nameField=="VITESSEX" || nameField=="vitesseX" )
+		return getVelocityXField();
+	else if(nameField=="velocityY" || nameField=="VelocityY" || nameField=="VELOCITYY" || nameField=="VitesseY" || nameField=="VITESSEY" || nameField=="vitesseY" )
+		return getVelocityYField();
+	else if(nameField=="velocityZ" || nameField=="VelocityZ" || nameField=="VELOCITYZ" || nameField=="VitesseZ" || nameField=="VITESSEZ" || nameField=="vitesseZ" )
+		return getVelocityZField();
+	else if(nameField=="density" || nameField=="Density" || nameField=="DENSITY" || nameField=="Densite" || nameField=="DENSITE" || nameField=="densite" )
+		return getDensityField();
+	else if(nameField=="momentum" || nameField=="Momentum" || nameField=="MOMENTUM" || nameField=="Qdm" || nameField=="QDM" || nameField=="qdm" )
+		return getMomentumField();
+    else
+    {
+        cout<<"Error : Field name "<< nameField << " does not exist, call getOutputFieldsNames first to check" << endl;
+        throw CdmathException("IsothermalSinglePhase::getOutputField error : Unknown Field name");
+    }
+}
+
+Field& IsothermalSinglePhase::getPressureField()
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getPressureField, Call initialize first");
+
+	if(!_saveAllFields)
+	{
+		_Pressure=Field("Pressure",CELLS,_mesh,1);
+		int Ii;
+		for (long i = 0; i < _Nmailles; i++){
+			Ii = i*_nVar;
+			VecGetValues(_primitiveVars,1,&Ii,&_Pressure(i));
+		}
+		_Pressure.setTime(_time,_nbTimeStep);
+		_Pressure.setInfoOnComponent(0,"Pressure_(Pa)");
+	}
+	return _Pressure;
+}
+
+Field& IsothermalSinglePhase::getVelocityField()
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getVelocityField, Call initialize first");
+
+	if(!_saveAllFields )
+	{
+		_Vitesse=Field("Vitesse",CELLS,_mesh,3);
+		int Ii;
+		for (long i = 0; i < _Nmailles; i++)
+		{
+			for (int j = 0; j < _Ndim; j++)//On récupère les composantes de vitesse
+			{
+				int Ii = i*_nVar +1+j;
+				VecGetValues(_primitiveVars,1,&Ii,&_Vitesse(i,j));
+			}
+			for (int j = _Ndim; j < 3; j++)//On met à zero les composantes de vitesse si la dimension est <3
+				_Vitesse(i,j)=0;
+		}
+		_Vitesse.setTime(_time,_nbTimeStep);
+		_Vitesse.setInfoOnComponent(0,"Velocity_x_(m/s)");
+		_Vitesse.setInfoOnComponent(1,"Velocity_y_(m/s)");
+		_Vitesse.setInfoOnComponent(2,"Velocity_z_(m/s)");
+	}
+	
+	return _Vitesse;
+}
+
+Field& IsothermalSinglePhase::getMachNumberField()
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getMachNumberField, Call initialize first");
+
+	if(!_saveAllFields )
+	{
+		_MachNumber=Field("Mach number",CELLS,_mesh,1);
+		int Ii;
+		double p,T,rho,h, temp, u2=0;
+		for (long i = 0; i < _Nmailles; i++){
+			Ii = i*_nVar;
+			VecGetValues(_primitiveVars,1,&Ii,&p);
+			Ii = i*_nVar +_nVar-1;
+			VecGetValues(_primitiveVars,1,&Ii,&T);
+			
+			for (int j = 0; j < _Ndim; j++)//On récupère les composantes de vitesse
+			{
+				int Ii = i*_nVar +1+j;
+				VecGetValues(_primitiveVars,1,&Ii,&temp);
+				u2+=temp*temp;
+			}
+	
+			rho=_fluides[0]->getDensity(p,T);
+			h  =_fluides[0]->getEnthalpy(T,rho);
+			_MachNumber[i]  =sqrt(u2)/_fluides[0]->vitesseSonEnthalpie(h);
+			//cout<<"u="<<sqrt(u2)<<", c= "<<_fluides[0]->vitesseSonEnthalpie(h)<<", MachNumberField[i] = "<<MachNumberField[i] <<endl;
+		}
+		_MachNumber.setTime(_time,_nbTimeStep);
+	}
+	//cout<<", MachNumberField = "<<MachNumberField <<endl;
+
+	return _MachNumber;
+}
+
+Field& IsothermalSinglePhase::getVelocityXField()
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getVelocityXField, Call initialize first");
+
+	if(!_saveAllFields )
+	{
+		_VitesseX=Field("Velocity X",CELLS,_mesh,1);
+		int Ii;
+		for (long i = 0; i < _Nmailles; i++)
+		{
+			int Ii = i*_nVar +1;
+			VecGetValues(_primitiveVars,1,&Ii,&_VitesseX(i));
+		}
+		_VitesseX.setTime(_time,_nbTimeStep);
+		_VitesseX.setInfoOnComponent(0,"Velocity_x_(m/s)");
+	}
+	
+	return _VitesseX;
+}
+
+Field& IsothermalSinglePhase::getVelocityYField()
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getVelocityYField, Call initialize first");
+
+	if(_Ndim<2)
+        throw CdmathException("IsothermalSinglePhase::getVelocityYField() error : dimension should be at least 2");	
+	else
+		if(!_saveAllFields )
+		{
+			_VitesseY=Field("Velocity Y",CELLS,_mesh,1);
+			int Ii;
+			for (long i = 0; i < _Nmailles; i++)
+			{
+				int Ii = i*_nVar +2;
+				VecGetValues(_primitiveVars,1,&Ii,&_VitesseY(i));
+			}
+			_VitesseY.setTime(_time,_nbTimeStep);
+			_VitesseY.setInfoOnComponent(0,"Velocity_y_(m/s)");
+		}
+		
+		return _VitesseY;
+}
+
+Field& IsothermalSinglePhase::getVelocityZField()
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getVelocityZField, Call initialize first");
+
+	if(_Ndim<3)
+        throw CdmathException("IsothermalSinglePhase::getvelocityZField() error : dimension should be 3");	
+	else
+		if(!_saveAllFields )
+		{
+			_VitesseZ=Field("Velocity Z",CELLS,_mesh,1);
+			int Ii;
+			for (long i = 0; i < _Nmailles; i++)
+			{
+				int Ii = i*_nVar +3;
+				VecGetValues(_primitiveVars,1,&Ii,&_VitesseZ(i));
+			}
+			_VitesseZ.setTime(_time,_nbTimeStep);
+			_VitesseZ.setInfoOnComponent(0,"Velocity_z_(m/s)");
+		}
+		
+		return _VitesseZ;
+}
+
+Field& IsothermalSinglePhase::getDensityField()
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getDensityField, Call initialize first");
+		
+	if(!_saveAllFields )
+	{
+		_Density=Field("Density",CELLS,_mesh,1);
+		int Ii;
+		for (long i = 0; i < _Nmailles; i++){
+			Ii = i*_nVar;
+			VecGetValues(_conservativeVars,1,&Ii,&_Density(i));
+		}
+		_Density.setTime(_time,_nbTimeStep);
+		_Density.setInfoOnComponent(0,"Density_(kg/m^3)");
+	}
+	return _Density;
+}
+
+Field& IsothermalSinglePhase::getMomentumField()//not yet managed by parameter _saveAllFields
+{
+	if(!_initializedMemory)
+		throw CdmathException("IsothermalSinglePhase::getMomentumField, Call initialize first");
+
+	_Momentum=Field("Momentum",CELLS,_mesh,_Ndim);
+	int Ii;
+	for (long i = 0; i < _Nmailles; i++)
+		for (int j = 0; j < _Ndim; j++)//On récupère les composantes de qdm
+		{
+			int Ii = i*_nVar +1+j;
+			VecGetValues(_conservativeVars,1,&Ii,&_Momentum(i,j));
+		}
+	_Momentum.setTime(_time,_nbTimeStep);
+	_Momentum.setInfoOnComponent(1,"Momentum_x");// (kg/m^2/s)
+	if (_Ndim>1)
+		_Momentum.setInfoOnComponent(2,"Momentum_y");// (kg/m^2/s)
+	if (_Ndim>2)
+		_Momentum.setInfoOnComponent(3,"Momentum_z");// (kg/m^2/s)
+
+	return _Momentum;
 }
