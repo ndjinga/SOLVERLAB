@@ -10,7 +10,7 @@ set (COREFLOWS_VERSION_MINOR 9)
 # CDMATH project options (deprecated, see SOLVERLAB options)
 set (COREFLOWS_WITH_DOCUMENTATION ON CACHE STRING "Generate documentation for CoreFlows use")
 set (COREFLOWS_WITH_PYTHON ON CACHE STRING "Compile Python interface for COREFLOWS")
-set (COREFLOWS_WITH_GUI OFF CACHE STRING "Compile Graphic user Interface for COREFLOWS")
+set (COREFLOWS_WITH_GUI ${SOLVERLAB_WITH_GUI} CACHE STRING "Compile Graphic user Interface for COREFLOWS")
 set (COREFLOWS_WITH_PACKAGE OFF CACHE STRING "Generate RPM, Debian and tarball packages")
 set (COREFLOWS_WITH_TESTS ON CACHE STRING "Compile with testing and examples")
 
