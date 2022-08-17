@@ -7,6 +7,10 @@ import vtk
 from vtk.util import numpy_support as npvtk 
 # do I need to kill the pipeline?
 
+# suppress the many vtk warnings in Paraview 5.7
+from vtkmodules.vtkCommonCore import vtkLogger
+vtkLogger.SetStderrVerbosity(vtkLogger.VERBOSITY_OFF)
+
 def Extract_VTK_data_over_line_to_numpyArray(inputFileName, point1, point2, resolution):
 
     reader = vtk.vtkXMLUnstructuredGridReader()
