@@ -17,7 +17,7 @@ def test_validation2DVF_loc_ref():
     nbMeshes=len(meshList)
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/2DLocRefinedSquares/'
+    mesh_path='./'
     mesh_name='squareWithLocRefSquares'
     diag_data=[0]*nbMeshes
     time_tab=[0]*nbMeshes

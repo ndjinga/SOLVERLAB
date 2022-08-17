@@ -14,7 +14,7 @@ def test_validation2DVF_right_triangles():
     ### 2D FV right triangles mesh
     meshList=[10,20,50,100,150,200]
     #meshList=['squareWithRightTriangles_0','squareWithRightTriangles_1','squareWithRightTriangles_2','squareWithRightTriangles_3','squareWithRightTriangles_4','squareWithTriangles_5']
-    mesh_path='../../../ressources/2DRightTriangles/'
+    mesh_path='./'
     meshType="Regular_right_triangles"
     testColor="Green"
     nbMeshes=len(meshList)

@@ -17,7 +17,7 @@ def test_validation3DCubeSkinEF():
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
     time_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/3DCubeSkin/'
+    mesh_path='./'
     mesh_name='CubeSkinWithTriangles'
     diag_data=[0]*nbMeshes
     resolution=100

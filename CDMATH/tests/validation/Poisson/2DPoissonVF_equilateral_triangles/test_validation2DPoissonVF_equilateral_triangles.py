@@ -14,7 +14,7 @@ def test_validation2DVF_equilateral_triangles():
     ### 2D FV equilateral triangles mesh
     #meshList=[5,20,50,100,200]
     meshList=['squareWithEquilateralTriangles5','squareWithEquilateralTriangles20','squareWithEquilateralTriangles50','squareWithEquilateralTriangles100','squareWithEquilateralTriangles200']
-    mesh_path='../../../ressources/2DEquilateralTriangles/'
+    mesh_path='./'
     meshType="Regular_equilateral_triangles"
     testColor="Green"
     nbMeshes=len(meshList)

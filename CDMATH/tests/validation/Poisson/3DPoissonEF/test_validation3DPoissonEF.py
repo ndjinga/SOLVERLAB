@@ -19,7 +19,7 @@ def test_validation3DEF():
     mesh_size_tab=[0]*nbMeshes
     diag_data=[0]*nbMeshes
     time_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/3DTetrahedra/'
+    mesh_path='./'
     mesh_name='meshCubeWithTetrahedraFE'
     resolution=100
     curv_abs=np.linspace(0,sqrt(3),resolution+1)

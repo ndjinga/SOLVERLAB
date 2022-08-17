@@ -13,7 +13,7 @@ def test_validation2DEF_skinny_triangles():
     #### 2D FE skinny triangle mesh
     #meshList=[5,9,15,21,31]
     meshList=['squareWithSkinnyTriangles_0','squareWithSkinnyTriangles_1','squareWithSkinnyTriangles_2']#,'squareWithSkinnyTriangles_3','squareWithSkinnyTriangles_4'
-    mesh_path='../../../ressources/2DSkinnyTriangles/'
+    mesh_path='./'
     meshType="Regular_skinny_triangles"
     mesh_name='squareWithSkinnyTriangles'
     testColor="Green"

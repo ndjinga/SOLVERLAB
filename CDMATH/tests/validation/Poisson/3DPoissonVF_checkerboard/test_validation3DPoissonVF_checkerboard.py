@@ -18,7 +18,7 @@ def test_validation3DVF_checkerboard():
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
     time_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/3DCheckerboard/'
+    mesh_path='./'
     mesh_name='CubeWithCheckerboardCubes'
     diag_data=[0]*nbMeshes
     resolution=100

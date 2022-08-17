@@ -13,7 +13,7 @@ def test_validation2DVF_cross_triangles():
     ### 2D FV cross triangles mesh
     #meshList=[5,9,15,21,31]
     meshList=['squareWithCrossTriangles_0','squareWithCrossTriangles_1','squareWithCrossTriangles_2','squareWithCrossTriangles_3']#,'squareWithCrossTriangles_4'
-    mesh_path='../../../ressources/2DCrossTriangles/'
+    mesh_path='./'
     meshType="Regular_cross_triangles"
     testColor="Green"
     nbMeshes=len(meshList)

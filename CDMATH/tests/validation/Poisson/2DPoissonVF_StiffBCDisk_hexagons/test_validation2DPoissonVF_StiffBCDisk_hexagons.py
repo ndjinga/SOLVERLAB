@@ -17,7 +17,7 @@ def test_validation2DVF_StiffBC_hexagons():
     nbMeshes=len(meshList)
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/2DDiskWithHexagons/'
+    mesh_path='./'
     mesh_name='diskWithHexagons'
     diag_data=[0]*nbMeshes
     time_tab=[0]*nbMeshes
