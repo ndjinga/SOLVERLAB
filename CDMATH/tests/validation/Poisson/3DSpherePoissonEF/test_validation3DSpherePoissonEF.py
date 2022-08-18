@@ -18,7 +18,7 @@ def test_validation3DSphereEF():
     mesh_size_tab=[0]*nbMeshes
     time_tab=[0]*nbMeshes
     iterations_tab=[0]*nbMeshes
-    tolerance_tab=[0]*nbMeshes
+    residual_tab=[0]*nbMeshes
     mesh_path='./'
     mesh_name='SphereWithTriangles'
     diag_data=[0]*nbMeshes
@@ -27,12 +27,12 @@ def test_validation3DSphereEF():
     i=0
     # Storing of numerical errors and mesh sizes
     for filename in meshList:
-        error_tab[i], mesh_size_tab[i], min_sol_num, max_sol_num, time_tab[i], iterations_tab[i], tolerance_tab[i] =FiniteElements3DPoissonSphere.solve(mesh_path+filename, resolution,meshType,testColor)
+        error_tab[i], mesh_size_tab[i], min_sol_num, max_sol_num, time_tab[i], iterations_tab[i], residual_tab[i] =FiniteElements3DPoissonSphere.solve(mesh_path+filename, resolution,meshType,testColor)
         assert min_sol_num>-1.1 
         assert max_sol_num<1.1
         error_tab[i]=log10(error_tab[i])
         time_tab[i]=log10(time_tab[i])
-        tolerance_tab[i]=-log10(tolerance_tab[i])
+        residual_tab[i]=-log10(residual_tab[i])
         with open('./FiniteElementsOnSpherePoisson_PlotOnSortedLines'+meshType+str(mesh_size_tab[i])+'.csv') as f:
             lines = f.readlines()
             y = [float(line.split(",")[0]) for line in lines[1:]]
@@ -59,14 +59,14 @@ def test_validation3DSphereEF():
     plt.title('Number of CG iterations for finite elements \n for Laplace operator on 3D sphere triangular meshes')
     plt.savefig(mesh_name+"_3DSpherePoissonFE_IterationNumber.png")
     
-    # Plot of tolerance value
+    # Plot of linear solver residual
     plt.close()
-    plt.plot(mesh_size_tab, tolerance_tab, label='Tolerance of the linear solver')
+    plt.plot(mesh_size_tab, residual_tab, label='Residual of the linear solver')
     plt.legend()
     plt.xlabel('Number of nodes')
-    plt.ylabel('Tolerance')
-    plt.title('CG tolerance for finite elements \n for Laplace operator on 3D sphere triangular meshes')
-    plt.savefig(mesh_name+"_3DSpherePoissonFE_LinearSolverTolerance.png")
+    plt.ylabel('Log(residual)')
+    plt.title('CG residual for finite elements \n for Laplace operator on 3D sphere triangular meshes')
+    plt.savefig(mesh_name+"_3DSpherePoissonFE_LinearSolverResidual.png")
     
     i=0
     for filename in meshList:
