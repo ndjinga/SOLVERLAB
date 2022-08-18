@@ -17,7 +17,7 @@ def test_validation2DWaveSystemUpwindCheckerboard(bctype,scaling):
     error_p_tab=[0]*nbMeshes
     error_u_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/2DCheckerboard/'
+    mesh_path='./'
     mesh_name='squareWithCheckerboard'
     diag_data_press=[0]*nbMeshes
     diag_data_vel=[0]*nbMeshes

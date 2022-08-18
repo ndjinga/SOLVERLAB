@@ -16,7 +16,7 @@ def test_validation2DWaveSystemCentered_triangles(scaling):
     testColor="Green"
     nbMeshes=len(meshList)
     mesh_size_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/2DTriangles/'
+    mesh_path='./'
     mesh_name='squareWithDelaunayTriangles'
     resolution=100
     curv_abs=np.linspace(0,sqrt(2),resolution+1)

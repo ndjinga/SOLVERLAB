@@ -14,7 +14,7 @@ def test_validation3DWaveSystemUpwindTetrahedra(bctype,scaling):
     #### 3D tetrahedral mesh of a cartesian mesh
     #meshList=[5,11,21,26]
     meshList=['meshCubeTetrahedra_0','meshCubeTetrahedra_1','meshCubeTetrahedra_2','meshCubeTetrahedra_3','meshCubeTetrahedra_4']
-    mesh_path='../../../ressources/3DTetrahedra/'
+    mesh_path='./'
     meshType="Unstructured tetrahedra"
     testColor="Green"
     nbMeshes=len(meshList)

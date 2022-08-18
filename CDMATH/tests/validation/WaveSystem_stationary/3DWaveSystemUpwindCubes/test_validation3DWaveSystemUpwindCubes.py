@@ -14,7 +14,7 @@ def test_validation3DWaveSystemUpwindCubes(bctype,scaling):
     #### 3D cubic mesh
     #meshList=[6,11,21]
     meshList=['mesh_hexa_2','mesh_hexa_3','mesh_hexa_4']#,'mesh_hexa_5'
-    mesh_path='../../../ressources/3DHexahedra/'
+    mesh_path='./'
     meshType="Regular cubes"
     testColor="Green"
     nbMeshes=len(meshList)

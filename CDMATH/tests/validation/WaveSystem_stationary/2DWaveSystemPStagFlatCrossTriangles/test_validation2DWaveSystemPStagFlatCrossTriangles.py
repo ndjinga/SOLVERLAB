@@ -16,7 +16,7 @@ def test_validation2DWaveSystemPStagFlatCrossTriangles(scaling):
     testColor="Orange (no stationary found on large meshes)"
     nbMeshes=len(meshList)
     mesh_size_tab=[0]*nbMeshes
-    mesh_path='../../../ressources/2DFlatCrossTriangles/'
+    mesh_path='./'
     mesh_name='squareWithFlatCrossTriangles'
     resolution=100
     curv_abs=np.linspace(0,sqrt(2),resolution+1)
