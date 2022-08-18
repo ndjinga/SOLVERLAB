@@ -24,12 +24,11 @@ def initial_conditions_wave_system_staggered(my_mesh):
         raise ValueError("WaveSystemStaggered: the mesh should be structured");
 
     NxNyNz=my_mesh.getCellGridStructure()
-    DxDyDz=my_mesh.getDXYZ()
-    dx=DxDyDz[0]
+    dx=(my_mesh.getXMax() - my_mesh.getXMin())/NxNyNz[0]
     if(dim>=2):
-        dy=DxDyDz[1]
+        dy=(my_mesh.getYMax() - my_mesh.getYMin())/NxNyNz[1]
         if(dim==3):
-            dz=DxDyDz[2]
+            dz=(my_mesh.getZMax() - my_mesh.getZMin())/NxNyNz[2]
 
     pressure_field = cdmath.Field("Pressure",            cdmath.CELLS, my_mesh, 1)
     velocity_field = cdmath.Field("Velocity",            cdmath.CELLS, my_mesh, 3)
@@ -68,7 +67,6 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt,scaling):
         raise ValueError("WaveSystemStaggered: the mesh should be structured");
 
     NxNyNz=my_mesh.getCellGridStructure()
-    DxDyDz=my_mesh.getDXYZ()
     
     implMat=cdmath.SparseMatrixPetsc(nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp)
 
@@ -76,7 +74,7 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt,scaling):
     
     if( dim == 1) :    
         nx=NxNyNz[0]
-        dx=DxDyDz[0]
+        dx=(my_mesh.getXMax() - my_mesh.getXMin())/NxNyNz[0]
             
         if( scaling==0 ):
             for k in range(nbCells):
@@ -96,8 +94,8 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt,scaling):
     elif( dim == 2) :# k = j*nx+i
         nx=NxNyNz[0]
         ny=NxNyNz[1]
-        dx=DxDyDz[0]
-        dy=DxDyDz[1]
+        dx=(my_mesh.getXMax() - my_mesh.getXMin())/NxNyNz[0]
+        dy=(my_mesh.getYMax() - my_mesh.getYMin())/NxNyNz[1]
                 
         if( scaling==0 ):
             for k in range(nbCells):
@@ -137,9 +135,9 @@ def computeDivergenceMatrix(my_mesh,nbVoisinsMax,dt,scaling):
         nx=NxNyNz[0]
         ny=NxNyNz[1]
         nz=NxNyNz[2]
-        dx=DxDyDz[0]
-        dy=DxDyDz[1]
-        dz=DxDyDz[2]
+        dx=(my_mesh.getXMax() - my_mesh.getXMin())/NxNyNz[0]
+        dy=(my_mesh.getYMax() - my_mesh.getYMin())/NxNyNz[1]
+        dz=(my_mesh.getZMax() - my_mesh.getZMin())/NxNyNz[2]
                 
         if( scaling==0 ):
             for k in range(nbCells):
