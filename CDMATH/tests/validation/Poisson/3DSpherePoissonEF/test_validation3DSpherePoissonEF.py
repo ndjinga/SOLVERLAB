@@ -17,6 +17,8 @@ def test_validation3DSphereEF():
     error_tab=[0]*nbMeshes
     mesh_size_tab=[0]*nbMeshes
     time_tab=[0]*nbMeshes
+    iterations_tab=[0]*nbMeshes
+    tolerance_tab=[0]*nbMeshes
     mesh_path='./'
     mesh_name='SphereWithTriangles'
     diag_data=[0]*nbMeshes
@@ -25,18 +27,18 @@ def test_validation3DSphereEF():
     i=0
     # Storing of numerical errors and mesh sizes
     for filename in meshList:
-        error_tab[i], mesh_size_tab[i], min_sol_num, max_sol_num, time_tab[i] =FiniteElements3DPoissonSphere.solve(mesh_path+filename, resolution,meshType,testColor)
+        error_tab[i], mesh_size_tab[i], min_sol_num, max_sol_num, time_tab[i], iterations_tab[i], tolerance_tab[i] =FiniteElements3DPoissonSphere.solve(mesh_path+filename, resolution,meshType,testColor)
         assert min_sol_num>-1.1 
         assert max_sol_num<1.1
         error_tab[i]=log10(error_tab[i])
         time_tab[i]=log10(time_tab[i])
+        tolerance_tab[i]=-log10(tolerance_tab[i])
         with open('./FiniteElementsOnSpherePoisson_PlotOnSortedLines'+meshType+str(mesh_size_tab[i])+'.csv') as f:
             lines = f.readlines()
             y = [float(line.split(",")[0]) for line in lines[1:]]
             x = [float(line.split(",")[1]) for line in lines[1:]]
 
         plt.plot(x, y, label= str(mesh_size_tab[i]) + ' nodes')
-        mesh_size_tab[i] = 0.5*log10(mesh_size_tab[i])
         i=i+1
 
     end = time.time()
@@ -48,6 +50,29 @@ def test_validation3DSphereEF():
     plt.title('Plot over slice circle for finite elements \n for Laplace operator on 3D sphere meshes')
     plt.savefig(mesh_name+"_3DSpherePoissonFE_Slice.png")
     
+    # Plot of iteration number
+    plt.close()
+    plt.plot(mesh_size_tab, iterations_tab, label='Number of iterations of the linear solver')
+    plt.legend()
+    plt.xlabel('Number of nodes')
+    plt.ylabel('Number of iterations')
+    plt.title('Number of CG iterations for finite elements \n for Laplace operator on 3D sphere triangular meshes')
+    plt.savefig(mesh_name+"_3DSpherePoissonFE_IterationNumber.png")
+    
+    # Plot of tolerance value
+    plt.close()
+    plt.plot(mesh_size_tab, tolerance_tab, label='Tolerance of the linear solver')
+    plt.legend()
+    plt.xlabel('Number of nodes')
+    plt.ylabel('Tolerance')
+    plt.title('CG tolerance for finite elements \n for Laplace operator on 3D sphere triangular meshes')
+    plt.savefig(mesh_name+"_3DSpherePoissonFE_LinearSolverTolerance.png")
+    
+    i=0
+    for filename in meshList:
+        mesh_size_tab[i] = 0.5*log10(mesh_size_tab[i])
+        i=i+1
+
     # Least square linear regression
     # Find the best a,b such that f(x)=ax+b best approximates the convergence curve
     # The vector X=(a,b) solves a symmetric linear system AX=B with A=(a1,a2\\a2,a3), B=(b1,b2)
