@@ -13,7 +13,7 @@ def test_validation2DWaveSystemCenteredSquares_DISK(bctype,scaling):
     start = time.time()
     #### 2D DISK mesh
     meshList=['diskWithSquares_1','diskWithSquares_2','diskWithSquares_3','diskWithSquares_4']#,'diskWithSquares_5'
-    mesh_path='../../../ressources/2DdiskWithSquares/'
+    mesh_path='./'
     meshType="Regular squares"
     testColor="Orange : if BC changed to Neuman, KSP diverge reason -p (nan or inf)"
     nbMeshes=len(meshList)

@@ -3,8 +3,10 @@ SET(SCRIPT
   ../../scripts/WaveSystemPStag/WaveSystemPStag.py
   )
 
-file(COPY ${SCRIPT} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-install(FILES ${SCRIPT} DESTINATION share/validation/test_validation2DWaveSystemPStagHexagons)
+FILE(GLOB MY_MESHES_AND_PICTURES  "../../../ressources/2DHexagons/squareWithHexagons_*" )
+
+file(COPY ${SCRIPT} ${MY_MESHES_AND_PICTURES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+install(FILES ${SCRIPT} ${MY_MESHES_AND_PICTURES} DESTINATION share/validation/test_validation2DWaveSystemPStagHexagons)
 
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 

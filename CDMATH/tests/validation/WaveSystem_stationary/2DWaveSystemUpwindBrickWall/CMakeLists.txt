@@ -3,8 +3,11 @@ SET(SCRIPT
   ../../scripts/WaveSystemUpwind/WaveSystemUpwind.py
   )
 
-file(COPY ${SCRIPT} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-install(FILES ${SCRIPT} DESTINATION share/validation/test_validation2DWaveSystemUpwindBrickWall)
+FILE(GLOB MY_MESHES_AND_PICTURES  "../../../ressources/2DBrickWall/squareWithBrickWall_*" )
+
+FILE(COPY ${SCRIPT} ${MY_MESHES_AND_PICTURES} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+install(FILES ${SCRIPT} ${MY_MESHES_AND_PICTURES} DESTINATION share/validation/test_validation2DWaveSystemUpwindBrickWall)
 
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
