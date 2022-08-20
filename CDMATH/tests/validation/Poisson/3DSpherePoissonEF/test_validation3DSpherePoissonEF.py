@@ -19,6 +19,7 @@ def test_validation3DSphereEF():
     time_tab=[0]*nbMeshes
     iterations_tab=[0]*nbMeshes
     residual_tab=[0]*nbMeshes
+    diameter_tab=[0]*nbMeshes
     mesh_path='./'
     mesh_name='SphereWithTriangles'
     diag_data=[0]*nbMeshes
@@ -27,11 +28,12 @@ def test_validation3DSphereEF():
     i=0
     # Storing of numerical errors and mesh sizes
     for filename in meshList:
-        error_tab[i], mesh_size_tab[i], min_sol_num, max_sol_num, time_tab[i], iterations_tab[i], residual_tab[i] =FiniteElements3DPoissonSphere.solve(mesh_path+filename, resolution,meshType,testColor)
+        error_tab[i], mesh_size_tab[i], min_sol_num, max_sol_num, time_tab[i], iterations_tab[i], residual_tab[i], diameter_tab[i] =FiniteElements3DPoissonSphere.solve(mesh_path+filename, resolution,meshType,testColor)
         assert min_sol_num>-1.1 
         assert max_sol_num<1.1
         error_tab[i]=log10(error_tab[i])
         time_tab[i]=log10(time_tab[i])
+        diameter_tab[i]=log10(diameter_tab[i])
         residual_tab[i]=-log10(residual_tab[i])
         with open('./FiniteElementsOnSpherePoisson_PlotOnSortedLines'+meshType+str(mesh_size_tab[i])+'.csv') as f:
             lines = f.readlines()
@@ -64,22 +66,17 @@ def test_validation3DSphereEF():
     plt.plot(mesh_size_tab, residual_tab, label='Residual of the linear solver')
     plt.legend()
     plt.xlabel('Number of nodes')
-    plt.ylabel('Log(residual)')
+    plt.ylabel('-Log(residual)')
     plt.title('CG residual for finite elements \n for Laplace operator on 3D sphere triangular meshes')
     plt.savefig(mesh_name+"_3DSpherePoissonFE_LinearSolverResidual.png")
     
-    i=0
-    for filename in meshList:
-        mesh_size_tab[i] = 0.5*log10(mesh_size_tab[i])
-        i=i+1
-
     # Least square linear regression
     # Find the best a,b such that f(x)=ax+b best approximates the convergence curve
     # The vector X=(a,b) solves a symmetric linear system AX=B with A=(a1,a2\\a2,a3), B=(b1,b2)
-    a1=np.dot(mesh_size_tab,mesh_size_tab)
-    a2=np.sum(mesh_size_tab)
+    a1=np.dot(diameter_tab,diameter_tab)
+    a2=np.sum(diameter_tab)
     a3=nbMeshes
-    b1=np.dot(error_tab,mesh_size_tab)   
+    b1=np.dot(error_tab,diameter_tab)   
     b2=np.sum(error_tab)
     
     det=a1*a3-a2*a2
@@ -88,24 +85,24 @@ def test_validation3DSphereEF():
     b=(-a2*b1+a1*b2)/det
     
     print( "FE on 3D sphere triangle mesh : scheme order is ", -a)
-    assert abs(a+0.816)<0.1
+    assert abs(a-0.775)<0.1
 
     # Plot of convergence curves
     plt.close()
-    plt.plot(mesh_size_tab, error_tab, label='log(|numerical-exact|)')
-    plt.plot(mesh_size_tab, a*np.array(mesh_size_tab)+b,label='least square slope : '+'%.3f' % a)
+    plt.plot(diameter_tab, error_tab, label='Log(|numerical-exact|)')
+    plt.plot(diameter_tab, a*np.array(diameter_tab)+b,label='least square slope : '+'%.3f' % a)
     plt.legend()
-    plt.xlabel('log(sqrt(number of nodes))')
-    plt.ylabel('log(error)')
+    plt.xlabel('Log(h)')
+    plt.ylabel('Log(error)')
     plt.title('Convergence of finite elements for \n Laplace operator on 3D sphere triangular meshes')
     plt.savefig(mesh_name+"_3DSpherePoissonFE_ConvergenceCurve.png")
     
     # Plot of computational time
     plt.close()
-    plt.plot(mesh_size_tab, time_tab, label='log(cpu time))')
+    plt.plot(mesh_size_tab, time_tab, label='Log(cpu time))')
     plt.legend()
-    plt.xlabel('log(sqrt(number of nodes)')
-    plt.ylabel('log(cpu time)')
+    plt.xlabel('Log(sqrt(number of nodes)')
+    plt.ylabel('Log(cpu time)')
     plt.title('Computational time of finite elements \n for Laplace operator on 3D sphere triangular meshes')
     plt.savefig(mesh_name+"_3DSpherePoissonFE_ComputationalTime.png")
     

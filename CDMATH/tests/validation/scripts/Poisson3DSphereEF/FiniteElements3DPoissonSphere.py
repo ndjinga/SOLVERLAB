@@ -244,7 +244,7 @@ def solve(filename,resolution,meshType, testColor):
     with open('test_Poisson'+str(my_mesh.getMeshDimension())+'D_EF_'+meshType+str(nbCells)+ "Cells.json", 'w') as outfile:  
         json.dump(test_desc, outfile)
 
-    return erreur_abs/max_abs_sol_exacte, nbNodes, min_sol_num, max_sol_num, end - start, LS.getNumberOfIter(), LS.getResidu()
+    return erreur_abs/max_abs_sol_exacte, nbNodes, min_sol_num, max_sol_num, end - start, LS.getNumberOfIter(), LS.getResidu(), my_mesh.minRatioVolSurf()
     
 if __name__ == """__main__""":
     solve("meshSphere",100,"Unstructured_3D_triangles","Green")
