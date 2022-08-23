@@ -94,7 +94,19 @@ public :
 	 * @param double mesureFace the lenght or area of the face
 	 * */
 	void addSourceTermToSecondMember(const int i, int nbNeighboursi,const int j, int nbNeighboursj,bool isBoundary, int ij, double mesureFace);
-
+	double getReferenceTemperature() { return _Temperature; };
+	
+	/* Get output fields for postprocessing or coupling */
+	vector<string> getOutputFieldsNames() ;//liste tous les champs que peut fournir le code pour le postraitement
+	Field&         getOutputField(const string& nameField );//Renvoie un champ pour le postraitement
+	Field& getPressureField();
+	Field& getVelocityField();
+	Field& getVelocityXField();
+	Field& getVelocityYField();
+	Field& getVelocityZField();
+	Field& getDensityField();
+	Field& getMomentumField();
+	Field& getMachNumberField();	
 protected :
 	double _Temperature, _internalEnergy;
 	double  _drho_sur_dp;
@@ -150,6 +162,8 @@ protected :
 	//Functions not yet implemented (generate exceptions)
 	Vector staggeredVFFCFlux();
 	void entropicShift(double* n);
+
+
 
 };
 
