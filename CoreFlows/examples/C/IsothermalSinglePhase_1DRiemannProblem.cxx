@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh " << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=2;
+	int nx=20;
 	Mesh M(xinf,xsup,nx);
 	double eps=1.E-8;
 	M.setGroupAtPlan(xsup,0,eps,"LeftBoundary");
@@ -18,8 +18,8 @@ int main(int argc, char** argv)
 	//initial data
 	double initialVelocity_Left=1;
 	double initialPressure_Left=155e5;
-	double initialVelocity_Right=1;
-	double initialPressure_Right=155e5;
+	double initialVelocity_Right=0.9;
+	double initialPressure_Right=157e5;
 
 	IsothermalSinglePhase  myProblem(Liquid,around155bars600K,spaceDim);
 	// Prepare for the initial condition
