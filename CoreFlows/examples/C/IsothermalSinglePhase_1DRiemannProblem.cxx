@@ -81,5 +81,10 @@ int main(int argc, char** argv)
 	cout << "------------ End of calculation !!! -----------" << endl;
 	myProblem.terminate();
 
+	//Ecriture des résultats en CSV
+	Field pV = myProblem.getPrimitiveField();
+	pV.writeCSV(fileName);
+
+
 	return EXIT_SUCCESS;
 }
