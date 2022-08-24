@@ -59,10 +59,12 @@ The corresponding binary files can be found  [here](https://www.salome-platform.
   CDMATH/tests/doc/3DPoissonEF/FiniteElements3DPoisson_CUBE.ipynb)
 - [Finite elements for the stationary diffusion of the temperature in a 3D room. Influence of the radiator position (by S. Kameni Ngwamou, PhD student)](
   CDMATH/tests/doc/3DRoomCoolingEF/3DRoomCoolingEF.ipynb)
-- [Surface Finite elements for the Poisson-Beltrami problem on a sphere in 3D (by M. Nguemfouo, PhD student)](
+- [Surface Finite elements for the Poisson-Beltrami problem on a sphere in 3D (by Marcial Nguemfouo, PhD student at university of Yaounde I)](
   CDMATH/tests/doc/3DPoissonSphereEF/SynthesisConvergenceFESphere.pdf)
-- [Surface Finite elements for the Poisson-Beltrami problem on a torus in 3D (by M. Nguemfouo, PhD student)](
+- [Surface Finite elements for the Poisson-Beltrami problem on a torus in 3D (by Marcial Nguemfouo, PhD student at university of Yaounde I)](
   CDMATH/tests/doc/3DPoissonTorusEF/SynthesisConvergenceFETorus.pdf)
+- [Surface Finite elements for the Poisson-Beltrami problem on a cube boundary in 3D (by Marcial Nguemfouo, PhD student at university of Yaounde I)](
+  CDMATH/tests/doc/3DPoissonCubeSkinEF/SynthesisConvergenceFECubeSkin.pdf)
 
 
 ### User guide of the CoreFlows module
