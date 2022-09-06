@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh " << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=20;
+	int nx=2;
 	Mesh M(xinf,xsup,nx);
 	double eps=1.E-8;
 	M.setGroupAtPlan(xsup,0,eps,"LeftBoundary");
@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	//initial data
 	double initialVelocity_Left=1;
 	double initialPressure_Left=155e5;
-	double initialVelocity_Right=0.9;
+	double initialVelocity_Right=1;
 	double initialPressure_Right=157e5;
 
 	IsothermalSinglePhase  myProblem(Liquid,around155bars600K,spaceDim);
@@ -55,8 +55,7 @@ int main(int argc, char** argv)
 	int freqSave = 1;
 	double cfl = 0.95;
 	double maxTime = 5;
-	double precision = 1e-8;
-
+	double precision = 1e-8; 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
 	myProblem.setMaxNbOfTimeStep(MaxNbOfTimeStep);
@@ -65,6 +64,7 @@ int main(int argc, char** argv)
 	myProblem.setFileName(fileName);
 	myProblem.saveConservativeField(true);
 	myProblem.setSaveFileFormat(CSV);
+	myProblem.setNewtonSolver(precision,20);
 
 	// set display option to monitor the calculation 
 	myProblem.setVerbose( true);

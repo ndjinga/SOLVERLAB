@@ -128,7 +128,7 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		cout << endl;
 	}
 	//Computation of conservative states Ui and Uj
-	primToCons(_Vi,0,_Ui,0);
+	primToCons(_Vi,0,_Ui,0); // Todo : Question : pourquoi indice des cellules et 0 et pas i et j ?
 	primToCons(_Vj,0,_Uj,0);
 
 	//Computation of Roe density and velocity
@@ -1121,6 +1121,7 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
 
 	for(int idim=0;idim<_Ndim;idim++)
 	{
+		_primToConsJacoMat[1+idim] = 0;
 		_primToConsJacoMat[(idim+1)*_nVar]=V[1+idim]*invSoundSpeed;
 		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho*invSoundSpeed;
 	}
