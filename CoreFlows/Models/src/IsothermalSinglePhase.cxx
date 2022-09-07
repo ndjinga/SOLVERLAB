@@ -1010,6 +1010,7 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
 
 	for(int idim=0;idim<_Ndim;idim++)
 	{
+		_primToConsJacoMat[1+idim] = 0;
 		_primToConsJacoMat[(idim+1)*_nVar]=V[1+idim]*invSoundSpeed;
 		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho*invSoundSpeed;
 	}
