@@ -2,6 +2,7 @@
 #define FLUIDE_H
 
 #include <string>
+#include <assert.h>
 #include "math.h"
 #include "EosException.hxx"
 
@@ -81,17 +82,23 @@ class CompressibleFluid:public Fluide{
   virtual double vitesseSonEnthalpie(double h) = 0;
   virtual double vitesseSonTemperature(const double T, const double rho)
   {
+  	assert(rho>0);
+  	assert(T>0);
   	double h= getEnthalpy(T,rho);
   	return vitesseSonEnthalpie(h);
   }
   virtual double vitesseSonPressure(const double P, const double T)
   {
+  	assert(P>0);
+  	assert(T>0);
   	double rho=getDensity(P, T);
   	return vitesseSonTemperature(T,rho);
   }
   
   double getInverseSoundSpeed(double P, double T)
   {
+  	assert(P>0);
+  	assert(T>0);
   	return 1./vitesseSonPressure( P, T);
   }
   

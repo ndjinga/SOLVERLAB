@@ -3,7 +3,6 @@
 
 #include <string>
 #include "math.h"
-#include <assert.h>
 #include "Fluide.h"
 
 using namespace std;
