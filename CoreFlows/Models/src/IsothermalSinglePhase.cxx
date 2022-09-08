@@ -148,6 +148,9 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 			cout << _Vj[q] << endl;
 		cout << endl;
 	}
+	assert(_Vi[0]>0);
+	assert(_Vj[0]>0);
+
 	//Computation of conservative states Ui and Uj
 	primToCons(_Vi,0,_Ui,0);
 	primToCons(_Vj,0,_Uj,0);
@@ -159,18 +162,18 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 	rj = sqrt(_Uj[0]);
 	_Uroe[0] = ri*rj;	//moyenne geometrique des densites
 	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout << "Densité moyenne Roe  gauche " << i << ": " << ri*ri << ", droite " << j << ": " << rj*rj << "->" << _Uroe[0] << endl;
+		cout << "Densité moyenne Roe  gauche " << i << ": " << _Ui[0] << ", droite " << j << ": " << _Uj[0] << "->" << _Uroe[0] << endl;
 	for(int k=0;k<_Ndim;k++){
 		xi = _Ui[k+1];
 		xj = _Uj[k+1];
 		_Uroe[1+k] = (xi/ri + xj/rj)/(ri + rj);
 		//"moyenne" des vitesses
 		if(_verbose && _nbTimeStep%_freqSave ==0)
-			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/(ri*ri) << ", droite " << j << ": " << xj/(rj*rj) << "->" << _Uroe[k+1] << endl;
+			cout << "Vitesse de Roe composante "<< k<<"  gauche " << i << ": " << xi/_Ui[0] << ", droite " << j << ": " << xj/_Uj[0] << "->" << _Uroe[k+1] << endl;
 	}
 
 	//Computation of 1/c²// Todo :  add porosity in the sound speed formula
-	if(abs(_Vi[0]-_Vj[0])<_precision*max(_Vi[0],_Vj[0]))//need to use EOS
+	if(abs(_Vi[0]-_Vj[0])<_precision*max(abs(_Vi[0]),abs(_Vj[0])))//need to use EOS
 	{
 		CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
 		
@@ -188,7 +191,6 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		for(int k=0;k<_nVar+1;k++)
 			cout<< _Uroe[k]<<" , "<<endl;
 	}
-	
 }
 
 void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord){
@@ -994,6 +996,9 @@ void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W, const int &j)
 {   //We do not know the size of Wcons and Wprim 
 	//Sometimes they have _nVar components, sometimes they have _Nmailles*_nVar
+
+	assert( P[i*_nVar]>0);//Pressure should be positive
+
 	double phi_rho =_porosityField(j)*_fluides[0]->getDensity(P[i*_nVar], _Temperature);
 	W[j*_nVar] =  phi_rho;//phi*rho
 	for(int k=0; k<_Ndim; k++)
@@ -1033,6 +1038,9 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 		throw CdmathException("IsothermalSinglePhase::consToPrim should not be used with incompressible fluids");
 	else
 	{
+		assert( Wcons[0]>0);//Density should be positive
+		assert( Wcons[_nVar-1]>0);//Total energy should be positive
+		
 		double q_2 = 0;
 		for(int k=1;k<=_Ndim;k++)
 			q_2 += Wcons[k]*Wcons[k];
@@ -1040,6 +1048,8 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 	
 		double rho=Wcons[0]/porosity;
 		double e =fluide0->getInternalEnergy(_Temperature);
+		assert(e>0);//Internal energy should be positive
+		
 		Wprim[0] =fluide0->getPressure(rho*e,rho);//pressure p
 		if (Wprim[0]<0){
 			cout << "pressure = "<< Wprim[0] << " < 0 " << endl;

@@ -1293,6 +1293,9 @@ void  SinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 void SinglePhase::primToCons(const double *P, const int &i, double *W, const int &j){
 	//cout<<"SinglePhase::primToCons i="<<i<<", j="<<j<<", P[i*(_Ndim+2)]="<<P[i*(_Ndim+2)]<<", P[i*(_Ndim+2)+(_Ndim+1)]="<<P[i*(_Ndim+2)+(_Ndim+1)]<<endl;
 
+	assert( P[i*(_Ndim+2)]>0);//Pressure should be positive
+	assert( P[i*(_Ndim+2)+(_Ndim+1)]>0);//Temperature should be positive
+
 	double rho=_fluides[0]->getDensity(P[i*(_Ndim+2)], P[i*(_Ndim+2)+(_Ndim+1)]);
 	W[j*(_Ndim+2)] =  _porosityField(j)*rho;//phi*rho
 	for(int k=0; k<_Ndim; k++)
@@ -1382,6 +1385,9 @@ void SinglePhase::primToConsJacobianMatrix(double *V)
 
 void SinglePhase::consToPrim(const double *Wcons, double* Wprim,double porosity)
 {
+	assert( Wcons[0]>0);//Density should be positive
+	assert( Wcons[_nVar-1]>0);//Total energy should be positive
+
 	double q_2 = 0;
 	for(int k=1;k<=_Ndim;k++)
 		q_2 += Wcons[k]*Wcons[k];
