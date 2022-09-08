@@ -56,7 +56,7 @@ class Fluide{
  */
 class CompressibleFluid:public Fluide{
  protected:
-  double _gamma,  _p0, _q;
+  double _gamma;
   double _Cv;/* Constant specific heat at constant volume */
   double _Cp;/* Constant specific heat at constant pressure */
   
@@ -65,28 +65,20 @@ class CompressibleFluid:public Fluide{
   { 
   _Cv=0; _Cp=0; 
   _Tref=0; _Pref=0; 
-  _gamma=0;  _p0=0; _q=0;
+  _gamma=0;
   }
   
   virtual double getInternalEnergy(double T, double rho=0)=0;
   virtual double getTemperatureFromPressure(double  p, double rho)=0;
   virtual double getTemperatureFromEnthalpy(const double  h, const double rho)=0;
   virtual double getEnthalpy(double T, double rho)=0;
-
-  //Stiffened gas equation of state
-  virtual double getPressure(double  rhoe,const double  rho) {
-  	return (_gamma - 1) * (rhoe - rho*_q) - _gamma*_p0;
-  }
-  virtual double getPressureFromEnthalpy(double  h,const double  rho) {
-  	return (_gamma - 1)/_gamma * rho * (h - _q) - _p0;
-  }
+  virtual double getPressure(double  rhoe,const double  rho) = 0;
+  virtual double getPressureFromEnthalpy(double  h,const double  rho)  = 0;
+  
   /*For the newton scheme in the IsothermalTwoFluid model */
-  virtual double getPressureDerivativeRhoE()  { return _gamma - 1; }
-  virtual double getDensityFromEnthalpy(double p, double h)
-  {
-  	return _gamma*(p+_p0)/((_gamma-1)*(h-_q));
-  }
-  virtual double vitesseSonEnthalpie(double h) {  return sqrt((_gamma-1)*h);  }
+  virtual double getPressureDerivativeRhoE()  = 0;
+  virtual double getDensityFromEnthalpy(double p, double h) = 0;
+  virtual double vitesseSonEnthalpie(double h) = 0;
   virtual double vitesseSonTemperature(const double T, const double rho)
   {
   	double h= getEnthalpy(T,rho);
@@ -112,13 +104,8 @@ class CompressibleFluid:public Fluide{
   		return _Cp;
   	else if(name== "gamma")
   		return _gamma;
-  	else if(name=="p0")
-  		return _p0;
-  	else if(name=="q")
-  		return _q;
   	else
 		return Fluide::constante(name);
   }
-
 };
 #endif
