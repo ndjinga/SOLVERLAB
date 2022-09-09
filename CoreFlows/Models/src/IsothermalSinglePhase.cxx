@@ -264,18 +264,34 @@ void IsothermalSinglePhase::convectionMatrices()
 		vitesse[idim]=_Uroe[1+idim];
 	}
 
-	//Todo : treat correctly the computation of eigenvalues for incompressible flows
-	double c;
+	vector<std::complex<double>>vp_dist;
+	double c;//store the sound speed
 	if(_Uroe[_nVar]==0.)//infinite sound speed
 		if(_timeScheme==Explicit)
 			throw CdmathException("Explicit scheme cannot be used for incompressible fluids since dt=0");
 		else
+		{
+			vp_dist.resize(1);
 			c=0.;//The velocity will be used to determine the time step
+			vp_dist[0]=u_n;//store the fluid velocity for calculation of the time step
+		}
 	else
+	{
 		c=1./sqrt(_Uroe[_nVar]);
-		
-	vector<std::complex<double>>vp_dist(3);
-	vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
+		if(_Ndim==1)//In 1D two acoustic eigenvalues
+		{
+			vp_dist.resize(2);
+			vp_dist[0]=u_n-c;
+			vp_dist[1]=u_n+c;
+		}
+		else//In 2D and 3D extra shear eigenvalue u_n
+		{
+			vp_dist.resize(3);
+			vp_dist[0]=u_n-c;
+			vp_dist[1]=u_n;
+			vp_dist[2]=u_n+c;
+		}
+	}
 	
 	_maxvploc=fabs(u_n)+c;
 	if(_maxvploc>_maxvp)
