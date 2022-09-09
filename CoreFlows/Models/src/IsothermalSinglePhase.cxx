@@ -264,13 +264,15 @@ void IsothermalSinglePhase::convectionMatrices()
 		vitesse[idim]=_Uroe[1+idim];
 	}
 
-	vector<std::complex<double>>vp_dist;
+	vector<std::complex<double>> vp_dist;
+	int nb_vp_dist;
 	double c;//store the sound speed
 	if(_Uroe[_nVar]==0.)//infinite sound speed
 		if(_timeScheme==Explicit)
 			throw CdmathException("Explicit scheme cannot be used for incompressible fluids since dt=0");
 		else
 		{
+			nb_vp_dist=1;
 			vp_dist.resize(1);
 			c=0.;//The velocity will be used to determine the time step
 			vp_dist[0]=u_n;//store the fluid velocity for calculation of the time step
@@ -280,12 +282,14 @@ void IsothermalSinglePhase::convectionMatrices()
 		c=1./sqrt(_Uroe[_nVar]);
 		if(_Ndim==1)//In 1D two acoustic eigenvalues
 		{
+			nb_vp_dist=2;
 			vp_dist.resize(2);
 			vp_dist[0]=u_n-c;
 			vp_dist[1]=u_n+c;
 		}
 		else//In 2D and 3D extra shear eigenvalue u_n
 		{
+			nb_vp_dist=3;
 			vp_dist.resize(3);
 			vp_dist[0]=u_n-c;
 			vp_dist[1]=u_n;
@@ -298,9 +302,9 @@ void IsothermalSinglePhase::convectionMatrices()
 		_maxvp=_maxvploc;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"IsothermalSinglePhase::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
+		cout<<"IsothermalSinglePhase::convectionMatrices, "<< nb_vp_dist<< " eigenvalues, u_n= "<<u_n<<", c= "<<c<<endl;
 
-	convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim
+	convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroePrimitive
 
 	if(_entropicCorrection)
 	{
@@ -316,11 +320,15 @@ void IsothermalSinglePhase::convectionMatrices()
 	}
 	else if(_spaceScheme == upwind )
 	{
-		//Ici on calcule |Aprim| qui n'est pas le décentrement recherché. A remplacer par |Acons|JacU
-		vector< complex< double > > y (3,0);
-		for( int i=0 ; i<3 ; i++)
+		if(_Uroe[_nVar]==0.)//infinite sound speed
+			throw CdmathException("Upwind scheme cannot be used with incompressible fluids (infinite sound speed->infinite upwinding)");
+		//Ici on calcule |Acons| qui n'est pas le décentrement recherché. A remplacer par |Acons|JacU
+		convectionMatrixConservativeVariables(u_n);//Ici on calcule Acons et on le stocke dans _Aroe
+
+		vector< complex< double > > y (	nb_vp_dist,0);
+		for( int i=0 ; i<nb_vp_dist ; i++)
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
-		Polynoms::abs_par_interp_directe(3,vp_dist, _AroeImplicit, _nVar,_precision, _absAroeImplicit,y);
+		Polynoms::abs_par_interp_directe(nb_vp_dist,vp_dist, _Aroe, _nVar,_precision, _absAroeImplicit,y);//Ici on calcule |Acons| et on le stocke dans _absAroeImplicit
 	}
 	else if( _spaceScheme ==staggered ){
 		if(_entropicCorrection)//To do: study entropic correction for staggered
