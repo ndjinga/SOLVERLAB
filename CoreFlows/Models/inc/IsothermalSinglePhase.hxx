@@ -124,8 +124,10 @@ protected :
 	void convectionMatrices();
 	//!Calcule le flux pour un état, une porosité et une normale donnés
 	Vector convectionFlux(Vector U,Vector V, Vector normale, double porosity);
-	//!Computation of the Roe matrix
+	//!Computation of the Roe matrix in primitive variables
 	void convectionMatrixPrimitiveVariables(double u_n);
+	//!Computation of the Roe matrix in conservative variables
+	void convectionMatrixConservativeVariables(double u_n);
 	//!Computation of the staggered Roe upwinding matrix in primitive variables
 	void staggeredRoeUpwindingMatrixPrimitiveVariables( double u_n);
 	//!calcule la matrice de diffusion de l'etat interface pour la diffusion
