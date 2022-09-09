@@ -284,7 +284,7 @@ void IsothermalSinglePhase::convectionMatrices()
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"IsothermalSinglePhase::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
 
-	convectionMatrixPrimitiveVariables(u_n);
+	convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim
 
 	if(_entropicCorrection)
 	{
@@ -300,11 +300,11 @@ void IsothermalSinglePhase::convectionMatrices()
 	}
 	else if(_spaceScheme == upwind )
 	{
+		//Ici on calcule |Aprim| qui n'est pas le décentrement recherché. A remplacer par |Acons|JacU
 		vector< complex< double > > y (3,0);
 		for( int i=0 ; i<3 ; i++)
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
 		Polynoms::abs_par_interp_directe(3,vp_dist, _AroeImplicit, _nVar,_precision, _absAroeImplicit,y);
-
 	}
 	else if( _spaceScheme ==staggered ){
 		if(_entropicCorrection)//To do: study entropic correction for staggered
@@ -313,7 +313,6 @@ void IsothermalSinglePhase::convectionMatrices()
 			_runLogFile->close();
 			throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for staggered scheme");
 		}
-
 		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);
 	}
 	else
@@ -1152,6 +1151,30 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinus en variables primitives");
 		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlus en variables primitives");
 		displayMatrix(_AroeImplicit,  _nVar,"matrice de Roe en variables primitives");
+	}
+}
+
+void IsothermalSinglePhase::convectionMatrixConservativeVariables(double u_n)
+{
+	assert( abs(_Uroe[_nVar])>0);
+	double c_2 = 1./_Uroe[_nVar];
+	
+	/******** Construction de la matrice de Roe *********/
+	//premiere ligne (masse)
+	_Aroe[0]=0;
+	for(int idim=0; idim<_Ndim;idim++)
+		_Aroe[1+idim]=_vec_normal[idim];
+
+	//lignes intermadiaires(qdm)
+	for(int idim=0; idim<_Ndim;idim++)
+	{
+		//premiere colonne
+		_Aroe[(1+idim)*_nVar]=c_2*_vec_normal[idim] - u_n*_Uroe[1+idim];
+		//colonnes intermediaires
+		for(int jdim=0; jdim<_Ndim;jdim++)
+			_Aroe[(1+idim)*_nVar + jdim + 1] = _Uroe[1+idim]*_vec_normal[jdim];
+		//matrice identite
+		_Aroe[(1+idim)*_nVar + idim + 1] += u_n;
 	}
 }
 
