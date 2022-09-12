@@ -328,7 +328,7 @@ void IsothermalSinglePhase::convectionMatrices()
 		vector< complex< double > > y (	nb_vp_dist,0);
 		for( int i=0 ; i<nb_vp_dist ; i++)
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
-		Polynoms::abs_par_interp_directe(nb_vp_dist,vp_dist, _Aroe, _nVar,_precision, _absAroeImplicit,y);//Ici on calcule |Acons| et on le stocke dans _absAroeImplicit
+		Polynoms::abs_par_interp_directe( nb_vp_dist, vp_dist, _Aroe, _nVar,_precision, _absAroeImplicit,y);//Ici on calcule |Acons| et on le stocke dans _absAroeImplicit
 	}
 	else if( _spaceScheme ==staggered ){
 		if(_entropicCorrection)//To do: study entropic correction for staggered
@@ -1049,6 +1049,31 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
 		displayVector(_Vi,_nVar," _Vi " );
 		cout<<" Jacobienne primToCons: " << endl;
 		displayMatrix(_primToConsJacoMat,_nVar," Jacobienne primToCons: ");
+	}
+}
+
+void IsothermalSinglePhase::primToConsRoeMatrix()
+{	//entree: URoe = rho, u, 1/c^2
+	//sortie: linéarisation de Roe de la fonction nabla U(V)
+	double pression=_Uroe[0];
+	double rho=_Uroe[0];
+	double invSoundSpeed = _Uroe[_nVar-1];
+	
+	_primToConsJacoMat[0] = invSoundSpeed;
+
+	for(int idim=0;idim<_Ndim;idim++)
+	{
+		_primToConsJacoMat[1+idim] = 0;
+		_primToConsJacoMat[(idim+1)*_nVar]=_Uroe[1+idim]*invSoundSpeed;
+		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho*invSoundSpeed;
+	}
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<" IsothermalSinglePhase::primToConsRoeMatrix" << endl;
+		displayVector(_Vi,_nVar," _Vi " );
+		cout<<" Roe matrix primToCons: " << endl;
+		displayMatrix(_primToConsJacoMat,_nVar," Roe matrix primToCons: ");
 	}
 }
 
