@@ -157,7 +157,7 @@ protected :
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);
-	void primToConsRoeMatrix();
+	void primToConsJacobianMatrix(double rho, double* velocity, double invSoundSpeed);
 	/** \fn getDensityDerivatives
 	 * \brief Computes the partial derivatives of rho, with regard to the primitive variables  p
 	 * @param pressure

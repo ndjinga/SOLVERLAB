@@ -322,13 +322,18 @@ void IsothermalSinglePhase::convectionMatrices()
 	{
 		if(_Uroe[_nVar]==0.)//infinite sound speed
 			throw CdmathException("Upwind scheme cannot be used with incompressible fluids (infinite sound speed->infinite upwinding)");
-		//Ici on calcule |Acons| qui n'est pas le décentrement recherché. A remplacer par |Acons|JacU
+		/* Calcul de Acons */
 		convectionMatrixConservativeVariables(u_n);//Ici on calcule Acons et on le stocke dans _Aroe
-
+		/* Calcul de |Acons| */
 		vector< complex< double > > y (	nb_vp_dist,0);
 		for( int i=0 ; i<nb_vp_dist ; i++)
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
-		Polynoms::abs_par_interp_directe( nb_vp_dist, vp_dist, _Aroe, _nVar,_precision, _absAroeImplicit,y);//Ici on calcule |Acons| et on le stocke dans _absAroeImplicit
+		Polynoms::abs_par_interp_directe( nb_vp_dist, vp_dist, _Aroe, _nVar,_precision, _absAroe,y);//Ici on calcule |Acons| et on le stocke dans _absAroe
+		
+		/* Calcul de JacU(rho, velocity, 1/c) */
+		primToConsJacobianMatrix(_Uroe[0], _Uroe+1,_Uroe[_nVar]);//Ici on calcule la jacobienne nabla U en l'état de Roe et on la stocke dans _primConsJacoMat
+		//Calcul du produit |Acons|JacU
+		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _absAroeImplicit);
 	}
 	else if( _spaceScheme ==staggered ){
 		if(_entropicCorrection)//To do: study entropic correction for staggered
@@ -1029,51 +1034,33 @@ void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W,
 }
 
 void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
-{//V vecteur primitif de taille _nVar
+{//V vecteur primitif (p,u) de taille _nVar
 	double pression=V[0];
 	double rho=_fluides[0]->getDensity(pression,_Temperature);
 	double invSoundSpeed = _fluides[0]->getInverseSoundSpeed(pression,_Temperature);
 	
-	_primToConsJacoMat[0] = invSoundSpeed;
-
-	for(int idim=0;idim<_Ndim;idim++)
-	{
-		_primToConsJacoMat[1+idim] = 0;
-		_primToConsJacoMat[(idim+1)*_nVar]=V[1+idim]*invSoundSpeed;
-		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho*invSoundSpeed;
-	}
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<" IsothermalSinglePhase::primToConsJacobianMatrix" << endl;
-		displayVector(_Vi,_nVar," _Vi " );
-		cout<<" Jacobienne primToCons: " << endl;
-		displayMatrix(_primToConsJacoMat,_nVar," Jacobienne primToCons: ");
-	}
+	primToConsJacobianMatrix( rho, V+1, invSoundSpeed);
 }
 
-void IsothermalSinglePhase::primToConsRoeMatrix()
-{	//entree: URoe = rho, u, 1/c^2
-	//sortie: linéarisation de Roe de la fonction nabla U(V)
-	double pression=_Uroe[0];
-	double rho=_Uroe[0];
-	double invSoundSpeed = _Uroe[_nVar-1];
-	
-	_primToConsJacoMat[0] = invSoundSpeed;
-
+void IsothermalSinglePhase::primToConsJacobianMatrix(double rho, double* velocity, double invSoundSpeed)
+{	
+	//Initialise all coeffs to zero
+	for(int i=0;i<_nVar*_nVar;i++)
+		_primToConsJacoMat[i] = 0;
+	//Fill non zero coefficients
+	_primToConsJacoMat[0] = invSoundSpeed;//the (0,0) coefficient
 	for(int idim=0;idim<_Ndim;idim++)
 	{
-		_primToConsJacoMat[1+idim] = 0;
-		_primToConsJacoMat[(idim+1)*_nVar]=_Uroe[1+idim]*invSoundSpeed;
-		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho*invSoundSpeed;
+		_primToConsJacoMat[(idim+1)*_nVar]=velocity[idim]*invSoundSpeed;//the first column
+		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho;//the diagonal
 	}
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<" IsothermalSinglePhase::primToConsRoeMatrix" << endl;
-		displayVector(_Vi,_nVar," _Vi " );
-		cout<<" Roe matrix primToCons: " << endl;
-		displayMatrix(_primToConsJacoMat,_nVar," Roe matrix primToCons: ");
+		cout<<" IsothermalSinglePhase::primToConsJacobianMatrix : rho= "<<rho <<", invSoundSpeed="<<invSoundSpeed << endl;
+		displayVector( velocity,_Ndim," velocity " );
+		cout<<" Jacobian matrix primToCons: " << endl;
+		displayMatrix(_primToConsJacoMat,_nVar," Jacobian matrix primToCons: ");
 	}
 }
 
