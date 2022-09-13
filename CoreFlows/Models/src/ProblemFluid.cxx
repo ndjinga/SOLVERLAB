@@ -363,7 +363,7 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 	//Change the relaxation coefficient to ease convergence
 	double relaxation=1;
 
-	if( !_usePrimitiveVarsInNewton)
+	if( _timeScheme == Explicit or !_usePrimitiveVarsInNewton)
 	{
 		VecAXPY(_conservativeVars,  relaxation, _newtonVariation);//Uk+1=Uk+relaxation*deltaU
 		//mise a jour du champ primitif
@@ -779,7 +779,7 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 void ProblemFluid::computeNewtonVariation()
 {
 	if(_system)
-		if( !_usePrimitiveVarsInNewton)
+		if( _timeScheme == Explicit || !_usePrimitiveVarsInNewton)
 		{
 			cout<<"Vecteur courant Uk "<<endl;
 			VecView(_conservativeVars,PETSC_VIEWER_STDOUT_SELF);

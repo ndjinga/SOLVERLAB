@@ -1065,37 +1065,22 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double rho, double* velocit
 }
 
 void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double porosity)//To do: treat porosity
-{  //Wcons and Wprim are vectors with _nVar components
-	//Wcons has been extracted from the vector _conservativeVars which has _Nmailles*_nVar components
+{   //Function called only with explicit schemes
+	//Wcons and Wprim are vectors with _nVar components
 	CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
 	
 	if(fluide0==NULL)
 		throw CdmathException("IsothermalSinglePhase::consToPrim should not be used with incompressible fluids");
 	else
-	{
-		assert( Wcons[0]>0);//Density should be positive
-		assert( Wcons[_nVar-1]>0);//Total energy should be positive
-		
-		double q_2 = 0;
-		for(int k=1;k<=_Ndim;k++)
-			q_2 += Wcons[k]*Wcons[k];
-		q_2 /= Wcons[0];	//phi rho u²
-	
+	{		
 		double rho=Wcons[0]/porosity;
 		double e =fluide0->getInternalEnergy(_Temperature);
-		assert(e>0);//Internal energy should be positive
 		
 		Wprim[0] =fluide0->getPressure(rho*e,rho);//pressure p
-		if (Wprim[0]<0){
-			cout << "pressure = "<< Wprim[0] << " < 0 " << endl;
-			*_runLogFile<< "pressure = "<< Wprim[0] << " < 0 " << endl;
-			_runLogFile->close();
-			throw CdmathException("IsothermalSinglePhase::consToPrim: negative pressure");
-		}
 		for(int k=1;k<=_Ndim;k++)
 			Wprim[k] = Wcons[k]/Wcons[0];//velocity u
 	
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		//if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"ConsToPrim Vecteur conservatif"<<endl;
 			for(int k=0;k<_nVar;k++)
@@ -1104,6 +1089,9 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 			for(int k=0;k<_nVar;k++)
 				cout<<Wprim[k]<<endl;
 		}
+		assert( Wcons[0]>0);//Density should be positive
+		assert(Wprim[0]>0);//Pressure should be positive
+		assert(e>0);//Internal energy should be positive
 	}
 }
 

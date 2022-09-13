@@ -57,7 +57,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	freqSave = 1;
 	cfl = 1;
 	maxTime = 500;
-	precision = 1e-6;
+	precision = 1e-5;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
