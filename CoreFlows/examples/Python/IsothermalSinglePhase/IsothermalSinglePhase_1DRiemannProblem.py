@@ -23,12 +23,12 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	initialPressure_Left=155e5;
 
 	initialVelocity_Right=1;
-	initialPressure_Right=150e5;
+	initialPressure_Right=155.001e5;
 
 	myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim);
 	nVar =  myProblem.getNumberOfVariables();
 
-        # Prepare for the initial condition
+    # Prepare for the initial condition
 	VV_Left  =svl.Vector(nVar)
 	VV_Right =svl.Vector(nVar)
 	
@@ -55,7 +55,7 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 25 ;
+	MaxNbOfTimeStep = 3 ;
 	freqSave = 1;
 	cfl = 0.95;
 	maxTime = 500;
@@ -75,7 +75,7 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	plt.xlabel('x')
 	plt.ylabel('Pressure')
 	plt.xlim(xinf,xsup)
-	plt.ylim( min(initialPressure_Left, initialPressure_Right), max(initialPressure_Left, initialPressure_Right) )
+	plt.ylim( 0.999999*min(initialPressure_Left, initialPressure_Right), 1.000001*max(initialPressure_Left, initialPressure_Right) )
 	plt.title('Solving Riemann problem for isothermal Euler equations\n with explicit upwind Finite volume method')
 	dx=(xsup-xinf)/nx
 	x=[ i*dx for i in range(nx)]   # array of cell center (1D mesh)
