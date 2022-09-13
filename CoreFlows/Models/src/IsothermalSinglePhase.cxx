@@ -273,7 +273,7 @@ void IsothermalSinglePhase::convectionMatrices()
 		else
 		{
 			nb_vp_dist=1;
-			vp_dist.resize(1);
+			vp_dist.resize(nb_vp_dist);
 			c=0.;//The velocity will be used to determine the time step
 			vp_dist[0]=u_n;//store the fluid velocity for calculation of the time step
 		}
@@ -283,14 +283,14 @@ void IsothermalSinglePhase::convectionMatrices()
 		if(_Ndim==1)//In 1D two acoustic eigenvalues
 		{
 			nb_vp_dist=2;
-			vp_dist.resize(2);
+			vp_dist.resize(nb_vp_dist);
 			vp_dist[0]=u_n-c;
 			vp_dist[1]=u_n+c;
 		}
 		else//In 2D and 3D extra shear eigenvalue u_n
 		{
 			nb_vp_dist=3;
-			vp_dist.resize(3);
+			vp_dist.resize(nb_vp_dist);
 			vp_dist[0]=u_n-c;
 			vp_dist[1]=u_n;
 			vp_dist[2]=u_n+c;
@@ -304,7 +304,7 @@ void IsothermalSinglePhase::convectionMatrices()
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"IsothermalSinglePhase::convectionMatrices, "<< nb_vp_dist<< " eigenvalues, u_n= "<<u_n<<", c= "<<c<<endl;
 
-	convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroePrimitive
+	convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 
 	if(_entropicCorrection)
 	{
@@ -330,7 +330,7 @@ void IsothermalSinglePhase::convectionMatrices()
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
 		Polynoms::abs_par_interp_directe( nb_vp_dist, vp_dist, _Aroe, _nVar,_precision, _absAroe,y);//Ici on calcule |Acons| et on le stocke dans _absAroe
 		
-		/* Calcul de JacU(rho, velocity, 1/c) */
+		/* Calcul de JacU(rho, velocity, 1/c^2) */
 		primToConsJacobianMatrix(_Uroe[0], _Uroe+1,_Uroe[_nVar]);//Ici on calcule la jacobienne nabla U en l'état de Roe et on la stocke dans _primConsJacoMat
 		//Calcul du produit |Acons|JacU
 		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _absAroeImplicit);
@@ -1039,25 +1039,25 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
 	double rho=_fluides[0]->getDensity(pression,_Temperature);
 	double invSoundSpeed = _fluides[0]->getInverseSoundSpeed(pression,_Temperature);
 	
-	primToConsJacobianMatrix( rho, V+1, invSoundSpeed);
+	primToConsJacobianMatrix( rho, V+1, invSoundSpeed*invSoundSpeed);
 }
 
-void IsothermalSinglePhase::primToConsJacobianMatrix(double rho, double* velocity, double invSoundSpeed)
+void IsothermalSinglePhase::primToConsJacobianMatrix(double rho, double* velocity, double invSoundSpeedsquared)
 {	
 	//Initialise all coeffs to zero
 	for(int i=0;i<_nVar*_nVar;i++)
 		_primToConsJacoMat[i] = 0;
 	//Fill non zero coefficients
-	_primToConsJacoMat[0] = invSoundSpeed;//the (0,0) coefficient
+	_primToConsJacoMat[0] = invSoundSpeedsquared;//the (0,0) coefficient
 	for(int idim=0;idim<_Ndim;idim++)
 	{
-		_primToConsJacoMat[(idim+1)*_nVar]=velocity[idim]*invSoundSpeed;//the first column
+		_primToConsJacoMat[(idim+1)*_nVar]=velocity[idim]*invSoundSpeedsquared;//the first column
 		_primToConsJacoMat[(idim+1)*_nVar+idim+1]=rho;//the diagonal
 	}
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<" IsothermalSinglePhase::primToConsJacobianMatrix : rho= "<<rho <<", invSoundSpeed="<<invSoundSpeed << endl;
+		cout<<" IsothermalSinglePhase::primToConsJacobianMatrix : rho= "<<rho <<", invSoundSpeedsquared="<<invSoundSpeedsquared << endl;
 		displayVector( velocity,_Ndim," velocity " );
 		cout<<" Jacobian matrix primToCons: " << endl;
 		displayMatrix(_primToConsJacoMat,_nVar," Jacobian matrix primToCons: ");
@@ -1074,13 +1074,13 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 	else
 	{		
 		double rho=Wcons[0]/porosity;
-		double e =fluide0->getInternalEnergy(_Temperature);
+		double e =fluide0->getInternalEnergy(_Temperature, rho);
 		
 		Wprim[0] =fluide0->getPressure(rho*e,rho);//pressure p
 		for(int k=1;k<=_Ndim;k++)
 			Wprim[k] = Wcons[k]/Wcons[0];//velocity u
 	
-		//if(_verbose && _nbTimeStep%_freqSave ==0)
+		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
 			cout<<"ConsToPrim Vecteur conservatif"<<endl;
 			for(int k=0;k<_nVar;k++)
@@ -1118,8 +1118,7 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 	else{
 		for(int k=0; k<_nVar; k++)
 			_Vj[k]= _Vext[k];
-	
-
+		primToCons(_Vj, 0, _Uj, 0);
 	}
 	_idm[0] = i;
 	_idn[0] = j;
