@@ -53,7 +53,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	fileName = "1DRiemannProblem_Implicit";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 25 ;
+	MaxNbOfTimeStep = 20 ;
 	freqSave = 1;
 	cfl = 1;
 	maxTime = 500;
@@ -78,7 +78,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	plt.xlabel('x')
 	plt.ylabel('Pressure')
 	plt.xlim(xinf,xsup)
-	plt.ylim( min(initialPressure_Left, initialPressure_Right), max(initialPressure_Left, initialPressure_Right) )
+	plt.ylim( 0.999999*min(initialPressure_Left, initialPressure_Right), 1.000001*max(initialPressure_Left, initialPressure_Right) )
 	plt.title('Solving Riemann problem for isothermal Euler equations\n with implicit upwind Finite volume method')
 	dx=(xsup-xinf)/nx
 	x=[ i*dx for i in range(nx)]   # array of cell center (1D mesh)
