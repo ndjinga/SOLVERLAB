@@ -22,7 +22,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	initialVelocity_Left=1;
 	initialPressure_Left=155e5;
 	initialVelocity_Right=1;
-	initialPressure_Right=155.001e5;
+	initialPressure_Right=155.01e5;
 
 	myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim);
 	nVar =  myProblem.getNumberOfVariables();
@@ -57,7 +57,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	freqSave = 1;
 	cfl = 1;
 	maxTime = 500;
-	precision = 1e-5;
+	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
