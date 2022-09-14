@@ -75,19 +75,27 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	myProblem.initialize();
 
    #Postprocessing
-	plt.xlabel('x')
-	plt.ylabel('Pressure')
-	plt.xlim(xinf,xsup)
-	plt.ylim( 0.999999*min(initialPressure_Left, initialPressure_Right), 1.000001*max(initialPressure_Left, initialPressure_Right) )
-	plt.title('Solving Riemann problem for isothermal Euler equations\n with implicit upwind Finite volume method')
 	dx=(xsup-xinf)/nx
 	x=[ i*dx for i in range(nx)]   # array of cell center (1D mesh)
 
 	myPressureField = myProblem.getPressureField()
 	pressureArray=myPressureField.getFieldValues()
-	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step 0')
-	plt.legend()
-	plt.savefig(fileName+".png")
+	myVelocityField = myProblem.getVelocityField()
+	velocityArray=myVelocityField.getFieldValues()
+
+	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
+	fig.suptitle('Implicit Upwind scheme for isothermal Euler equations')
+	axVelocity.plot([xinf+0.5*dx + i*dx for i in range(nx)], velocityArray, label='Velocity time step 0')
+	axVelocity.set(xlabel='x (m)', ylabel='Velocity')
+	axVelocity.set_xlim(xinf,xsup)
+	axVelocity.set_ylim( 0.999*min(initialVelocity_Left, initialVelocity_Right), 1.001*max(initialVelocity_Left, initialVelocity_Right) )
+	axVelocity.legend()
+	axPressure.plot([xinf+0.5*dx + i*dx for i in range(nx)], pressureArray, label='Pressure  time step 0')
+	axPressure.set(xlabel='x (m)', ylabel='Pressure')
+	axPressure.set_xlim(xinf,xsup)
+	axPressure.set_ylim(0.999999*min(initialPressure_Left, initialPressure_Right), 1.000001*max(initialPressure_Left, initialPressure_Right) )
+	axPressure.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+	axPressure.legend()
 
 	ok = myProblem.run();
 	if (ok):
@@ -100,14 +108,18 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	print( "------------ End of calculation !!! -----------" );
 
 	myPressureField = myProblem.getPressureField()
-	timeStep=myProblem.getNbTimeStep()#Final time step
 	pressureArray=myPressureField.getFieldValues()
-	line_pressure, = plt.plot(x, pressureArray,  label='Pressure time step '+str(timeStep))
-	plt.legend()
+	myVelocityField = myProblem.getVelocityField()
+	velocityArray=myVelocityField.getFieldValues()
+	timeStep=myProblem.getNbTimeStep()#Final time step
+	axPressure.plot(x, pressureArray,  label='Pressure time step '+str(timeStep))
+	axVelocity.plot(x, velocityArray,  label='Velocity time step '+str(timeStep))
+	axPressure.legend()
+	axVelocity.legend()
 	plt.savefig(fileName+".png")
 
 	myProblem.terminate();
 	return ok
 
 if __name__ == """__main__""":
-    IsothermalSinglePhase_1DRiemannProblem_Implicit()
+	IsothermalSinglePhase_1DRiemannProblem_Implicit()
