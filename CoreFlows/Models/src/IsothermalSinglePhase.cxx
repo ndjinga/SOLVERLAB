@@ -56,6 +56,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
     _usePrimitiveVarsInNewton=true;//This class is designed only to solve linear system in primitive variables
     _Vdiff=NULL;
     _saveAllFields = false;
+	_nonLinearFormulation=reducedRoe;//Only case implemented is reduced roe
 }
 
 void IsothermalSinglePhase::initialize(){
@@ -214,12 +215,12 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule gauche" << i << endl;
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule gauche = " << i << endl;
 		cout << "Vi = ";
 		for(int q=0; q<_nVar; q++)
 			cout << _Vi[q]  << "\t";
 		cout << endl;
-		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule droite" << j << endl;
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule droite =" << j << endl;
 		cout << "Vj = ";
 		for(int q=0; q<_nVar; q++)
 			cout << _Vj[q]  << "\t";
@@ -1034,6 +1035,18 @@ void IsothermalSinglePhase::primToCons(const double *P, const int &i, double *W,
 	W[j*_nVar] =  phi_rho;//phi*rho
 	for(int k=0; k<_Ndim; k++)
 		W[j*_nVar+(k+1)] = phi_rho*P[i*_nVar+(k+1)];//phi*rho*u
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<"IsothermalSinglePhase::primToCons Vecteur primitif"<<endl;
+		for(int k=0;k<_nVar;k++)
+			cout<<P[k]<<endl;
+		cout<<"IsothermalSinglePhase::primToCons Vecteur conservatif"<<endl;
+		for(int k=0;k<_nVar;k++)
+			cout<<W[k]<<endl;
+	}
+	assert( W[0]>0);//Density should be positive
+	assert( P[0]>0);//Pressure should be positive
 }
 
 void IsothermalSinglePhase::primToConsJacobianMatrix(double *V)
@@ -1078,23 +1091,23 @@ void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double
 	{		
 		double rho=Wcons[0]/porosity;
 		double e =fluide0->getInternalEnergy(_Temperature, rho);
-		
+
 		Wprim[0] =fluide0->getPressure(rho*e,rho);//pressure p
 		for(int k=1;k<=_Ndim;k++)
 			Wprim[k] = Wcons[k]/Wcons[0];//velocity u
 	
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
-			cout<<"ConsToPrim Vecteur conservatif"<<endl;
+			cout<<"IsothermalSinglePhase::ConsToPrim Vecteur conservatif"<<endl;
 			for(int k=0;k<_nVar;k++)
 				cout<<Wcons[k]<<endl;
-			cout<<"ConsToPrim Vecteur primitif"<<endl;
+			cout<<"IsothermalSinglePhase::ConsToPrim Vecteur primitif"<<endl;
 			for(int k=0;k<_nVar;k++)
 				cout<<Wprim[k]<<endl;
 		}
-		assert( Wcons[0]>0);//Density should be positive
-		assert(Wprim[0]>0);//Pressure should be positive
-		assert(e>0);//Internal energy should be positive
+		assert( Wcons[0]>0 );//Density should be positive
+		assert( Wprim[0]>0 );//Pressure should be positive
+		assert( e>0) ;//Internal energy should be positive
 	}
 }
 
@@ -1149,7 +1162,8 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 			for(int q=0; q<_nVar; q++)
 				cout << _temp[q] << endl;
 			cout << endl;
-			cout << "Contribution convection à " << i << ", A^-*(Vi - Vj)*_inv_dxi= "<<endl;
+			cout << "Contribution convection à " << i << endl;
+			cout << "A^-*(Vi - Vj)*_inv_dxi= "<<endl;
 			for(int q=0; q<_nVar; q++)
 				cout << _phi[q] << endl;
 			cout << endl;
@@ -1164,20 +1178,13 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 
 			if(_verbose && _nbTimeStep%_freqSave ==0)
 			{
-				cout << "Contribution convection à  " << j << ", A^+*(Vi - Vj)*_inv_dxi= "<<endl;
+				cout << "Contribution convection à  " << j << endl;
+				cout << "A^+*(Vi - Vj)*_inv_dxi= "<<endl;
 				for(int q=0; q<_nVar; q++)
 					cout << _phi[q] << endl;
 				cout << endl;
 			}
 		}
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<"ProblemFluid::addConvectionToSecondMember end : matrices de décentrement cellules i= " << i << ", et j= " << j<< "):"<<endl;
-		displayMatrix(_absAroeImplicit,   _nVar,"Valeur absolue matrice de Roe en variables primitives");
-		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinus en variables primitives");
-		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlus en variables primitives");
-		displayMatrix(_AroeImplicit,  _nVar,"matrice de Roe en variables primitives");
-	}
 }
 
 void IsothermalSinglePhase::convectionMatrixConservativeVariables(double u_n)
@@ -1191,7 +1198,7 @@ void IsothermalSinglePhase::convectionMatrixConservativeVariables(double u_n)
 	for(int idim=0; idim<_Ndim;idim++)
 		_Aroe[1+idim]=_vec_normal[idim];
 
-	//lignes intermadiaires(qdm)
+	//lignes intermédiaires(qdm)
 	for(int idim=0; idim<_Ndim;idim++)
 	{
 		//premiere colonne
