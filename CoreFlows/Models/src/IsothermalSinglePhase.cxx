@@ -1217,7 +1217,7 @@ void IsothermalSinglePhase::convectionMatrixPrimitiveVariables(double u_n )
 	{
 		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*_Uroe[1+i]+_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j]=rho*_vec_normal[j];
+			_AroeImplicit[(1+i)*_nVar+1+j]=rho*_Uroe[1+i]*_vec_normal[j];
 		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
 	}
 }
