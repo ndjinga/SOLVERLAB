@@ -180,7 +180,10 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 		if(fluide0==NULL)//case of an incompressible fluid
 		    _Uroe[_nVar] = 0;
 		else
-		    _Uroe[_nVar] = fluide0->getInverseSoundSpeed(max(_Vi[0],_Vj[0]), _Temperature);
+		{
+		    _Uroe[_nVar]  = fluide0->getInverseSoundSpeed(max(_Vi[0],_Vj[0]), _Temperature);//store 1/c
+		    _Uroe[_nVar] *= _Uroe[_nVar];//store 1/c^2
+		}
     }    
 	else
 	    _Uroe[_nVar] = (_Ui[0]-_Uj[0])/(_Vi[0]-_Vj[0]);//_Uroe has size _nVar+1 !!!
