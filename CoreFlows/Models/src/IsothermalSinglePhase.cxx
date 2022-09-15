@@ -564,7 +564,7 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 	//on n'a pas de contribution sur la masse
 	_phi[0]=0;
 	//contribution visqueuse sur la quantite de mouvement
-	for(int k=1; k<_nVar-1; k++)
+	for(int k=1; k<_nVar; k++)
 		_phi[k] = _inv_dxi*2/(1/_inv_dxi+1/_inv_dxj)*mu*(_porosityj*_Vj[k] - _porosityi*_Vi[k]);
 	
 	_idm[0] = i;
