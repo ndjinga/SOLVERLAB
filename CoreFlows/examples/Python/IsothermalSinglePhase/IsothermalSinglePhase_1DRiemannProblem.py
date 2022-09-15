@@ -10,7 +10,7 @@ def IsothermalSinglePhase_1DRiemannProblem():
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
-	xsup=4.2;
+	xsup=1;
 	nx=100;
 	discontinuity=(xinf+xsup)/2
 	M=svl.Mesh(xinf,xsup,nx)
@@ -23,7 +23,7 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	initialPressure_Left=155e5;
 
 	initialVelocity_Right=1;
-	initialPressure_Right=155.001e5;
+	initialPressure_Right=155.01e5;
 
 	myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim);
 	nVar =  myProblem.getNumberOfVariables();
@@ -55,11 +55,11 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 10 ;
+	MaxNbOfTimeStep = 25 ;
 	freqSave = 1;
 	cfl = 0.95;
 	maxTime = 500;
-	precision = 1e-6;
+	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

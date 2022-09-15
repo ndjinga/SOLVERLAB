@@ -10,7 +10,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
-	xsup=4.2;
+	xsup=1;
 	nx=100;
 	discontinuity=(xinf+xsup)/2
 	M=svl.Mesh(xinf,xsup,nx)
@@ -53,7 +53,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Implicit():
 	fileName = "1DRiemannProblem_Implicit";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 20 ;
+	MaxNbOfTimeStep = 25 ;
 	freqSave = 1;
 	cfl = 1;
 	maxTime = 500;

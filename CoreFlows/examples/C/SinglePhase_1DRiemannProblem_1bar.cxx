@@ -52,7 +52,8 @@ int main(int argc, char** argv)
 
 	// set the numerical method
 	myProblem.setNumericalScheme(upwind, Explicit);
-
+	myProblem.setNonLinearFormulation(reducedRoe);
+	
 	// name file save
 	string fileName = "1DRiemannProblem_1bar";
 
