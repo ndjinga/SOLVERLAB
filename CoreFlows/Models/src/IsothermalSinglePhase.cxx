@@ -349,7 +349,10 @@ void IsothermalSinglePhase::convectionMatrices()
 			_runLogFile->close();
 			throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for staggered scheme");
 		}
-		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);
+		/* Calcul de Aprim */
+		convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
+		/* Calcul du décentrement staggered */
+		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);//Ici on calcule le décentrement staggered et on le stocke dans _absAroeImplicit
 	}
 	else
 	{
