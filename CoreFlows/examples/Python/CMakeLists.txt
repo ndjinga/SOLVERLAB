@@ -70,6 +70,8 @@ add_test(TransportEquation/TransportEquation_2DSpherical ${PYTHON_EXECUTABLE} ${
 
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem.py "Python fv isothermalsinglephase 1D riemann structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_Implicit.py "Python fv isothermalsinglephase 1D riemann implicit structured coreflows")
+CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_PStaggered.py "Python fv isothermalsinglephase 1D riemann implicit pstaggered structured coreflows")
+CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_Centered.py "Python fv isothermalsinglephase 1D riemann implicit centered structured coreflows")
 
 CreatePythonTest(SinglePhase/SinglePhase_1DDepressurisation.py "Python fv singlephase 1D depressurisation structured coreflows")
 CreatePythonTest(SinglePhase/SinglePhase_1DHeatedAssembly.py "Python fv singlephase 1D heating structured coreflows")
