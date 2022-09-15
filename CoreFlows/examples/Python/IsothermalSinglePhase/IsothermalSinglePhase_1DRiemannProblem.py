@@ -55,7 +55,7 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 3 ;
+	MaxNbOfTimeStep = 10 ;
 	freqSave = 1;
 	cfl = 0.95;
 	maxTime = 500;

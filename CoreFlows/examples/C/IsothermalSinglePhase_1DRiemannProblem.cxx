@@ -17,11 +17,11 @@ int main(int argc, char** argv)
 
 	//initial data
 	double initialVelocity_Left=1;
-	double initialPressure_Left=155e5;
-	double initialVelocity_Right=1;
-	double initialPressure_Right=155e5;
+	double initialPressure_Left=1e5;
+	double initialVelocity_Right=-1;
+	double initialPressure_Right=1e5;
 
-	IsothermalSinglePhase  myProblem(Liquid,around155bars600K,spaceDim);
+	IsothermalSinglePhase  myProblem(Liquid,around1bar300K,spaceDim);
 	// Prepare for the initial condition
 	int nVar = myProblem.getNumberOfVariables();
 	Vector VV_Left(nVar),VV_Right(nVar);
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 	string fileName = "1DRiemannProblem";
 
 	// parameters calculation
-	unsigned MaxNbOfTimeStep = 3;
+	unsigned MaxNbOfTimeStep = 1;
 	int freqSave = 1;
 	double cfl = 0.95;
 	double maxTime = 5;
