@@ -106,14 +106,6 @@ void IsothermalSinglePhase::terminate(){
 	ProblemFluid::terminate();
 }
 
-bool IsothermalSinglePhase::iterateTimeStep(bool &converged)
-{    //The class does not allow the use of conservative variables in Newton iterations
-	if(_timeScheme == Explicit || _usePrimitiveVarsInNewton)
-		return ProblemFluid::iterateTimeStep(converged);
-	else
-		throw CdmathException("IsothermalSinglePhase can not use conservative variables in Newton scheme for implicit in time discretisation");
-}
-
 void IsothermalSinglePhase::convectionState( const long &i, const long &j, const bool &IsBord){
 	//entree: indices des cellules Vi et Vj.
 	//Attention : Vj peut être un état fantôme
@@ -308,8 +300,6 @@ void IsothermalSinglePhase::convectionMatrices()
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"IsothermalSinglePhase::convectionMatrices, "<< nb_vp_dist<< " eigenvalues, u_n= "<<u_n<<", c= "<<c<<endl;
 
-	convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
-
 	if(_entropicCorrection)
 	{
 		*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: entropy scheme not available for IsothermalSinglePhase"<<endl;
@@ -319,14 +309,27 @@ void IsothermalSinglePhase::convectionMatrices()
 
 	/******** Construction des matrices de decentrement ********/
 	if( _spaceScheme ==centered){
-		for(int i=0; i<_nVar*_nVar;i++)
-			_absAroeImplicit[i] = 0;
+		if(_usePrimitiveVarsInNewton)//We use primitive variables in Newton iterations
+		{
+			convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
+			for(int i=0; i<_nVar*_nVar;i++)
+				_absAroeImplicit[i] = 0;
+		}
+		else//We use conservative variables in Newton iterations
+		{
+			convectionMatrixConservativeVariables(u_n);//Ici on calcule Acons et on le stocke dans _Aroe
+			for(int i=0; i<_nVar*_nVar;i++)
+				_absAroe[i] = 0;
+		}
 	}
 	else if(_spaceScheme == upwind )
 	{
 		if(_Uroe[_nVar]==0.)//infinite sound speed
 			throw CdmathException("Upwind scheme cannot be used with incompressible fluids (infinite sound speed->infinite upwinding)");
-		/* Calcul de Acons */
+
+		/* Calcul de Aprim */
+		convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
+		/* Calcul de Acons (first step in the the computaton of upwinding matrix) */
 		convectionMatrixConservativeVariables(u_n);//Ici on calcule Acons et on le stocke dans _Aroe
 		/* Calcul de |Acons| */
 		vector< complex< double > > y (	nb_vp_dist,0);
@@ -355,20 +358,36 @@ void IsothermalSinglePhase::convectionMatrices()
 		throw CdmathException("IsothermalSinglePhase::convectionMatrices: scheme not treated");
 	}
 
-	for(int i=0; i<_nVar*_nVar;i++)
-	{
-		_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
-		_AroePlusImplicit[i]  = (_AroeImplicit[i]+_absAroeImplicit[i])/2;
-	}
-
+	if(_usePrimitiveVarsInNewton)//We use primitive variables in Newton iterations
+		for(int i=0; i<_nVar*_nVar;i++)
+		{
+			_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
+			_AroePlusImplicit[i]  = (_AroeImplicit[i]+_absAroeImplicit[i])/2;
+		}
+	else//We use conservative variables in Newton iterations
+		for(int i=0; i<_nVar*_nVar;i++)
+		{
+			_AroeMinus[i] = (_Aroe[i]-_absAroe[i])/2;
+			_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
+		}
+	
 	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		displayMatrix(_AroeImplicit,      _nVar,"Matrice de Roe en variables primitives");
-		displayMatrix(_absAroeImplicit,   _nVar,"Décentrement en variables primitives");
-		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinus en variables primitives");
-		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlus en variables primitives");
+		if(_usePrimitiveVarsInNewton)//We use primitive variables in Newton iterations
+		{
+			displayMatrix(_AroeImplicit,      _nVar,"Matrice de Roe en variables primitives");
+			displayMatrix(_absAroeImplicit,   _nVar,"Décentrement en variables primitives");
+			displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinus en variables primitives");
+			displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlus en variables primitives");
+		}
+		else//We use conservative variables in Newton iterations
+		{
+			displayMatrix(_Aroe,      _nVar,"Matrice de Roe en variables conservatives");
+			displayMatrix(_absAroe,   _nVar,"Décentrement en variables conservatives");
+			displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus en variables conservatives");
+			displayMatrix(_AroePlus,  _nVar,"Matrice _AroePlus en variables conservatives");
+		}
+	
 	}
-}
 
 void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *normale){
 	_idm[0] = _nVar*j;
@@ -1141,16 +1160,27 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "addConvectionToSecondMember : état i= " << i << ", _Vi=" << endl;
+		cout << "addConvectionToSecondMember : état primitif i= "    << i << endl << " _Vi=" ;
 		for(int q=0; q<_nVar; q++)
-			cout << _Vi[q] << endl;
+			cout << _Vi[q] << ", ";
 		cout << endl;
-		cout << "addConvectionToSecondMember : état j= " << j << ", _Vj=" << endl;
+		cout << "addConvectionToSecondMember : état conservatif i= " << i << endl << " _Ui=" ;
 		for(int q=0; q<_nVar; q++)
-			cout << _Vj[q] << endl;
+			cout << _Ui[q] << ", ";
+		cout << endl;
+		cout << "addConvectionToSecondMember : état primitif j= "    << j << endl << " _Vj=" ;
+		for(int q=0; q<_nVar; q++)
+			cout << _Vj[q] <<  ", ";
+		cout << endl;
+		cout << "addConvectionToSecondMember : état conservatif j= " << j << endl << " _Uj=" ;
+		for(int q=0; q<_nVar; q++)
+			cout << _Uj[q] <<  ", ";
 		cout << endl;
 	}
-	for(int k=0; k<_nVar; k++)
+	
+	if(_usePrimitiveVarsInNewton)//We use primitive variables in Newton iterations
+	{
+		for(int k=0; k<_nVar; k++)
 			_temp[k]=(_Vi[k] - _Vj[k])*_inv_dxi;//(Vi-Vj)*_inv_dxi
 		Polynoms::matrixProdVec(_AroeMinusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^-(V_i-V_j)/dx
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
@@ -1173,9 +1203,9 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 		{
 			for(int k=0; k<_nVar; k++)
 				_temp[k]*=_inv_dxj/_inv_dxi;//(Vi-Vj)*_inv_dxj
-			Polynoms::matrixProdVec(_AroePlusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^+(V_i-Vs_j)/dx
+			Polynoms::matrixProdVec(_AroePlusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^+(V_i-V_j)/dx
 			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
-
+	
 			if(_verbose && _nbTimeStep%_freqSave ==0)
 			{
 				cout << "Contribution convection à  " << j << endl;
@@ -1185,6 +1215,31 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 				cout << endl;
 			}
 		}
+	}
+	else//We use conservative variables in Newton iterations
+	{
+		for(int k=0; k<_nVar; k++)
+			_temp[k]=(_Ui[k] - _Uj[k])*_inv_dxj;//(Ui-Uj)*_inv_dxi
+		Polynoms::matrixProdVec(_AroeMinus, _nVar, _nVar, _temp, _phi);//phi=A^-(U_i-U_j)/dx
+		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
+
+		if(!isBord)
+		{
+			for(int k=0; k<_nVar; k++)
+				_temp[k]*=_inv_dxj/_inv_dxi;//(Ui-Uj)*_inv_dxj
+			Polynoms::matrixProdVec(_AroePlus, _nVar, _nVar, _temp, _phi);//phi=A^+(U_i-U_j)/dx
+			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
+	
+			if(_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution convection à  " << j << endl;
+				cout << "A^+*(Ui - Uj)*_inv_dxj= "<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _phi[q] << endl;
+				cout << endl;
+			}
+		}
+	}
 }
 
 void IsothermalSinglePhase::convectionMatrixConservativeVariables(double u_n)
