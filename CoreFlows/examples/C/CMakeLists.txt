@@ -67,6 +67,7 @@ CreateTestExecAndInstall(SinglePhase_1DDepressurisation.cxx  "${libs_for_tests}"
 CreateTestExecAndInstall(SinglePhase_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv singlephase 1D heating structured coreflows" )
 CreateTestExecAndInstall(SinglePhase_1DPorosityJump.cxx  "${libs_for_tests}" "C++ fv singlephase 1D porosity structured coreflows" )
 CreateTestExecAndInstall(SinglePhase_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann structured coreflows" )
+CreateTestExecAndInstall(SinglePhase_1DRiemannProblem_1bar.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann structured coreflows" )
 CreateTestExecAndInstall(SinglePhase_1DRiemannProblem_Implicit.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann implicit structured coreflows" )
 CreateTestExecAndInstall(SinglePhase_1DRiemannProblem_Implicit_LineSearch.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann implicit linesearch structured coreflows" )
 CreateTestExecAndInstall(SinglePhase_2DHeatDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares coreflows" )
