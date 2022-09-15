@@ -364,11 +364,13 @@ void IsothermalSinglePhase::convectionMatrices()
 			_AroeMinusImplicit[i] = (_AroeImplicit[i]-_absAroeImplicit[i])/2;
 			_AroePlusImplicit[i]  = (_AroeImplicit[i]+_absAroeImplicit[i])/2;
 		}
-	else//We use conservative variables in Newton iterations
+	else//We use conservative variables in contribution to right hand side
 		for(int i=0; i<_nVar*_nVar;i++)
 		{
 			_AroeMinus[i] = (_Aroe[i]-_absAroe[i])/2;
 			_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
+			_AroeMinusImplicit[i] = _AroeMinus[i];
+			_AroePlusImplicit[i]  = _AroePlus[i];
 		}
 	
 	if(_verbose && _nbTimeStep%_freqSave ==0)
