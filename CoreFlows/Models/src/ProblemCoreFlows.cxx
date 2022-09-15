@@ -565,7 +565,7 @@ bool ProblemCoreFlows::run()
 			else // The resolution was successful, validate and go to the next time step.
 			{
 				if (_nbTimeStep%_freqSave ==0){
-					PetscPrintf(PETSC_COMM_WORLD,"Solved time step = %d, dt = %.2e, time = %.2f, ||Un+1-Un||= %.2e\n\n",_nbTimeStep+1,_dt,_time,_erreur_rel);
+					PetscPrintf(PETSC_COMM_WORLD,"Solved time step = %d, dt = %.2e, time = %.2e, ||Un+1-Un||= %.2e\n\n",_nbTimeStep+1,_dt,_time,_erreur_rel);
 					*_runLogFile << "Solved time step = "<< _nbTimeStep+1 << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
 				}
 				validateTimeStep();
@@ -588,7 +588,7 @@ bool ProblemCoreFlows::run()
 		PetscPrintf(PETSC_COMM_WORLD,"Error problem wants to stop!\n");
 		*_runLogFile<<"Error problem wants to stop!"<<endl;
 	}
-	PetscPrintf(PETSC_COMM_WORLD,"End of calculation at time t = %.2f and time step number %d\n",_time,_nbTimeStep+1);
+	PetscPrintf(PETSC_COMM_WORLD,"End of calculation at time t = %.2e and time step number %d\n",_time,_nbTimeStep+1);
 	*_runLogFile << "End of calculation time t= " << _time << " at time step number "<< _nbTimeStep << endl;
 
 	_runLogFile->close();

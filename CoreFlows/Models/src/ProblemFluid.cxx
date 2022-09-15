@@ -1537,7 +1537,7 @@ void ProblemFluid::validateTimeStep()
 	if(_verbose && _nbTimeStep%_freqSave ==0){
 		if(!_usePrimitiveVarsInNewton)
 			testConservation();
-		cout <<"Valeur propre locale max: " << _maxvp << endl;
+		cout <<"Valeur propre maximum: " << _maxvp << endl;
 	}
 
 	if(_nbPhases==2 && _nbTimeStep%_freqSave ==0){
