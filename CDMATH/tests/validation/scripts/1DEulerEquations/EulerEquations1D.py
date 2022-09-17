@@ -382,7 +382,7 @@ def FillInnerCell(j, Uk, nbComp, divMat, Rhs, Un, dt, dx, isImplicit, scheme, ga
 		Rhs[j * nbComp + 2] = 0
 
 
-def EulerSystem(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, isImplicit, scheme,fig,p_L,v_L,rho_L,p_R,v_R,rho_R, lam_max, gamma, pinf,pos_disc):
+def EulerSystem(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, isImplicit, scheme,fig,p_L,v_L,rho_L,p_R,v_R,rho_R, lam_max, gamma, pinf,pos_disc, test_desc):
 	dim = 1
 	nbComp = 3
 	dt = 0.
@@ -509,7 +509,6 @@ def EulerSystem(ntmax, tmax, cfl, a, b, nbCells, output_freq, meshName, isImplic
 		test_desc["Linear_solver_maximum_iterations"]=LS.getNumberMaxOfIter()
 		test_desc["Linear_system_max_actual_iterations_number"]=LS.getNumberOfIter()
 		test_desc["Linear_system_max_actual_error"]=LS.getResidu()
-		test_desc["Linear_system_max_actual_condition number"]=LS.getConditionNumber()
 
 	if (it >= ntmax):
 		print("Maximum number of time steps ntmax= ", ntmax, " reached")
@@ -564,7 +563,7 @@ def solve(a, b, nx, meshName, meshType, isImplicit, scheme, simulation_name, tes
 	test_desc["Mesh_max_number_of_neighbours"]=2
 
 	start = time.time()
-	p_field, v_field, e_field, rho_field, q_field, h_field = EulerSystem(ntmax, tmax, cfl, a, b, nx, output_freq, meshName,  isImplicit,scheme,fig,p_L,v_L,rho_L,p_R,v_R,rho_R, pos_disc,lam_max, gamma, pinf)
+	p_field, v_field, e_field, rho_field, q_field, h_field = EulerSystem(ntmax, tmax, cfl, a, b, nx, output_freq, meshName,  isImplicit,scheme,fig,p_L,v_L,rho_L,p_R,v_R,rho_R, pos_disc,lam_max, gamma, pinf, test_desc)
 	end = time.time()
 
 	test_desc["Computational_time_taken_by_run"]=end-start
