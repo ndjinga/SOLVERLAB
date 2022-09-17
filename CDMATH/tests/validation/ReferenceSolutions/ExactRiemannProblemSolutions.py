@@ -379,8 +379,8 @@ def run_Riemann_problems(numsamples = 100):
 		max_initial_q = max_initial_rho*max_initial_v
 		min_initial_q = min_initial_rho*min_initial_v
 		
-		e_L=exact_rs_stiffenedgas.p_to_e_StiffenedGaz(WL[2], WL[0], gammaL, pinf_L)
-		e_R=exact_rs_stiffenedgas.p_to_e_StiffenedGaz(WR[2], WR[0], gammaR, pinf_R)
+		e_L=exact_rs_stiffenedgas.stiffenedgas_e(WL[0], WL[2], gammaL, pinf_L)
+		e_R=exact_rs_stiffenedgas.stiffenedgas_e(WR[0], WR[2], gammaR, pinf_R)
 		h_L=e_L+WL[2]/WL[0]
 		h_R=e_R+WR[2]/WR[0]
 		max_initial_e = max(e_L,e_R)

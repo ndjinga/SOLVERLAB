@@ -18,10 +18,6 @@ def stiffenedgas_e (rho, p, gamma, pinf):
 def stiffenedgas_h (rho, p, gamma, pinf):
 	return gamma*(p+pinf)/(rho*(gamma-1));
 
-def p_to_e_StiffenedGaz(p, rho, gamma, pinf):
-	e_field = (p + gamma*pinf) / (gamma - 1.) / rho
-	return e_field
-
 class exact_rs_stiffenedgas :
 
 	def __init__(self, gamma_L, gamma_R, pinf_L, pinf_R, tol=1.e-6, max_iter=100):

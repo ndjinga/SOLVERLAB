@@ -89,8 +89,8 @@ def test_validation1DEulerEquationsToro(scheme,isImplicit):
     max_initial_q = max_initial_rho*max_initial_v
     min_initial_q = min_initial_rho*min_initial_v
 
-    e_L=exact_rs_stiffenedgas.p_to_e_StiffenedGaz(p_L, rho_L, gamma, p0)
-    e_R=exact_rs_stiffenedgas.p_to_e_StiffenedGaz(p_R, rho_R, gamma, p0)
+    e_L=exact_rs_stiffenedgas.stiffenedgas_e(rho_L, p_L, gamma, p0)
+    e_R=exact_rs_stiffenedgas.stiffenedgas_e(rho_R, p_R, gamma, p0)
     h_L=e_L+p_L/rho_L
     h_R=e_R+p_R/rho_R
     max_initial_e = max(e_L, e_R)
