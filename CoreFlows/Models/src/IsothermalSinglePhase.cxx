@@ -6,7 +6,6 @@
 
 #include<bits/stdc++.h>
 #include "IsothermalSinglePhase.hxx"
-#include "StiffenedGas.hxx"
 
 using namespace std;
 

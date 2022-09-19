@@ -15,6 +15,7 @@
 #define IsothermalSinglePhase_HXX_
 
 #include "ProblemFluid.hxx"
+#include "StiffenedGas.hxx"
 
 class IsothermalSinglePhase : public ProblemFluid{
 public :
@@ -88,6 +89,8 @@ public :
 	 * */
 	void addSourceTermToSecondMember(const int i, int nbNeighboursi,const int j, int nbNeighboursj,bool isBoundary, int ij, double mesureFace);
 
+	//EOS functions
+	StiffenedGas getFluidEOS(){ return *dynamic_cast<StiffenedGas*>(_fluides[0]); }
 	double getReferenceTemperature() { return _Temperature; };
 	
 	/* Get output fields for postprocessing or coupling */
