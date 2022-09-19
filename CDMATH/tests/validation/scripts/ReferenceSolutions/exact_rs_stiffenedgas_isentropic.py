@@ -14,14 +14,12 @@ from math import pow, fabs, sqrt
 
 class exact_rs_stiffenedgas_isentropic :
 
-	def __init__(self, gamma_L, gamma_R, pinf_L, pinf_R, tol=1.e-6, max_iter=100):
+	def __init__(self, gamma_L, gamma_R, tol=1.e-6, max_iter=100):
 		self.TOL = tol
 		self.MAX_NB_ITER = max_iter
 	
 		self.gamma_L = gamma_L
 		self.gamma_R = gamma_R
-		self.pinf_L  = pinf_L
-		self.pinf_R  = pinf_R
 		
 		self.S_STAR = 0.
 		self.P_STAR = 0.
@@ -53,7 +51,7 @@ class exact_rs_stiffenedgas_isentropic :
 		
 		# Calculate u_star
 	
-		self.S_STAR = 0.5*(W_L[1]+W_R[1]) + 0.5*(self.f(self.P_STAR,W_R[0],self.gamma_R,self.pinf_R) - self.f(self.P_STAR,W_L[0],self.gamma_L,self.pinf_L))
+		self.S_STAR = 0.5*(W_L[1]+W_R[1]) + 0.5*(self.f(self.P_STAR,W_R[0],self.gamma_R) - self.f(self.P_STAR,W_L[0],self.gamma_L))
 	
 	
 	def sample_solution (self, W_L, W_R, S):
@@ -140,24 +138,24 @@ class exact_rs_stiffenedgas_isentropic :
 
 	def total_pressure_function (self, p_star, p_L, u_L, p_R, u_R):
 
-		return	self.f(p_star, p_L, self.gamma_L, self.pinf_L)	+ self.f(p_star, p_R, self.gamma_R, self.pinf_R) + u_R - u_L
+		return	self.f(p_star, p_L, self.gamma_L)	+ self.f(p_star, p_R, self.gamma_R) + u_R - u_L
 
 	def total_pressure_function_deriv (self, p_star, p_L, p_R ):
 
-		return 	self.f_deriv (p_star, p_L, self.gamma_L, self.pinf_L) + self.f_deriv (p_star, p_R, self.gamma_R, self.pinf_R)
+		return 	self.f_deriv (p_star, p_L, self.gamma_L) + self.f_deriv (p_star, p_R, self.gamma_R)
 
 
-	def f (self, p_star, p, gamma, pinf):
+	def f (self, p_star, p, gamma):
 		if (p_star > p):
 		
-			return (p_star - p)/self.Q_K(p_star, p, gamma, pinf)
+			return (p_star - p)/self.Q_K(p_star, p, gamma)
 		
 		else:
 		
-			return (2.0*self.a(p,gamma,pinf)/(gamma-1.0))*(pow((p_star + pinf)/(p + pinf), (gamma-1.0)/(2.0*gamma)) - 1.0)
+			return (2.0*self.a(p,gamma,pinf)/(gamma-1.0))*(pow((p_star )/(p ), (gamma-1.0)/(2.0*gamma)) - 1.0)
 		
 
-	def f_deriv (self, p_star, rho, p, gamma, pinf):
+	def f_deriv (self, p_star, rho, p, gamma):
 		A = 2.0/((gamma+1.0)*rho)
 		B = (p+pinf)*(gamma-1.0)/(gamma+1.0)
 	
@@ -174,20 +172,20 @@ class exact_rs_stiffenedgas_isentropic :
 	# Functions to find the state inside a rarefaction fan
 
 	def set_left_rarefaction_fan_state (self, W_L, S, W):
-		a_L = self.a(W_L[0],self.gamma_L,self.pinf_L)
+		a_L = self.a(W_L[0],self.gamma_L)
 		W[1] = (2.0/(self.gamma_L+1.0))*(a_L + S + ((self.gamma_L-1.0)/2.0)*W_L[1])
-		W[0] = (W_L[0] + self.pinf_L)*pow((2.0/(self.gamma_L+1.0)) + ((self.gamma_L-1.0)/(a_L*(self.gamma_L+1.0)))*(W_L[1] - S), (2.0*self.gamma_L)/(self.gamma_L-1.0)) - self.pinf_L
+		W[0] = (W_L[0] + self.pinf_L)*pow((2.0/(self.gamma_L+1.0)) + ((self.gamma_L-1.0)/(a_L*(self.gamma_L+1.0)))*(W_L[1] - S), (2.0*self.gamma_L)/(self.gamma_L-1.0)) 
 
 	def set_right_rarefaction_fan_state (self, W_R, S, W):
-		a_R = self.a(W_R[0],self.gamma_R,self.pinf_R)
+		a_R = self.a(W_R[0],self.gamma_R)
 		W[1] = (2.0/(self.gamma_R+1.0))*(- a_R + S + ((self.gamma_R-1.0)/2.0)*W_R[1])
-		W[0] = (W_R[0] + self.pinf_R)*pow((2.0/(self.gamma_R+1.0)) - ((self.gamma_R-1.0)/(a_R*(self.gamma_R+1.0)))*(W_R[1] - S), (2.0*self.gamma_R)/(self.gamma_R-1.0)) - self.pinf_R
+		W[0] = (W_R[0] + self.pinf_R)*pow((2.0/(self.gamma_R+1.0)) - ((self.gamma_R-1.0)/(a_R*(self.gamma_R+1.0)))*(W_R[1] - S), (2.0*self.gamma_R)/(self.gamma_R-1.0)) 
 
 
 
 	# Misc functions
 
-	def Q_K (self, p_star, rho, p, gamma, pinf):
+	def Q_K (self, p_star, rho, p, gamma):
 		A = 2.0/((gamma+1.0)*rho)
 		B = (p+pinf)*(gamma-1.0)/(gamma+1.0)
 		return sqrt((p_star+pinf+B)/A)
