@@ -24,7 +24,7 @@ public :
 			 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 			 * \param [in] int : mesh dimension
 			 *  */
-	IsothermalSinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim);
+	IsothermalSinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, bool isCompressibleFluid=true);
 	//!initialisation du systeme (allocations mémoire)
 	void initialize();
 	//!libération de la mémoire

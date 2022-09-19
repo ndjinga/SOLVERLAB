@@ -9,7 +9,7 @@
 
 using namespace std;
 
-IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim){
+IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, bool isCompressibleFluid){
 	_Ndim=dim;
 	_nVar=_Ndim+1;
 	_nbPhases = 1;
@@ -18,34 +18,74 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 	if (pEstimate==around1bar300K)//EOS at 1 bar and 300K
 	{
 		_Temperature=300;//Constant temperature of the model
-		if(fluid==Gas){
-			cout<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
-			*_runLogFile<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
-			_internalEnergy=2.22e5;//nitrogen internal energy at 1bar, 300K
-			_fluides[0] = new StiffenedGas(1.4,743,_Temperature,_internalEnergy);  //ideal gas law for nitrogen at pressure 1 bar and temperature 27°C, c_v=743
+		if(fluid==Gas)
+		{
+			if(isCompressibleFluid)
+			{
+				cout<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
+				*_runLogFile<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
+				_internalEnergy=2.22e5;//nitrogen internal energy at 1bar, 300K
+				_fluides[0] = new StiffenedGas(1.4,743,_Temperature,_internalEnergy);  //ideal gas law for nitrogen at pressure 1 bar and temperature 27°C, c_v=743
+			}
+			else
+			{
+				cout<<"Fluid is incompressible air around 1 bar and 300 K (27°C)"<<endl;
+				*_runLogFile<<"Fluid is incompressible air around 1 bar and 300 K (27°C)"<<endl;
+				//_fluides[0] = new IncompressibleFluid(1.12);  
+			}
 		}
-		else{
-			cout<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
-			*_runLogFile<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
-			_internalEnergy=1.12e5;//water internal energy at 1 bar, 300K
-			_fluides[0] = new StiffenedGas(996,1e5,_Temperature,_internalEnergy,1501,4130);  //stiffened gas law for water at pressure 1 bar and temperature 27°C
+		else
+		{
+			if(isCompressibleFluid)
+			{
+				cout<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
+				*_runLogFile<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
+				_internalEnergy=1.12e5;//water internal energy at 1 bar, 300K
+				_fluides[0] = new StiffenedGas(996.56,1e5,_Temperature,_internalEnergy,1501,4130);  //stiffened gas law for water at pressure 1 bar and temperature 27°C
+			}
+			else
+			{
+				cout<<"Fluid is incompressible water around 1 bar and 300 K (27°C)"<<endl;
+				*_runLogFile<<"Fluid is incompressible water around 1 bar and 300 K (27°C)"<<endl;
+				//_fluides[0] = new IncompressibleFluid(996.56);  
+			}
 		}
 	}
 	else
 	{
-		if(fluid==Gas){//EOS at 155 bars and 618K
-			cout<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
-			*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
-			_Temperature=618;//Constant temperature of the model
-			_internalEnergy=2.44e6;//Gas internal energy at saturation at 155 bar
-			_fluides[0] = new StiffenedGas(102,1.55e7,_Temperature,_internalEnergy, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C:
+		if(fluid==Gas)//EOS at 155 bars and 618K
+		{
+			if(isCompressibleFluid)
+			{
+				cout<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
+				*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
+				_Temperature=618;//Constant temperature of the model
+				_internalEnergy=2.44e6;//Gas internal energy at saturation at 155 bar
+				_fluides[0] = new StiffenedGas(102,1.55e7,_Temperature,_internalEnergy, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C:
+			}
+			else
+			{
+				cout<<"Fluid is incompressible air around 155 bars and 618 K (345°C)"<<endl;
+				*_runLogFile<<"Fluid is incompressible air around 155 bars and 618 K (345°C)"<<endl;
+				//_fluides[0] = new IncompressibleFluid(102);  
+			}
 		}
-		else{//EOS at 155 bars and 573K
-			cout<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
-			*_runLogFile<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
-			_Temperature=573;//Constant temperature of the model
-			_internalEnergy=1.3e6;//water internal energy at saturation at 155 bar
-			_fluides[0] = new StiffenedGas(726.82,1.55e7,_Temperature,_internalEnergy, 971.,5454.);  //stiffened gas law for water at pressure 155 bar and temperature 300°C:
+		else//EOS at 155 bars and 573K
+		{
+			if(isCompressibleFluid)
+			{
+				cout<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
+				*_runLogFile<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
+				_Temperature=573;//Constant temperature of the model
+				_internalEnergy=1.3e6;//water internal energy at saturation at 155 bar
+				_fluides[0] = new StiffenedGas(726.82,1.55e7,_Temperature,_internalEnergy, 971.,5454.);  //stiffened gas law for water at pressure 155 bar and temperature 300°C:
+			}
+			else
+			{
+				cout<<"Fluid is incompressible water around 155 bars and 573 K (300°C)"<<endl;
+				*_runLogFile<<"Fluid is incompressible water around 155 bars and 573 K (300°C)"<<endl;
+				//_fluides[0] = new IncompressibleFluid(594);  
+			}
 		}
 	}
 
