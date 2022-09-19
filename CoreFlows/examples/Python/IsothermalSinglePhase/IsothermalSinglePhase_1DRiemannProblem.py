@@ -76,13 +76,6 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	dx = (xsup-xinf)/nx
 	x  = [ i*dx for i in range(nx)]   # array of cell center (1D mesh)
 
-	myEOS = myProblem.getFluidEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
-	initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
-	initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
-
-	#Determine exact solution
-	exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx+1)
-
 	myPressureField = myProblem.getPressureField()
 	pressureArray=myPressureField.getFieldValues()
 	myVelocityField = myProblem.getVelocityField()
@@ -90,12 +83,12 @@ def IsothermalSinglePhase_1DRiemannProblem():
 
 	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
 	fig.suptitle('Explicit Upwind scheme for isothermal Euler equations')
-	axVelocity.plot([xinf+0.5*dx + i*dx for i in range(nx)], velocityArray, label='Velocity time step 0')
+	axVelocity.plot([xinf+0.5*dx + i*dx for i in range(nx)], velocityArray, label='Initial velocity time step 0')
 	axVelocity.set(xlabel='x (m)', ylabel='Velocity')
 	axVelocity.set_xlim(xinf,xsup)
 	axVelocity.set_ylim( 0.999*min(initialVelocity_Left, initialVelocity_Right), 1.001*max(initialVelocity_Left, initialVelocity_Right) )
 	axVelocity.legend()
-	axPressure.plot([xinf+0.5*dx + i*dx for i in range(nx)], pressureArray, label='Pressure  time step 0')
+	axPressure.plot([xinf+0.5*dx + i*dx for i in range(nx)], pressureArray, label='Initial pressure time step 0')
 	axPressure.set(xlabel='x (m)', ylabel='Pressure')
 	axPressure.set_xlim(xinf,xsup)
 	axPressure.set_ylim(0.999999*min(initialPressure_Left, initialPressure_Right), 1.000001*max(initialPressure_Left, initialPressure_Right) )
@@ -112,13 +105,23 @@ def IsothermalSinglePhase_1DRiemannProblem():
 
 	print( "------------ End of calculation !!! -----------" );
 
+	# Extract EOS and Riemann problem parameters
+	myEOS = myProblem.getFluidEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+	initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
+	initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
+
+	#Determine exact solution
+	exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
+
 	myPressureField = myProblem.getPressureField()
 	pressureArray=myPressureField.getFieldValues()
 	myVelocityField = myProblem.getVelocityField()
 	velocityArray=myVelocityField.getFieldValues()
 	timeStep=myProblem.getNbTimeStep()#Final time step
-	axPressure.plot(x, pressureArray,  label='Pressure time step '+str(timeStep))
-	axVelocity.plot(x, velocityArray,  label='Velocity time step '+str(timeStep))
+	axPressure.plot(x, exactPressure,  label='Exact pressure at time step '+str(timeStep))
+	axPressure.plot(x, pressureArray,  label='Numerical pressure at time step '+str(timeStep))
+	axVelocity.plot(x, exactVelocity,  label='Exact velocity at time step '+str(timeStep))
+	axVelocity.plot(x, velocityArray,  label='Numerical velocity at time step '+str(timeStep))
 	axPressure.legend()
 	axVelocity.legend()
 	plt.savefig(fileName+".png")
