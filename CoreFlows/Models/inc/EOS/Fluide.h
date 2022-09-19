@@ -102,7 +102,7 @@ class CompressibleFluid:public Fluide{
   	return 1./vitesseSonPressure( P, T);
   }
   
-  //return constants gamma, cp, cv, p0, q
+  //return constants gamma, cp, cv or Fluide class constants
   double constante(string name)
   {
   	if (name == "cv"||name == "Cv")

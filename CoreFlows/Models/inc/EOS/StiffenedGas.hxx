@@ -59,6 +59,17 @@ class StiffenedGas:public CompressibleFluid{
      * wrt the pressure (const h) wrt the enthalpy (const P) */
   double getDiffDensEnthalpyPressconstant(const double p, const double h);
   double getDiffDensPressEnthalpyconstant(const double h);
+
+  //return constants p0, q or CompressibleFluid constants
+  double constante(string name)
+  {
+  	if (name == "p0"||name == "P0")
+  		return _p0;
+  	else if (name == "q"||name == "Q")
+  		return _q;
+  	else
+		return CompressibleFluid::constante(name);
+  }
 };
 
 // S. Dellacherie stiffened gas class
