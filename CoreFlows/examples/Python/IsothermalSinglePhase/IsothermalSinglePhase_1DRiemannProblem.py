@@ -3,6 +3,7 @@
 
 import solverlab as svl
 import matplotlib.pyplot as plt
+import exact_rs_stiffenedgas
 
 def IsothermalSinglePhase_1DRiemannProblem():
 
@@ -72,8 +73,15 @@ def IsothermalSinglePhase_1DRiemannProblem():
 	myProblem.initialize();
 
     #Postprocessing
-	dx=(xsup-xinf)/nx
-	x=[ i*dx for i in range(nx)]   # array of cell center (1D mesh)
+	dx = (xsup-xinf)/nx
+	x  = [ i*dx for i in range(nx)]   # array of cell center (1D mesh)
+
+	myEOS = myProblem.getFluidEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+	initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
+	initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
+
+	#Determine exact solution
+	exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx+1)
 
 	myPressureField = myProblem.getPressureField()
 	pressureArray=myPressureField.getFieldValues()
