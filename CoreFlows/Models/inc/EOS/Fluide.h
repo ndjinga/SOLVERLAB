@@ -115,4 +115,29 @@ class CompressibleFluid:public Fluide{
 		return Fluide::constante(name);
   }
 };
+
+/*! \class IncompressibleFluid Fluide.h "Fluide.h"
+ *  \brief Class implementing incompressible fluid laws with infinite speed of sound
+ *  \details The density is constant
+ */
+class IncompressibleFluid:public Fluide{
+ protected:
+  double _rho;
+  
+ public:
+  IncompressibleFluid(double rho)
+  { 
+	  _rho=rho;
+  }
+  
+  double getDensity(double p, double T)
+  {
+  	return _rho;
+  }
+  double getInverseSoundSpeed(double P, double T)
+  {
+  	return 0;
+  }
+};
+
 #endif
