@@ -89,7 +89,7 @@ def SinglePhase_1DRiemannProblem_Implicit_LineSearch():
 	fig, ([axDensity, axPressure], [axVelocity, axTemperature]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
 	plt.gcf().subplots_adjust(wspace = 0.5)
 
-	myEOS = myProblem.getFluidEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+	myEOS = myProblem.getStiffenedGasEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
 
 	axPressure.set(xlabel='x (m)', ylabel='Pressure (bar)')
 	axPressure.set_xlim(xinf,xsup)

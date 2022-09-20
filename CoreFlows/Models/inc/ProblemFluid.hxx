@@ -13,7 +13,7 @@
 #ifndef PROBLEMFLUID_HXX_
 #define PROBLEMFLUID_HXX_
 
-#include "Fluide.h"
+#include "StiffenedGas.hxx"
 #include "ProblemCoreFlows.hxx"
 #include "utilitaire_algebre.h"
 
@@ -211,6 +211,20 @@ public :
 		for(int i=0;i<_nbPhases;i++)
 			_fluides[i]->setConductivity(conductivite[i]);
 	};
+
+	/** \fn getStiffenedGasEOS
+	 * \brief return the stiffened gas law associated to fluid i
+	 * @param int i : the index of the fluid
+	 * @return throws an exception if the fluid with index i does not follow a stiffened gas law.
+	 * */
+	StiffenedGas getStiffenedGasEOS(int i)
+	{
+		StiffenedGas * result = dynamic_cast<StiffenedGas*>(_fluides[i]); 
+		if(result)
+			 return *result;
+		else
+			throw CdmathException("ProblemFluid::getStiffenedGasEOS() : fluid EOS is not a stiffened gas law");
+	}
 
 	/** \fn setDragCoeffs
 	 * \brief Sets the drag coefficients

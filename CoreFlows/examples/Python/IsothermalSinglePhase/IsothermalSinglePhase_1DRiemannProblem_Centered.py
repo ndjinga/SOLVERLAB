@@ -109,7 +109,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered():
 	print( "------------ End of calculation !!! -----------" );
 
 	# Extract EOS and Riemann problem parameters
-	myEOS = myProblem.getFluidEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+	myEOS = myProblem.getStiffenedGasEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
 	initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
 	initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
 

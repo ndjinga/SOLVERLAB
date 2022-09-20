@@ -97,7 +97,7 @@ def solve(xinf,xsup,nx,cfl,isExplicit,scheme):
     # simulation parameters 
 	MaxNbOfTimeStep = nx ;
 	freqSave = 10;
-	maxTime = (xsup-xinf)/4./max(myProblem.getFluidEOS().vitesseSonPressure(initialPressure_Left,initialTemperature_Left), myProblem.getFluidEOS().vitesseSonPressure(initialPressure_Right,initialTemperature_Right) )
+	maxTime = (xsup-xinf)/4./max(myProblem.getStiffenedGasEOS().vitesseSonPressure(initialPressure_Left,initialTemperature_Left), myProblem.getStiffenedGasEOS().vitesseSonPressure(initialPressure_Right,initialTemperature_Right) )
 	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
@@ -129,7 +129,7 @@ def solve(xinf,xsup,nx,cfl,isExplicit,scheme):
 		fig, ([axDensity, axPressure], [axVelocity, axTemperature]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
 		plt.gcf().subplots_adjust(wspace = 0.5)
 	
-		myEOS = myProblem.getFluidEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+		myEOS = myProblem.getStiffenedGasEOS()## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
 		initialDensity_Left = myEOS.getDensity( initialPressure_Left, initialTemperature_Left)
 		initialDensity_Right = myEOS.getDensity( initialPressure_Right, initialTemperature_Right)
 
