@@ -82,8 +82,9 @@ CreateTestExecAndInstall(SinglePhase_2DWallHeatedChannel.cxx  "${libs_for_tests}
 CreateTestExecAndInstall(SinglePhase_3DHeatDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 3D heating structured cubes coreflows" )
 CreateTestExecAndInstall(SinglePhase_HeatedWire_2Branches.cxx  "${libs_for_tests}" "C++ fv singlephase 1D branches heating unstructured coreflows" )
 
-CreateTestExecAndInstall(IsothermalSinglePhase_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D riemann structured coreflows" )
-CreateTestExecAndInstall(IsothermalSinglePhase_1DRiemannProblem_Implicit.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D implicit riemann structured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D riemann explicit upwindstructured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase_1DRiemannProblem_Implicit.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D implicit upwind riemann structured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase_1DChannelGravity_Incompressible.cxx "${libs_for_tests}" "C++ fv isothermalsinglephase 1D implicit staggered gravity structured coreflows" )
 
 CreateTestExecAndInstall(DriftModel_1DBoilingAssembly.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D heating boiling structured coreflows" )
 CreateTestExecAndInstall(DriftModel_1DBoilingChannel.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D heating boiling structured coreflows" )
