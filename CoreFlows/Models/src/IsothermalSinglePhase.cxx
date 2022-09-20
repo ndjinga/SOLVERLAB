@@ -825,16 +825,10 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 	{
 		for(int k=0; k<_nVar*_nVar;k++)
 			_GravityImplicitationMatrix[k] = 0;
-		if(!_usePrimitiveVarsInNewton)
-			for(int k=0; k<_nVar;k++)
-				_GravityImplicitationMatrix[k*_nVar]=-_gravite[k];
-		else
-		{
-			double pression=Vi[0];
-			getDensityDerivatives( pression);
-			for(int k=0; k<_nVar;k++)
-				_GravityImplicitationMatrix[k*_nVar+0]      =-_gravite[k]*_drho_sur_dp;
-		}
+		double pression=Vi[0];
+		getDensityDerivatives( pression);
+		for(int k=0; k<_nVar;k++)
+			_GravityImplicitationMatrix[k*_nVar+0] = -_gravite[k]*_drho_sur_dp;
 	}
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -851,6 +845,10 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 		for(int k=0;k<_nVar;k++)
 			cout<<Si[k]<<", ";
 		cout<<endl;
+		cout<<"_gravite="<<endl;
+		for(int i=0; i<_nVar; i++)
+			cout<<_gravite[i]<<", ";
+		cout<<endl;
 		if(_timeScheme==Implicit)
 			displayMatrix(_GravityImplicitationMatrix, _nVar, "Gravity implicitation matrix");
 	}
@@ -860,9 +858,9 @@ void IsothermalSinglePhase::getDensityDerivatives( double pressure)
 {
 	CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
 	
-	if(fluide0==NULL)
-		throw CdmathException("IsothermalSinglePhase::getDensityDerivatives should not be used with incompressible fluids");
-	else
+	if(fluide0==NULL)//Case of an incompressible fluid
+		_drho_sur_dp = 0;
+	else//Case of a compressible fluid
 	{
 		_drho_sur_dp=fluide0->getInverseSoundSpeed(pressure, _Temperature);
 	

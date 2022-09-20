@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 	cout << "Building a regular grid " << endl;
 	double xinf=0.0;
 	double xsup=1.;
-	int nx=10;//50;
+	int nx=2;//50;
 	Mesh M(xinf,xsup,nx);
 	double eps=1.E-8;
 	M.setGroupAtPlan(xsup,0,eps,"Top");
@@ -26,31 +26,32 @@ int main(int argc, char** argv)
 	// Prepare for the initial condition
 	Vector VV_Constant(nVar);
 	// constant vector
-	VV_Constant(1) = 155e5;
+	VV_Constant(0) = 1e5;
 	for (int idim=0; idim<spaceDim;idim++)
-		VV_Constant(2+idim) = 0;
+		VV_Constant(1+idim) = 0;
 
 	//Initial field creation
 	cout << "Setting initial data " << endl;
 	myProblem.setInitialFieldConstant(M,VV_Constant);
 
 	//set the boundary conditions
-	myProblem.setWallBoundaryCondition("Top");
-	myProblem.setWallBoundaryCondition("Bottom");
+	myProblem.setNeumannBoundaryCondition("Top");
+	myProblem.setNeumannBoundaryCondition("Bottom");
 
 	// physical parameters
 	myProblem.setGravity(gravite);
 
 	// set the numerical method
 	myProblem.setNumericalScheme(staggered, Implicit);
-
+	myProblem.setLinearSolver(GMRES, LU);
+	
 	// name the result file
 	string fileName = "1DChannelGravity_Incompressible";
 
 	// setting numerical parameters
-	unsigned MaxNbOfTimeStep =3 ;
+	unsigned MaxNbOfTimeStep =1 ;
 	int freqSave = 1;
-	double cfl = 100;
+	double cfl = 1;
 	double maxTime = 1;
 	double precision = 1e-7;
 

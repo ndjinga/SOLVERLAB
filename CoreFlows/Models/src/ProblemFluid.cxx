@@ -773,7 +773,10 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 		return (_nbTimeStep+1)*_minl/_maxvp;
 	else
 	 */
-	return _cfl*_minl/_maxvp;
+	if(_maxvp>0)
+		return _cfl*_minl/_maxvp;
+	else//case of incompressible fluid at rest. Use a velocity of 1
+		return _cfl*_minl;
 }
 
 void ProblemFluid::computeNewtonVariation()
