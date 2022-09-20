@@ -31,7 +31,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			{
 				cout<<"Fluid is incompressible air around 1 bar and 300 K (27°C)"<<endl;
 				*_runLogFile<<"Fluid is incompressible air around 1 bar and 300 K (27°C)"<<endl;
-				//_fluides[0] = new IncompressibleFluid(1.12);  
+				_fluides[0] = new IncompressibleFluid(1.12);  
 			}
 		}
 		else
@@ -47,7 +47,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			{
 				cout<<"Fluid is incompressible water around 1 bar and 300 K (27°C)"<<endl;
 				*_runLogFile<<"Fluid is incompressible water around 1 bar and 300 K (27°C)"<<endl;
-				//_fluides[0] = new IncompressibleFluid(996.56);  
+				_fluides[0] = new IncompressibleFluid(996.56);  
 			}
 		}
 	}
@@ -67,7 +67,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			{
 				cout<<"Fluid is incompressible air around 155 bars and 618 K (345°C)"<<endl;
 				*_runLogFile<<"Fluid is incompressible air around 155 bars and 618 K (345°C)"<<endl;
-				//_fluides[0] = new IncompressibleFluid(102);  
+				_fluides[0] = new IncompressibleFluid(102);  
 			}
 		}
 		else//EOS at 155 bars and 573K
@@ -84,7 +84,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 			{
 				cout<<"Fluid is incompressible water around 155 bars and 573 K (300°C)"<<endl;
 				*_runLogFile<<"Fluid is incompressible water around 155 bars and 573 K (300°C)"<<endl;
-				//_fluides[0] = new IncompressibleFluid(594);  
+				_fluides[0] = new IncompressibleFluid(594);  
 			}
 		}
 	}
@@ -1053,26 +1053,19 @@ void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 			v2 = v[2]*v[2];
 		}
 		double rho=_Uj[0];
-		double internal_energy=_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho);
-		double total_energy=internal_energy+ve2/2;
+		double total_energy=ve2/2;
 
-		//Mass line
-		_JcbDiff[0]=v2/(2*internal_energy);
-		for(k=0; k<_Ndim;k++)
-			_JcbDiff[1+k]=-v[k]/internal_energy;
-		_JcbDiff[_nVar-1]=1/internal_energy;
-		//Momentum lines
-		for(int l =1;l<1+_Ndim;l++){
-			_JcbDiff[l*_nVar]=v2*ve[l-1]/(2*internal_energy);
-			for(k=0; k<_Ndim;k++)
-				_JcbDiff[l*_nVar+1+k]=-v[k]*ve[l-1]/internal_energy;
-			_JcbDiff[l*_nVar+_nVar-1]=ve[l-1]/internal_energy;
-		}
-		//Energy line
-		_JcbDiff[(_nVar-1)*_nVar]=v2*total_energy/(2*internal_energy);
-		for(k=0; k<_Ndim;k++)
-			_JcbDiff[(_nVar-1)*_nVar+1+k]=-v[k]*total_energy/internal_energy;
-		_JcbDiff[(_nVar-1)*_nVar+_nVar-1]=total_energy/internal_energy;
+	/* To do : correct the formula used below (not valid for isothermal fuid */
+		////Mass line
+		//_JcbDiff[0]=v2/(2*internal_energy);
+		//for(k=0; k<_Ndim;k++)
+			//_JcbDiff[1+k]=-v[k]/internal_energy;
+		////Momentum lines
+		//for(int l =1;l<1+_Ndim;l++){
+			//_JcbDiff[l*_nVar]=v2*ve[l-1]/(2*internal_energy);
+			//for(k=0; k<_Ndim;k++)
+				//_JcbDiff[l*_nVar+1+k]=-v[k]*ve[l-1]/internal_energy;
+		//}
 	}
 	else if (_limitField[nameOfGroup].bcType==Outlet || _limitField[nameOfGroup].bcType==Neumann
 			||_limitField[nameOfGroup].bcType==Inlet || _limitField[nameOfGroup].bcType==InletPressure)
@@ -1370,13 +1363,11 @@ Vector IsothermalSinglePhase::convectionFlux(Vector U,Vector V, Vector normale, 
 
 	double vitessen=vitesse*normale;
 	double rho=phirho/porosity;
-	double e_int=_fluides[0]->getInternalEnergy(Temperature,rho);
 
 	Vector F(_nVar);
 	F(0)=phirho*vitessen;
 	for(int i=0;i<_Ndim;i++)
 		F(1+i)=phirho*vitessen*vitesse(i)+pression*normale(i)*porosity;
-	F(1+_Ndim)=phirho*(e_int+0.5*vitesse*vitesse+pression/rho)*vitessen;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -1664,6 +1655,8 @@ void IsothermalSinglePhase::save(){
 			VecGetValues(_conservativeVars,1,&Ii,&rho);
 			Ii = i*_nVar;
 			VecGetValues(_primitiveVars,1,&Ii,&p);
+			Ii = i*_nVar + _nVar - 1;
+			VecGetValues(_primitiveVars,1,&Ii,&T);
 			Ii = i*_nVar + 1;
 			VecGetValues(_primitiveVars,1,&Ii,&vx);
 			if(_Ndim>1)
@@ -1690,8 +1683,7 @@ void IsothermalSinglePhase::save(){
 					v2+=vz*vz;
 				}
 			}
-			double h=0;
-			_MachNumber(i)=sqrt(v2)/_fluides[0]->vitesseSonEnthalpie(h);
+			_MachNumber(i)=sqrt(v2)*_fluides[0]->getInverseSoundSpeed(p,T);
 		}
 		_Density.setTime(_time,_nbTimeStep);
 		_Pressure.setTime(_time,_nbTimeStep);
@@ -1969,10 +1961,8 @@ Field& IsothermalSinglePhase::getMachNumberField()
 				u2+=temp*temp;
 			}
 	
-			rho=_fluides[0]->getDensity(p,T);
-			h  =_fluides[0]->getEnthalpy(T,rho);
-			_MachNumber[i]  =sqrt(u2)/_fluides[0]->vitesseSonEnthalpie(h);
-			//cout<<"u="<<sqrt(u2)<<", c= "<<_fluides[0]->vitesseSonEnthalpie(h)<<", MachNumberField[i] = "<<MachNumberField[i] <<endl;
+			_MachNumber[i]  =sqrt(u2)*_fluides[0]->getInverseSoundSpeed(p,T);
+			//cout<<"u="<<sqrt(u2)<<", 1/c= "<<_fluides[0]->getInverseSoundSpeed(p,T);<<", MachNumberField[i] = "<<MachNumberField[i] <<endl;
 		}
 		_MachNumber.setTime(_time,_nbTimeStep);
 	}

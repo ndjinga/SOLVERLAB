@@ -112,9 +112,9 @@ public :
 		double titreThermo=(enthalpie-_hsatl)/(_hsatv-_hsatl);
 
 		if(titreThermo<=_precision)
-			return _fluides[1]->getTemperatureFromEnthalpy(enthalpie, 0);
+			return _fluidesCompressibles[1]->getTemperatureFromEnthalpy(enthalpie, 0);
 		else if (titreThermo>1-_precision)
-			return _fluides[0]->getTemperatureFromEnthalpy(enthalpie, 0);
+			return _fluidesCompressibles[0]->getTemperatureFromEnthalpy(enthalpie, 0);
 		else
 			return _Tsat;
 		}
@@ -331,7 +331,7 @@ protected :
 
 	// Fonctions utilisant la loi d'etat 
 
-	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids so the constructor will dynamic_cast the fluids defined in the parent class ProblemFluid
+	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids
 
 	/** \fn consToPrim
 	 * \brief computes the primitive vector state from a conservative vector state

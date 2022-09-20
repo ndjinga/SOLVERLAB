@@ -49,10 +49,11 @@ SinglePhase::SinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, b
 		}
 	}
 
-	_fileName = "SolverlabSinglePhase";
-    PetscPrintf(PETSC_COMM_WORLD,"\n Navier-Stokes equations for single phase flow\n");
 	//Save into the fluid list
 	_fluides.resize(1,_compressibleFluid);
+
+	_fileName = "SolverlabSinglePhase";
+    PetscPrintf(PETSC_COMM_WORLD,"\n Navier-Stokes equations for single phase flow\n");
 }
 
 void SinglePhase::initialize(){
@@ -1330,7 +1331,7 @@ void SinglePhase::primToConsJacobianMatrix(double *V)
 		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_compressibleFluid);
 		double e=fluide0->getInternalEnergy(temperature);
 		double E=e+0.5*v2;
-		/* To do : replace the formulas usind p0 andq by calls to sound speed */
+		/* To do : replace the formulas usind p0 and q by calls to sound speed */
 		double Pinf = fluide0->constante("p0");
 		double    q = fluide0->constante("q");
 

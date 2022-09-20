@@ -21,14 +21,14 @@ FiveEqsTwoFluid::FiveEqsTwoFluid(pressureEstimate pEstimate, int dim){
 	_nVar=2*(_Ndim+1)+1;
 	_nbPhases = 2;
 	_dragCoeffs=vector<double>(2,0);
-	_fluides.resize(2);
+	_fluidesCompressibles.resize(2);
 	//Ne pas utiliser la loi de Stephane Dellacherie mais la stiffened gas standard
 	if (pEstimate==around1bar300K)//EOS at 1 bar and 373K
 	{
 		cout<<"Fluid is water-Gas mixture around saturation point 1 bar and 373 K (100°C)"<<endl;
 		*_runLogFile<<"Fluid is water-Gas mixture around saturation point 1 bar and 373 K (100°C)"<<endl;
-		_fluides[0] = new StiffenedGas(1.34,1555,373,2.5e6);  //ideal gas law for Gas at pressure 1 bar and temperature 100°C: eref1=2.5e6
-		_fluides[1] = new StiffenedGas(958,1e5,373,4.2e5,1543,3769);  //stiffened gas law for water at pressure 1 bar and temperature 100°C: eref2=5e5
+		_fluidesCompressibles[0] = new StiffenedGas(1.34,1555,373,2.5e6);  //ideal gas law for Gas at pressure 1 bar and temperature 100°C: eref1=2.5e6
+		_fluidesCompressibles[1] = new StiffenedGas(958,1e5,373,4.2e5,1543,3769);  //stiffened gas law for water at pressure 1 bar and temperature 100°C: eref2=5e5
 		_Tsat=373;//saturation temperature at 1 bar
 		_hsatl=4.2e5;//water enthalpy at saturation at 1 bar
 		_hsatv=2.5e6;//Gas enthalpy at saturation at 1 bar
@@ -37,19 +37,23 @@ FiveEqsTwoFluid::FiveEqsTwoFluid(pressureEstimate pEstimate, int dim){
 	{
 		cout<<"Fluid is water-Gas mixture around saturation point 155 bars and 618 K (345°C)"<<endl;
 		*_runLogFile<<"Fluid is water-Gas mixture around saturation point 155 bars and 618 K (345°C)"<<endl;
-		_fluides[0] = new StiffenedGas(102,1.55e7,618,2.44e6, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C: eref1=2.4e6
-		_fluides[1] = new StiffenedGas(594,1.55e7,618,1.6e6, 621,3100);  //stiffened gas law for water at pressure 155 bar and temperature 345°C: eref2=1.6e6
+		_fluidesCompressibles[0] = new StiffenedGas(102,1.55e7,618,2.44e6, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C: eref1=2.4e6
+		_fluidesCompressibles[1] = new StiffenedGas(594,1.55e7,618,1.6e6, 621,3100);  //stiffened gas law for water at pressure 155 bar and temperature 345°C: eref2=1.6e6
 		_Tsat=618;//saturation temperature at 155 bars
 		_hsatl=1.63e6;//water enthalpy at saturation at 155 bars
 		_hsatv=2.6e6;//Gas enthalpy at saturation at 155 bars
 	}
 	_latentHeat=_hsatv-_hsatl;
 	_intPressCoeff=1.5;
+    
+    _usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
+	//Save into the fluid list
+	_fluides.resize(2);
+	_fluides[0] = _fluidesCompressibles[0];
+	_fluides[1] = _fluidesCompressibles[1];
 
 	_fileName = "SolverlabFiveEquationTwoFluid";
     PetscPrintf(PETSC_COMM_WORLD,"\n Five equation two-fluid problem for two phase flow\n");
-    
-    _usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
 }
 
 void FiveEqsTwoFluid::initialize()
@@ -260,11 +264,11 @@ void FiveEqsTwoFluid::diffusionStateAndMatrices(const long &i,const long &j, con
 	_Udiff[_nVar-1]=_phi[_nVar-1];
 	double alpha=_phi[0];
 	double Tm=_phi[_nVar-1];
-	double mu1 = _fluides[0]->getViscosity(Tm);
-	double mu2 = _fluides[1]->getViscosity(Tm);
-	double lambda = alpha*_fluides[0]->getConductivity(Tm)+(1-alpha)*_fluides[1]->getConductivity(Tm);
-	double Cv1= _fluides[0]->constante("Cv");
-	double Cv2= _fluides[1]->constante("Cv");
+	double mu1 = _fluidesCompressibles[0]->getViscosity(Tm);
+	double mu2 = _fluidesCompressibles[1]->getViscosity(Tm);
+	double lambda = alpha*_fluidesCompressibles[0]->getConductivity(Tm)+(1-alpha)*_fluidesCompressibles[1]->getConductivity(Tm);
+	double Cv1= _fluidesCompressibles[0]->constante("Cv");
+	double Cv2= _fluidesCompressibles[1]->constante("Cv");
 
 	if(_timeScheme==Implicit)
 	{
@@ -451,10 +455,10 @@ void FiveEqsTwoFluid::porosityGradientSourceVector()
 	}
 	_porosityGradientSourceVector[0]=0;
 	_porosityGradientSourceVector[1+_Ndim]=0;
-	rho1i = _fluides[0]->getDensity(pi, Ti);
-	rho2i = _fluides[1]->getDensity(pi, Ti);
-	rho1j = _fluides[0]->getDensity(pj, Tj);
-	rho2j = _fluides[1]->getDensity(pj, Tj);
+	rho1i = _fluidesCompressibles[0]->getDensity(pi, Ti);
+	rho2i = _fluidesCompressibles[1]->getDensity(pi, Ti);
+	rho1j = _fluidesCompressibles[0]->getDensity(pj, Tj);
+	rho2j = _fluidesCompressibles[1]->getDensity(pj, Tj);
 	pij1=(pi+pj)/2+rho1i*rho1j/2/(rho1i+rho1j)*(u1_ni-u1_nj)*(u1_ni-u1_nj);
 	pij2=(pi+pj)/2+rho2i*rho2j/2/(rho2i+rho2j)*(u2_ni-u2_nj)*(u2_ni-u2_nj);
 	for(int i=0;i<_Ndim;i++){
@@ -469,8 +473,8 @@ double FiveEqsTwoFluid::intPressDef(double alpha, double u_r2, double rho1, doub
 	return  _intPressCoeff*alpha*(1-alpha)*rho1*rho2*u_r2/( alpha*rho2+(1-alpha)*rho1);
 	+alpha*(1-alpha)*rho1*rho2*u_r2/((alpha*rho2+(1-alpha)*rho1)*(alpha*rho2+(1-alpha)*rho1)*(alpha*rho2+(1-alpha)*rho1)*(alpha*rho2+(1-alpha)*rho1))*u_r2
 			*(alpha*alpha*rho2-(1-alpha)*(1-alpha)*rho1)
-			*(alpha*alpha*rho2*rho2/(_fluides[0]->vitesseSonTemperature(Temperature,rho1)*_fluides[0]->vitesseSonTemperature(Temperature,rho1))
-					-(1-alpha)*(1-alpha)*rho1*rho1/(_fluides[1]->vitesseSonTemperature(Temperature,rho2)*_fluides[1]->vitesseSonTemperature(Temperature,rho2)));
+			*(alpha*alpha*rho2*rho2/(_fluidesCompressibles[0]->vitesseSonTemperature(Temperature,rho1)*_fluidesCompressibles[0]->vitesseSonTemperature(Temperature,rho1))
+					-(1-alpha)*(1-alpha)*rho1*rho1/(_fluidesCompressibles[1]->vitesseSonTemperature(Temperature,rho2)*_fluidesCompressibles[1]->vitesseSonTemperature(Temperature,rho2)));
 }
 
 Vector FiveEqsTwoFluid::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
@@ -499,10 +503,10 @@ Vector FiveEqsTwoFluid::convectionFlux(Vector U,Vector V, Vector normale, double
 
 	double vitesse1n=vitesse1*normale;
 	double vitesse2n=vitesse2*normale;
-	double rho1=_fluides[0]->getDensity(pression,Temperature);
-	double rho2=_fluides[1]->getDensity(pression,Temperature);
-	double e1_int=_fluides[0]->getInternalEnergy(Temperature,rho1);
-	double e2_int=_fluides[1]->getInternalEnergy(Temperature,rho2);
+	double rho1=_fluidesCompressibles[0]->getDensity(pression,Temperature);
+	double rho2=_fluidesCompressibles[1]->getDensity(pression,Temperature);
+	double e1_int=_fluidesCompressibles[0]->getInternalEnergy(Temperature,rho1);
+	double e2_int=_fluidesCompressibles[1]->getInternalEnergy(Temperature,rho2);
 
 	double alpha_roe = _Uroe[0];//Toumi formula
 	// interfacial pressure term (hyperbolic correction)
@@ -533,8 +537,8 @@ void FiveEqsTwoFluid::convectionJacobianMatrix(double *V, double *n)
 	double alp = V[0];
 	double p = V[1];
 	double Tm = V[_nVar-1];
-	double rho1 = _fluides[0]->getDensity(p, Tm);
-	double rho2 = _fluides[1]->getDensity(p, Tm);
+	double rho1 = _fluidesCompressibles[0]->getDensity(p, Tm);
+	double rho2 = _fluidesCompressibles[1]->getDensity(p, Tm);
 	double ur_2 = 0;
 	for (int idim=0; idim<_Ndim; idim++){
 		ur_2 += (V[2+idim]-V[2+idim+_Ndim])*(V[2+idim]-V[2+idim+_Ndim]);
@@ -547,16 +551,16 @@ void FiveEqsTwoFluid::convectionJacobianMatrix(double *V, double *n)
 	/**** coefficients a, b, c ****/
 	double inv_a1_2,inv_a2_2,b1,c1,a2,b2,c2;
 	double e1,e2;
-	e1 = _fluides[0]->getInternalEnergy(V[_nVar-1],rho1);// primitive variable _l[_nVar-1]=Tm
-	e2 = _fluides[1]->getInternalEnergy(V[_nVar-1],rho2);
-	inv_a1_2 = static_cast<StiffenedGas*>(_fluides[0])->getDiffDensPress(e1);
-	inv_a2_2 = static_cast<StiffenedGas*>(_fluides[1])->getDiffDensPress(e2);
+	e1 = _fluidesCompressibles[0]->getInternalEnergy(V[_nVar-1],rho1);// primitive variable _l[_nVar-1]=Tm
+	e2 = _fluidesCompressibles[1]->getInternalEnergy(V[_nVar-1],rho2);
+	inv_a1_2 = static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getDiffDensPress(e1);
+	inv_a2_2 = static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getDiffDensPress(e2);
 	//double getJumpDensInternalEnergy(const double p_l,const double p_r,const double e_l,const double e_r);
-	b1 = static_cast<StiffenedGas*>(_fluides[0])->getDiffDensInternalEnergy(p,e1);
-	b2 = static_cast<StiffenedGas*>(_fluides[1])->getDiffDensInternalEnergy(p,e2);
+	b1 = static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getDiffDensInternalEnergy(p,e1);
+	b2 = static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getDiffDensInternalEnergy(p,e2);
 	//double getJumpInternalEnergyTemperature();
-	c1 = static_cast<StiffenedGas*>(_fluides[0])->getDiffInternalEnergyTemperature();
-	c2 = static_cast<StiffenedGas*>(_fluides[1])->getDiffInternalEnergyTemperature();
+	c1 = static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getDiffInternalEnergyTemperature();
+	c2 = static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getDiffInternalEnergyTemperature();
 	/**** coefficients eta,  varrho_2 ****/
 	double eta[_Ndim], varrho_2;
 	// prefix m is arithmetic mean
@@ -722,25 +726,25 @@ void FiveEqsTwoFluid::convectionMatrices()
 	// ********Prepare the parameters to compute the Roe Matrix******** //
 	// **** coefficients eta,  varrho_2 **** //
 	double eta[_Ndim], varrho_2;
-	double rho1_l =  _fluides[0]->getDensity(_l[1], _l[_Ndim*2+2]);//(p,T)_Ndim*2+2
-	double rho2_l =  _fluides[1]->getDensity(_l[1], _l[_Ndim*2+2]);
-	double rho1_r =  _fluides[0]->getDensity(_r[1], _r[_Ndim*2+2]);
-	double rho2_r =  _fluides[1]->getDensity(_r[1], _r[_Ndim*2+2]);
+	double rho1_l =  _fluidesCompressibles[0]->getDensity(_l[1], _l[_Ndim*2+2]);//(p,T)_Ndim*2+2
+	double rho2_l =  _fluidesCompressibles[1]->getDensity(_l[1], _l[_Ndim*2+2]);
+	double rho1_r =  _fluidesCompressibles[0]->getDensity(_r[1], _r[_Ndim*2+2]);
+	double rho2_r =  _fluidesCompressibles[1]->getDensity(_r[1], _r[_Ndim*2+2]);
 	// **** coefficients a, b, c **** //
 	double inv_a1_2,inv_a2_2,b1,c1,a2,b2,c2;
 	double e1_l,e1_r,e2_l,e2_r;
-	e1_l = _fluides[0]->getInternalEnergy(_l[_nVar-1],rho1_l);// primitive variable _l[_nVar-1]=Tm
-	e2_l = _fluides[1]->getInternalEnergy(_l[_nVar-1],rho2_l);
-	e1_r = _fluides[0]->getInternalEnergy(_r[_nVar-1],rho1_r);
-	e2_r = _fluides[1]->getInternalEnergy(_r[_nVar-1],rho2_r);
-	inv_a1_2 = static_cast<StiffenedGas*>(_fluides[0])->getJumpDensPress(e1_l,e1_r);
-	inv_a2_2 = static_cast<StiffenedGas*>(_fluides[1])->getJumpDensPress(e2_l,e2_r);
+	e1_l = _fluidesCompressibles[0]->getInternalEnergy(_l[_nVar-1],rho1_l);// primitive variable _l[_nVar-1]=Tm
+	e2_l = _fluidesCompressibles[1]->getInternalEnergy(_l[_nVar-1],rho2_l);
+	e1_r = _fluidesCompressibles[0]->getInternalEnergy(_r[_nVar-1],rho1_r);
+	e2_r = _fluidesCompressibles[1]->getInternalEnergy(_r[_nVar-1],rho2_r);
+	inv_a1_2 = static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getJumpDensPress(e1_l,e1_r);
+	inv_a2_2 = static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getJumpDensPress(e2_l,e2_r);
 	//double getJumpDensInternalEnergy(const double p_l,const double p_r,const double e_l,const double e_r);
-	b1 = static_cast<StiffenedGas*>(_fluides[0])->getJumpDensInternalEnergy(_l[1],_r[1],e1_l,e1_r);
-	b2 = static_cast<StiffenedGas*>(_fluides[1])->getJumpDensInternalEnergy(_l[1],_r[1],e2_l,e2_r);
+	b1 = static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getJumpDensInternalEnergy(_l[1],_r[1],e1_l,e1_r);
+	b2 = static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getJumpDensInternalEnergy(_l[1],_r[1],e2_l,e2_r);
 	//double getJumpInternalEnergyTemperature();
-	c1 = static_cast<StiffenedGas*>(_fluides[0])->getJumpInternalEnergyTemperature();
-	c2 = static_cast<StiffenedGas*>(_fluides[1])->getJumpInternalEnergyTemperature();
+	c1 = static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getJumpInternalEnergyTemperature();
+	c2 = static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getJumpInternalEnergyTemperature();
 
 	// prefix m is arithmetic mean
 	double m_alp1,m_rho1,m_rho2,m_P,m_e1,m_e2,m_m1,m_m2, eta_n;
@@ -1310,8 +1314,8 @@ void FiveEqsTwoFluid::jacobianDiff(const int &j, string nameOfGroup)
 
 		double pression=_Vj[1];//pressure inside
 		double T=_Vj[_nVar-1];//temperature outside
-		double rho_v=_fluides[0]->getDensity(pression,T);
-		double rho_l=_fluides[1]->getDensity(pression,T);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 		_JcbDiff[0] = 1;
 		_JcbDiff[(1+_Ndim)*_nVar +1+_Ndim] = 1;
 		_JcbDiff[_nVar]=_limitField[nameOfGroup].v_x[0];
@@ -1332,8 +1336,8 @@ void FiveEqsTwoFluid::jacobianDiff(const int &j, string nameOfGroup)
 				v2_l+=_limitField[nameOfGroup].v_z[1]*_limitField[nameOfGroup].v_z[1];
 			}
 		}
-		_JcbDiff[(_nVar-1)*_nVar]=         _fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v)+0.5*v2_v;
-		_JcbDiff[(_nVar-1)*_nVar +1+_Ndim]=_fluides[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l)+0.5*v2_l;
+		_JcbDiff[(_nVar-1)*_nVar]=         _fluidesCompressibles[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v)+0.5*v2_v;
+		_JcbDiff[(_nVar-1)*_nVar +1+_Ndim]=_fluidesCompressibles[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l)+0.5*v2_l;
 	}
 	else if (_limitField[nameOfGroup].bcType==Inlet){
 		/*
@@ -1357,8 +1361,8 @@ void FiveEqsTwoFluid::jacobianDiff(const int &j, string nameOfGroup)
 				v2_l+=_limitField[nameOfGroup].v_z[1]*_limitField[nameOfGroup].v_z[1];
 			}
 		}
-		_JcbDiff[(_nVar-1)*_nVar]=         _fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v)+0.5*v2_v;
-		_JcbDiff[(_nVar-1)*_nVar +1+_Ndim]=_fluides[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l)+0.5*v2_l;
+		_JcbDiff[(_nVar-1)*_nVar]=         _fluidesCompressibles[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v)+0.5*v2_v;
+		_JcbDiff[(_nVar-1)*_nVar +1+_Ndim]=_fluidesCompressibles[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l)+0.5*v2_l;
 		 */
 	} else if (_limitField[nameOfGroup].bcType==Outlet){
 		//extraction de l etat courant et primitives
@@ -1429,8 +1433,8 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		//Pour la diffusion, paroi à vitesses et temperature imposees
 		double pression=_Vj[1];//pressure inside
 		double T=_Vj[_nVar-1];//temperature outside
-		double rho_v=_fluides[0]->getDensity(pression,T);
-		double rho_l=_fluides[1]->getDensity(pression,T);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 		_externalStates[1]=_externalStates[0]*_limitField[nameOfGroup].v_x[0];
 		_externalStates[2+_Ndim]=_externalStates[1+_Ndim]*_limitField[nameOfGroup].v_x[1];
 		if(_Ndim>1)
@@ -1443,8 +1447,8 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 				_externalStates[4+_Ndim]=_externalStates[1+_Ndim]*_limitField[nameOfGroup].v_z[1];
 			}
 		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v) + v1_2/2)
-																																													+_externalStates[1+_Ndim]*(_fluides[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l) + v2_2/2);
+		_externalStates[_nVar-1] = _externalStates[0]*(_fluidesCompressibles[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v) + v1_2/2)
+																																													+_externalStates[1+_Ndim]*(_fluidesCompressibles[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l) + v2_2/2);
 		VecAssemblyBegin(_Uextdiff);
 		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
 		VecAssemblyEnd(_Uextdiff);
@@ -1478,8 +1482,8 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		double alpha=_limitField[nameOfGroup].alpha;//void fraction outside
 		double pression=_Vj[1];//pressure inside
 		double T=_limitField[nameOfGroup].T;//temperature outside
-		double rho_v=_fluides[0]->getDensity(pression,T);
-		double rho_l=_fluides[1]->getDensity(pression,T);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 		//cout<<"Inlet alpha= "<<alpha<<" pression= "<<pression<<" temperature= "<<T<<" velocity gas "<<_limitField[nameOfGroup].v_x[0]<<" velocity liq "<<_limitField[nameOfGroup].v_x[1]<<endl;
 
 		_externalStates[0]=alpha*rho_v;
@@ -1502,8 +1506,8 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 			_Vj[2+idim] = v1[idim];
 			_Vj[2+_Ndim+idim] = v2[idim];
 		}
-		_externalStates[_nVar-1] = _externalStates[0]      *(_fluides[0]->getInternalEnergy(T,rho_v) + v1_2/2)
-    																																									+_externalStates[1+_Ndim]*(_fluides[1]->getInternalEnergy(T,rho_l) + v2_2/2);
+		_externalStates[_nVar-1] = _externalStates[0]      *(_fluidesCompressibles[0]->getInternalEnergy(T,rho_v) + v1_2/2)
+    																																									+_externalStates[1+_Ndim]*(_fluidesCompressibles[1]->getInternalEnergy(T,rho_l) + v2_2/2);
 		// _Vj external primitives
 		_Vj[0] = alpha;
 		_Vj[_nVar-1] = T;
@@ -1541,8 +1545,8 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		double alpha=_limitField[nameOfGroup].alpha;
 		double pression=_limitField[nameOfGroup].p+hydroPress;
 		double T=_limitField[nameOfGroup].T;
-		double rho_v=_fluides[0]->getDensity(pression,T);
-		double rho_l=_fluides[1]->getDensity(pression,T);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 		_externalStates[0]=alpha*rho_v;
 		_externalStates[1+_Ndim]=(1-alpha)*rho_l;
 
@@ -1552,8 +1556,8 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 			v1_2+=_Vj[2+idim]*_Vj[2+idim];
 			v2_2+=_Vj[2+_Ndim+idim]*_Vj[2+_Ndim+idim];
 		}
-		_externalStates[_nVar-1]=    alpha *rho_v*(_fluides[0]->getInternalEnergy(T,rho_v)+v1_2/2)
-				                																																				+(1-alpha)*rho_l*(_fluides[1]->getInternalEnergy(T,rho_l)+v2_2/2);
+		_externalStates[_nVar-1]=    alpha *rho_v*(_fluidesCompressibles[0]->getInternalEnergy(T,rho_v)+v1_2/2)
+				                																																				+(1-alpha)*rho_l*(_fluidesCompressibles[1]->getInternalEnergy(T,rho_l)+v2_2/2);
 		// _Vj external primitives
 		_Vj[0] = alpha;
 		_Vj[1] = pression;
@@ -1591,10 +1595,10 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 		double pression_int=_Vj[1];
 		double pression_ext=_limitField[nameOfGroup].p+hydroPress;
 		double T=_Vj[_nVar-1];
-		double rho_v_int=_fluides[0]->getDensity(pression_int,T);
-		double rho_l_int=_fluides[1]->getDensity(pression_int,T);
-		double rho_v_ext=_fluides[0]->getDensity(pression_ext,T);
-		double rho_l_ext=_fluides[1]->getDensity(pression_ext,T);
+		double rho_v_int=_fluidesCompressibles[0]->getDensity(pression_int,T);
+		double rho_l_int=_fluidesCompressibles[1]->getDensity(pression_int,T);
+		double rho_v_ext=_fluidesCompressibles[0]->getDensity(pression_ext,T);
+		double rho_l_ext=_fluidesCompressibles[1]->getDensity(pression_ext,T);
 
 		for(k=0;k<1+_Ndim;k++){
 			_externalStates[k]*=rho_v_ext/rho_v_int;
@@ -1606,7 +1610,7 @@ void FiveEqsTwoFluid::setBoundaryState(string nameOfGroup, const int &j,double *
 			v1_2+=_Vj[2+idim]*_Vj[2+idim];
 			v2_2+=_Vj[2+_Ndim+idim]*_Vj[2+_Ndim+idim];
 		}
-		_externalStates[_nVar-1]=alpha*rho_v_ext*(_fluides[0]->getInternalEnergy(T,rho_v_int)+v1_2/2)+(1-alpha)*rho_l_ext*(_fluides[1]->getInternalEnergy(T,rho_l_int)+v2_2/2);
+		_externalStates[_nVar-1]=alpha*rho_v_ext*(_fluidesCompressibles[0]->getInternalEnergy(T,rho_v_int)+v1_2/2)+(1-alpha)*rho_l_ext*(_fluidesCompressibles[1]->getInternalEnergy(T,rho_l_int)+v2_2/2);
 
 		// _Vj external primitives
 		_Vj[1] = pression_ext;
@@ -1637,10 +1641,10 @@ void FiveEqsTwoFluid::addDiffusionToSecondMember
 		bool isBord)
 {
 	double Tm=_Udiff[_nVar-1];
-	double lambdal=_fluides[1]->getConductivity(Tm);
-	double lambdav=_fluides[0]->getConductivity(Tm);
-	double mu1 =_fluides[0]->getViscosity(Tm);
-	double mu2 = _fluides[1]->getViscosity(Tm);
+	double lambdal=_fluidesCompressibles[1]->getConductivity(Tm);
+	double lambdav=_fluidesCompressibles[0]->getConductivity(Tm);
+	double mu1 =_fluidesCompressibles[0]->getViscosity(Tm);
+	double mu2 = _fluidesCompressibles[1]->getViscosity(Tm);
 
 	if(mu1==0 && mu2 ==0 && lambdav==0 && lambdal==0 && _heatTransfertCoeff==0)
 		return;
@@ -1802,8 +1806,8 @@ void FiveEqsTwoFluid::primToCons(const double *P, const int &i, double *W, const
 	double alpha=P[i*_nVar];
 	double pression=P[i*_nVar+1];
 	double temperature=P[i*_nVar+_nVar-1];
-	double rho_v=_fluides[0]->getDensity(pression,temperature);
-	double rho_l=_fluides[1]->getDensity(pression,temperature);
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,temperature);
+	double rho_l=_fluidesCompressibles[1]->getDensity(pression,temperature);
 	double u1_sq=0, u2_sq=0;
 
 	W[j*_nVar] = alpha*rho_v;
@@ -1815,7 +1819,7 @@ void FiveEqsTwoFluid::primToCons(const double *P, const int &i, double *W, const
 		W[j*_nVar+(k+1)+1+_Ndim] = W[j*_nVar+1+_Ndim]*P[i*_nVar+(k+2)+_Ndim];//alpha2*rho2*u2
 	}
 	// total energy
-	W[j*_nVar+_nVar-1] = W[j*(_nVar)]* _fluides[0]->getInternalEnergy(temperature,rho_v)+W[j*(_nVar)+1+_Ndim]* _fluides[1]->getInternalEnergy(temperature,rho_l);
+	W[j*_nVar+_nVar-1] = W[j*(_nVar)]* _fluidesCompressibles[0]->getInternalEnergy(temperature,rho_v)+W[j*(_nVar)+1+_Ndim]* _fluidesCompressibles[1]->getInternalEnergy(temperature,rho_l);
 	for(int k=0; k<_Ndim; k++){
 		u1_sq+=P[i*_nVar+(k+2)]*P[i*_nVar+(k+2)];
 		u2_sq+=P[i*_nVar+(k+2)+_Ndim]*P[i*_nVar+(k+2)+_Ndim];
@@ -1855,13 +1859,13 @@ void FiveEqsTwoFluid::consToPrim(const double *Wcons, double* Wprim,double poros
 		q2_sq = 0;
 	double rho_m_e_m=Wcons[_nVar-1] -0.5*(q1_sq+q2_sq);
 	//calcul de la temperature et de la pression pour une loi stiffened gas
-	double temperature= (rho_m_e_m-m_v*static_cast<StiffenedGas*>(_fluides[0])->getInternalEnergy(0)-m_l*static_cast<StiffenedGas*>(_fluides[1])->getInternalEnergy(0))/(m_v*_fluides[0]->constante("cv")+m_l*_fluides[1]->constante("cv"));
-	double e_v=static_cast<StiffenedGas*>(_fluides[0])->getInternalEnergy(temperature);
-	double e_l=static_cast<StiffenedGas*>(_fluides[1])->getInternalEnergy(temperature);
-	double gamma_v=_fluides[0]->constante("gamma");
-	double gamma_l=_fluides[1]->constante("gamma");
-	double Pinf_v=- gamma_v*_fluides[0]->constante("p0");
-	double Pinf_l=- gamma_l*_fluides[1]->constante("p0");
+	double temperature= (rho_m_e_m-m_v*static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getInternalEnergy(0)-m_l*static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getInternalEnergy(0))/(m_v*_fluidesCompressibles[0]->constante("cv")+m_l*_fluidesCompressibles[1]->constante("cv"));
+	double e_v=static_cast<StiffenedGas*>(_fluidesCompressibles[0])->getInternalEnergy(temperature);
+	double e_l=static_cast<StiffenedGas*>(_fluidesCompressibles[1])->getInternalEnergy(temperature);
+	double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+	double gamma_l=_fluidesCompressibles[1]->constante("gamma");
+	double Pinf_v=- gamma_v*_fluidesCompressibles[0]->constante("p0");
+	double Pinf_l=- gamma_l*_fluidesCompressibles[1]->constante("p0");
 	double a=1;
 	double b=-(Pinf_v+m_v*(gamma_v-1)*e_v+Pinf_l+m_l*(gamma_l-1)*e_l);
 	double c=Pinf_v*Pinf_l+Pinf_v*m_l*(gamma_l-1)*e_l+ Pinf_l*m_v*(gamma_v-1)*e_v;
@@ -1883,7 +1887,7 @@ void FiveEqsTwoFluid::consToPrim(const double *Wcons, double* Wprim,double poros
 		throw CdmathException("FiveEqsTwoFluid::consToPrim: Failed to compute pressure");
 	}
 
-	double rho_v=_fluides[0]->getDensity(pression,temperature);
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,temperature);
 	double alpha=m_v/rho_v;
 	Wprim[0]= alpha;
 	Wprim[1] =  pression;
@@ -2075,8 +2079,8 @@ Vector FiveEqsTwoFluid::staggeredVFFCFlux()
 
 			double pressioni=_Vi[1];
 			double Temperaturei= _Vi[_nVar-1];
-			double rho1=_fluides[0]->getDensity(pressioni,Temperaturei);
-			double e1_int=_fluides[0]->getInternalEnergy(Temperaturei,rho1);
+			double rho1=_fluidesCompressibles[0]->getDensity(pressioni,Temperaturei);
+			double e1_int=_fluidesCompressibles[0]->getInternalEnergy(Temperaturei,rho1);
 			Fij(_nVar-1)+=_Ui[0]*(e1_int+0.5*vitesse1n*vitesse1n+_Vj[1]/rho1)*vitesse1n;
 		}
 		else
@@ -2091,8 +2095,8 @@ Vector FiveEqsTwoFluid::staggeredVFFCFlux()
 
 			double pressionj=_Vj[1];
 			double Temperaturej= _Vj[_nVar-1];
-			double rho1=_fluides[0]->getDensity(pressionj,Temperaturej);
-			double e1_int=_fluides[0]->getInternalEnergy(Temperaturej,rho1);
+			double rho1=_fluidesCompressibles[0]->getDensity(pressionj,Temperaturej);
+			double e1_int=_fluidesCompressibles[0]->getInternalEnergy(Temperaturej,rho1);
 			Fij(_nVar-1)+=_Uj[0]*(e1_int+0.5*vitesse1n*vitesse1n+_Vi[1]/rho1)*vitesse1n;
 		}
 
@@ -2108,8 +2112,8 @@ Vector FiveEqsTwoFluid::staggeredVFFCFlux()
 
 			double pressioni=_Vi[1];
 			double Temperaturei= _Vi[_nVar-1];
-			double rho2=_fluides[1]->getDensity(pressioni,Temperaturei);
-			double e2_int=_fluides[1]->getInternalEnergy(Temperaturei,rho2);
+			double rho2=_fluidesCompressibles[1]->getDensity(pressioni,Temperaturei);
+			double e2_int=_fluidesCompressibles[1]->getInternalEnergy(Temperaturei,rho2);
 			Fij(_nVar-1)+=_Ui[1+_Ndim]*(e2_int+0.5*vitesse2n*vitesse2n+_Vj[1]/rho2)*vitesse2n;
 		}
 		else
@@ -2124,8 +2128,8 @@ Vector FiveEqsTwoFluid::staggeredVFFCFlux()
 
 			double pressionj=_Vj[1];
 			double Temperaturej= _Vj[_nVar-1];
-			double rho2=_fluides[1]->getDensity(pressionj,Temperaturej);
-			double e2_int=_fluides[1]->getInternalEnergy(Temperaturej,rho2);
+			double rho2=_fluidesCompressibles[1]->getDensity(pressionj,Temperaturej);
+			double e2_int=_fluidesCompressibles[1]->getInternalEnergy(Temperaturej,rho2);
 			Fij(_nVar-1)+=_Uj[1+_Ndim]*(e2_int+0.5*vitesse2n*vitesse2n+_Vi[1]/rho2)*vitesse2n;
 		}
 		return Fij;
@@ -2156,8 +2160,8 @@ void FiveEqsTwoFluid::applyVFRoeLowMachCorrections(bool isBord, string groupname
 				throw CdmathException("FiveEqsTwoFluid::applyVFRoeLowMachCorrections pressure correction order can be only 1 or 2 for five equation two-fluid model");
 
 			double norm_uij=0, uij_n=0, ui_n=0, uj_n=0;//mean velocities
-			double rho1 =  _fluides[0]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
-			double rho2 =  _fluides[1]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
+			double rho1 =  _fluidesCompressibles[0]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
+			double rho2 =  _fluidesCompressibles[1]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
 			double m1=_Uroe[0]*rho1,  m2=(1-_Uroe[0])*rho2;
 			double rhom=m1+m2;
 			for(int i=0;i<_Ndim;i++)
@@ -2177,8 +2181,8 @@ void FiveEqsTwoFluid::applyVFRoeLowMachCorrections(bool isBord, string groupname
 		else if(_spaceScheme==staggered)
 		{
 			double qij_n=0;
-			double rho1 =  _fluides[0]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
-			double rho2 =  _fluides[1]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
+			double rho1 =  _fluidesCompressibles[0]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
+			double rho2 =  _fluidesCompressibles[1]->getDensity(_Uroe[1],_Uroe[_nVar-1]);
 			double m1=_Uroe[0]*rho1,  m2=(1-_Uroe[0])*rho2;
 			double rhom=m1+m2;
 			for(int i=0;i<_Ndim;i++)

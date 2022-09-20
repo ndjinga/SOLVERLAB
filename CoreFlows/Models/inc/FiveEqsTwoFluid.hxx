@@ -137,7 +137,7 @@ class FiveEqsTwoFluid : public ProblemFluid{
 	void entropicShift(double* n);
 
 	// Functions of equations of states
-	vector<	CompressibleFluid* > _fluidesCompressibles;//This class works only with compressible fluids so the constructor will dynamic_cast the fluids defined in the parent class ProblemFluid
+	vector<	StiffenedGas* > _fluidesCompressibles;//This class works only with stiffened gas laws 
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);

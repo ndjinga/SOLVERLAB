@@ -14,7 +14,7 @@ DriftModel::DriftModel(pressureEstimate pEstimate, int dim, bool useDellacherieE
 	_nVar=_Ndim+3;
 	_nbPhases  = 2;
 	_dragCoeffs=vector<double>(2,0);
-	_fluides.resize(2);
+	_fluidesCompressibles.resize(2);
 	_saveAllFields=false;
 
 	if( pEstimate==around1bar300K){//EOS at 1 bar and 373K
@@ -28,8 +28,8 @@ DriftModel::DriftModel(pressureEstimate pEstimate, int dim, bool useDellacherieE
 		double gamma_v=1.337;//Gas heat capacity ratio at saturation at 1 bar
 		double rho_sat_l=958;//water density at saturation at 1 bar
 		double sound_speed_l=1543;//water sound speed at saturation at 1 bar
-		_fluides[0] = new StiffenedGas(gamma_v,cv_v,_Tsat,esatv);  //ideal gas law for Gas at pressure 1 bar and temperature 100°C, gamma=1.34
-		_fluides[1] = new StiffenedGas(rho_sat_l,1e5,_Tsat,esatl,sound_speed_l,cv_l);  //stiffened gas law for water at pressure 1 bar and temperature 100°C
+		_fluidesCompressibles[0] = new StiffenedGas(gamma_v,cv_v,_Tsat,esatv);  //ideal gas law for Gas at pressure 1 bar and temperature 100°C, gamma=1.34
+		_fluidesCompressibles[1] = new StiffenedGas(rho_sat_l,1e5,_Tsat,esatl,sound_speed_l,cv_l);  //stiffened gas law for water at pressure 1 bar and temperature 100°C
 		_hsatl=4.175e5;//water enthalpy at saturation at 1 bar
 		_hsatv=2.675e6;//Gas enthalpy at saturation at 1 bar
 
@@ -44,8 +44,8 @@ DriftModel::DriftModel(pressureEstimate pEstimate, int dim, bool useDellacherieE
 			_Tsat=656;//saturation temperature used in Dellacherie EOS
 			_hsatl=1.633e6;//water enthalpy at saturation at 155 bars
 			_hsatv=3.006e6;//Gas enthalpy at saturation at 155 bars
-			_fluides[0] = new StiffenedGasDellacherie(1.43,0  ,2.030255e6  ,1040.14); //stiffened gas law for Gas from S. Dellacherie
-			_fluides[1] = new StiffenedGasDellacherie(2.35,1e9,-1.167056e6,1816.2); //stiffened gas law for water from S. Dellacherie
+			_fluidesCompressibles[0] = new StiffenedGasDellacherie(1.43,0  ,2.030255e6  ,1040.14); //stiffened gas law for Gas from S. Dellacherie
+			_fluidesCompressibles[1] = new StiffenedGasDellacherie(2.35,1e9,-1.167056e6,1816.2); //stiffened gas law for water from S. Dellacherie
 		}
 		else
 		{
@@ -60,8 +60,8 @@ DriftModel::DriftModel(pressureEstimate pEstimate, int dim, bool useDellacherieE
 			_Tsat=618;//saturation temperature at 155 bars
 			_hsatl=1.63e6;//water enthalpy at saturation at 155 bars
 			_hsatv=2.6e6;//Gas enthalpy at saturation at 155 bars
-			_fluides[0] = new StiffenedGas(rho_sat_v,1.55e7,_Tsat,esatv, sound_speed_v,cv_v); //stiffened gas law for Gas at pressure 155 bar and temperature 345°C
-			_fluides[1] = new StiffenedGas(rho_sat_l,1.55e7,_Tsat,esatl, sound_speed_l,cv_l); //stiffened gas law for water at pressure 155 bar
+			_fluidesCompressibles[0] = new StiffenedGas(rho_sat_v,1.55e7,_Tsat,esatv, sound_speed_v,cv_v); //stiffened gas law for Gas at pressure 155 bar and temperature 345°C
+			_fluidesCompressibles[1] = new StiffenedGas(rho_sat_l,1.55e7,_Tsat,esatl, sound_speed_l,cv_l); //stiffened gas law for water at pressure 155 bar
 		}
 	}
 	_latentHeat=_hsatv-_hsatl;
@@ -72,6 +72,11 @@ DriftModel::DriftModel(pressureEstimate pEstimate, int dim, bool useDellacherieE
 	cout<<"Latent heat "<< _latentHeat<<endl;
 	*_runLogFile<<"Latent heat "<< _latentHeat<<endl;
 
+	//Save into the fluid list
+	_fluides.resize(2);
+	_fluides[0] = _fluidesCompressibles[0];
+	_fluides[1] = _fluidesCompressibles[1];
+	
 	_fileName = "SolverlabDriftModel";
     PetscPrintf(PETSC_COMM_WORLD,"\n Drift model problem for two phase flow\n");
 }
@@ -294,23 +299,23 @@ void DriftModel::diffusionStateAndMatrices(const long &i,const long &j, const bo
 		double pression=_phi[1];
 		double m_v=_Udiff[1];
 		double m_l=_Udiff[0]-_Udiff[1];
-		double rho_v=_fluides[0]->getDensity(pression,Tm);
-		double rho_l=_fluides[1]->getDensity(pression,Tm);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,Tm);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,Tm);
 		double alpha_v=m_v/rho_v,alpha_l=1-alpha_v;
 
 		for(int l=0; l<_nVar*_nVar;l++)
 			_Diffusion[l] = 0;
-		double mu = alpha_v*_fluides[0]->getViscosity(Tm)+alpha_l*_fluides[1]->getViscosity(Tm);
+		double mu = alpha_v*_fluidesCompressibles[0]->getViscosity(Tm)+alpha_l*_fluidesCompressibles[1]->getViscosity(Tm);
 		for(int l=2;l<(_nVar-1);l++)
 		{
 			_Diffusion[l*_nVar] =  mu*_Udiff[l]/(_Udiff[0]*_Udiff[0]);
 			_Diffusion[l*_nVar+l] = -mu/_Udiff[0];
 		}
-		double lambda = alpha_v*_fluides[0]->getConductivity(Tm)+alpha_l*_fluides[1]->getConductivity(Tm);
-		double C_v=  alpha_v*_fluides[0]->constante("cv");
-		double C_l=	 alpha_l*_fluides[1]->constante("cv");
-		double ev0=_fluides[0]->getInternalEnergy(0,rho_v);//Corriger
-		double el0=_fluides[1]->getInternalEnergy(0,rho_l);//Corriger
+		double lambda = alpha_v*_fluidesCompressibles[0]->getConductivity(Tm)+alpha_l*_fluidesCompressibles[1]->getConductivity(Tm);
+		double C_v=  alpha_v*_fluidesCompressibles[0]->constante("cv");
+		double C_l=	 alpha_l*_fluidesCompressibles[1]->constante("cv");
+		double ev0=_fluidesCompressibles[0]->getInternalEnergy(0,rho_v);//Corriger
+		double el0=_fluidesCompressibles[1]->getInternalEnergy(0,rho_l);//Corriger
 		double Rhomem=RhomEm-0.5*q_2/(_Udiff[0]*_Udiff[0]);
 		int q = (_nVar-1)*_nVar;
 		//Formules a verifier
@@ -372,8 +377,8 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 		double concentration=_Vj[0];
 		double pression=_Vj[1];
 		double T=_limitField[nameOfGroup].T;
-		double rho_v=_fluides[0]->getDensity(pression,T);
-		double rho_l=_fluides[1]->getDensity(pression,T);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 		if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 		{
 			cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -398,8 +403,8 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 				v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
 			}
 		}
-		_externalStates[_nVar-1] = _externalStates[1]*_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v)
-																																																																																																																																					 +(_externalStates[0]-_externalStates[1])*_fluides[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l) + _externalStates[0]*v2/2;
+		_externalStates[_nVar-1] = _externalStates[1]*_fluidesCompressibles[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho_v)
+																																																																																																																																					 +(_externalStates[0]-_externalStates[1])*_fluidesCompressibles[1]->getInternalEnergy(_limitField[nameOfGroup].T,rho_l) + _externalStates[0]*v2/2;
 		_idm[0] = 0;
 		for(k=1; k<_nVar; k++)
 			_idm[k] = _idm[k-1] + 1;
@@ -427,8 +432,8 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 			double concentration=_limitField[nameOfGroup].conc;
 			double pression=_Vj[1];
 			double T=_limitField[nameOfGroup].T;
-			double rho_v=_fluides[0]->getDensity(pression,T);
-			double rho_l=_fluides[1]->getDensity(pression,T);
+			double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+			double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 			if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 			{
 				cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -452,7 +457,7 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 					v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
 				}
 			}
-			_externalStates[_nVar-1] = _externalStates[1]*_fluides[0]->getInternalEnergy(T,rho_v)+(_externalStates[0]-_externalStates[1])*_fluides[1]->getInternalEnergy(T,rho_l) + _externalStates[0]*v2/2;
+			_externalStates[_nVar-1] = _externalStates[1]*_fluidesCompressibles[0]->getInternalEnergy(T,rho_v)+(_externalStates[0]-_externalStates[1])*_fluidesCompressibles[1]->getInternalEnergy(T,rho_l) + _externalStates[0]*v2/2;
 		}
 		else if(_nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
@@ -495,8 +500,8 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 		}
 
 		double pression=_limitField[nameOfGroup].p + hydroPress;
-		double rho_v=_fluides[0]->getDensity(pression, Tm);
-		double rho_l=_fluides[1]->getDensity(pression, Tm);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression, Tm);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression, Tm);
 		if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 		{
 			cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -514,7 +519,7 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 			v2+=_Vj[k+2]*_Vj[k+2];
 			_externalStates[k+2]=_externalStates[0]*_Vj[(k+2)] ;
 		}
-		_externalStates[_nVar-1] = mv*_fluides[0]->getInternalEnergy(Tm,rho_v)+ml*_fluides[1]->getInternalEnergy(Tm,rho_l) +_externalStates[0]* v2/2;
+		_externalStates[_nVar-1] = mv*_fluidesCompressibles[0]->getInternalEnergy(Tm,rho_v)+ml*_fluidesCompressibles[1]->getInternalEnergy(Tm,rho_l) +_externalStates[0]* v2/2;
 
 		_idm[0] = 0;
 		for(k=1; k<_nVar; k++)
@@ -546,8 +551,8 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 		double concentration=_Vj[0];
 		double pression=_limitField[nameOfGroup].p+hydroPress;
 		double Tm=_Vj[_nVar-1];
-		double rho_v=_fluides[0]->getDensity(pression, Tm);
-		double rho_l=_fluides[1]->getDensity(pression, Tm);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression, Tm);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression, Tm);
 		if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 		{
 			cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -565,7 +570,7 @@ void DriftModel::setBoundaryState(string nameOfGroup, const int &j,double *norma
 			v2+=_Vj[k+2]*_Vj[k+2];
 			_externalStates[k+2]=_externalStates[0]*_Vj[(k+2)] ;
 		}
-		_externalStates[_nVar-1] = mv*_fluides[0]->getInternalEnergy(Tm,rho_v)+ml*_fluides[1]->getInternalEnergy(Tm,rho_l) +_externalStates[0]* v2/2;
+		_externalStates[_nVar-1] = mv*_fluidesCompressibles[0]->getInternalEnergy(Tm,rho_v)+ml*_fluidesCompressibles[1]->getInternalEnergy(Tm,rho_l) +_externalStates[0]* v2/2;
 
 		_idm[0] = 0;
 		for(k=1; k<_nVar; k++)
@@ -623,9 +628,9 @@ void DriftModel::convectionMatrices()
 			vitesse[idim]=_Uroe[2+idim];
 
 		if(cm<_precision)//pure liquid
-			Tm=_fluides[1]->getTemperatureFromEnthalpy(hm,rhom);
+			Tm=_fluidesCompressibles[1]->getTemperatureFromEnthalpy(hm,rhom);
 		else if(cm>1-_precision)
-			Tm=_fluides[0]->getTemperatureFromEnthalpy(hm,rhom);
+			Tm=_fluidesCompressibles[0]->getTemperatureFromEnthalpy(hm,rhom);
 		else//Hypothèse de saturation
 			Tm=_Tsat;
 
@@ -793,10 +798,10 @@ void DriftModel::addDiffusionToSecondMember
 		bool isBord)
 {
 	double Tm=_Udiff[_nVar-1];
-	double lambdal=_fluides[1]->getConductivity(Tm);
-	double lambdav = _fluides[0]->getConductivity(Tm);
-	double mu_l = _fluides[1]->getViscosity(Tm);
-	double mu_v = _fluides[0]->getViscosity(Tm);
+	double lambdal=_fluidesCompressibles[1]->getConductivity(Tm);
+	double lambdav = _fluidesCompressibles[0]->getConductivity(Tm);
+	double mu_l = _fluidesCompressibles[1]->getViscosity(Tm);
+	double mu_v = _fluidesCompressibles[0]->getViscosity(Tm);
 
 	if(mu_v==0 && mu_l ==0 && lambdav==0 && lambdal==0 && _heatTransfertCoeff==0)
 		return;
@@ -838,8 +843,8 @@ void DriftModel::addDiffusionToSecondMember
 	}
 	double pression=(_Vi[1]+_Vj[1])/2;//ameliorer car traitement different pour pression et temperature
 	double m_v=_Udiff[1];
-	double rho_v=_fluides[0]->getDensity(pression,Tm);
-	double rho_l=_fluides[1]->getDensity(pression,Tm);
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,Tm);
+	double rho_l=_fluidesCompressibles[1]->getDensity(pression,Tm);
 	double alpha_v=m_v/rho_v,alpha_l=1-alpha_v;
 	double mu = alpha_v*mu_v+alpha_l*mu_l;
 	double lambda = alpha_v*lambdav+alpha_l*lambdal;
@@ -1056,8 +1061,8 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 			double concentration=_limitField[nameOfGroup].conc;
 			double pression=_Vj[1];
 			double T=_limitField[nameOfGroup].T;
-			double rho_v=_fluides[0]->getDensity(pression,T);
-			double rho_l=_fluides[1]->getDensity(pression,T);
+			double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+			double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 			if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 			{
 				cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -1068,8 +1073,8 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 			}
 
 			double rho_e=rho_v*rho_l/(concentration*rho_l+(1-concentration)*rho_v);
-			double e_v=_fluides[0]->getInternalEnergy(T,rho_v);
-			double e_l=_fluides[1]->getInternalEnergy(T,rho_l);
+			double e_v=_fluidesCompressibles[0]->getInternalEnergy(T,rho_v);
+			double e_l=_fluidesCompressibles[1]->getInternalEnergy(T,rho_l);
 			ve[0] = _limitField[nameOfGroup].v_x[0];
 			v[0]=_Vj[1];
 			ve2 = ve[0]*ve[0];
@@ -1089,8 +1094,8 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 			double E_e = concentration*e_v+(1-concentration)*e_l + ve2/2;
 
 			//Pressure differential
-			double gamma_v =_fluides[0]->constante("gamma");
-			double gamma_l =_fluides[1]->constante("gamma");
+			double gamma_v =_fluidesCompressibles[0]->constante("gamma");
+			double gamma_l =_fluidesCompressibles[1]->constante("gamma");
 			double omega=concentration/((gamma_v-1)*rho_v*rho_v*e_v)+(1-concentration)/((gamma_l-1)*rho_l*rho_l*e_l);
 			double rhom=_externalStates[0];
 			double m_v=concentration*rhom, m_l=rhom-m_v;
@@ -1130,8 +1135,8 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 		double concentration=_limitField[nameOfGroup].conc;
 		double pression=_limitField[nameOfGroup].p;
 		double T=_limitField[nameOfGroup].T;
-		double rho_v=_fluides[0]->getDensity(pression,T);
-		double rho_l=_fluides[1]->getDensity(pression,T);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 		if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 		{
 			cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -1167,8 +1172,8 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 		double concentration=_Vj[0];
 		double pression=_limitField[nameOfGroup].p;
 		double T=_Vj[_nVar-1];
-		double rho_v=_fluides[0]->getDensity(pression,T);
-		double rho_l=_fluides[1]->getDensity(pression,T);
+		double rho_v=_fluidesCompressibles[0]->getDensity(pression,T);
+		double rho_l=_fluidesCompressibles[1]->getDensity(pression,T);
 		if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 		{
 			cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -1180,8 +1185,8 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 
 		double rho_ext=rho_v*rho_l/(concentration*rho_l+(1-concentration)*rho_v);
 		double rho_int=_externalStates[0];
-		double e_v=_fluides[0]->getInternalEnergy(T,rho_v);
-		double e_l=_fluides[1]->getInternalEnergy(T,rho_l);
+		double e_v=_fluidesCompressibles[0]->getInternalEnergy(T,rho_v);
+		double e_l=_fluidesCompressibles[1]->getInternalEnergy(T,rho_l);
 		double ratio_densite=rho_ext/rho_int;
 		for(k=0;k<_Ndim;k++){
 			v[k]=_Vj[2+k];
@@ -1190,10 +1195,10 @@ void DriftModel::jacobian(const int &j, string nameOfGroup,double * normale)
 		double E_m = concentration*e_v+(1-concentration)*e_l + v2/2;//total energy
 
 		//Temperature differential
-		double C_v=  _fluides[0]->constante("cv");
-		double C_l=	 _fluides[1]->constante("cv");
-		double ev0=_fluides[0]->getInternalEnergy(0,rho_v);//Corriger
-		double el0=_fluides[1]->getInternalEnergy(0,rho_l);//Corriger
+		double C_v=  _fluidesCompressibles[0]->constante("cv");
+		double C_l=	 _fluidesCompressibles[1]->constante("cv");
+		double ev0=_fluidesCompressibles[0]->getInternalEnergy(0,rho_v);//Corriger
+		double el0=_fluidesCompressibles[1]->getInternalEnergy(0,rho_l);//Corriger
 
 		double omega=concentration*C_v/(rho_v*e_v)+(1-concentration)*C_l/(rho_l*e_l);
 		double rhomem=_externalStates[0]*(concentration*e_v+(1-concentration)*e_l);
@@ -1305,10 +1310,10 @@ Vector DriftModel::computeExtendedPrimState(double *V)
 	Vector Vext(7+2*_Ndim);
 
 	double C=V[0], P=V[1], T=V[_nVar-1];
-	double rho_v=_fluides[0]->getDensity(P,T);
-	double rho_l=_fluides[1]->getDensity(P,T);
-	double e_v=_fluides[0]->getInternalEnergy(T,rho_v);
-	double e_l=_fluides[1]->getInternalEnergy(T,rho_l);
+	double rho_v=_fluidesCompressibles[0]->getDensity(P,T);
+	double rho_l=_fluidesCompressibles[1]->getDensity(P,T);
+	double e_v=_fluidesCompressibles[0]->getInternalEnergy(T,rho_v);
+	double e_l=_fluidesCompressibles[1]->getInternalEnergy(T,rho_l);
 	if(fabs(rho_l*C+rho_v*(1-C))<_precision)
 	{
 		cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<", concentration= "<<C<<endl;
@@ -1346,10 +1351,10 @@ void DriftModel::primToCons(const double *P, const int &i, double *W, const int 
 	double concentration=P[i*_nVar];
 	double pression=P[i*_nVar+1];
 	double temperature=P[i*_nVar+_nVar-1];
-	double rho_v=_fluides[0]->getDensity(pression,temperature);
-	double rho_l=_fluides[1]->getDensity(pression,temperature);
-	double e_v = _fluides[0]->getInternalEnergy(temperature,rho_v);
-	double e_l = _fluides[1]->getInternalEnergy(temperature,rho_l);
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,temperature);
+	double rho_l=_fluidesCompressibles[1]->getDensity(pression,temperature);
+	double e_v = _fluidesCompressibles[0]->getInternalEnergy(temperature,rho_v);
+	double e_l = _fluidesCompressibles[1]->getInternalEnergy(temperature,rho_l);
 	if(fabs(concentration*rho_l+(1-concentration)*rho_v)<_precision)
 	{
 		cout<<"rhov= "<<rho_v<<", rhol= "<<rho_l<<endl;
@@ -1385,12 +1390,10 @@ void DriftModel::primToConsJacobianMatrix(double *V)
 	for(int idim=0;idim<_Ndim;idim++)
 		v2+=vitesse[idim]*vitesse[idim];
 
-	double rho_v=_fluides[0]->getDensity(pression,temperature);
-	double rho_l=_fluides[1]->getDensity(pression,temperature);
-	double gamma_v=_fluides[0]->constante("gamma");
-	double gamma_l=_fluides[1]->constante("gamma");
-	double q_v=_fluides[0]->constante("q");
-	double q_l=_fluides[1]->constante("q");
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,temperature);
+	double rho_l=_fluidesCompressibles[1]->getDensity(pression,temperature);
+	double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+	double gamma_l=_fluidesCompressibles[1]->constante("gamma");
 
 	double rho=concentration*rho_v+(1-concentration)*rho_l;;
 
@@ -1399,12 +1402,15 @@ void DriftModel::primToConsJacobianMatrix(double *V)
 
 	if(		!_useDellacherieEOS)
 	{
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluides[1]);
+		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[0]);
+		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[1]);
 		double e_v = fluide0->getInternalEnergy(temperature);
 		double e_l = fluide0->getInternalEnergy(temperature);
 		double cv_v=fluide0->constante("cv");
 		double cv_l=fluide1->constante("cv");
+		/* To do : replace the formula using q by calls to sound speed */
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 		double e=concentration*e_v+(1-concentration)*e_l;
 		double E=e+0.5*v2;
 
@@ -1457,14 +1463,17 @@ void DriftModel::primToConsJacobianMatrix(double *V)
 	}
 	else if(_useDellacherieEOS)
 	{
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluides[1]);
+		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[0]);
+		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[1]);
 		double h_v=fluide0->getEnthalpy(temperature);
 		double h_l=fluide1->getEnthalpy(temperature);
 		double h=concentration*h_v+(1-concentration)*h_l;
 		double H=h+0.5*v2;
 		double cp_v=fluide0->constante("cp");
 		double cp_l=fluide1->constante("cp");
+		/* To do : replace the formula using q by calls to sound speed */
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 
 		/******* Masse totale **********/
 		_primToConsJacoMat[0]=-rho*rho*(1/rho_v-1/rho_l);
@@ -1552,13 +1561,13 @@ void DriftModel::consToPrim(const double *Wcons, double* Wprim,double porosity)
 
 	if(concentration<_precision)
 	{
-		pression=_fluides[1]->getPressure(rho_m_e_m,m_l);
-		Temperature=_fluides[1]->getTemperatureFromPressure(pression,m_l);
+		pression=_fluidesCompressibles[1]->getPressure(rho_m_e_m,m_l);
+		Temperature=_fluidesCompressibles[1]->getTemperatureFromPressure(pression,m_l);
 	}
 	else if(concentration>1-_precision)
 	{
-		pression=_fluides[0]->getPressure(rho_m_e_m,m_v);
-		Temperature=_fluides[0]->getTemperatureFromPressure(pression,m_v);
+		pression=_fluidesCompressibles[0]->getPressure(rho_m_e_m,m_v);
+		Temperature=_fluidesCompressibles[0]->getTemperatureFromPressure(pression,m_v);
 	}
 	else//Hypothèses de saturation
 	{
@@ -1608,31 +1617,37 @@ void DriftModel::consToPrim(const double *Wcons, double* Wprim,double porosity)
 
 double DriftModel::getMixturePressure(double c_v, double rhom, double temperature)
 {
-	double gamma_v=_fluides[0]->constante("gamma");
-	double gamma_l=_fluides[1]->constante("gamma");
-	double Pinf_v=_fluides[0]->constante("p0");
-	double Pinf_l=_fluides[1]->constante("p0");
-	double q_v=_fluides[0]->constante("q");
-	double q_l=_fluides[1]->constante("q");
+	double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+	double gamma_l=_fluidesCompressibles[1]->constante("gamma");
 	double c_l=1-c_v;
 	double a=1., b, c;
 
 	if(	!_useDellacherieEOS)
 	{
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluides[1]);
+		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[0]);
+		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[1]);
 		double e_v=fluide0->getInternalEnergy(temperature);
 		double e_l=fluide1->getInternalEnergy(temperature);
+		/* To do : replace the formula using p0 and q by calls to sound speed */
+		double Pinf_v=fluide0->constante("p0");
+		double Pinf_l=fluide1->constante("p0");
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 		b=gamma_v*Pinf_v+gamma_l*Pinf_l -rhom*(c_l*(gamma_l-1)*(e_l-q_l)+c_v*(gamma_v-1)*(e_v-q_v));
 		c=	gamma_v*Pinf_v*gamma_l*Pinf_l
 				-rhom*(c_l*(gamma_l-1)*(e_l-q_l)*gamma_v*Pinf_v + c_v*(gamma_v-1)*(e_v-q_v)*gamma_l*Pinf_l);
 	}
 	else if(_useDellacherieEOS)
 	{
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluides[1]);
+		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[0]);
+		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[1]);
 		double h_v=fluide0->getEnthalpy(temperature);
 		double h_l=fluide1->getEnthalpy(temperature);
+		/* To do : replace the formula using p0 and q by calls to sound speed */
+		double Pinf_v=fluide0->constante("p0");
+		double Pinf_l=fluide1->constante("p0");
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 		b=Pinf_v+Pinf_l -rhom*(c_l*(gamma_l-1)*(h_l-q_l)/gamma_l+c_v*(gamma_v-1)*(h_v-q_v)/gamma_v);
 		c=Pinf_v*Pinf_l-rhom*(c_l*(gamma_l-1)*(h_l-q_l)*Pinf_v + c_v*(gamma_v-1)*(h_v-q_v)*Pinf_l);
 	}
@@ -1659,19 +1674,20 @@ double DriftModel::getMixturePressure(double c_v, double rhom, double temperatur
 
 void DriftModel::getMixturePressureAndTemperature(double c_v, double rhom, double rhom_em, double& pression, double& temperature)
 {
-	double gamma_v=_fluides[0]->constante("gamma");
-	double gamma_l=_fluides[1]->constante("gamma");
-	double Pinf_v=_fluides[0]->constante("p0");
-	double Pinf_l=_fluides[1]->constante("p0");
-	double q_v=_fluides[0]->constante("q");
-	double q_l=_fluides[1]->constante("q");
+	double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+	double gamma_l=_fluidesCompressibles[1]->constante("gamma");
 	double c_l=1-c_v, m_v=c_v*rhom, m_l=rhom-m_v;
 	double a, b, c, delta;
 
 	if(	!_useDellacherieEOS)
 	{
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluides[1]);
+		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[0]);
+		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[1]);
+		/* To do : replace the formula using p0 and q by calls to sound speed */
+		double Pinf_v=fluide0->constante("p0");
+		double Pinf_l=fluide1->constante("p0");
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 
 		temperature= (rhom_em-m_v*fluide0->getInternalEnergy(0)-m_l*fluide1->getInternalEnergy(0))
 																																																																																																																																			/(m_v*fluide0->constante("cv")+m_l*fluide1->constante("cv"));
@@ -1696,13 +1712,18 @@ void DriftModel::getMixturePressureAndTemperature(double c_v, double rhom, doubl
 	}
 	else if(_useDellacherieEOS)
 	{
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluides[1]);
+		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[0]);
+		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[1]);
+		/* To do : replace the formula using p0 and q by calls to sound speed */
+		double Pinf_v=fluide0->constante("p0");
+		double Pinf_l=fluide1->constante("p0");
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 
 		double h0_v=fluide0->getEnthalpy(0);
 		double h0_l=fluide1->getEnthalpy(0);
-		double cp_v = _fluides[0]->constante("cp");
-		double cp_l = _fluides[1]->constante("cp");
+		double cp_v = _fluidesCompressibles[0]->constante("cp");
+		double cp_l = _fluidesCompressibles[1]->constante("cp");
 		double denom=m_v*cp_v+m_l*cp_l;
 		double num_v=cp_v*rhom_em+m_l*(cp_l* h0_v-cp_v* h0_l);
 		double num_l=cp_l*rhom_em+m_v*(cp_v* h0_l-cp_l* h0_v);
@@ -1741,20 +1762,21 @@ void DriftModel::getMixturePressureAndTemperature(double c_v, double rhom, doubl
 }
 double DriftModel::getMixtureTemperature(double c_v, double rhom, double pression)
 {
-	double gamma_v=_fluides[0]->constante("gamma");
-	double gamma_l=_fluides[1]->constante("gamma");
-	double Pinf_v = _fluides[0]->constante("p0");
-	double Pinf_l = _fluides[1]->constante("p0");
-	double q_v=_fluides[0]->constante("q");
-	double q_l=_fluides[1]->constante("q");
+	double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+	double gamma_l=_fluidesCompressibles[1]->constante("gamma");
 	double c_l=1-c_v;
 
 	if(	!_useDellacherieEOS)
 	{
-		double cv_v = _fluides[0]->constante("cv");
-		double cv_l = _fluides[1]->constante("cv");
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluides[1]);
+		double cv_v = _fluidesCompressibles[0]->constante("cv");
+		double cv_l = _fluidesCompressibles[1]->constante("cv");
+		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[0]);
+		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[1]);
+		/* To do : replace the formula using p0 and q by calls to sound speed */
+		double Pinf_v=fluide0->constante("p0");
+		double Pinf_l=fluide1->constante("p0");
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 		double e0_v=fluide0->getInternalEnergy(0);
 		double e0_l=fluide1->getInternalEnergy(0);
 
@@ -1767,10 +1789,15 @@ double DriftModel::getMixtureTemperature(double c_v, double rhom, double pressio
 	}
 	else if(_useDellacherieEOS)
 	{
-		double cp_v = _fluides[0]->constante("cp");
-		double cp_l = _fluides[1]->constante("cp");
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluides[1]);
+		double cp_v = _fluidesCompressibles[0]->constante("cp");
+		double cp_l = _fluidesCompressibles[1]->constante("cp");
+		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[0]);
+		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[1]);
+		/* To do : replace the formula using p0 and q by calls to sound speed */
+		double Pinf_v=fluide0->constante("p0");
+		double Pinf_l=fluide1->constante("p0");
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 		double h0_v=fluide0->getEnthalpy(0);
 		double h0_l=fluide1->getEnthalpy(0);
 
@@ -1792,22 +1819,25 @@ double DriftModel::getMixtureTemperature(double c_v, double rhom, double pressio
 
 void DriftModel::getMixturePressureDerivatives(double m_v, double m_l, double pression, double Tm)
 {
-	double rho_v=_fluides[0]->getDensity(pression,Tm);
-	double rho_l=_fluides[1]->getDensity(pression,Tm);
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,Tm);
+	double rho_l=_fluidesCompressibles[1]->getDensity(pression,Tm);
 	double alpha_v=m_v/rho_v,alpha_l=1-alpha_v;
-	double gamma_v=_fluides[0]->constante("gamma");
-	double gamma_l=_fluides[1]->constante("gamma");
-	double q_v=_fluides[0]->constante("q");
-	double q_l=_fluides[1]->constante("q");
+	double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+	double gamma_l=_fluidesCompressibles[1]->constante("gamma");
 	double temp1, temp2, denom;
 
 	if(	   !_useDellacherieEOS)
 	{//Classical stiffened gas with linear law e(T)
-		double cv_v = _fluides[0]->constante("cv");
-		double cv_l = _fluides[1]->constante("cv");
+		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[0]);
+		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[1]);
+		/* To do : replace the formula using q by calls to sound speed */
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
+		double cv_v = _fluidesCompressibles[0]->constante("cv");
+		double cv_l = _fluidesCompressibles[1]->constante("cv");
 
-		double e_v=_fluides[0]->getInternalEnergy(Tm, rho_v);//Actually does not depends on rho_v
-		double e_l=_fluides[1]->getInternalEnergy(Tm, rho_l);//Actually does not depends on rho_l
+		double e_v=_fluidesCompressibles[0]->getInternalEnergy(Tm, rho_v);//Actually does not depends on rho_v
+		double e_l=_fluidesCompressibles[1]->getInternalEnergy(Tm, rho_l);//Actually does not depends on rho_l
 
 		//On estime les dérivées discrètes de la pression (cf doc)
 		temp1= m_v* cv_v + m_l* cv_l;
@@ -1818,14 +1848,18 @@ void DriftModel::getMixturePressureDerivatives(double m_v, double m_l, double pr
 		_ksi=(temp1*(rho_l-rho_v)/(rho_v*rho_l)+(e_l-e_v)*temp2)/denom;
 		_kappa=temp2/denom;
 	}
-
 	else if( _useDellacherieEOS)
 	{//S. Dellacherie stiffened gas with linear law h(T)
-		double cp_v = _fluides[0]->constante("cp");
-		double cp_l = _fluides[1]->constante("cp");
+		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[0]);
+		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[1]);
+		/* To do : replace the formula using q by calls to sound speed */
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
+		double cp_v = _fluidesCompressibles[0]->constante("cp");
+		double cp_l = _fluidesCompressibles[1]->constante("cp");
 
-		double h_v=_fluides[0]->getEnthalpy(Tm, rho_v);//Actually does not depends on rho_v
-		double h_l=_fluides[1]->getEnthalpy(Tm, rho_l);//Actually does not depends on rho_l
+		double h_v=_fluidesCompressibles[0]->getEnthalpy(Tm, rho_v);//Actually does not depends on rho_v
+		double h_l=_fluidesCompressibles[1]->getEnthalpy(Tm, rho_l);//Actually does not depends on rho_l
 
 		//On estime les dérivées discrètes de la pression (cf doc)
 		temp1= m_v* cp_v + m_l* cp_l;
@@ -1953,10 +1987,10 @@ Vector DriftModel::convectionFlux(Vector U,Vector V, Vector normale, double poro
 	double vitesse_vn=vitesse_v*normale;
 	double vitesse_ln=vitesse_l*normale;
 	//double rho_m_e_m=rho_m_E_m -0.5*(q_m*vitesse_melange + rho_m*concentration_v*concentration_l*vitesse_relative*vitesse_relative)
-	double rho_v=_fluides[0]->getDensity(pression,Temperature);
-	double rho_l=_fluides[1]->getDensity(pression,Temperature);
-	double e_v=_fluides[0]->getInternalEnergy(Temperature,rho_v);
-	double e_l=_fluides[1]->getInternalEnergy(Temperature,rho_l);
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,Temperature);
+	double rho_l=_fluidesCompressibles[1]->getDensity(pression,Temperature);
+	double e_v=_fluidesCompressibles[0]->getInternalEnergy(Temperature,rho_v);
+	double e_l=_fluidesCompressibles[1]->getInternalEnergy(Temperature,rho_l);
 
 	Vector F(_nVar);
 	F(0)=m_v*vitesse_vn+m_l*vitesse_ln;
@@ -2294,9 +2328,9 @@ void DriftModel::staggeredVFFCMatricesConservativeVariables(double u_mn)
 			double hm=Hm-0.5*u_2;
 
 			if(cm<_precision)//pure liquid
-				Tm=_fluides[1]->getTemperatureFromEnthalpy(hm,rhom);
+				Tm=_fluidesCompressibles[1]->getTemperatureFromEnthalpy(hm,rhom);
 			else if(cm>1-_precision)
-				Tm=_fluides[0]->getTemperatureFromEnthalpy(hm,rhom);
+				Tm=_fluidesCompressibles[0]->getTemperatureFromEnthalpy(hm,rhom);
 			else//Hypothèse de saturation
 				Tm=_Tsat;
 
@@ -2550,8 +2584,8 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 		double ecini=0.5*ui_2;
 		double emi=Emi-0.5*ui_2;
 		double hmi=emi+pi/rhomi;
-		double rho_vi=_fluides[0]->getDensity(pi,Tmi);
-		double rho_li=_fluides[1]->getDensity(pi,Tmi);
+		double rho_vi=_fluidesCompressibles[0]->getDensity(pi,Tmi);
+		double rho_li=_fluidesCompressibles[1]->getDensity(pi,Tmi);
 
 		double pj=_Vj[1];
 		double rhomj=_Uj[0]/_porosityj;
@@ -2563,27 +2597,28 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 		double ecinj=0.5*uj_2;
 		double emj=Emj-0.5*uj_2;
 		double hmj=emj+pj/rhomj;
-		double rho_vj=_fluides[0]->getDensity(pj,Tmj);
-		double rho_lj=_fluides[1]->getDensity(pj,Tmj);
+		double rho_vj=_fluidesCompressibles[0]->getDensity(pj,Tmj);
+		double rho_lj=_fluidesCompressibles[1]->getDensity(pj,Tmj);
 
-		double gamma_v=_fluides[0]->constante("gamma");
-		double gamma_l=_fluides[1]->constante("gamma");
-		double q_v=_fluides[0]->constante("q");
-		double q_l=_fluides[1]->constante("q");
+		double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+		double gamma_l=_fluidesCompressibles[1]->constante("gamma");
 
 		if(fabs(u_mn)>_precision)//non zero velocity on the interface
 		{
 			if(		!_useDellacherieEOS)
 			{
-				StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-				StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluides[1]);
+				StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[0]);
+				StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[1]);
+				/* To do : replace the formula using q by calls to sound speed */
+				double q_v=fluide0->constante("q");
+				double q_l=fluide1->constante("q");
 				double cv_v=fluide0->constante("cv");
 				double cv_l=fluide1->constante("cv");
 
-				double e_vi=_fluides[0]->getInternalEnergy(Tmi,rho_vi);
-				double e_li=_fluides[1]->getInternalEnergy(Tmi,rho_li);
-				double e_vj=_fluides[0]->getInternalEnergy(Tmj,rho_vj);
-				double e_lj=_fluides[1]->getInternalEnergy(Tmj,rho_lj);
+				double e_vi=_fluidesCompressibles[0]->getInternalEnergy(Tmi,rho_vi);
+				double e_li=_fluidesCompressibles[1]->getInternalEnergy(Tmi,rho_li);
+				double e_vj=_fluidesCompressibles[0]->getInternalEnergy(Tmj,rho_vj);
+				double e_lj=_fluidesCompressibles[1]->getInternalEnergy(Tmj,rho_lj);
 
 				if(u_mn>_precision)
 				{
@@ -2753,15 +2788,18 @@ void DriftModel::staggeredVFFCMatricesPrimitiveVariables(double u_mn)
 			}
 			else if(_useDellacherieEOS)
 			{
-				StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-				StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluides[1]);
+				StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[0]);
+				StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[1]);
+				/* To do : replace the formula using q by calls to sound speed */
+				double q_v=fluide0->constante("q");
+				double q_l=fluide1->constante("q");
 				double cp_v=fluide0->constante("cp");
 				double cp_l=fluide1->constante("cp");
 
-				double h_vi=_fluides[0]->getEnthalpy(Tmi,rho_vi);
-				double h_li=_fluides[1]->getEnthalpy(Tmi,rho_li);
-				double h_vj=_fluides[0]->getEnthalpy(Tmj,rho_vj);
-				double h_lj=_fluides[1]->getEnthalpy(Tmj,rho_lj);
+				double h_vi=_fluidesCompressibles[0]->getEnthalpy(Tmi,rho_vi);
+				double h_li=_fluidesCompressibles[1]->getEnthalpy(Tmi,rho_li);
+				double h_vj=_fluidesCompressibles[0]->getEnthalpy(Tmj,rho_vj);
+				double h_lj=_fluidesCompressibles[1]->getEnthalpy(Tmj,rho_lj);
 				double Hmi=Emi+pi/rho_vi;
 				double Hmj=Emj+pj/rho_vj;
 
@@ -3175,23 +3213,24 @@ void DriftModel::getDensityDerivatives(double concentration, double pression, do
 {
 	//EOS is more involved with primitive variables
 
-	double rho_v=_fluides[0]->getDensity(pression,temperature);
-	double rho_l=_fluides[1]->getDensity(pression,temperature);
-	double gamma_v=_fluides[0]->constante("gamma");
-	double gamma_l=_fluides[1]->constante("gamma");
-	double q_v=_fluides[0]->constante("q");
-	double q_l=_fluides[1]->constante("q");
+	double rho_v=_fluidesCompressibles[0]->getDensity(pression,temperature);
+	double rho_l=_fluidesCompressibles[1]->getDensity(pression,temperature);
+	double gamma_v=_fluidesCompressibles[0]->constante("gamma");
+	double gamma_l=_fluidesCompressibles[1]->constante("gamma");
 
 	double rho=concentration*rho_v+(1-concentration)*rho_l;;
 
 	if(	!_useDellacherieEOS)
 	{
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluides[0]);
-		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluides[1]);
+		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[0]);
+		StiffenedGas* fluide1=dynamic_cast<StiffenedGas*>(_fluidesCompressibles[1]);
 		double e_v = fluide0->getInternalEnergy(temperature);
 		double e_l = fluide1->getInternalEnergy(temperature);
 		double cv_v=fluide0->constante("cv");
 		double cv_l=fluide1->constante("cv");
+		/* To do : replace the formula using q by calls to sound speed */
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 		double e=concentration*e_v+(1-concentration)*e_l;
 		double E=e+0.5*v2;
 
@@ -3225,14 +3264,17 @@ void DriftModel::getDensityDerivatives(double concentration, double pression, do
 	}
 	else if(_useDellacherieEOS)
 	{
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluides[0]);
-		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluides[1]);
+		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[0]);
+		StiffenedGasDellacherie* fluide1=dynamic_cast<StiffenedGasDellacherie*>(_fluidesCompressibles[1]);
 		double h_v=fluide0->getEnthalpy(temperature);
 		double h_l=fluide1->getEnthalpy(temperature);
 		double h=concentration*h_v+(1-concentration)*h_l;
 		double H=h+0.5*v2;
 		double cp_v=fluide0->constante("cp");
 		double cp_l=fluide1->constante("cp");
+		/* To do : replace the formula using q by calls to sound speed */
+		double q_v=fluide0->constante("q");
+		double q_l=fluide1->constante("q");
 
 		_drho_sur_dcv=-rho*rho*(1/rho_v-1/rho_l);
 		_drho_sur_dp =rho*rho*(
@@ -3454,13 +3496,13 @@ void DriftModel::save(){
 				}
 			}
 
-			rho_v=_fluides[0]->getDensity(p,Tm);
-			rho_l=_fluides[1]->getDensity(p,Tm);
+			rho_v=_fluidesCompressibles[0]->getDensity(p,Tm);
+			rho_l=_fluidesCompressibles[1]->getDensity(p,Tm);
 			alpha_v=cv*rhom/rho_v;
 			m_v=cv*rhom;
 			m_l=(1-cv)*rhom;
-			h_v=_fluides[0]->getEnthalpy(Tm,rho_v);
-			h_l=_fluides[1]->getEnthalpy(Tm,rho_l);
+			h_v=_fluidesCompressibles[0]->getEnthalpy(Tm,rho_v);
+			h_l=_fluidesCompressibles[1]->getEnthalpy(Tm,rho_l);
 
 			_VoidFraction(i)=alpha_v;
 			_Enthalpy(i)=(m_v*h_v+m_l*h_l)/rhom;

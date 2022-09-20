@@ -503,7 +503,7 @@ protected :
 	int _pressureCorrectionOrder;
 
 	/** Fluid equation of state **/
-	vector<	CompressibleFluid* > _fluides;//ToDo replace this by a vector of Fluide once the classes needing compressible fluids have been modified adequately
+	vector<	Fluide* > _fluides;//ToDo replace this by a vector of Fluide once the classes needing compressible fluids have been modified adequately
 
 	/** Source terms **/
 	vector<double> _gravite, _GravityField3d, _gravityReferencePoint, _dragCoeffs;//_GravityField3d has size _Ndim whereas _gravite has size _Nvar and is usefull for dealing with source term and implicitation of gravity vector
