@@ -325,8 +325,15 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 
 		if(reason<0)//solving the linear system failed
 		{
-			cout<<"Systeme lineaire : pas de convergence de Petsc. Raison PETSC numéro "<<reason<<endl;
-			cout<<"Nombre d'itérations effectuées "<< _PetscIts<<" nombre maximal Itérations autorisées "<<_maxPetscIts<<endl;
+			if( reason == -3)
+			    cout<<"Maximum number of iterations "<<_maxPetscIts<<" reached"<<endl;
+			else if( reason == -11)
+			    cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
+			else
+			{
+			    cout<<"PETSc divergence reason  "<< reason <<endl;
+				cout<<"Nombre d'itérations effectuées "<< _PetscIts<<" nombre maximal Itérations autorisées "<<_maxPetscIts<<endl;
+			}
 			*_runLogFile<<"Systeme lineaire : pas de convergence de Petsc. Raison PETSC numéro "<<reason<<endl;
 			*_runLogFile<<"Nombre d'itérations effectuées "<< _PetscIts<<" nombre maximal Itérations autorisées "<<_maxPetscIts<<endl;
 			converged=false;
