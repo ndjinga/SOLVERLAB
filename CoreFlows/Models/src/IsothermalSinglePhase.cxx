@@ -979,21 +979,16 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 	}
 	else if (_limitField[nameOfGroup].bcType==Inlet)
 	{
-		if(u_n<0){
-		for(k=0; k<_nVar;k++)
-			_Jcb[k*_nVar + k] = 0;
-		_Jcb[0] = 1;
-		}
+		if(u_n<0)
+		_Jcb[0] = 1;//Only the forst coefficient of the matrix is non zero
 		else//Neumann BC
+		{
+			cout<<"Warning  IsothermalSinglePhase::jacobian : inlet boundary condition requested but fluid going outward. Applying Neumann boundary condition"<<endl;
 			for(k=0;k<_nVar;k++)
-				_Jcb[k*_nVar+k]=1;
+				_Jcb[k*_nVar+k]=1;//Identity matrix
+		}
 	}
 	else if (_limitField[nameOfGroup].bcType==InletPressure && u_n<0){
-		for(k=0; k<_nVar;k++)
-		{
-			_Jcb[0*_nVar + k] = 0;//First line
-			_Jcb[k*_nVar + 0] = 0;//First column
-		}
 		for(k=1; k<_nVar;k++)
 			for(int l=1; l<_nVar;l++)
 				_Jcb[k*_nVar + l] = normale[k-1]*normale[l-1];
