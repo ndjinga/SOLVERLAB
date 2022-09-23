@@ -85,7 +85,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered():
 	velocityArray=myVelocityField.getFieldValues()
 
 	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
-	fig.suptitle('PStaggered scheme for isothermal Euler equations')
+	fig.suptitle('Centered scheme for isothermal Euler equations')
 	axVelocity.plot([xinf+0.5*dx + i*dx for i in range(nx)], velocityArray, label='Initial velocity time step 0')
 	axVelocity.set(xlabel='x (m)', ylabel='Velocity')
 	axVelocity.set_xlim(xinf,xsup)
