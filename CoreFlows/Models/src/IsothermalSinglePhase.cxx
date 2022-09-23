@@ -91,8 +91,7 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 		}
 	}
 
-	_compressibleFluid=dynamic_cast< CompressibleFluid * >(_fluides[0] );
-
+	_compressibleFluid=dynamic_cast< CompressibleFluid * >(_fluides[0] );//To be used when the numerical method requires a compressible fluid e.g. upwind
     _usePrimitiveVarsInNewton=true;//This class is designed only to solve linear system in primitive variables
     _Vdiff=NULL;
     _saveAllFields = false;
@@ -141,6 +140,22 @@ void IsothermalSinglePhase::initialize(){
 		}
 	}
 
+	/* In case of an incompressible fluid, pressure may be defined up to a constant hence a singular inear system (no uniqueness unless outlet boundary condition) */
+	if(_isCompressibleFluid)
+		_isSingularSystem=false;
+	else
+	{
+		_isSingularSystem=true;//unless outlet boundary condition
+		/* Check the presence of an unless outlet boundary condition */
+		for(  map<string, LimitField>::iterator it = _limitField.begin() ; it!=_limitField.end() ; it++ )
+		{
+			if( (it->second).bcType == Outlet or (it->second).bcType == InletPressure )
+			{
+				_isSingularSystem=false;
+				break;
+			}
+		}
+	}
 	ProblemFluid::initialize();
 }
 

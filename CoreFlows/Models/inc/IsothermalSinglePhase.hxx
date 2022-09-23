@@ -166,6 +166,7 @@ protected :
 	Vector staggeredVFFCFlux();
 	void entropicShift(double* n);
 
+	bool _isSingularSystem;
 };
 
 #endif /* IsothermalSinglePhase_HXX_ */
