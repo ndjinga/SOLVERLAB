@@ -1,7 +1,6 @@
 #ifndef STIFFENEDGAS_H
 #define STIFFENEDGAS_H
 
-#include <string>
 #include "math.h"
 #include "Fluide.h"
 

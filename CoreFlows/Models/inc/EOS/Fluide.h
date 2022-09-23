@@ -3,8 +3,8 @@
 
 #include <string>
 #include <assert.h>
-#include "math.h"
 #include "EosException.hxx"
+#include <iostream>
 
 /*! \class Fluide Fluide.hxx "Fluide.hxx"
  *  \brief Fluid thermodynamics properties (fluid may be compressible or incompressible)
@@ -127,7 +127,8 @@ class IncompressibleFluid:public Fluide{
  public:
   IncompressibleFluid(double rho)
   { 
-	  _rho=rho;
+	_rho=rho;
+	std::cout<<"Incompressible fluid with density rho = "<< _rho <<std::endl;
   }
   
   double getDensity(double p, double T)

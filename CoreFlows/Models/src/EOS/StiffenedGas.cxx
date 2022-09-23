@@ -1,6 +1,4 @@
 #include "StiffenedGas.hxx"
-#include <iostream>
-#include "EosException.hxx"
 
 //Perfect gas EOS with given gamma
 StiffenedGas::StiffenedGas( double gamma, double cv, double T_ref, double e_ref): CompressibleFluid()
