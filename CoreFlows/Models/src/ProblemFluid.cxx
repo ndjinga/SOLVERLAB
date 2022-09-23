@@ -329,6 +329,8 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 			    cout<<"Maximum number of iterations "<<_maxPetscIts<<" reached"<<endl;
 			else if( reason == -11)
 			    cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
+			else if( reason == -5)
+				cout<<"!!!!!!! Generic breakdown of the linear solver !!!!!!"<<endl;
 			else
 			{
 			    cout<<"PETSc divergence reason  "<< reason <<endl;

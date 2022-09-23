@@ -556,6 +556,8 @@ LinearSolver::solve( Vector X0 )
 		    cout<<"Maximum number of iterations "<<_numberMaxOfIter<<" reached"<<endl;
 		else if( reason == -11)
 		    cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
+		else if( reason == -5)
+		    cout<<"!!!!!!! Generic breakdown of the linear solver !!!!!!"<<endl;
 		else
 		{
 		    cout<<"PETSc divergence reason  "<< reason <<endl;
