@@ -157,16 +157,22 @@ void IsothermalSinglePhase::initialize(){
 		}
 		if( _isSingularSystem )
 		{
+			/* Build vector in the kernel of the system matrix */
 			VecDuplicate(_conservativeVars, &_constantPressureVector);//Vector _constantPressureVector has same parallel structure as _conservativeVars
-			IS pressureCoeffsIS, velocityCoeffsIS;
-			ISCreateStride(PETSC_COMM_SELF,           _Nmailles,0,2, &pressureCoeffsIS);
-			ISCreateStride(PETSC_COMM_SELF, (_nVar-1)*_Nmailles,1,2, &velocityCoeffsIS);
+			VecZeroEntries(_constantPressureVector);
+			IS pressureCoeffsIS;
+			ISCreateStride(PETSC_COMM_SELF, _Nmailles,0,_nVar, &pressureCoeffsIS);
 			VecISSet(_constantPressureVector, pressureCoeffsIS,1);
-			VecISSet(_constantPressureVector, velocityCoeffsIS,0);
 			VecAssemblyBegin(_constantPressureVector);
 			VecAssemblyEnd(_constantPressureVector);
 			ISDestroy(&pressureCoeffsIS);
-			ISDestroy(&velocityCoeffsIS);
+			
+			/* Give kernel vector to the system matrix */
+			MatNullSpace nullsp;
+			MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, 1, &_constantPressureVector, &nullsp);//Declaration of a kernel containing a vector of constant pressure but NOT containing constant vectors
+			//MatSetTransposeNullSpace(_A, nullsp);
+			MatSetNullSpace(_A, nullsp);
+			MatNullSpaceDestroy(&nullsp);
 		}
 	}
 	ProblemFluid::initialize();
