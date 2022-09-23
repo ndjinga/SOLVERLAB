@@ -557,7 +557,7 @@ LinearSolver::solve( Vector X0 )
 		else if( reason == -11)
 		    cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
 		else if( reason == -5)
-		    cout<<"!!!!!!! Generic breakdown of the linear solver !!!!!!"<<endl;
+		    cout<<"!!!!!!! Generic breakdown of the linear solver (Could be due to a singular matrix or preconditioner)!!!!!!"<<endl;
 		else
 		{
 		    cout<<"PETSc divergence reason  "<< reason <<endl;
