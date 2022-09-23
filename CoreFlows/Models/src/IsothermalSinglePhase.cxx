@@ -155,12 +155,29 @@ void IsothermalSinglePhase::initialize(){
 				break;
 			}
 		}
+		if( _isSingularSystem )
+		{
+			VecDuplicate(_conservativeVars, &_constantPressureVector);//Vector _constantPressureVector has same parallel structure as _conservativeVars
+			IS pressureCoeffsIS, velocityCoeffsIS;
+			ISCreateStride(PETSC_COMM_SELF,           _Nmailles,0,2, &pressureCoeffsIS);
+			ISCreateStride(PETSC_COMM_SELF, (_nVar-1)*_Nmailles,1,2, &velocityCoeffsIS);
+			VecISSet(_constantPressureVector, pressureCoeffsIS,1);
+			VecISSet(_constantPressureVector, velocityCoeffsIS,0);
+			VecAssemblyBegin(_constantPressureVector);
+			VecAssemblyEnd(_constantPressureVector);
+			ISDestroy(&pressureCoeffsIS);
+			ISDestroy(&velocityCoeffsIS);
+		}
 	}
 	ProblemFluid::initialize();
 }
 
 void IsothermalSinglePhase::terminate(){
 	delete[] _Vdiff,_Vextdiff,_Vext;
+	
+	if( _isSingularSystem )
+		VecDestroy(&_constantPressureVector);
+
 	ProblemFluid::terminate();
 }
 

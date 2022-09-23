@@ -167,6 +167,7 @@ protected :
 	void entropicShift(double* n);
 
 	bool _isSingularSystem;
+	Vec _constantPressureVector;
 };
 
 #endif /* IsothermalSinglePhase_HXX_ */
