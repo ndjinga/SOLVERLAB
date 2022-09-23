@@ -14,7 +14,9 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 	_nVar=_Ndim+1;
 	_nbPhases = 1;
 	_dragCoeffs=vector<double>(1,0);
+	_isCompressibleFluid = isCompressibleFluid;
 	_fluides.resize(1);
+
 	if (pEstimate==around1bar300K)//EOS at 1 bar and 300K
 	{
 		_Temperature=300;//Constant temperature of the model
@@ -89,14 +91,16 @@ IsothermalSinglePhase::IsothermalSinglePhase(phaseType fluid, pressureEstimate p
 		}
 	}
 
-	_fileName = "SolverlabIsothermalSinglePhase";
-    PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal single phase problem \n");
-    
+	_compressibleFluid=dynamic_cast< CompressibleFluid * >(_fluides[0] );
+
     _usePrimitiveVarsInNewton=true;//This class is designed only to solve linear system in primitive variables
     _Vdiff=NULL;
     _saveAllFields = false;
 	_nonLinearFormulation=reducedRoe;//Only case implemented is reduced roe
-}
+
+	_fileName = "SolverlabIsothermalSinglePhase";
+    PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal single phase problem \n");
+    }
 
 void IsothermalSinglePhase::initialize(){
 	cout<<"\n Initialising the isothermal single phase model\n"<<endl;
@@ -207,13 +211,11 @@ void IsothermalSinglePhase::convectionState( const long &i, const long &j, const
 	//Computation of 1/c²// Todo :  add porosity in the sound speed formula
 	if(abs(_Vi[0]-_Vj[0])<_precision*max(abs(_Vi[0]),abs(_Vj[0])))//need to use EOS
 	{
-		CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
-		
-		if(fluide0==NULL)//case of an incompressible fluid
+		if(not _isCompressibleFluid)//case of an incompressible fluid
 		    _Uroe[_nVar] = 0;
 		else
 		{
-		    _Uroe[_nVar]  = fluide0->getInverseSoundSpeed(max(_Vi[0],_Vj[0]), _Temperature);//store 1/c
+		    _Uroe[_nVar]  = _compressibleFluid->getInverseSoundSpeed(max(_Vi[0],_Vj[0]), _Temperature);//store 1/c
 		    _Uroe[_nVar] *= _Uroe[_nVar];//store 1/c^2
 		}
     }    
@@ -856,13 +858,11 @@ void IsothermalSinglePhase::sourceVector(PetscScalar * Si,PetscScalar * Ui,Petsc
 
 void IsothermalSinglePhase::getDensityDerivatives( double pressure)
 {
-	CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
-	
-	if(fluide0==NULL)//Case of an incompressible fluid
+	if(not _isCompressibleFluid)//Case of an incompressible fluid
 		_drho_sur_dp = 0;
 	else//Case of a compressible fluid
 	{
-		_drho_sur_dp=fluide0->getInverseSoundSpeed(pressure, _Temperature);
+		_drho_sur_dp=_compressibleFluid->getInverseSoundSpeed(pressure, _Temperature);
 	
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 			cout<<"_drho_sur_dp= "<<_drho_sur_dp<<endl;	
@@ -1132,16 +1132,15 @@ void IsothermalSinglePhase::primToConsJacobianMatrix(double rho, double* velocit
 void IsothermalSinglePhase::consToPrim(const double *Wcons, double* Wprim,double porosity)//To do: treat porosity
 {   //Function called only with explicit schemes
 	//Wcons and Wprim are vectors with _nVar components
-	CompressibleFluid* fluide0=dynamic_cast<CompressibleFluid*>(_fluides[0]);
-	
-	if(fluide0==NULL)
+
+	if(not _isCompressibleFluid)
 		throw CdmathException("IsothermalSinglePhase::consToPrim should not be used with incompressible fluids");
 	else
 	{		
 		double rho=Wcons[0]/porosity;
-		double e =fluide0->getInternalEnergy(_Temperature, rho);
+		double e =_compressibleFluid->getInternalEnergy(_Temperature, rho);
 
-		Wprim[0] =fluide0->getPressure(rho*e,rho);//pressure p
+		Wprim[0] =_compressibleFluid->getPressure(rho*e,rho);//pressure p
 		for(int k=1;k<=_Ndim;k++)
 			Wprim[k] = Wcons[k]/Wcons[0];//velocity u
 	

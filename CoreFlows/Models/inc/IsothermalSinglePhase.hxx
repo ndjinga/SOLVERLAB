@@ -104,8 +104,10 @@ public :
 	Field& getMachNumberField();
 
 protected :
+	//Thermodynamical quantities
 	double _Temperature, _internalEnergy;
 	double  _drho_sur_dp;
+	//Saving results
 	Field _Pressure, _Density, _Momentum, _Vitesse, _VitesseX, _VitesseY, _VitesseZ, _MachNumber;
 	bool _saveAllFields;
 	
@@ -148,6 +150,8 @@ protected :
 	void computeScaling(double offset);
 
 	// Functions of equations of states
+	bool _isCompressibleFluid;
+	CompressibleFluid *_compressibleFluid;//This class works with both compressible and incompressible fluids
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);
