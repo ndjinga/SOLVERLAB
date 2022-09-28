@@ -155,6 +155,11 @@ void IsothermalSinglePhase::initialize(){
 				break;
 			}
 		}
+	if(_verbose && _nbTimeStep%_freqSave ==0)	
+		if(_isSingularSystem)
+			cout<<"!!!!!!!########## singular system ###########!!!!!!!!!!"<<endl;
+		else
+			cout<<"!!!!!!!########## non singular system ###########!!!!!!!!!!"<<endl;
 	}
 	
 	ProblemFluid::initialize();
