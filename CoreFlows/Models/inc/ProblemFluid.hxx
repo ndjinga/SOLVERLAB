@@ -226,6 +226,20 @@ public :
 			throw CdmathException("ProblemFluid::getStiffenedGasEOS() : fluid EOS is not a stiffened gas law");
 	}
 
+	/** \fn getIncompressibleEOS
+	 * \brief return the incompressible law associated to fluid i
+	 * @param int i : the index of the fluid
+	 * @return throws an exception if the fluid with index i does not follow an incompressible law.
+	 * */
+	IncompressibleFluid getIncompressibleEOS(int i)
+	{
+		IncompressibleFluid * result = dynamic_cast<IncompressibleFluid*>(_fluides[i]); 
+		if(result)
+			 return *result;
+		else
+			throw CdmathException("ProblemFluid::getIncompressibleEOS() : fluid EOS is not an incompressible law");
+	}
+
 	/** \fn setDragCoeffs
 	 * \brief Sets the drag coefficients
 	 * @param dragCoeffs is a  vector of size equal to the number of phases and containing the value of the friction coefficient of each phase
