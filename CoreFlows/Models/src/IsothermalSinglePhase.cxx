@@ -175,9 +175,11 @@ void IsothermalSinglePhase::initialize(){
 		/* Give kernel vector to the system matrix */
 		MatNullSpace nullsp;
 		MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, 1, &_constantPressureVector, &nullsp);//Declaration of a kernel containing a vector of constant pressure but NOT containing constant vectors
-		//MatSetTransposeNullSpace(_A, nullsp);
+		//MatSetTransposeNullSpace(_A, nullsp);//To be used if the linear solver needs the kernel of the transpose matrix
 		MatSetNullSpace(_A, nullsp);
 		MatNullSpaceDestroy(&nullsp);
+		//PCFactorSetShiftType(_pc,MAT_SHIFT_NONZERO);//To be used in case of a zero pivot
+		//PCFactorSetShiftAmount(_pc,1e-10);//To be used in case of a zero pivot
 	}
 }
 
@@ -473,8 +475,7 @@ void IsothermalSinglePhase::convectionMatrices()
 			displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus en variables conservatives");
 			displayMatrix(_AroePlus,  _nVar,"Matrice _AroePlus en variables conservatives");
 		}
-	
-	}
+}
 
 void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *normale){
 	_idm[0] = _nVar*j;
@@ -491,7 +492,14 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 
 	if (_limitField[nameOfGroup].bcType==Wall){
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne primitif
-		double u_n=0;//q_n=quantité de mouvement normale à la face frontière;
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+		{
+			cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< ", inner primitive state Vi = "<<endl;
+			for(int k=0; k<_nVar; k++)
+				cout<<_externalStates[k]<<", ";
+			cout<<endl;
+		}
+		double u_n=0;//u_n=vitesse normale à la face frontière;
 		for(int k=0; k<_Ndim; k++)
 			u_n+=_externalStates[(k+1)]*normale[k];
 			
@@ -620,11 +628,17 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 		throw CdmathException("Unknown boundary condition");
 	}
 
-	_idm[0] = 0;
 	for(int k=0; k<_nVar; k++){
-		//_idm[k] = _idm[k-1] + 1;
 		_Vext[k] = _externalStates[k];
 		_Vextdiff[k] = _externalStates[k];
+	}
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< ", ghost primitive state Vj = "<<endl;
+		for(int k=0; k<_nVar; k++)
+			cout<<_externalStates[k]<<", ";
+		cout<<endl;
 	}
 }
 
@@ -1005,7 +1019,7 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 	for(k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
 	VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-	double u_n=0;//quantité de mouvement normale à la paroi
+	double u_n=0;//vitesse normale à la paroi
 	for(k=0; k<_Ndim; k++)
 		u_n+=_externalStates[(k+1)]*normale[k];
 
@@ -1049,6 +1063,12 @@ void IsothermalSinglePhase::jacobian(const int &j, string nameOfGroup,double * n
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
 		throw CdmathException("IsothermalSinglePhase::jacobian: This boundary condition is not treated");
+	}
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<" IsothermalSinglePhase::jacobian : Jacobienne condition limite convection bord "<< nameOfGroup<<endl;
+		displayMatrix(_Jcb,_nVar," Jacobian matrix of convection BC : "+nameOfGroup);
 	}
 }
 
@@ -1112,6 +1132,12 @@ void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
 		_runLogFile->close();
 		throw CdmathException("IsothermalSinglePhase::jacobianDiff: This boundary condition is not recognised");
+	}
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<" IsothermalSinglePhase::jacobianDiff : Jacobienne condition limite diffusion bord "<< nameOfGroup<<endl;
+		displayMatrix(_JcbDiff,_nVar," Jacobian matrix of diffusion BC : "+nameOfGroup);
 	}
 }
 
@@ -1272,7 +1298,7 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 		if(!isBord)
 		{
 			for(int k=0; k<_nVar; k++)
-				_temp[k]*=_inv_dxj/_inv_dxi;//(Vi-Vj)*_inv_dxj
+				_temp[k]*=_inv_dxj/_inv_dxi;//(Vi-Vj)*_inv_dxi
 			Polynoms::matrixProdVec(_AroePlusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^+(V_i-V_j)/dx
 			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
 	
@@ -1289,9 +1315,23 @@ void IsothermalSinglePhase::addConvectionToSecondMember
 	else//We use conservative variables in Newton iterations
 	{
 		for(int k=0; k<_nVar; k++)
-			_temp[k]=(_Ui[k] - _Uj[k])*_inv_dxj;//(Ui-Uj)*_inv_dxi
+			_temp[k]=(_Ui[k] - _Uj[k])*_inv_dxj;//(Ui-Uj)*_inv_dxj
 		Polynoms::matrixProdVec(_AroeMinus, _nVar, _nVar, _temp, _phi);//phi=A^-(U_i-U_j)/dx
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
+
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+		{
+			cout << "Ajout convection au 2nd membre pour les etats " << i << "," << j << endl;
+			cout << "(Ui - Uj)*_inv_dxj= "<<endl;;
+			for(int q=0; q<_nVar; q++)
+				cout << _temp[q] << endl;
+			cout << endl;
+			cout << "Contribution convection à " << i << endl;
+			cout << "A^-*(Ui - Uj)*_inv_dxj= "<<endl;
+			for(int q=0; q<_nVar; q++)
+				cout << _phi[q] << endl;
+			cout << endl;
+		}
 
 		if(!isBord)
 		{
@@ -1371,6 +1411,16 @@ void IsothermalSinglePhase::staggeredRoeUpwindingMatrixPrimitiveVariables( doubl
 			_absAroeImplicit[(1+i)*_nVar+1+j]=rho*_Uroe[1+i]*_vec_normal[j];
 		_absAroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
 	}
+
+	double signu=0;
+	if(u_n>_precision)
+		signu=1;
+	else if (u_n<-_precision)
+		signu=-1;
+
+	for(int i=0; i<_nVar*_nVar;i++)
+		_absAroeImplicit[i] *= signu;//atan(100*u_n);
+
 }
 
 Vector IsothermalSinglePhase::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
