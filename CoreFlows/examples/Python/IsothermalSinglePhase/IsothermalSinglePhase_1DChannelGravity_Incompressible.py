@@ -1,54 +1,61 @@
 #!/usr/bin/env python3
 # -*-coding:utf-8 -*
 
-import CoreFlows as cf
+import solverlab as svl
+import matplotlib.pyplot as plt
 
 def IsothermalSinglePhase_1DChannelGravity():
 
 	spaceDim = 1;
     # Prepare for the mesh
-	print("Building mesh " );
+	print("Building mesh" );
 	xinf = 0 ;
-	xsup=1;
-	nx=10;
+	xsup = 1;
+	nx=100
 
 
     # physical parameters
-	gravite=[-10];
+	gravite=[10];
 
-	myProblem = cf.IsothermalSinglePhase(cf.Liquid,cf.around155bars600K,spaceDim,False);
+	myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim,False);
 	nVar =  myProblem.getNumberOfVariables();
+
+	# Prepare for the boundary conditions
+	inletVelocity = 1
+	outletPressure = 155.e5
 
     # Prepare for the initial condition
 	VV_Constant =[0]*nVar;
+	initialVelocity = 1
+	initialPressure = 155.e5
 
 	# constant vector
-	VV_Constant[0] = 1e5 ;
-	VV_Constant[1] = 0;
+	VV_Constant[0] = initialPressure ;
+	VV_Constant[1] = initialVelocity;
 
 
     #Initial field creation
 	print("Building initial data " ); 
-	myProblem.setInitialFieldConstant( spaceDim, VV_Constant, xinf, xsup, nx,"Top","Bottom");
+	myProblem.setInitialFieldConstant( spaceDim, VV_Constant, xinf, xsup, nx,"Inlet","Outlet");
 
     # set the boundary conditions
-	myProblem.setNeumannBoundaryCondition("Top")
-	myProblem.setNeumannBoundaryCondition("Bottom");
+	myProblem.setInletBoundaryCondition("Inlet",[inletVelocity])
+	myProblem.setOutletBoundaryCondition("Outlet",outletPressure);
 
     # set physical parameters
 	myProblem.setGravity(gravite);
 
     # set the numerical method
-	myProblem.setNumericalScheme(cf.staggered, cf.Implicit);
+	myProblem.setNumericalScheme(svl.staggered, svl.Implicit);
     
     # name of result file
 	fileName = "1DChannelGravityStaggered_Incompressible";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 3 ;
-	freqSave = 1;
+	MaxNbOfTimeStep = 100 ;
+	freqSave = 100;
 	cfl = 1;
-	maxTime = 500;
+	maxTime = 500000000;
 	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
@@ -70,6 +77,43 @@ def IsothermalSinglePhase_1DChannelGravity():
 		pass
 
 	print( "------------ End of calculation !!! -----------" );
+
+    #Postprocessing
+	dx = (xsup-xinf)/nx
+	x  = [ xinf+0.5*dx + i*dx for i in range(nx)]   # array of cell center (1D mesh)
+
+	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
+	fig.suptitle('Implicit pstaggered scheme for isothermal Euler equations')
+
+	# Extract density
+	myEOS = myProblem.getIncompressibleEOS(0)## Needed to retrieve density
+	density  = myEOS.getDensity( outletPressure,  myProblem.getReferenceTemperature() )
+
+	# Build exact solution
+	ExactVelocityArray = [inletVelocity]*nx
+	ExactPressureArray = [outletPressure + density*gravite[0]*(x[i] - xsup) for i in range(nx)]
+
+	axVelocity.plot( x , ExactVelocityArray, label='Exact stationary velocity')
+	axVelocity.set(xlabel='x (m)', ylabel='Velocity')
+	axVelocity.set_xlim(xinf,xsup)
+	axPressure.plot(x, ExactPressureArray, label='Exact stationary pressure')
+	axPressure.set(xlabel='x (m)', ylabel='Pressure')
+	axPressure.set_xlim(xinf,xsup)
+	axPressure.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+
+	myPressureField = myProblem.getPressureField()
+	pressureArray=myPressureField.getFieldValues()
+	myVelocityField = myProblem.getVelocityField()
+	velocityArray=myVelocityField.getFieldValues()
+
+	timeStep=myProblem.getNbTimeStep()#Final time step
+	axPressure.set_ylim(0.999*min(pressureArray), 1.001*max(pressureArray) )
+	axPressure.plot(x, pressureArray,  label='Numerical pressure at time step '+str(timeStep))
+	axVelocity.set_ylim(0.999*min(velocityArray), 1.001*max(velocityArray) )
+	axVelocity.plot(x, velocityArray,  label='Numerical velocity at time step '+str(timeStep))
+	axPressure.legend()
+	axVelocity.legend()
+	plt.savefig(fileName+".png")
 
 	myProblem.terminate();
 	return ok
