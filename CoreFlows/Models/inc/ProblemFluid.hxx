@@ -154,17 +154,6 @@ public :
 	};
 
 	/** \fn setOutletBoundaryCondition
-	 * \brief Adds a new boundary condition of type Outlet
-	 * \details
-	 * \param [in] string : the name of the boundary
-	 * \param [in] double : the value of the pressure at the boundary
-	 * \param [out] void
-	 *  */
-	void setOutletBoundaryCondition(string groupName,double Pressure){
-		_limitField[groupName]=LimitField(Outlet,Pressure,vector<double>(_nbPhases,0),vector<double>(_nbPhases,0),vector<double>(_nbPhases,0),-1,-1,-1,-1);
-	};
-
-	/** \fn setOutletBoundaryCondition
 	 * \brief Adds a new boundary condition of type Outlet taking into account the hydrostatic pressure variations
 	 * \details The pressure is not constant on the boundary but varies linearly with a slope given by the gravity vector
 	 * \param [in] string : the name of the boundary
@@ -172,7 +161,7 @@ public :
 	 * \param [in] vector<double> : reference_point position on the boundary where the value Pressure will be imposed
 	 * \param [out] void
 	 *  */
-	void setOutletBoundaryCondition(string groupName,double referencePressure, vector<double> reference_point){
+	void setOutletBoundaryCondition(string groupName,double referencePressure, vector<double> reference_point=vector<double>(3,0)){
 		/* On the boundary we have P-Pref=rho g\cdot(x-xref) */
 		_gravityReferencePoint=reference_point;
 		_limitField[groupName]=LimitField(Outlet,referencePressure,vector<double>(_nbPhases,0),vector<double>(_nbPhases,0),vector<double>(_nbPhases,0),-1,-1,-1,-1);
