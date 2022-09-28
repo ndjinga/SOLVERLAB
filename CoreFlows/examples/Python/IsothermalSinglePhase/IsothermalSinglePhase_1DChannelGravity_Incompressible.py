@@ -39,7 +39,7 @@ def IsothermalSinglePhase_1DChannelGravity():
 	myProblem.setInitialFieldConstant( spaceDim, VV_Constant, xinf, xsup, nx,"Inlet","Outlet");
 
     # set the boundary conditions
-	myProblem.setInletBoundaryCondition("Inlet",[inletVelocity])
+	myProblem.setInletBoundaryCondition( "Inlet",[inletVelocity])
 	myProblem.setOutletBoundaryCondition("Outlet",outletPressure);
 
     # set physical parameters
@@ -55,7 +55,7 @@ def IsothermalSinglePhase_1DChannelGravity():
 	MaxNbOfTimeStep = 100 ;
 	freqSave = 100;
 	cfl = 1;
-	maxTime = 500000000;
+	maxTime = 5000;
 	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
@@ -83,7 +83,7 @@ def IsothermalSinglePhase_1DChannelGravity():
 	x  = [ xinf+0.5*dx + i*dx for i in range(nx)]   # array of cell center (1D mesh)
 
 	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
-	fig.suptitle('Implicit pstaggered scheme for isothermal Euler equations')
+	fig.suptitle('Implicit pstaggered scheme for isothermal Euler equations \n 1D channel under gravity')
 
 	# Extract density
 	myEOS = myProblem.getIncompressibleEOS(0)## Needed to retrieve density
