@@ -83,7 +83,7 @@ def IsothermalSinglePhase_1DChannelGravity():
 	x  = [ xinf+0.5*dx + i*dx for i in range(nx)]   # array of cell center (1D mesh)
 
 	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
-	fig.suptitle('Implicit pstaggered scheme for isothermal Euler equations \n 1D sedimentation under gravity')
+	fig.suptitle('Implicit pstaggered scheme for isothermal Euler equations \n 1D sedimentation under gravity (incompressible fluid)')
 
 	# Extract density
 	myEOS = myProblem.getIncompressibleEOS(0)## Needed to retrieve density
