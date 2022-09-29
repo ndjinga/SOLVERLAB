@@ -40,7 +40,7 @@ def IsothermalSinglePhase_1DChannelGravity():
 
     # set the boundary conditions
 	myProblem.setInletBoundaryCondition( "Inlet",[inletVelocity])
-	myProblem.setOutletBoundaryCondition("Outlet",outletPressure);
+	myProblem.setOutletBoundaryCondition("Outlet",outletPressure,[xsup,0,0]);
 
     # set physical parameters
 	myProblem.setGravity(gravite);

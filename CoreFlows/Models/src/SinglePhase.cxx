@@ -574,21 +574,26 @@ void SinglePhase::setBoundaryState(string nameOfGroup, const int &j,double *norm
 			cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<" with flow rate "<< q_n<<endl;
             cout<< "Applying Neumann boundary condition for velocity and temperature"<<endl;
         }
-		//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
-		Cell Cj=_mesh.getCell(j);
-		double hydroPress=Cj.x()*_GravityField3d[0];
-		if(_Ndim>1){
-			hydroPress+=Cj.y()*_GravityField3d[1];
-			if(_Ndim>2)
-				hydroPress+=Cj.z()*_GravityField3d[2];
-		}
-		hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
 
-		if(_verbose && _nbTimeStep%_freqSave ==0)
+		double hydroPress=0;
+		if( _VV.getSpaceDimension()>1)
 		{
-			cout<<"Cond lim outlet densite= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
-			cout<<"Cond lim outlet pression ref= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
+			//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
+			Cell Cj=_mesh.getCell(j);
+			hydroPress=(Cj.x()-_gravityReferencePoint[0])*_GravityField3d[0];
+			if(_Ndim>1){
+				hydroPress+=(Cj.y()-_gravityReferencePoint[1])*_GravityField3d[1];
+				if(_Ndim>2)
+					hydroPress+(Cj.z()-_gravityReferencePoint[2])*_GravityField3d[2];
+			}
+			hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
+			if(_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout<<"Cond lim outlet densite= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
+				cout<<"Cond lim outlet pression ref= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
+			}
 		}
+
 		//Building the external state
 		_idm[0] = _nVar*j;// Kieu
 		for(int k=1; k<_nVar; k++)

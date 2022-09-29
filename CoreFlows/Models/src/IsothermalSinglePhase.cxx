@@ -608,22 +608,26 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 		    cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<" with velocity "<< u_n<<endl;
         else
         {
-			//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
-			Cell Cj=_mesh.getCell(j);
-			double hydroPress=Cj.x()*_GravityField3d[0];
-			if(_Ndim>1){
-				hydroPress+=Cj.y()*_GravityField3d[1];
-				if(_Ndim>2)
-					hydroPress+=Cj.z()*_GravityField3d[2];
-			}
-			hydroPress*= _fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature) ;//multiplication by rho the total density
-			_externalStates[0] = hydroPress + _limitField[nameOfGroup].p;
-	
-			if(_verbose && _nbTimeStep%_freqSave ==0)
+			double hydroPress=0;
+			if( _VV.getSpaceDimension()>1)
 			{
-				cout<<"Cond lim outlet pressure= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
-				cout<<"Cond lim outlet reference pressure= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
+				//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
+				Cell Cj=_mesh.getCell(j);
+				double hydroPress=(Cj.x()-_gravityReferencePoint[0])*_GravityField3d[0];
+				if(_Ndim>1){
+					hydroPress+=(Cj.y()-_gravityReferencePoint[1])*_GravityField3d[1];
+					if(_Ndim>2)
+						hydroPress+=(Cj.z()-_gravityReferencePoint[2])*_GravityField3d[2];
+				}
+				hydroPress*= _fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature) ;//multiplication by rho the total density
+		
+				if(_verbose && _nbTimeStep%_freqSave ==0)
+				{
+					cout<<"Cond lim outlet pressure= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
+					cout<<"Cond lim outlet reference pressure= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
+				}
 			}
+			_externalStates[0] = hydroPress + _limitField[nameOfGroup].p;
 		}
 	}else {
 		cout<<"Boundary condition not set for boundary named "<<nameOfGroup<< " _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
