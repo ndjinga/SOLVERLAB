@@ -115,6 +115,15 @@ def IsothermalSinglePhase_1DChannelGravity():
 	axVelocity.legend()
 	plt.savefig(fileName+".png")
 
+	error_velocity = max( [ abs(ExactVelocityArray[i] - velocityArray[i]) for i in range(nx)] )
+	max_velocity = max( [ abs(ExactVelocityArray[i] ) for i in range(nx)] )
+	error_pressure = max( [ abs(ExactPressureArray[i] - pressureArray[i]) for i in range(nx)] )
+	max_pressure = max( [ abs(ExactPressureArray[i] ) for i in range(nx)] )
+	print("Relative error velocity ", error_velocity/max_velocity)
+	print("Relative error pressure ", error_pressure/max_pressure)
+	assert error_velocity/max_velocity<1e-5
+	assert error_pressure/max_pressure<1e-5
+
 	myProblem.terminate();
 	return ok
 
