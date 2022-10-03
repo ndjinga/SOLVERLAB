@@ -91,7 +91,7 @@ def IsothermalSinglePhase_1DChannelGravity():
 
 	# Build exact solution
 	ExactVelocityArray = [inletVelocity]*nx
-	ExactPressureArray = [outletPressure + density*gravite[0]*(x[i] - xsup) for i in range(nx)]
+	ExactPressureArray = [outletPressure + density*gravite[0]*(x[i] - (xinf+xsup)/2) for i in range(nx)]
 
 	axVelocity.plot( x , ExactVelocityArray, label='Exact stationary velocity')
 	axVelocity.set(xlabel='x (m)', ylabel='Velocity')
@@ -121,8 +121,8 @@ def IsothermalSinglePhase_1DChannelGravity():
 	max_pressure = max( [ abs(ExactPressureArray[i] ) for i in range(nx)] )
 	print("Absolute error velocity ", error_velocity)
 	print("Relative error pressure ", error_pressure/max_pressure)
-	assert error_velocity<1e-5
-	assert error_pressure/max_pressure<2e-4
+	assert error_velocity<1e-6
+	assert error_pressure/max_pressure<2e-6
 
 	myProblem.terminate();
 	return ok
