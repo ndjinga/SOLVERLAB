@@ -1106,10 +1106,10 @@ void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 			_JcbDiff[k*_nVar+k]=1;
 	}
 	else{
-		cout << "group named "<<nameOfGroup << " : unknown boundary condition" << endl;
-		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition" << endl;
+		cout << "group named "<<nameOfGroup << " : unknown boundary condition. Known boundary types : Neumann, Wall, Inlet, Outlet, InletPresure." << endl;
+		*_runLogFile<<"group named "<<nameOfGroup << " : unknown boundary condition. Known boundary types : Neumann, Wall, Inlet, Outlet, InletPresure." << endl;
 		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::jacobianDiff: This boundary condition is not recognised");
+		throw CdmathException("IsothermalSinglePhase::jacobianDiff: This boundary condition is not recognised. Known boundary types : Neumann, Wall, Inlet, Outlet, InletPresure.");
 	}
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
