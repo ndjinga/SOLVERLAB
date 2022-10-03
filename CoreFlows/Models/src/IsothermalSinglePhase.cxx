@@ -641,9 +641,22 @@ void IsothermalSinglePhase::setBoundaryState(string nameOfGroup, const int &j,do
 
 	for(int k=0; k<_nVar; k++){
 		_Vext[k] = _externalStates[k];
-		_Vextdiff[k] = _externalStates[k];
+		_Vextdiff[k] = _externalStates[k];//Will be changed later for wall boundary condition
 	}
 
+	if (_limitField[nameOfGroup].bcType==Wall)	//Pour la diffusion, paroi à vitesse et temperature imposees
+	{
+		_Vextdiff[0] =_externalStates[0];
+		_Vextdiff[1] =_limitField[nameOfGroup].v_x[0];
+
+		if(_Ndim>1)
+		{
+			_Vextdiff[2] = _limitField[nameOfGroup].v_y[0];
+			if(_Ndim==3)
+				_Vextdiff[3] = _limitField[nameOfGroup].v_z[0];
+		}
+	}
+	
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< ", ghost primitive state Vj = "<<endl;
