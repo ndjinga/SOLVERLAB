@@ -76,6 +76,7 @@ CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_PS
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DChannelGravity_upwind.py "Python fv isothermalsinglephase 1D gravity implicit upwind structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DChannelGravity_Incompressible.py "Python fv isothermalsinglephase 1D gravity implicit pstaggered inlet outlet structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DChannelGravity_Incompressible_Wall.py "Python fv isothermalsinglephase 1D gravity implicit pstaggered wall structured coreflows")
+CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_2DLidDrivenCavity.py  "Python fv isothermalsinglephase 2D viscosity implicit pstaggered wall structured coreflows")
 
 CreatePythonTest(SinglePhase/SinglePhase_1DDepressurisation.py "Python fv singlephase 1D depressurisation structured coreflows")
 CreatePythonTest(SinglePhase/SinglePhase_1DHeatedAssembly.py "Python fv singlephase 1D heating structured coreflows")

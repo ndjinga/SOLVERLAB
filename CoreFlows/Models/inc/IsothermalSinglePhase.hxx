@@ -57,16 +57,17 @@ public :
 		_limitField[groupName]=LimitField(InletPressure,Pressure,vector<double>(0,0),vector<double>(0,0),vector<double>(0,0),-1,-1,-1,-1);
 	};
 	/** \fn setWallBoundaryCondition
-			 * \brief adds a new boundary condition of type Wall
-			 * \details
-			 * \param [in] string : the name of the boundary
-			 * \param [in] vector<double> : the values of the x component of the 2 velocities at the boundary
-			 * \param [in] vector<double> : the values of the y component of the 2 velocities at the boundary
-			 * \param [in] vector<double> : the values of the z component of the 2 velocities at the boundary
-			 * \param [out] void
-			 *  */
-	void setWallBoundaryCondition(string groupName,vector<double> v_x=vector<double>(3,0), vector<double> v_y=vector<double>(3,0), vector<double> v_z=vector<double>(3,0)){
-		_limitField[groupName]=LimitField(Wall,-1,v_x,v_y,v_z,-1,-1,-1,-1);
+	 * \brief adds a new boundary condition of type Wall
+	 * \details
+	 * \param [in] string : the name of the boundary
+	 * \param [in] double : the value of the temperature at the boundary
+	 * \param [in] double : the value of the x component of the velocity at the boundary
+	 * \param [in] double : the value of the y component of the velocity at the boundary
+	 * \param [in] double : the value of the z component of the velocity at the boundary
+	 * \param [out] void
+	 *  */
+	void setWallBoundaryCondition(string groupName, double v_x=0, double v_y=0, double v_z=0){
+		_limitField[groupName]=LimitField(Wall,-1,vector<double>(1,v_x),vector<double>(1,v_y),vector<double>(1,v_z),getReferenceTemperature(),-1,-1,-1);
 	};
 	/** \fn addConvectionToSecondMember
 	 * \brief Adds the contribution of the convection to the system right hand side for a face (i,j) inside the domain
