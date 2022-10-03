@@ -3,7 +3,7 @@
 
 import solverlab as svl
 
-def SinglePhase_2DLidDrivenCavity():
+def IsothermalSinglePhase_2DLidDrivenCavity():
  
 	spaceDim = 2;
     #Preprocessing: mesh data
@@ -12,8 +12,8 @@ def SinglePhase_2DLidDrivenCavity():
 	yinf=0;
 	ysup=1;
 	
-	nx=50;
-	ny=50;
+	nx=20;
+	ny=20;
 
     # set the limit field for each boundary
 
@@ -26,7 +26,7 @@ def SinglePhase_2DLidDrivenCavity():
     # physical constants
 	viscosite=[0.025];
 
-	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim,False);
+	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim);#,False
 	nVar = myProblem.getNumberOfVariables();
 
 	#Initial field creation
@@ -54,7 +54,7 @@ def SinglePhase_2DLidDrivenCavity():
 
     # set the numerical method
 	myProblem.setNumericalScheme(svl.staggered, svl.Implicit);
-	#myProblem.setLinearSolver(svl.GMRES,svl.LU);
+	myProblem.setLinearSolver(svl.GMRES,svl.LU);
    
     # name file save
 	fileName = "2DLidDrivenCavity";
@@ -63,7 +63,7 @@ def SinglePhase_2DLidDrivenCavity():
 	MaxNbOfTimeStep = 1000 ;
 	freqSave = 100;
 	cfl = 100;
-	maxTime = 50;
+	maxTime = 50000;
 	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
@@ -95,4 +95,4 @@ def SinglePhase_2DLidDrivenCavity():
 
 
 if __name__ == """__main__""":
-    SinglePhase_2DLidDrivenCavity()
+    IsothermalSinglePhase_2DLidDrivenCavity()
