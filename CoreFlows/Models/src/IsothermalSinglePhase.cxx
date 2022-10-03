@@ -1092,50 +1092,17 @@ void IsothermalSinglePhase::jacobianDiff(const int &j, string nameOfGroup)
 	for(k=0; k<_nVar*_nVar;k++)
 		_JcbDiff[k] = 0;
 
-	if (_limitField[nameOfGroup].bcType==Wall){
-		double v[_Ndim], ve[_Ndim], v2, ve2;
-
-		_idm[0] = _nVar*j;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
-		VecGetValues(_conservativeVars, _nVar, _idm, _Uj);
-
-		ve[0] = _limitField[nameOfGroup].v_x[0];
-		v[0]=_Vj[1];
-		ve2 = ve[0]*ve[0];
-		v2 = v[0]*v[0];
-		if (_Ndim >1){
-			ve[1] = _limitField[nameOfGroup].v_y[0];
-			v[1]=_Vj[2];
-			ve2 += ve[1]*ve[1];
-			v2 = v[1]*v[1];
-		}
-		if (_Ndim >2){
-			ve[2] = _limitField[nameOfGroup].v_z[0];
-			v[2]=_Vj[3];
-			ve2 += ve[2]*ve[2];
-			v2 = v[2]*v[2];
-		}
-		double rho=_Uj[0];
-		double total_energy=ve2/2;
-
-	/* To do : correct the formula used below (not valid for isothermal fuid */
-		////Mass line
-		//_JcbDiff[0]=v2/(2*internal_energy);
-		//for(k=0; k<_Ndim;k++)
-			//_JcbDiff[1+k]=-v[k]/internal_energy;
-		////Momentum lines
-		//for(int l =1;l<1+_Ndim;l++){
-			//_JcbDiff[l*_nVar]=v2*ve[l-1]/(2*internal_energy);
-			//for(k=0; k<_Ndim;k++)
-				//_JcbDiff[l*_nVar+1+k]=-v[k]*ve[l-1]/internal_energy;
-		//}
+	if (_limitField[nameOfGroup].bcType==Wall ||_limitField[nameOfGroup].bcType==Inlet ){
+		_JcbDiff[0]=1;
 	}
-	else if (_limitField[nameOfGroup].bcType==Outlet || _limitField[nameOfGroup].bcType==Neumann
-			||_limitField[nameOfGroup].bcType==Inlet || _limitField[nameOfGroup].bcType==InletPressure)
+	else if ( _limitField[nameOfGroup].bcType==Neumann )
 	{
 		for(k=0;k<_nVar;k++)
+			_JcbDiff[k*_nVar+k]=1;
+	}
+	else if (_limitField[nameOfGroup].bcType==Outlet || _limitField[nameOfGroup].bcType==InletPressure)
+	{
+		for(k=1;k<_nVar;k++)
 			_JcbDiff[k*_nVar+k]=1;
 	}
 	else{
