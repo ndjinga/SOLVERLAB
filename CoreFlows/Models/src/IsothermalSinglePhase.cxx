@@ -328,7 +328,7 @@ void IsothermalSinglePhase::diffusionStateAndMatrices(const long &i,const long &
 		double mu = _fluides[0]->getViscosity(_Temperature);
 		for(int i=0; i<_nVar*_nVar;i++)
 			_Diffusion[i] = 0;
-		for(int i=1;i<(_nVar-1);i++)
+		for(int i=1;i<_nVar;i++)
 			_Diffusion[i*_nVar+i] = mu;
 	}
 }
