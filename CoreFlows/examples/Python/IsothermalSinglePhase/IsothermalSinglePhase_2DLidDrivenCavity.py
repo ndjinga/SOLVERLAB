@@ -26,7 +26,7 @@ def IsothermalSinglePhase_2DLidDrivenCavity():
     # physical constants
 	viscosite=[0.025];
 
-	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim);#,False
+	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim,False);#,False
 	nVar = myProblem.getNumberOfVariables();
 
 	#Initial field creation
@@ -57,12 +57,12 @@ def IsothermalSinglePhase_2DLidDrivenCavity():
 	myProblem.setLinearSolver(svl.GMRES,svl.LU);
    
     # name file save
-	fileName = "2DLidDrivenCavity";
+	fileName = "2DLidDrivenCavity_Incompressible";
 
     # simulation parameters
 	MaxNbOfTimeStep = 1000 ;
-	freqSave = 100;
-	cfl = 100;
+	freqSave = 1;
+	cfl = 1;
 	maxTime = 50000;
 	precision = 1e-7;
 
