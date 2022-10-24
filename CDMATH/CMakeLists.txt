@@ -82,10 +82,9 @@ if (CDMATH_WITH_DOCUMENTATION)
 endif(CDMATH_WITH_DOCUMENTATION)
 
 #Debug option : todo = sort flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fprofile-arcs -ftest-coverage -lgcov")
 if   (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  SET(CMAKE_EXE_LINKER_FLAGS "-pg -fprofile-arcs -ftest-coverage -lgcov")
-  SET(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg -fprofile-arcs -ftest-coverage -lgcov")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -fprofile-arcs -ftest-coverage -lgcov")
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # Tests
