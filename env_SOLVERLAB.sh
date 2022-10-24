@@ -29,7 +29,7 @@ then
   export PYTHONPATH=$MPI4PY_ROOT_DIR:$PYTHONPATH
 fi
 
-if [ @PRELOAD_NETCDF_ON_UBUNTU20@ = ON ]  # test RELOAD_NETCDF_ON_UBUNTU20
+if [ @PRELOAD_NETCDF_ON_UBUNTU20@ = ON ]  # test PRELOAD_NETCDF_ON_UBUNTU20
 then
     export  LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libnetcdf.so
 fi
