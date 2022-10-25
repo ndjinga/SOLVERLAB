@@ -91,7 +91,7 @@ def IsothermalSinglePhase_2DRiemannProblem_Staggered_symmetric():
 
     # Postprocessing
 	dx=(xsup-xinf)/nx
-	x=[ i*dx for i in range(nx)]   # array of cell center (1D mesh)
+	x=[xinf+0.5*dx + i*dx for i in range(nx+1)]   # array of cell center (1D mesh)
 
 	myPressureField = myProblem.getPressureField()
 	pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField,[xinf,(yinf+ysup)/2,0],[xsup,(yinf+ysup)/2,0], nx)
@@ -100,12 +100,12 @@ def IsothermalSinglePhase_2DRiemannProblem_Staggered_symmetric():
 
 	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
 	fig.suptitle('PStaggered scheme for symmetric Riemmann Problem \n 2D isothermal Euler equations')
-	axVelocity.plot([xinf+0.5*dx + i*dx for i in range(nx)], velocityArray, label='Initial velocity time step 0')
+	axVelocity.plot(x, velocityArray, label='Initial velocity time step 0')
 	axVelocity.set(xlabel='x (m)', ylabel='Velocity')
 	axVelocity.set_xlim(xinf,xsup)
-	axVelocity.set_ylim( 0.999*min(initialVelocity_Left, initialVelocity_Right), 1.001*max(initialVelocity_Left, initialVelocity_Right) )
+	axVelocity.set_ylim( 0.999*min(initialVelocityX_Left, initialVelocityX_Right), 1.001*max(initialVelocityX_Left, initialVelocityX_Right) )
 	axVelocity.legend()
-	axPressure.plot([xinf+0.5*dx + i*dx for i in range(nx)], pressureArray, label='Initial pressure time step 0')
+	axPressure.plot(x, pressureArray, label='Initial pressure time step 0')
 	axPressure.set(xlabel='x (m)', ylabel='Pressure')
 	axPressure.set_xlim(xinf,xsup)
 	axPressure.set_ylim(0.95*min(initialPressure_Left, initialPressure_Right), 1.05*max(initialPressure_Left, initialPressure_Right) )
@@ -123,6 +123,28 @@ def IsothermalSinglePhase_2DRiemannProblem_Staggered_symmetric():
 		pass
 
 	print( "------------ End of calculation !!! -----------" );
+
+	# Extract EOS and Riemann problem parameters
+	myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+	initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
+	initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
+
+	#Determine exact solution
+	exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocityX_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocityX_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
+
+	myPressureField = myProblem.getPressureField()
+	pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField,[xinf,(yinf+ysup)/2,0],[xsup,(yinf+ysup)/2,0], nx)
+	myVelocityField = myProblem.getVelocityField()
+	velocityArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myVelocityField,[xinf,(yinf+ysup)/2,0],[xsup,(yinf+ysup)/2,0], nx)
+
+	timeStep=myProblem.getNbTimeStep()#Final time step
+	axPressure.plot(x, exactPressure,  label='Exact pressure at time step '+str(timeStep))
+	axPressure.plot(x, pressureArray,  label='Numerical pressure at time step '+str(timeStep))
+	axVelocity.plot(x, exactVelocity,  label='Exact velocity at time step '+str(timeStep))
+	axVelocity.plot(x, velocityArray,  label='Numerical velocity at time step '+str(timeStep))
+	axPressure.legend()
+	axVelocity.legend()
+	plt.savefig(fileName+".png")
 
 
 	myProblem.terminate();
