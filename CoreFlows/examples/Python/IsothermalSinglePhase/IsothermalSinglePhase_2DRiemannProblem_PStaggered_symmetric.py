@@ -4,28 +4,36 @@
 import solverlab as svl
 import matplotlib.pyplot as plt
 import exact_rs_stiffenedgas
+import VTK_routines
 
-def IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric():
+def IsothermalSinglePhase_2DRiemannProblem_Staggered_symmetric():
 
-	spaceDim = 1;
+	spaceDim = 2;
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1;
-	nx=100;
+	yinf = 0 ;
+	ysup=1;
+	nx=20;
+	ny=20;
 	discontinuity=(xinf+xsup)/2
-	M=svl.Mesh(xinf,xsup,nx)
+	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)
 	eps=1e-6
 	M.setGroupAtPlan(xsup,0,eps,"RightBoundary")
 	M.setGroupAtPlan(xinf,0,eps,"LeftBoundary")
+	M.setGroupAtPlan(ysup,1,eps,"TopBoundary")
+	M.setGroupAtPlan(yinf,1,eps,"BottomBoundary")
 
     # Prepare initial data
-	initialVelocity_Left=-1;
+	initialVelocityX_Left=-1;
+	initialVelocityY_Left= 0;
 	initialPressure_Left=1e5;
-	initialVelocity_Right=1;
+	initialVelocityX_Right=1;
+	initialVelocityY_Right=0;
 	initialPressure_Right=1e5;
 
-	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim);
+	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim,True);
 	nVar =  myProblem.getNumberOfVariables();
 
     # Prepare for the initial condition
@@ -34,9 +42,11 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric():
 	
 	# left and right constant vectors		
 	VV_Left[0] = initialPressure_Left;
-	VV_Left[1] = initialVelocity_Left;
+	VV_Left[1] = initialVelocityX_Left;
+	VV_Left[2] = initialVelocityY_Left;
 	VV_Right[0] = initialPressure_Right;
-	VV_Right[1] = initialVelocity_Right;
+	VV_Right[1] = initialVelocityX_Right;
+	VV_Right[2] = initialVelocityY_Right;
 
 
     #Initial field creation
@@ -46,15 +56,17 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric():
     # set the boundary conditions
 	myProblem.setNeumannBoundaryCondition("LeftBoundary");
 	myProblem.setNeumannBoundaryCondition("RightBoundary");
+	myProblem.setNeumannBoundaryCondition("TopBoundary");
+	myProblem.setNeumannBoundaryCondition("BottomBoundary");
 
     # set the numerical method
 	myProblem.setNumericalScheme(svl.staggered, svl.Implicit);
     
     # name of result file
-	fileName = "1DRiemannProblem_staggered_symmetric";
+	fileName = "2DRiemannProblem_staggered_symmetric";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 25 ;
+	MaxNbOfTimeStep = 5 ;
 	freqSave = 1;
 	cfl = 1;
 	maxTime = 500;
@@ -66,8 +78,10 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(svl.CSV)
 	myProblem.saveConservativeField(True);
+	if(spaceDim>1):
+		myProblem.saveVelocity();
+		pass
 	
 	myProblem.setLinearSolver(svl.GMRES, svl.LU)
 	myProblem.setNewtonSolver(precision,50, svl.Newton_SOLVERLAB)
@@ -75,17 +89,17 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric():
     # Initialisation
 	myProblem.initialize();
 
-   # Postprocessing
+    # Postprocessing
 	dx=(xsup-xinf)/nx
 	x=[ i*dx for i in range(nx)]   # array of cell center (1D mesh)
 
 	myPressureField = myProblem.getPressureField()
-	pressureArray=myPressureField.getFieldValues()
-	myVelocityField = myProblem.getVelocityField()
-	velocityArray=myVelocityField.getFieldValues()
+	pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField,[xinf,(yinf+ysup)/2,0],[xsup,(yinf+ysup)/2,0], nx)
+	myVelocityField = myProblem.getVelocityXField()
+	velocityArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myVelocityField,[xinf,(yinf+ysup)/2,0],[xsup,(yinf+ysup)/2,0], nx)
 
 	fig, ([axVelocity, axPressure]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
-	fig.suptitle('PStaggered scheme for symmetric Riemmann Problem \n 1D isothermal Euler equations')
+	fig.suptitle('PStaggered scheme for symmetric Riemmann Problem \n 2D isothermal Euler equations')
 	axVelocity.plot([xinf+0.5*dx + i*dx for i in range(nx)], velocityArray, label='Initial velocity time step 0')
 	axVelocity.set(xlabel='x (m)', ylabel='Velocity')
 	axVelocity.set_xlim(xinf,xsup)
@@ -98,6 +112,7 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric():
 	axPressure.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
 	axPressure.legend()
 
+
     # Evolution
 	ok = myProblem.run();
 	if (ok):
@@ -109,29 +124,9 @@ def IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric():
 
 	print( "------------ End of calculation !!! -----------" );
 
-	# Extract EOS and Riemann problem parameters
-	myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
-	initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
-	initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
-
-	#Determine exact solution
-	exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, myProblem.presentTime(), myEOS.constante("gamma"), myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
-
-	myPressureField = myProblem.getPressureField()
-	pressureArray=myPressureField.getFieldValues()
-	myVelocityField = myProblem.getVelocityField()
-	velocityArray=myVelocityField.getFieldValues()
-	timeStep=myProblem.getNbTimeStep()#Final time step
-	axPressure.plot(x, exactPressure,  label='Exact pressure at time step '+str(timeStep))
-	axPressure.plot(x, pressureArray,  label='Numerical pressure at time step '+str(timeStep))
-	axVelocity.plot(x, exactVelocity,  label='Exact velocity at time step '+str(timeStep))
-	axVelocity.plot(x, velocityArray,  label='Numerical velocity at time step '+str(timeStep))
-	axPressure.legend()
-	axVelocity.legend()
-	plt.savefig(fileName+".png")
 
 	myProblem.terminate();
 	return ok
 
 if __name__ == """__main__""":
-	IsothermalSinglePhase_1DRiemannProblem_Staggered_symmetric()
+	IsothermalSinglePhase_2DRiemannProblem_Staggered_symmetric()

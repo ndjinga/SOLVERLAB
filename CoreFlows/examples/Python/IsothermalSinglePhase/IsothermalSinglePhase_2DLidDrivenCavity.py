@@ -60,7 +60,7 @@ def IsothermalSinglePhase_2DLidDrivenCavity():
 	fileName = "2DLidDrivenCavity_Incompressible";
 
     # simulation parameters
-	MaxNbOfTimeStep = 1000 ;
+	MaxNbOfTimeStep = 1001 ;
 	freqSave = 1;
 	cfl = 1;
 	maxTime = 50000;

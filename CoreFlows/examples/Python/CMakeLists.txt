@@ -35,7 +35,7 @@ if  ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) A
 	ADD_TEST(PythonTests ${PYTHON_EXECUTABLE} ${SALOME_INSTALL_SCRIPT_PYTHON}/tests/SOLVERLAB_2DSphericalExplosion_HEXAGON.py ${CMAKE_INSTALL_PREFIX}/share/meshes/2DHexagonWithTriangles/meshHexagonWithTriangles200.med)
 	SET_TESTS_PROPERTIES(PythonTests PROPERTIES ENVIRONMENT "${tests_env}")
 						    								#
-endif( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )                                                                                                        #
+endif( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )   #
 #---------------------------------------------------------------------------------------------------------------#
 
 
@@ -46,6 +46,9 @@ endif( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) 
 
 function(CreatePythonTest pythonFile testLabels)
     add_test(NAME ${pythonFile} COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${pythonFile})
+    if(    ${PRELOAD_NETCDF_ON_UBUNTU20} AND NOT ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) ) )
+      SET_PROPERTY(TEST ${pythonFile}        PROPERTY ENVIRONMENT LD_PRELOAD=${NETCDF_LIBRARY_ON_UBUNTU20} )
+    endif( ${PRELOAD_NETCDF_ON_UBUNTU20} AND NOT ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) ) )
 #    SET_PROPERTY(TEST ${pythonFile}        PROPERTY ENVIRONMENT LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH} )
 #    SET_PROPERTY(TEST ${pythonFile} APPEND PROPERTY ENVIRONMENT      PYTHONPATH=${TESTS_PYTHON_PATH}  )
     set_property(TEST ${pythonFile} PROPERTY LABELS ${testLabels})     
@@ -73,6 +76,7 @@ CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_Im
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_Centered.py "Python fv isothermalsinglephase 1D riemann implicit centered structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_PStaggered.py "Python fv isothermalsinglephase 1D riemann implicit pstaggered structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_PStaggered_symmetric.py "Python fv isothermalsinglephase 1D riemann implicit pstaggered structured coreflows")
+CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_2DRiemannProblem_PStaggered_symmetric.py "Python fv isothermalsinglephase 2D riemann implicit pstaggered structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DChannelGravity_upwind.py "Python fv isothermalsinglephase 1D gravity implicit upwind structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DChannelGravity_Incompressible.py "Python fv isothermalsinglephase 1D gravity implicit pstaggered inlet outlet structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DChannelGravity_Incompressible_Wall.py "Python fv isothermalsinglephase 1D gravity implicit pstaggered wall structured coreflows")
