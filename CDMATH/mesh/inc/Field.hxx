@@ -268,6 +268,8 @@ class Field
 
     void setTime ( double time, int iter );
 
+    void setTimeIteration ( int iter );
+
     std::vector< double > getFieldValues(int compo=0) const ;
 
     Vector getValuesOnComponent(int compo) const ;
@@ -277,6 +279,8 @@ class Field
     int getSpaceDimension( void ) const;
 
     double getTime ( void ) const;
+
+    int getTimeIteration ( void ) const;
 
     void setName ( const std::string fieldName ) ;
 
