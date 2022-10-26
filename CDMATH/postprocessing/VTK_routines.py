@@ -43,10 +43,13 @@ def Extract_field_data_over_line_to_numpyArray(field, point1, point2, resolution
     inputFileName = field.getName()#os.getcwd()+field.get_name()
     inputFileName_removeSpaces=inputFileName.replace(" ", "")
     field.writeVTK(inputFileName_removeSpaces)
+    
+    time_iter = field.getTimeIteration()
+    filename_extension = "_"+str(time_iter)+".vtu"
 
-    numpy_array = Extract_VTK_data_over_line_to_numpyArray(inputFileName_removeSpaces+"_0.vtu", point1, point2, resolution)
+    numpy_array = Extract_VTK_data_over_line_to_numpyArray(inputFileName_removeSpaces+filename_extension, point1, point2, resolution)
 
-    os.remove(inputFileName_removeSpaces+"_0.vtu")
+    os.remove(inputFileName_removeSpaces+filename_extension)
     return numpy_array
 
 def Extract_field_data_over_line_to_txt_file(field, point1, point2, resolution, outputFileName):
