@@ -1019,8 +1019,6 @@ void IsothermalSinglePhase::computeScaling(double maxvp)
 {
 	_blockDiag[0]=1;
 	_invBlockDiag[0]=1;//_blockDiag[0];
-	_blockDiag[1+_Ndim]=1;
-	_invBlockDiag[1+_Ndim]=1.0;//_blockDiag[1+_Ndim];
 	for(int q=1; q<_Ndim+1; q++)
 	{
 		_blockDiag[q]=1/(maxvp*maxvp);
