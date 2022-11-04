@@ -12,8 +12,8 @@ def IsothermalSinglePhase_2DLidDrivenCavity():
 	yinf=0;
 	ysup=1;
 	
-	nx=20;
-	ny=20;
+	nx=50;
+	ny=50;
 
     # set the limit field for each boundary
 
@@ -26,7 +26,7 @@ def IsothermalSinglePhase_2DLidDrivenCavity():
     # physical constants
 	viscosite=[0.025];
 
-	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim,False);#,False
+	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim);#,False
 	nVar = myProblem.getNumberOfVariables();
 
 	#Initial field creation
@@ -57,13 +57,13 @@ def IsothermalSinglePhase_2DLidDrivenCavity():
 	myProblem.setLinearSolver(svl.GMRES,svl.LU);
    
     # name file save
-	fileName = "2DLidDrivenCavity_Incompressible";
+	fileName = "2DLidDrivenCavity_Compressible_50x50_CFL10";
 
     # simulation parameters
-	MaxNbOfTimeStep = 1001 ;
-	freqSave = 1;
-	cfl = 1;
-	maxTime = 50000;
+	MaxNbOfTimeStep = 100001 ;
+	freqSave = 100;
+	cfl = 10;
+	maxTime = 50000000000;
 	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
@@ -72,7 +72,7 @@ def IsothermalSinglePhase_2DLidDrivenCavity():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setNewtonSolver(float('inf'),20);
+	myProblem.setNewtonSolver(float('inf'),50);#1000000*
 	if(spaceDim>1):
 		myProblem.saveVelocity();
 		pass
