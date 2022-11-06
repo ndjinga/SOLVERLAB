@@ -552,7 +552,7 @@ if  ( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   endif( NOT DEFINED PARAVIEW_VERSION )
   message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
 else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
-  set( PARAVIEW_SUFFIXES paraview-5.0 paraview-5.1 paraview-5.2 paraview-5.3 paraview-5.4 paraview-5.5 paraview-5.6 paraview-5.7 paraview-5.8 paraview-5.9 )
+  set( PARAVIEW_SUFFIXES paraview-5.0 paraview-5.1 paraview-5.2 paraview-5.3 paraview-5.4 paraview-5.5 paraview-5.6 paraview-5.7 paraview-5.8 paraview-5.9 paraview-5.10 paraview-5.11 paraview-5.12 paraview-5.13 paraview-5.14 paraview-5.15)
   find_file( vtkConfig_file vtkPVConfig.h HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
 
   #extraction of the paraview version"
@@ -575,14 +575,14 @@ else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   ENDIF( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
 endif( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
 
-#Choose python 2 or 3
-IF   ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )#Use python 3, use VERSION_GREATER_EQUAL if cmake >=3.7
+#Choose python 2 or 3  
+IF   ( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )#Use python 3, use VERSION_GREATER_EQUAL if cmake >=3.7
   SET(PYTHON2OR3 "3")
   message(STATUS "PARAVIEW_VERSION greater than 5.6. We need python3 for postprocessing scripts.")
-ELSE ( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )#Use python 2
+ELSE ( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )#Use python 2
   SET(PYTHON2OR3 "2")
   message(STATUS "PARAVIEW_VERSION smaller than 5.6. We need python2 for postprocessing scripts.")
-ENDIF( ${PARAVIEW_VERSION} STRGREATER "5.6" OR ${PARAVIEW_VERSION} STREQUAL "5.6" )
+ENDIF( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )
 
 # Find python
 IF   ( PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
