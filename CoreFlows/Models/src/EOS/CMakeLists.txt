@@ -11,6 +11,6 @@ SET(src_eos_CXX
   )
 
 ADD_LIBRARY(EosLibs SHARED ${src_eos_CXX})
-target_link_libraries( EosLibs ${CDMATH_LIBRARIES})
+target_link_libraries( EosLibs )
 INSTALL(TARGETS EosLibs DESTINATION lib)
 

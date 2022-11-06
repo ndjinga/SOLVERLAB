@@ -2,7 +2,7 @@
 #define IAPWS97_H
 
 #include <string>
-#include "CdmathException.hxx"
+#include "EosException.hxx"
 #include "Fluide.h"
 
 /*! \class IAPWS97 IAPWS97.hxx "IAPWS97.hxx"
@@ -45,7 +45,7 @@ class FluideIAPWS97:public Fluide{
   	else if (name == "cp"||name == "Cp")
   		return cpmass(T,p);
   	else
-  		throw CdmathException("Unknown constant: "+name);
+  		throw EosException("Unknown constant: "+name);
   }
   double getDensity(double p, double T)  {  	return rhomass(T,p);  }
   double getTemperatureFromPressure(const double  p, const double rho) {  	return T_phmass(p,h);  }
