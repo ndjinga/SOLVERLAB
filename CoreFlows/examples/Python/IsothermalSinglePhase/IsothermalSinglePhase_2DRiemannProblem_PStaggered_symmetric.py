@@ -134,7 +134,7 @@ def IsothermalSinglePhase_2DRiemannProblem_Staggered_symmetric():
 
 	myPressureField = myProblem.getPressureField()
 	pressureArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myPressureField,[xinf,(yinf+ysup)/2,0],[xsup,(yinf+ysup)/2,0], nx)
-	myVelocityField = myProblem.getVelocityXField()
+	myVelocityField = myProblem.getVelocityField()
 	velocityArray=VTK_routines.Extract_field_data_over_line_to_numpyArray(myVelocityField,[xinf,(yinf+ysup)/2,0],[xsup,(yinf+ysup)/2,0], nx)
 
 	timeStep=myProblem.getNbTimeStep()#Final time step
