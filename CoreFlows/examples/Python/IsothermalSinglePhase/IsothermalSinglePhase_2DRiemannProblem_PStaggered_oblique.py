@@ -31,7 +31,7 @@ def IsothermalSinglePhase_2DRiemannProblem_Staggered_symmetric():
 	initialVelocityY_Left= 1;
 	initialPressure_Left=1e5;
 	initialVelocityX_Right=1;
-	initialVelocityY_Right=-1;
+	initialVelocityY_Right=1;
 	initialPressure_Right=1e5;
 
 	myProblem = svl.IsothermalSinglePhase(svl.Gas,svl.around1bar300K,spaceDim,True);
