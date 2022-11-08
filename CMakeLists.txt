@@ -20,6 +20,8 @@ option (SOLVERLAB_WITH_PYTHON        "Generate Python interface of SOLVERLAB usi
 option (SOLVERLAB_WITH_GUI           "Compile a Graphic user Interface for SOLVERLAB" OFF)
 option (SOLVERLAB_WITH_PACKAGE       "Generate RPM, Debian and tarball packages" OFF)
 option (SOLVERLAB_WITH_COREFLOWS     "Generate COREFLOWS module" ON)
+option (SOLVERLAB_WITH_PETSC         "Link with PETSc for linear systems" ON)
+option (SOLVERLAB_WITH_POSTPRO       "Install postprocessing Python modules" ON)
 option (SOLVERLAB_WITH_TESTS         "Generate SOLVERLAB example tests" ON)
 option (SOLVERLAB_WITH_MPI           "Generate a parallel version of SOLVERLAB" OFF)
 option (SOLVERLAB_WITH_TRACE         "Generate cmake trace variables in log (for cmake debug)" OFF)
