@@ -1969,7 +1969,7 @@ Field& IsothermalSinglePhase::getOutputField(const string& nameField )
 Field& IsothermalSinglePhase::getPressureField()
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getPressureField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getPressureField. Call initialize first");
 
 	if(!_saveAllFields)
 	{
@@ -1988,7 +1988,7 @@ Field& IsothermalSinglePhase::getPressureField()
 Field& IsothermalSinglePhase::getVelocityField()
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getVelocityField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getVelocityField. Call initialize first");
 
 	if(!_saveAllFields )
 	{
@@ -2016,7 +2016,7 @@ Field& IsothermalSinglePhase::getVelocityField()
 Field& IsothermalSinglePhase::getMachNumberField()
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getMachNumberField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getMachNumberField. Call initialize first");
 
 	if(!_saveAllFields )
 	{
@@ -2049,7 +2049,7 @@ Field& IsothermalSinglePhase::getMachNumberField()
 Field& IsothermalSinglePhase::getVelocityXField()
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getVelocityXField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getVelocityXField. Call initialize first");
 
 	if(!_saveAllFields )
 	{
@@ -2070,7 +2070,7 @@ Field& IsothermalSinglePhase::getVelocityXField()
 Field& IsothermalSinglePhase::getVelocityYField()
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getVelocityYField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getVelocityYField. Call initialize first");
 
 	if(_Ndim<2)
         throw CdmathException("IsothermalSinglePhase::getVelocityYField() error : dimension should be at least 2");	
@@ -2094,7 +2094,7 @@ Field& IsothermalSinglePhase::getVelocityYField()
 Field& IsothermalSinglePhase::getVelocityZField()
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getVelocityZField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getVelocityZField. Call initialize first");
 
 	if(_Ndim<3)
         throw CdmathException("IsothermalSinglePhase::getvelocityZField() error : dimension should be 3");	
@@ -2118,7 +2118,7 @@ Field& IsothermalSinglePhase::getVelocityZField()
 Field& IsothermalSinglePhase::getDensityField()
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getDensityField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getDensityField. Call initialize first");
 		
 	if(!_saveAllFields )
 	{
@@ -2137,7 +2137,7 @@ Field& IsothermalSinglePhase::getDensityField()
 Field& IsothermalSinglePhase::getMomentumField()//not yet managed by parameter _saveAllFields
 {
 	if(!_initializedMemory)
-		throw CdmathException("IsothermalSinglePhase::getMomentumField, Call initialize first");
+		throw CdmathException("IsothermalSinglePhase::getMomentumField. Call initialize first");
 
 	_Momentum=Field("Momentum",CELLS,_mesh,_Ndim);
 	int Ii;
@@ -2148,11 +2148,11 @@ Field& IsothermalSinglePhase::getMomentumField()//not yet managed by parameter _
 			VecGetValues(_conservativeVars,1,&Ii,&_Momentum(i,j));
 		}
 	_Momentum.setTime(_time,_nbTimeStep);
-	_Momentum.setInfoOnComponent(1,"Momentum_x");// (kg/m^2/s)
+	_Momentum.setInfoOnComponent(0,"Momentum_x");// (kg/m^2/s)
 	if (_Ndim>1)
-		_Momentum.setInfoOnComponent(2,"Momentum_y");// (kg/m^2/s)
+		_Momentum.setInfoOnComponent(1,"Momentum_y");// (kg/m^2/s)
 	if (_Ndim>2)
-		_Momentum.setInfoOnComponent(3,"Momentum_z");// (kg/m^2/s)
+		_Momentum.setInfoOnComponent(2,"Momentum_z");// (kg/m^2/s)
 
 	return _Momentum;
 }
