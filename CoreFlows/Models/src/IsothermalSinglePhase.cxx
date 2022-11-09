@@ -185,9 +185,12 @@ void IsothermalSinglePhase::initialize(){
 		//MatSetTransposeNullSpace(_A, nullsp);//To be used if the linear solver needs the kernel of the transpose matrix
 		MatSetNullSpace(_A, nullsp);
 		MatNullSpaceDestroy(&nullsp);
-		//PCFactorSetShiftType(_pc,MAT_SHIFT_NONZERO);//To be used in case of a zero pivot
-		//PCFactorSetShiftAmount(_pc,1e-10);//To be used in case of a zero pivot
 	}
+	//PCFactorSetShiftType(_pc,MAT_SHIFT_INBLOCKS);//To be used in case of a zero pivot
+	//PCFactorSetShiftAmount(_pc,1e-10);//To be used in case of a zero pivot
+	//PCFactorSetColumnPivot(_pc,0.80);
+	//PCFactorSetZeroPivot(_pc,1e-5);
+	//PCFactorReorderForNonzeroDiagonal(_pc,1e-5);
 }
 
 void IsothermalSinglePhase::terminate(){
