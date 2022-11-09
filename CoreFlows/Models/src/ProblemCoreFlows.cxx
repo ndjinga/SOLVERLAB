@@ -636,7 +636,7 @@ bool ProblemCoreFlows::solveTimeStep(){
 
 		if(_timeScheme == Implicit && _nbTimeStep%_freqSave ==0)//To monitor the convergence of the newton scheme
 		{
-			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %s iterations : %d, preconditioner : %s, variation ||Uk+1-Uk||: %.2e\n",_NEWTON_its,_ksptype,_pctype,_PetscIts,_erreur_rel);
+			PetscPrintf(PETSC_COMM_WORLD," Newton iteration %d, %s iterations : %d, preconditioner : %s, variation ||Uk+1-Uk||: %.2e\n",_NEWTON_its,_ksptype,_PetscIts,_pctype,_erreur_rel);
 			*_runLogFile<< " Newton iteration " << _NEWTON_its<< ", "<< _ksptype << " iterations : " << _PetscIts<< ", preconditioner : "<<_pctype<<", maximum variation ||Uk+1-Uk||: " << _erreur_rel << endl;
 
 			if(_conditionNumber)
