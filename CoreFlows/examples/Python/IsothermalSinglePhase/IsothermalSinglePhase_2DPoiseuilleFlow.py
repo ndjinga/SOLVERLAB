@@ -18,10 +18,13 @@ def IsothermalSinglePhase_2DPoiseuilleFlow():
 	my_mesh=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)
 	# set the boundary names for each boundary
 	eps=1e-6;
-	my_mesh.setGroupAtPlan(xsup,0,eps,"wall")
-	my_mesh.setGroupAtPlan(xinf,0,eps,"wall")
-	my_mesh.setGroupAtPlan(ysup,1,eps,"neumann")
-	my_mesh.setGroupAtPlan(yinf,1,eps,"neumann")
+	my_mesh.setGroupAtPlan(xsup,0,eps,"Wall")
+	my_mesh.setGroupAtPlan(xinf,0,eps,"Wall")
+	my_mesh.setGroupAtPlan(ysup,1,eps,"Neumann")
+	my_mesh.setGroupAtPlan(yinf,1,eps,"Neumann")
+        
+	myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim,False);
+	nVar =myProblem.getNumberOfVariables();
 
     # physical constants
 	viscosity=0.0025
@@ -31,17 +34,8 @@ def IsothermalSinglePhase_2DPoiseuilleFlow():
        
 	outletPressure     = 155e5
 
-        
-    # set the limit field for each boundary
-	wallVelocityX=0;
-	wallVelocityY=0;
-
-	myProblem = svl.SinglePhase(svl.Liquid,svl.around155bars600K,spaceDim);
-	nVar =myProblem.getNumberOfVariables();
-
-    #Initial field creation
 	print("Setting initial data" );
-	initial_field=svl.Field("Initial field", svl.CELLS, my_mesh, nVar)
+	initial_field=svl.Field("Initial field", svl.CELLS, my_mesh,3)
 	for i in range( 0 , my_mesh.getNumberOfCells() ):
 		Ci=my_mesh.getCell(i)
 		x=Ci.x()
@@ -53,21 +47,21 @@ def IsothermalSinglePhase_2DPoiseuilleFlow():
 	myProblem.setInitialField(initial_field)
 
     # the boundary conditions
-	myProblem.setWallBoundaryCondition("wall", wallVelocityX, wallVelocityY);
-	myProblem.setNeumannBoundaryCondition("neumann");
+	myProblem.setWallBoundaryCondition("Wall");
+	myProblem.setNeumannBoundaryCondition("Neumann");
 
     # set physical parameters
 	myProblem.setViscosity(viscosite);
 
 	# set the numerical method
 	myProblem.setNumericalScheme(svl.staggered, svl.Implicit);
-	#myProblem.setLinearSolver(svl.GMRES,svl.LU,True);
+	myProblem.setLinearSolver(svl.GMRES,svl.LU);
     
 	# name file save
-	fileName = "2DPoiseuilleFlow_staggered_CFL10";
+	fileName = "2DPoiseuilleFlow_Incompressible_staggered_CFL10";
 
 	# parameters calculation
-	MaxNbOfTimeStep = 10000 ;
+	MaxNbOfTimeStep = 3 ;
 	freqSave = 1;
 	cfl = 10;
 	maxTime = 5000;
@@ -77,10 +71,9 @@ def IsothermalSinglePhase_2DPoiseuilleFlow():
 	myProblem.setPrecision(precision);
 	myProblem.setMaxNbOfTimeStep(MaxNbOfTimeStep);
 	myProblem.setTimeMax(maxTime);
-	myProblem.setNewtonSolver(float('inf'),20);
+	#myProblem.setNewtonSolver(float('inf'),20);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.saveConservativeField(True);
 	if(spaceDim>1):
 		myProblem.saveVelocity();
 		pass
@@ -113,16 +106,6 @@ def IsothermalSinglePhase_2DPoiseuilleFlow():
 	PressureField.writeMED("PressureField2")
 	PressureField.writeVTK("PressureField2")
 	print("Pressure in first cell ", pressureField[0])
-
-	temperatureField=myProblem.getTemperatureField()
-	temperatureField.writeMED("temperatureField")
-	temperatureField.writeVTK("temperatureField")
-	print("Temperature in first cell ", temperatureField[0])
-
-	temperatureField=myProblem.getOutputField("Temperature")
-	temperatureField.writeMED("temperatureField2")
-	temperatureField.writeVTK("temperatureField2")
-	print("Temperature in first cell ", temperatureField[0])
 
 	velocityField=myProblem.getVelocityField()
 	velocityField.writeMED("velocityField")
@@ -157,26 +140,6 @@ def IsothermalSinglePhase_2DPoiseuilleFlow():
 	momentumField.writeVTK("momentumField2")
 	print("Momentum X in first cell ", momentumField[0,0])
 	print("Momentum Y in first cell ", momentumField[0,1])
-
-	totalEnergyField=myProblem.getTotalEnergyField()
-	totalEnergyField.writeMED("totalEnergyField")
-	totalEnergyField.writeVTK("totalEnergyField")
-	print("Total energy in first cell ", totalEnergyField[0])
-
-	totalEnergyField=myProblem.getOutputField("TotalEnergy")
-	totalEnergyField.writeMED("totalEnergyField2")
-	totalEnergyField.writeVTK("totalEnergyField2")
-	print("Total energy in first cell ", totalEnergyField[0])
-
-	enthalpyField=myProblem.getEnthalpyField()
-	enthalpyField.writeMED("enthalpyField")
-	enthalpyField.writeVTK("enthalpyField")
-	print("Enthalpy in first cell ", enthalpyField[0])
-
-	enthalpyField=myProblem.getOutputField("Enthalpy")
-	enthalpyField.writeMED("enthalpyField2")
-	enthalpyField.writeVTK("enthalpyField2")
-	print("Enthalpy in first cell ", enthalpyField[0])
 
 	velocityXField=myProblem.getVelocityXField()
 	velocityXField.writeMED("velocityXField")
