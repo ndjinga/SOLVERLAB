@@ -150,6 +150,7 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DFV_Eq
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DFV_StructuredSquares.py "Python fv stationary diffusion 2D dirichlet structured squares coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DFV_StructuredSquares_Neumann.py "Python fv stationary diffusion 2D neumann structured squares coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DEF.py "Python fe stationary diffusion 3D dirichlet unstructured tetrahedra CUBE coreflows")
+CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DEF_Neumann.py "Python fe stationary diffusion 3D neumann unstructured tetrahedra BALL coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DFV_StructuredCubes.py "Python fv stationary diffusion 3D dirichlet structured cubes CUBE coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DFV_StructuredTetrahedra.py "Python fv stationary diffusion 3D dirichlet structured tetrahedra CUBE coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DEF_RoomCooling.py "Python fe stationary diffusion 3D dirichlet unstructured tetrahedra CUBE coreflows")
