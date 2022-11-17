@@ -67,6 +67,11 @@ add_test(DiffusionEquation/DiffusionEquation_2DSpherical_FE ${PYTHON_EXECUTABLE}
   set_property (TEST DiffusionEquation/DiffusionEquation_2DSpherical_FE PROPERTY LABELS "Python fe diffusion riemann 2D heating structured coreflows")     
 add_test(DiffusionEquation/DiffusionEquation_2DSpherical_FV ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DiffusionEquation/DiffusionEquation_2DSpherical.py 0)
   set_property (TEST DiffusionEquation/DiffusionEquation_2DSpherical_FV PROPERTY LABELS "Python fv diffusion riemann 2D heating structured coreflows")     
+add_test(DiffusionEquation/DiffusionEquation_3D_BALL_Neumann_FV ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DiffusionEquation/DiffusionEquation_3D_BALL_Neumann.py 0)
+  set_property (TEST DiffusionEquation/DiffusionEquation_3D_BALL_Neumann_FV PROPERTY LABELS "Python fv diffusion 3D BALL heating unstructured tetrahedra coreflows")  
+add_test(DiffusionEquation/DiffusionEquation_3D_BALL_Neumann_FE ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DiffusionEquation/DiffusionEquation_3D_BALL_Neumann.py 1)
+  set_property (TEST DiffusionEquation/DiffusionEquation_3D_BALL_Neumann_FE PROPERTY LABELS "Python fe diffusion 3D BALL heating unstructured tetrahedra coreflows")  
+
 
 CreatePythonTest(TransportEquation/TransportEquation_1DHeatedChannel.py "Python fv transport 1D heating structured coreflows")
 add_test(TransportEquation/TransportEquation_2DSpherical ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/TransportEquation/TransportEquation_2DSpherical.py "Python fv transport 2D riemann structured coreflows" )
