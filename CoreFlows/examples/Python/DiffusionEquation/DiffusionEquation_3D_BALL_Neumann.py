@@ -54,7 +54,7 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 			y = Ni.y()
 			z = Ni.z()
 	
-			heatPowerField[i]=1000*exp(-(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
+			heatPowerField[i]=1000*exp(-10*(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
 	else:
 		for i in range(ball_mesh.getNumberOfCells()):
 			Ci= ball_mesh.getCell(i)
@@ -62,7 +62,7 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 			y = Ci.y()
 			z = Ci.z()
 	
-			heatPowerField[i]=1000*exp(-(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
+			heatPowerField[i]=1000*exp(-10*(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
 	heatPowerField.writeVTK("HeatPowerField")
 	
 	initialTemperature=20
@@ -80,7 +80,6 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 	myProblem.setNeumannBoundaryCondition("Sphere")
 
 	myProblem.setHeatPowerField(heatPowerField)
-	myProblem.setLinearSolver(solverlab.GMRES,solverlab.ILU);
 	
     # Set the mesh and initial data
 	#initial_data_inputfile="../resources/Ball_1";
@@ -93,9 +92,9 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 
 
     # set the numerical method
-	myProblem.setTimeScheme( solverlab.Explicit)
+	myProblem.setTimeScheme( solverlab.Implicit)
 	max_nb_its_lin_solver = 50
-	myProblem.setLinearSolver(solverlab.GMRES, solverlab.LU, max_nb_its_lin_solver );
+	myProblem.setLinearSolver(solverlab.GMRES, solverlab.ILU, max_nb_its_lin_solver );
 
     # computation parameters
 	MaxNbOfTimeStep = 3 ;# default value is 10
