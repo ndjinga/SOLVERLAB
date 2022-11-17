@@ -49,8 +49,10 @@ CreateTestExecAndInstall(CoupledTransportDiffusionEquations_1DHeatedChannel.cxx 
 
 CreateTestExecAndInstall(TransportEquation_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv transport 1D heating structured coreflows" )
 
-CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod.cxx  "${libs_for_tests}" "C++ fv diffusion 1D heating structured coreflows" )
-CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_FE.cxx  "${libs_for_tests}" "C++ fe diffusion 1D heating structured coreflows" )
+CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod.cxx  "${libs_for_tests}" "C++ fv diffusion 1D explicit heating structured coreflows" )
+CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_Implicit.cxx  "${libs_for_tests}" "C++ fv diffusion 1D implicit heating structured coreflows" )
+CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_FE.cxx  "${libs_for_tests}" "C++ fe diffusion 1D explicit heating structured coreflows" )
+CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_FE_Implicit.cxx  "${libs_for_tests}" "C++ fe diffusion 1D implicit heating structured coreflows" )
 
 CreateTestExecAndInstall(StationaryDiffusionEquation_2DEF_StructuredTriangles.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D dirichlet structured triangles coreflows" )
 CreateTestExecAndInstall(StationaryDiffusionEquation_2DEF_StructuredTriangles_Neumann.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D neumann structured triangles coreflows" )
