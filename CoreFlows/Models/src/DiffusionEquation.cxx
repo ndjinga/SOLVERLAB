@@ -557,15 +557,28 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 	        {
 	            Cell Ci;
 	            std::vector< int > nodesId;
+	            double Tj;//To store the temperature in a node j of the cell i
+	            double coeff;//To store the contribution of the right hand side before space integration
 	            for (int i=0; i<_Nmailles;i++)
 	            {
 	                Ci=_mesh.getCell(i);
 	                nodesId=Ci.getNodesId();
 	                for (int j=0; j<nodesId.size();j++)
-	                    if(!_mesh.isBorderNode(nodesId[j])) //or for better performance nodeIds[idim]>dirichletNodes.upper_bound()
-	                    {
-	                        double coeff = (_heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]))/(_rho*_cp);
-	                        VecSetValue(_b,unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
+	                    if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodesId[j])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodesId[j]))
+	                    {//nodeIds[j] is an unknown node (not a dirichlet node)
+				            //Contribution due to fluid/solide heat exchange + Contribution of the volumic heat power
+				            if(_timeScheme == Explicit)
+				            {
+								int nodej_unknown_index = unknownNodeIndex(nodesId[j], _dirichletNodeIds);//global index of the local node j in the global unknown vector Tn
+				                VecGetValues(_Tn, 1, &nodej_unknown_index, &Tj);
+		                        double coeff = (_heatTransfertCoeff*(_fluidTemperatureField(nodesId[j])-Tj) + _heatPowerField(nodesId[j]))/(_rho*_cp);
+		                        VecSetValue(_b,nodej_unknown_index, coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
+							}
+				            else//Implicit scheme    
+				            {
+		                        double coeff = (_heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]))/(_rho*_cp);
+		                        VecSetValue(_b,nodej_unknown_index, coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
+							}
 	                    }
 	            }
 	        }
