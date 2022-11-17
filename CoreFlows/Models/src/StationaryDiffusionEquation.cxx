@@ -622,6 +622,17 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
 
     if(_conditionNumber)
         KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
+
+	if(_system)
+	{
+		cout << "Matrice du système linéaire" << endl;
+		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+		cout << endl;
+		cout << "Second membre du système linéaire" << endl;
+		VecView(_b, PETSC_VIEWER_STDOUT_SELF);
+		cout << endl;
+	}
+
     KSPSolve(_ksp, _b, _Tk);
 
 	KSPConvergedReason reason;
@@ -631,9 +642,9 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
     KSPGetResidualNorm(_ksp,&residu);
 	if (reason!=2 and reason!=3)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.");
-        PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2e, précision demandée= %1.2e",_maxPetscIts,residu,_precision);
-        PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d",_ksptype,_pctype,_PetscIts);
+	        PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.\n");
+	        PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2e, précision demandée= %1.2e.\n",_maxPetscIts,residu,_precision);
+	        PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d.\n",_ksptype,_pctype,_PetscIts);
 		if(_mpi_rank==0)//Avoid redundant printing
 		{
 			*_runLogFile<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
@@ -650,6 +661,7 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
         PetscPrintf(PETSC_COMM_WORLD,"## Système linéaire résolu en %d itérations par le solveur %s et le preconditioneur %s, précision demandée = %1.2e",_PetscIts,_ksptype,_pctype,_precision);
 		if(_mpi_rank==0)//Avoid redundant printing
 			*_runLogFile<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<endl<<endl;
+
         VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
         VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
 
@@ -665,6 +677,7 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
 
 		if(_verbose)
 			PetscPrintf(PETSC_COMM_WORLD,"Fin calcul de la variation relative, erreur maximale : %1.2e", _erreur_rel );
+
         stop=false;
         converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
     }
