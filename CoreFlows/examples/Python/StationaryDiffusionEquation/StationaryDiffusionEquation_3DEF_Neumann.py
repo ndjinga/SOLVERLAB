@@ -35,14 +35,15 @@ def StationaryDiffusionEquation_3DEF_BALL_Neumann():
 	myProblem.setNeumannBoundaryCondition("Boundary")
 
 	#Set the right hand side function
-	my_RHSfield = cm.Field("RHS_field", cm.NODES, ball_mesh, 1)
+	my_RHSfield = cm.Field("Heat power", cm.NODES, ball_mesh, 1)
 	for i in range(ball_mesh.getNumberOfNodes()):
 		Ni= ball_mesh.getNode(i)
 		x = Ni.x()
 		y = Ni.y()
 		z = Ni.z()
 
-		my_RHSfield[i]=exp(-(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
+		my_RHSfield[i]=1000*exp(-(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
+	my_RHSfield.writeVTK("HeatPowerField")
 	
 	myProblem.setHeatPowerField(my_RHSfield)
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
@@ -64,7 +65,7 @@ def StationaryDiffusionEquation_3DEF_BALL_Neumann():
 	else:
 		####################### Postprocessing #########################
 		my_ResultField = myProblem.getOutputTemperatureField()
-		my_ResultField.writeMED("TemperatureField_3D_BALL_Neumann")
+		my_ResultField.writeMED("TemperatureField_3D_BALL_Neumann")#Pour s'en servir comme donnée initiale
 		pass
 
 	print( "------------ !!! End of calculation !!! -----------" );
