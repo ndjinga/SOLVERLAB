@@ -188,6 +188,25 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
 	int nbNeib,indexFace;
 	Cell Ci;
 	Face Fk;
+        
+	//Compute Delta x and the cell perimeters
+	for (int i=0; i<_mesh.getNumberOfCells(); i++){
+		Ci = _mesh.getCell(i);
+		if (_Ndim > 1){
+			_perimeters(i)=0;
+			for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
+				indexFace=Ci.getFacesId()[k];
+				Fk = _mesh.getFace(indexFace);
+				_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
+				_perimeters(i)+=Fk.getMeasure();
+			}
+		}else{
+			_minl = min(_minl,Ci.getMeasure());
+			_perimeters(i)=Ci.getNumberOfFaces();
+		}
+	}
+	if(_verbose)
+		cout<<_perimeters<<endl;
 
 	if(_verbose)
 		PetscPrintf(PETSC_COMM_SELF,"Processor %d Computing cell perimeters and mesh minimal diameter\n", _mpi_rank);
@@ -198,25 +217,6 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
     else
     {
         _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
-        
-		//Compute Delta x and the cell perimeters
-		for (int i=0; i<_mesh.getNumberOfCells(); i++){
-			Ci = _mesh.getCell(i);
-			if (_Ndim > 1){
-				_perimeters(i)=0;
-				for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
-					indexFace=Ci.getFacesId()[k];
-					Fk = _mesh.getFace(indexFace);
-					_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
-					_perimeters(i)+=Fk.getMeasure();
-				}
-			}else{
-				_minl = min(_minl,Ci.getMeasure());
-				_perimeters(i)=Ci.getNumberOfFaces();
-			}
-		}
-		if(_verbose)
-			cout<<_perimeters<<endl;
 	}
 	
 	/*** MPI distribution of parameters ***/
