@@ -567,9 +567,9 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 	                    if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodesId[j])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodesId[j]))
 	                    {//nodeIds[j] is an unknown node (not a dirichlet node)
 				            //Contribution due to fluid/solide heat exchange + Contribution of the volumic heat power
+							int nodej_unknown_index = unknownNodeIndex(nodesId[j], _dirichletNodeIds);//global index of the local node j in the global unknown vector Tn
 				            if(_timeScheme == Explicit)
 				            {
-								int nodej_unknown_index = unknownNodeIndex(nodesId[j], _dirichletNodeIds);//global index of the local node j in the global unknown vector Tn
 				                VecGetValues(_Tn, 1, &nodej_unknown_index, &Tj);
 		                        double coeff = (_heatTransfertCoeff*(_fluidTemperatureField(nodesId[j])-Tj) + _heatPowerField(nodesId[j]))/(_rho*_cp);
 		                        VecSetValue(_b,nodej_unknown_index, coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
