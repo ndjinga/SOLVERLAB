@@ -86,7 +86,7 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
         throw CdmathException("Error : parameter dim cannot  be negative");
     }
 
-    PetscPrintf(PETSC_COMM_WORLD,"\n Diffusion problem with density %.2e, specific heat %.2e, conductivity %.2e", rho,cp,lambda);
+    PetscPrintf(PETSC_COMM_WORLD,"\n Diffusion problem with density %.2e, specific heat %.2e, conductivity %.2e\n", rho,cp,lambda);
     if(FECalculation)
         PetscPrintf(PETSC_COMM_WORLD," and finite elements method\n\n");
     else
@@ -134,7 +134,7 @@ void DiffusionEquation::initialize()
 	
 		if(_Ndim != _mesh.getSpaceDimension() or _Ndim!=_mesh.getMeshDimension())//for the moment we must have space dim=mesh dim
 		{
-	        PetscPrintf(PETSC_COMM_SELF,"Problem : dimension defined is %d but mesh dimension= %d, and space dimension is %d",_Ndim,_mesh.getMeshDimension(),_mesh.getSpaceDimension());
+	        PetscPrintf(PETSC_COMM_SELF,"Problem : dimension defined is %d but mesh dimension= %d, and space dimension is %d\n",_Ndim,_mesh.getMeshDimension(),_mesh.getSpaceDimension());
 			*_runLogFile<< "Problem : dim = "<<_Ndim<< " but mesh dim= "<<_mesh.getMeshDimension()<<", mesh space dim= "<<_mesh.getSpaceDimension()<<endl;
 			*_runLogFile<<"DiffusionEquation::initialize: mesh has incorrect dimension"<<endl;
 			_runLogFile->close();
@@ -203,7 +203,7 @@ void DiffusionEquation::initialize()
 					PetscPrintf(PETSC_COMM_SELF,"1D Finite element method on a 3D network : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());			
 				else
 				{
-					PetscPrintf(PETSC_COMM_SELF,"Error Finite element with space dimension %d, and mesh dimension  %d, mesh should be either tetrahedral, either a triangularised surface or 1D network",_Ndim,_mesh.getMeshDimension());
+					PetscPrintf(PETSC_COMM_SELF,"Error Finite element with space dimension %d, and mesh dimension  %d, mesh should be either tetrahedral, either a triangularised surface or 1D network\n",_Ndim,_mesh.getMeshDimension());
 					*_runLogFile<<"DiffusionEquation::initialize mesh has incorrect dimension"<<endl;
 					_runLogFile->close();
 					throw CdmathException("DiffusionEquation::initialize: mesh has incorrect cell types");
@@ -214,7 +214,7 @@ void DiffusionEquation::initialize()
 	        _NboundaryNodes=_boundaryNodeIds.size();
 	
 	        if(_NboundaryNodes==_Nnodes)
-	            PetscPrintf(PETSC_COMM_SELF,"!!!!! Warning : all nodes are boundary nodes !!!!!");
+	            PetscPrintf(PETSC_COMM_SELF,"!!!!! Warning : all nodes are boundary nodes !!!!!\n");
 	
 	        for(int i=0; i<_NboundaryNodes; i++)
 	            if(_limitField[(_mesh.getNode(_boundaryNodeIds[i])).getGroupName()].bcType==DirichletDiffusion)
@@ -716,9 +716,6 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 		{
 	        if( _MaxIterLinearSolver < _PetscIts)
 	            _MaxIterLinearSolver = _PetscIts;
-	        PetscPrintf(PETSC_COMM_WORLD,"## Système linéaire résolu en %d itérations par le solveur %s et le preconditioneur %s, précision demandée = %1.2e",_PetscIts,_ksptype,_pctype,_precision);
-			if(_mpi_rank==0)//Avoid redundant printing
-				*_runLogFile<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<endl<<endl;
 
 	        VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
 	        VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
@@ -729,12 +726,12 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 	        VecAssemblyEnd(  _deltaT);
 	
 			if(_verbose)
-				PetscPrintf(PETSC_COMM_WORLD,"Début calcul de l'erreur maximale");
+				PetscPrintf(PETSC_COMM_WORLD,"Début calcul de l'erreur maximale\n");
 	
 			VecNorm(_deltaT,NORM_INFINITY,&_erreur_rel);
 	
 			if(_verbose)
-				PetscPrintf(PETSC_COMM_WORLD,"Fin calcul de la variation relative, erreur maximale : %1.2e", _erreur_rel );
+				PetscPrintf(PETSC_COMM_WORLD,"Fin calcul de la variation relative, erreur maximale : %1.2e\n", _erreur_rel );
 
 	        stop=false;
 			converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
