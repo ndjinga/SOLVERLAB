@@ -592,24 +592,30 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 
 bool DiffusionEquation::initTimeStep(double dt){
 
-	/* tricky because of code coupling */
-    if(_dt>0 and dt>0)//Previous time step was set and used
-    {
-        //Remove the contribution from dt to prepare for new time step. The diffusion matrix is not recomputed
-        if(_timeScheme == Implicit)
-            MatShift(_A,-1/_dt+1/dt);
-        //No need to remove the contribution to the right hand side since it is recomputed from scratch at each time step
-    }
-    else if(dt>0)//_dt==0, first time step
-    {
-        if(_timeScheme == Implicit)
-            MatShift(_A,1/dt);        
-    }
-    else//dt<=0
-    {
-        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep %.2e = \n",dt);
-        throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
-    }
+    if(_nbTimeStep==0)// first time step
+	    if(dt>0)
+	    {
+	        if(_timeScheme == Implicit)
+	           MatShift(_A,1/dt); 
+	    }
+	    else//dt<=0
+	    {
+	        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep Error : zero time step set%.2e = \n",dt);
+	        throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
+	    }
+    else /* tricky because of code coupling */
+	    if(_dt>0 and dt>0)//Previous time step was set and used
+	    {
+	        //Remove the contribution from dt to prepare for new time step. The diffusion matrix is not recomputed
+	        if(_timeScheme == Implicit)
+	            { MatShift(_A,-1/_dt+1/dt);cout<<"On a fait un matshift(_1,1/dt) avec _dt= "<<_dt<<endl;       }
+	        //No need to remove the contribution to the right hand side since it is recomputed from scratch at each time step
+	    }
+	    else//dt<=0
+	    {
+	        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep Error : zero time step set %.2e = \n",dt);
+	        throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
+	    }
     //At this stage _b contains _b0 + power + heat exchange
     VecAXPY(_b, 1/dt, _Tn);        
 
@@ -674,6 +680,9 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 			cout << "Second membre du système linéaire" << endl;
 			VecView(_b, PETSC_VIEWER_STDOUT_SELF);
 			cout << endl;
+			MatMult(_A, _Tn, _Tk);
+			VecView(_Tn, PETSC_VIEWER_STDOUT_SELF);
+			VecView(_Tk, PETSC_VIEWER_STDOUT_SELF);
 		}
 
 		KSPSolve(_ksp, _b, _Tk);
