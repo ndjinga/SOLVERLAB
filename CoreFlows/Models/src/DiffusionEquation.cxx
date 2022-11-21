@@ -680,9 +680,6 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 			cout << "Second membre du système linéaire" << endl;
 			VecView(_b, PETSC_VIEWER_STDOUT_SELF);
 			cout << endl;
-			MatMult(_A, _Tn, _Tk);
-			VecView(_Tn, PETSC_VIEWER_STDOUT_SELF);
-			VecView(_Tk, PETSC_VIEWER_STDOUT_SELF);
 		}
 
 		KSPSolve(_ksp, _b, _Tk);
