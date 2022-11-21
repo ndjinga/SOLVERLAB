@@ -549,10 +549,10 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
 	            if(_timeScheme == Explicit)
 	            {
 	                VecGetValues(_Tn, 1, &i, &Ti);
-	                VecSetValue(_b,i,(_heatTransfertCoeff*(_fluidTemperatureField(i)-Ti)+_heatPowerField(i))/(_rho*_cp),ADD_VALUES);
+	                VecSetValue(_b,i,(_heatTransfertCoeff*(_fluidTemperatureField(i)-Ti)+_heatPowerField(i))/(_rho*_cp), ADD_VALUES);
 	            }
 	            else//Implicit scheme    
-	                VecSetValue(_b,i,(_heatTransfertCoeff* _fluidTemperatureField(i)    +_heatPowerField(i))/(_rho*_cp)    ,ADD_VALUES);
+	                VecSetValue(_b,i,(_heatTransfertCoeff* _fluidTemperatureField(i)    +_heatPowerField(i))/(_rho*_cp), ADD_VALUES);
 	    else
 	        {
 	            Cell Ci;
@@ -616,9 +616,6 @@ bool DiffusionEquation::initTimeStep(double dt){
 	        PetscPrintf(PETSC_COMM_WORLD,"DiffusionEquation::initTimeStep Error : zero time step set %.2e = \n",dt);
 	        throw CdmathException("Error DiffusionEquation::initTimeStep : cannot set time step to zero");        
 	    }
-    //At this stage _b contains _b0 + power + heat exchange
-    VecAXPY(_b, 1/dt, _Tn);        
-
 	_dt = dt;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
@@ -645,12 +642,15 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 
 	if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
 		_maxvp=0;
-		computeTimeStep(stop);
+		computeTimeStep(stop);//This adds heat source and fluid coupling to the RHS _b
 	}
 	if(stop){
 		converged=false;
 		return false;
 	}
+
+    //At this stage _b contains _b0 + power + heat exchange
+    VecAXPY(_b, 1/_dt, _Tn);//Final contribution to _b cannot be added earlier because dt might not be known 
 
 	if(_timeScheme == Explicit)
 	{
