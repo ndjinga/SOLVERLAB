@@ -607,7 +607,7 @@ bool DiffusionEquation::initTimeStep(double dt){
 	    if(_dt>0 and dt>0)//Previous time step was set and used
 	    {
 	        //Remove the contribution from dt to prepare for new time step. The diffusion matrix is not recomputed
-	        if(_timeScheme == Implicit)
+	        if(_timeScheme == Implicit && fabs(-1/_dt+1/dt)>_precision)
 	            MatShift(_A,-1/_dt+1/dt);
 	        //No need to remove the contribution to the right hand side since it is recomputed from scratch at each time step
 	    }
@@ -725,11 +725,6 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 
 	        VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
 	        VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
-	
-	        VecAssemblyBegin(_Tk);
-	        VecAssemblyEnd(  _Tk);
-	        VecAssemblyBegin(_deltaT);
-	        VecAssemblyEnd(  _deltaT);
 	
 			if(_verbose)
 				PetscPrintf(PETSC_COMM_WORLD,"Début calcul de l'erreur maximale\n");
