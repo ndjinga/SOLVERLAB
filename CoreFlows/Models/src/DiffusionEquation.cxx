@@ -736,10 +736,9 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 
 	        stop=false;
 			converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
+			VecCopy(_Tk, _Tkm1);
 		}
 	}
-
-	VecCopy(_Tk, _Tkm1);
 
 	return true;
 }
@@ -752,7 +751,8 @@ void DiffusionEquation::validateTimeStep()
 	_isStationary =(_erreur_rel <_precision);
 
 	VecCopy(_Tk, _Tn);
-	VecCopy(_Tk, _Tkm1);
+	if(_timeScheme == Implicit)
+		VecCopy(_Tk, _Tkm1);
 
 	_time+=_dt;
 	_nbTimeStep++;
