@@ -608,7 +608,7 @@ bool DiffusionEquation::initTimeStep(double dt){
 	    {
 	        //Remove the contribution from dt to prepare for new time step. The diffusion matrix is not recomputed
 	        if(_timeScheme == Implicit)
-	            { MatShift(_A,-1/_dt+1/dt);cout<<"On a fait un matshift(_1,1/dt) avec _dt= "<<_dt<<endl;       }
+	            MatShift(_A,-1/_dt+1/dt);
 	        //No need to remove the contribution to the right hand side since it is recomputed from scratch at each time step
 	    }
 	    else//dt<=0
