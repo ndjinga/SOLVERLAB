@@ -566,8 +566,8 @@ bool ProblemCoreFlows::run()
 			{
 				validateTimeStep();
 				if ((_nbTimeStep-1)%_freqSave ==0){
-					PetscPrintf(PETSC_COMM_WORLD,"Solved time step = %d, dt = %.2e, time = %.2e, ||Un+1-Un||= %.2e\n\n",_nbTimeStep+1,_dt,_time,_erreur_rel);
-					*_runLogFile << "Solved time step = "<< _nbTimeStep+1 << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
+					PetscPrintf(PETSC_COMM_WORLD,"Solved time step = %d, dt = %.2e, time = %.2e, ||Un+1-Un||= %.2e\n\n",_nbTimeStep,_dt,_time,_erreur_rel);
+					*_runLogFile << "Solved time step = "<< _nbTimeStep << ", dt = "<< _dt <<", time = "<<_time << ", ||Un+1-Un||= "<<_erreur_rel<<endl<<endl;
 				}
 			}
 		}
