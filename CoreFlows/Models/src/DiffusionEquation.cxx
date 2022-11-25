@@ -802,7 +802,7 @@ void DiffusionEquation::save(){
 				if(_mpi_size>1)
 					VecGetValues(_Tn_seq, 1, &i, &Ti);
 				else
-					VecGetValues(_Tk    , 1, &i, &Ti);
+					VecGetValues(_Tn    , 1, &i, &Ti);
 	            globalIndex = globalNodeIndex(i, _dirichletNodeIds);
 	            _VV(globalIndex)=Ti;
 	        }
