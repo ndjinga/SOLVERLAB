@@ -69,8 +69,8 @@ public :
 		_limitField = boundaryFields;
     };
 	/** \fn setDirichletBoundaryCondition
-			 * \brief adds a new boundary condition of type Dirichlet
-			 * \details
+			 * \brief adds a new boundary condition of type Dirichlet on a boundary group
+			 * \details Constant bounadry value on the boundary group
 			 * \param [in] string : the name of the boundary
 			 * \param [in] double : the value of the temperature at the boundary
 			 * \param [out] void
@@ -79,7 +79,7 @@ public :
 		_limitField[groupName]=LimitFieldDiffusion(DirichletDiffusion,Temperature,-1);
 	};
 	/** \fn setDirichletBoundaryCondition
-			 * \brief adds a new boundary condition of type Dirichlet
+			 * \brief adds a new boundary condition of type Dirichlet on a boundary group
 			 * \details Reads the boundary field in a med file
 			 * \param [in] string : the name of the boundary
 			 * \param [in] string : the file name
@@ -93,16 +93,17 @@ public :
 		_limitField[groupName]=LimitFieldDiffusion(DirichletDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
 	}
 	/** \fn setNeumannBoundaryCondition
-			 * \brief adds a new boundary condition of type Neumann
-			 * \details
+			 * \brief adds a new boundary condition of type Neumann on a boundary group
+			 * \details Constant normal gradient at the boundary group
 			 * \param [in] string : the name of the boundary
+			 * \param [in] double : the value of the normal gradient
 			 * \param [out] void
 			 *  */
-	void setNeumannBoundaryCondition(string groupName, double normalFlux=0){
-		_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1, normalFlux);
+	void setNeumannBoundaryCondition(string groupName, double normalGradient=0){
+		_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1, normalGradient);
 	};
 	/** \fn setNeumannBoundaryCondition
-			 * \brief adds a new boundary condition of type Neumann
+			 * \brief adds a new boundary condition of type Neumann on a boundary group
 			 * \details Reads the boundary field in a med file
 			 * \param [in] string : the name of the boundary
 			 * \param [in] string : the file name
@@ -115,7 +116,9 @@ public :
 	void setNeumannBoundaryCondition(string groupName, Field BC_Field){
 		_limitField[groupName]=LimitFieldDiffusion(NeumannDiffusion,-1, 0);//This line will be deleted when variable BC are properly treated in solverlab 
 	};
+	/* Set all Dirichlet boundary values */
 	void setDirichletValues(map< int, double> dirichletBoundaryValues);
+	/* Set all Neumann boundary values */
 	void setNeumannValues(map< int, double> neumannBoundaryValues);
 
 	void setRodDensity(double rho){
