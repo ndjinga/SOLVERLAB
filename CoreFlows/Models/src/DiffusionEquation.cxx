@@ -381,16 +381,21 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 	                        dirichletCell_treated=true;
 	                        for (int kdim=0; kdim<_Ndim+1;kdim++)
 	                        {
-								std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
-								if( it != _dirichletBoundaryValues.end() )
-	                            {
-	                                if( _dirichletValuesSet )
-	                                    valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
-	                                else    
-	                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
-	                            }
+								if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[kdim])!=_dirichletNodeIds.end())//node kdim is a Dirichlet BC node
+								{
+	                                if( _dirichletValuesSet )//BC set via setDirichletValues
+	                                {
+										std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
+										if( it != _dirichletBoundaryValues.end() )
+		                                    valuesBorder[kdim]=_dirichletBoundaryValues[it->second]; 
+		                                else    
+											throw CdmathException("setDirichletValues has not given all Dirichlet values");
+									}
+									else//BC set via setDirichletBoundaryCondition
+		                                    valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
+								}
 	                            else
-	                                valuesBorder[kdim]=0;                            
+	                                valuesBorder[kdim]=0;                      
 	                        }
 	                        GradShapeFuncBorder=gradientNodal(M,valuesBorder)/fact(_Ndim);
 	                        coeff =-1.*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();
@@ -649,7 +654,7 @@ bool DiffusionEquation::iterateTimeStep(bool &converged)
 		return false;
 	}
 
-    //At this stage _b contains _b0 + power + heat exchange
+    //At this stage _b contains _b0 + power + heat exchange with fluid
     VecAXPY(_b, 1/_dt, _Tn);//Final contribution to _b cannot be added earlier because dt might not be known 
 
 	if(_timeScheme == Explicit)
