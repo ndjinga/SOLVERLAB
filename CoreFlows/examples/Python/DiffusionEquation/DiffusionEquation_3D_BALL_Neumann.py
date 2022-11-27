@@ -11,6 +11,7 @@ from math import exp
 #               \rho cp dT/dt-\lambda\Delta T=\Phi 
 #               Neumann or Dirichlet boundary conditions
 #               Finite elements or finite volumes
+#               Heat source is stronger at the center of the ball
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2022
 #================================================================================================================================
@@ -22,6 +23,7 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 		Equation : Thermal diffusion equation  \rho cp dT/dt-\lambda\Delta T=\Phi 
 		        Heat capacity cp, density \rho, and conductivity \lambda of the solid MUST be defined
 		        The solid may receive some extra heat power due to nuclear fissions or magnetic waves using function setHeatSource
+                Heat source is stronger at the center of the ball
 	"""
 	#Space dimension of the problem
 	spaceDim=3
@@ -76,7 +78,7 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 	myProblem.setInitialFieldConstant(ball_mesh,[initialTemperature],supportOfField);
 
     # set the Neumann boundary condition
-	myProblem.setNeumannBoundaryCondition("Boundary")
+	myProblem.setNeumannBoundaryCondition("Sphere")
 
 	myProblem.setHeatPowerField(heatPowerField)
 	
@@ -96,7 +98,7 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 	myProblem.setLinearSolver(solverlab.GMRES, solverlab.LU, max_nb_its_lin_solver );
 
     # computation parameters
-	MaxNbOfTimeStep = 5000 ;# default value is 10
+	MaxNbOfTimeStep = 3 ;# default value is 10
 	freqSave = 100;# default value is 1
 	cfl = 100;# default value is 1
 	maxTime = 100000000000;# default value is 10
