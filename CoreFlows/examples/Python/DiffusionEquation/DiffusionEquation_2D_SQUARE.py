@@ -3,14 +3,15 @@
 
 import sys
 import solverlab
-from math import pi, sin
+from math import pi, sin, cos, exp
 
 #===============================================================================================================================
 # Name        : Simulation of a 2D heat equation 
-# Description : Test solving the diffusion of the temperature T in a solid
+# Description : Test solving the diffusion of the temperature T in a solid subject to a heat source
 #               \rho cp dT/dt-\lambda\Delta T=\Phi 
 #               Neumann or Dirichlet boundary conditions
 #               Finite elements or finite volumes
+#               The heat source function is an eigenvector of the Laplacean, so the exact solution is known using separation of variables
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2022
 #================================================================================================================================
@@ -18,10 +19,11 @@ from math import pi, sin
 
 def DiffusionEquation_2D_SQUARE(FECalculation, fileName, DirichletBC):
 
-	""" Description : Test solving the diffusion of the temperature T in a solid. 
+	""" Description : Test solving the diffusion of the temperature T in a solid subject to a heat source. 
 		Equation : Thermal diffusion equation  \rho cp dT/dt-\lambda\Delta T=\Phi 
-		        Heat capacity cp, density \rho, and conductivity \lambda of the solid MUST be defined
-		        The solid may receive some extra heat power due to nuclear fissions or magnetic waves using function setHeatSource
+		        Heat capacity cp, density \rho, and conductivity \lambda of the solid MUST be defined.
+		        The solid may receive some extra heat power due to nuclear fissions or magnetic waves using function setHeatSource.
+                The heat source function is an eigenvector of the Laplacean, so the exact solution is known using separation of variables.
 	"""
 	#Space dimension of the problem
 	spaceDim=2
@@ -30,10 +32,10 @@ def DiffusionEquation_2D_SQUARE(FECalculation, fileName, DirichletBC):
 	print("Building mesh " )
 	xmin=0
 	xmax=1
-	nx=2
+	nx=20
 	ymin=0
 	ymax=1
-	ny=2
+	ny=20
 	
 	if(FECalculation):
 		square_mesh = solverlab.Mesh(xmin,xmax,nx,ymin,ymax,ny,0)#right triangle mesh build from spliting the cells of a nx*ny cartesian mesh
@@ -58,30 +60,55 @@ def DiffusionEquation_2D_SQUARE(FECalculation, fileName, DirichletBC):
 
 	#Set the right hand side function
 	heatPowerField = solverlab.Field("Heat power", supportOfField, square_mesh, 1)
-	if( FECalculation):
-		for i in range(square_mesh.getNumberOfNodes()):
-			Ni= square_mesh.getNode(i)
-			x = Ni.x()
-			y = Ni.y()
-			z = Ni.z()
-	
-			heatPowerField[i]=sin(pi*x)*sin(pi*y)#mettre la fonction definie au second membre de l'edp
+	exactSolution = solverlab.Field("Exact temperature", supportOfField, square_mesh, 1)#eigenvector associated to -laplacian on a square
+	if(DirichletBC):
+		if( FECalculation):
+			for i in range(square_mesh.getNumberOfNodes()):
+				Ni= square_mesh.getNode(i)
+				x = Ni.x()
+				y = Ni.y()
+				z = Ni.z()
+		
+				heatPowerField[i]=sin(pi*x)*sin(pi*y)#mettre la fonction definie au second membre de l'edp
+				exactSolution[i]=sin(pi*x)*sin(pi*y)
+		else:
+			for i in range(square_mesh.getNumberOfCells()):
+				Ci= square_mesh.getCell(i)
+				x = Ci.x()
+				y = Ci.y()
+				z = Ci.z()
+
+				heatPowerField[i]=sin(pi*x)*sin(pi*y)#mettre la fonction definie au second membre de l'edp
+				exactSolution[i]=sin(pi*x)*sin(pi*y)
 	else:
-		for i in range(square_mesh.getNumberOfCells()):
-			Ci= square_mesh.getCell(i)
-			x = Ci.x()
-			y = Ci.y()
-			z = Ci.z()
-	
-			heatPowerField[i]=sin(pi*x)*sin(pi*y)#mettre la fonction definie au second membre de l'edp
+		if( FECalculation):
+			for i in range(square_mesh.getNumberOfNodes()):
+				Ni= square_mesh.getNode(i)
+				x = Ni.x()
+				y = Ni.y()
+				z = Ni.z()
+		
+				heatPowerField[i]=cos(pi*x)*cos(pi*y)#mettre la fonction definie au second membre de l'edp
+				exactSolution[i]=cos(pi*x)*cos(pi*y)
+		else:
+			for i in range(square_mesh.getNumberOfCells()):
+				Ci= square_mesh.getCell(i)
+				x = Ci.x()
+				y = Ci.y()
+				z = Ci.z()
+		
+				heatPowerField[i]=cos(pi*x)*cos(pi*y)#mettre la fonction definie au second membre de l'edp
+				exactSolution[i]=cos(pi*x)*cos(pi*y)
+				
 	heatPowerField.writeVTK("HeatPowerField")
 	
-	initialTemperature=20
+	initialTemperature=0
 	
     # Mandatory physical values
 	solid_specific_heat=300# specific heat capacity, default value 300
 	solid_density=10000# density, default value 10000
 	solid_conductivity=5# conductivity, default value 5
+	diffusivity=solid_conductivity/(solid_density*solid_specific_heat)
 
 	myProblem = solverlab.DiffusionEquation(spaceDim,FECalculation,solid_density,solid_specific_heat,solid_conductivity);
 	myProblem.setInitialFieldConstant(square_mesh,[initialTemperature],supportOfField);
@@ -102,7 +129,7 @@ def DiffusionEquation_2D_SQUARE(FECalculation, fileName, DirichletBC):
     # computation parameters
 	MaxNbOfTimeStep = 3 ;# default value is 10
 	freqSave = 1;# default value is 1
-	cfl = 0.95;# default value is 1
+	cfl = 100;# default value is 1
 	maxTime = 100000000;# default value is 10
 	precision = 1e-6;# default value is 1e-6
 	result_directory="."# default value = current directory
@@ -124,6 +151,17 @@ def DiffusionEquation_2D_SQUARE(FECalculation, fileName, DirichletBC):
 	if (ok):
 		print( "Python simulation " + fileName + " is successful !" );
 		pass
+		
+		final_time = myProblem.getTime()
+		Lambda = 2*pi*pi#eigenvalue associated to the heat power field
+		time_factor = 1/(Lambda*diffusivity)*(1-exp(-Lambda*diffusivity*final_time))#Exact solution is time factor times heat source function
+		if( FECalculation):
+			for i in range(square_mesh.getNumberOfNodes()):
+				exactSolution[i]*=time_factor
+		else:
+			for i in range(square_mesh.getNumberOfCells()):
+				exactSolution[i]*=time_factor
+		exactSolution.writeVTK("exactSolution")
 	else:
 		print( "Python simulation " + fileName + "  failed ! " );
 		pass
