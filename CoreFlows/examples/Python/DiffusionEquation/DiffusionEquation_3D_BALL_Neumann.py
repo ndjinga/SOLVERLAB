@@ -7,7 +7,7 @@ from math import exp
 
 #===============================================================================================================================
 # Name        : Simulation of a 3D heat equation 
-# Description : Test solving the diffusion of the temperature T in a solid
+# Description : Test solving the diffusion of the temperature T in a solid subject to a heat source
 #               \rho cp dT/dt-\lambda\Delta T=\Phi 
 #               Neumann or Dirichlet boundary conditions
 #               Finite elements or finite volumes
@@ -18,7 +18,7 @@ from math import exp
 
 def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 
-	""" Description : Test solving the diffusion of the temperature T in a solid. 
+	""" Description : Test solving the diffusion of the temperature T in a solid subject to a heat source. 
 		Equation : Thermal diffusion equation  \rho cp dT/dt-\lambda\Delta T=\Phi 
 		        Heat capacity cp, density \rho, and conductivity \lambda of the solid MUST be defined
 		        The solid may receive some extra heat power due to nuclear fissions or magnetic waves using function setHeatSource
@@ -54,7 +54,7 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 			y = Ni.y()
 			z = Ni.z()
 	
-			heatPowerField[i]=1000*exp(-10*(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
+			heatPowerField[i]=1000*exp(-100*(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
 	else:
 		for i in range(ball_mesh.getNumberOfCells()):
 			Ci= ball_mesh.getCell(i)
@@ -62,10 +62,10 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 			y = Ci.y()
 			z = Ci.z()
 	
-			heatPowerField[i]=1000*exp(-10*(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
+			heatPowerField[i]=1000*exp(-100*(x*x+y*y+z*z))#mettre la fonction definie au second membre de l'edp
 	heatPowerField.writeVTK("HeatPowerField")
 	
-	initialTemperature=20
+	initialTemperature=15
 	
     # Mandatory physical values
 	solid_specific_heat=300# specific heat capacity, default value 300
@@ -77,7 +77,6 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
 
     # set the Neumann boundary condition
 	myProblem.setNeumannBoundaryCondition("Boundary")
-	myProblem.setNeumannBoundaryCondition("Sphere")
 
 	myProblem.setHeatPowerField(heatPowerField)
 	
@@ -94,13 +93,13 @@ def DiffusionEquation_3D_BALL_Neumann(FECalculation, fileName):
     # set the numerical method
 	myProblem.setTimeScheme( solverlab.Implicit)
 	max_nb_its_lin_solver = 50
-	myProblem.setLinearSolver(solverlab.GMRES, solverlab.ILU, max_nb_its_lin_solver );
+	myProblem.setLinearSolver(solverlab.GMRES, solverlab.LU, max_nb_its_lin_solver );
 
     # computation parameters
-	MaxNbOfTimeStep = 3 ;# default value is 10
-	freqSave = 1;# default value is 1
-	cfl = 0.95;# default value is 1
-	maxTime = 100000000;# default value is 10
+	MaxNbOfTimeStep = 5000 ;# default value is 10
+	freqSave = 100;# default value is 1
+	cfl = 100;# default value is 1
+	maxTime = 100000000000;# default value is 10
 	precision = 1e-6;# default value is 1e-6
 	result_directory="."# default value = current directory
 
