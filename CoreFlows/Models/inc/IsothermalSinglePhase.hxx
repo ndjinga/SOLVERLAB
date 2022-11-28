@@ -88,8 +88,11 @@ public :
 	 * @param double mesureFace the lenght or area of the face
 	 * */
 	void addSourceTermToSecondMember(const int i, int nbNeighboursi,const int j, int nbNeighboursj,bool isBoundary, int ij, double mesureFace);
+<<<<<<< HEAD
 
 	//EOS functions
+=======
+>>>>>>> ecc29f862a712570f948b6c47598784a964ae2ac
 	double getReferenceTemperature() { return _Temperature; };
 	
 	/* Get output fields for postprocessing or coupling */
@@ -102,8 +105,12 @@ public :
 	Field& getVelocityZField();
 	Field& getDensityField();
 	Field& getMomentumField();
+<<<<<<< HEAD
 	Field& getMachNumberField();
 
+=======
+	Field& getMachNumberField();	
+>>>>>>> ecc29f862a712570f948b6c47598784a964ae2ac
 protected :
 	//Thermodynamical quantities
 	double _Temperature, _internalEnergy;
@@ -167,8 +174,13 @@ protected :
 	Vector staggeredVFFCFlux();
 	void entropicShift(double* n);
 
+<<<<<<< HEAD
 	bool _isSingularSystem;
 	Vec _constantPressureVector;
+=======
+
+
+>>>>>>> ecc29f862a712570f948b6c47598784a964ae2ac
 };
 
 #endif /* IsothermalSinglePhase_HXX_ */
