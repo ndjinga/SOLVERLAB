@@ -8,11 +8,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh " << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-<<<<<<< HEAD
 	int nx=10;
-=======
-	int nx=2;
->>>>>>> ecc29f862a712570f948b6c47598784a964ae2ac
 	Mesh M(xinf,xsup,nx);
 	double eps=1.E-8;
 	M.setGroupAtPlan(xsup,0,eps,"LeftBoundary");
@@ -23,11 +19,7 @@ int main(int argc, char** argv)
 	double initialVelocity_Left=1;
 	double initialPressure_Left=155e5;
 	double initialVelocity_Right=1;
-<<<<<<< HEAD
 	double initialPressure_Right=155.0001e5;
-=======
-	double initialPressure_Right=157e5;
->>>>>>> ecc29f862a712570f948b6c47598784a964ae2ac
 
 	IsothermalSinglePhase  myProblem(Liquid,around155bars600K,spaceDim);
 	// Prepare for the initial condition
@@ -56,22 +48,14 @@ int main(int argc, char** argv)
 	myProblem.setNumericalScheme(upwind, Implicit);
 
 	// name file save
-<<<<<<< HEAD
 	string fileName = "1DRiemannProblem_implicit";
-=======
-	string fileName = "1DRiemannProblem";
->>>>>>> ecc29f862a712570f948b6c47598784a964ae2ac
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 3;
 	int freqSave = 1;
 	double cfl = 0.95;
 	double maxTime = 5;
-<<<<<<< HEAD
 	double precision = 1e-6; 
-=======
-	double precision = 1e-8; 
->>>>>>> ecc29f862a712570f948b6c47598784a964ae2ac
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
 	myProblem.setMaxNbOfTimeStep(MaxNbOfTimeStep);
