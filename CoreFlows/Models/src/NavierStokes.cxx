@@ -104,7 +104,7 @@ void IsothermalSinglePhase::terminate(){
 }
 
 void NavierStokes::convectionState( const long &i, const long &j, const bool &IsBord){
-	// Computation of "Roe values" rho, u, H, Cp, de_dp, c1^2, c2^2
+	// Computation of "Roe values" rho, u, H
 	//Extraction of primitive and conservative states
 	_idm[0] = _nVar*i; 
 	for(int k=1; k<_nVar; k++)
@@ -139,8 +139,6 @@ void NavierStokes::convectionState( const long &i, const long &j, const bool &Is
 	assert(_Vj[0]>0);
 	assert(_Vi[0]>0);
 
-	
-	//#Todo Etat de Roe à passer en variables primitives
 	//Computation of Roe state
 	PetscScalar ri, rj, xi, xj, Cp, de_dp, H_i, H_j;
 	ri = sqrt(_Ui[0]);//racine carre de phi_i rho_i
@@ -159,11 +157,6 @@ void NavierStokes::convectionState( const long &i, const long &j, const bool &Is
 	H_i = _compressibleFluid->getEnthalpy(_Vi[2], _Ui[0] );
 	H_j = _compressibleFluid->getEnthalpy(_Vj[2], _Uj[0] );
 	_Uroe[_nVar - 1] = (ri*H_i + H_j*rj)/(ri + rj);
-	//#todo utiliser un Cv variable
-	Cp = _compressibleFluide->constante("Cv");
-	// #todo Ajouter de_dp = ?
-	_Uroe[_nVar ] = Cv;
-	_Uroe[_nVar +1 ] = de_dp;
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout << "Enthalpie totale de Roe H  gauche " << i << ": " << H_i << ", droite " << j << ": " << H_j << "->" << _Uroe[_nVar-1] << endl;
 
@@ -177,74 +170,58 @@ void NavierStokes::convectionState( const long &i, const long &j, const bool &Is
 }
 
 void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const bool &IsBord){
-	//sortie: matrices et etat de diffusion (p, u, T)
-	_idm[0] = _nVar*i;
+	//sortie: matrices et etat de diffusion (p, u,  h)
+	__idm[0] = _nVar*i;
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
 
 	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-	for(int k=0; k<_nVar; k++)
-		_idn[k] = k;
 
 	if(IsBord)
-		VecGetValues(_Vextdiff, _nVar, _idn, _Vj);
+		for(int k=0; k<_nVar; k++)
+			_Vj[k]=_Vextdiff[k];
 	else
 		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "NavierStokes::diffusionStateAndMatrices primitives cellule gauche" << i << endl;
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule gauche = " << i << endl;
 		cout << "Vi = ";
 		for(int q=0; q<_nVar; q++)
 			cout << _Vi[q]  << "\t";
 		cout << endl;
-		cout << "NavierStokes::diffusionStateAndMatrices primitives cellule droite" << j << endl;
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices cellule droite =" << j << endl;
 		cout << "Vj = ";
 		for(int q=0; q<_nVar; q++)
 			cout << _Vj[q]  << "\t";
 		cout << endl;
 	}
 
-	// #Todo Faut-il modifier ces valeurs en variables primitives ?
 	for(int k=0; k<_nVar; k++)
 		_Vdiff[k] = (_Vi[k]/_porosityi+_Vj[k]/_porosityj)/2;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "SinglePhase::diffusionStateAndMatrices conservative diffusion state" << endl;
-		cout << "_Udiff = ";
+		cout << "IsothermalSinglePhase::diffusionPrimitiveStateAndMatrices primitive diffusion state" << endl;
+		cout << "_Vdiff = ";
 		for(int q=0; q<_nVar; q++)
-			cout << _Udiff[q]  << "\t";
+			cout << _Vdiff[q]  << "\t";
 		cout << endl;
 		cout << "porosite gauche= "<<_porosityi<< ", porosite droite= "<<_porosityj<<endl;
 	}
-	consToPrim(_Udiff,_phi,1);
-	_Udiff[_nVar-1]=_phi[_nVar-1];
 
 	if(_timeScheme==Implicit)
 	{
-		double q_2=0;
-		for (int i = 0; i<_Ndim;i++)
-			q_2+=_Udiff[i+1]*_Udiff[i+1];
-		double mu = _compressibleFluid->getViscosity(_Udiff[_nVar-1]);
-		double lambda = _compressibleFluid->getConductivity(_Udiff[_nVar-1]);
-		double Cv= _compressibleFluid->constante("Cv");
+		double mu = _fluides[0]->getViscosity( fluides[0]->getTemperatureFromPressure(_Vdiff[0]) );
 		for(int i=0; i<_nVar*_nVar;i++)
 			_Diffusion[i] = 0;
-		for(int i=1;i<(_nVar-1);i++)
-		{
-			_Diffusion[i*_nVar] =  mu*_Udiff[i]/(_Udiff[0]*_Udiff[0]);
-			_Diffusion[i*_nVar+i] = -mu/_Udiff[0];
-		}
-		int i = (_nVar-1)*_nVar;
-		_Diffusion[i]=lambda*(_Udiff[_nVar-1]/_Udiff[0]-q_2/(2*Cv*_Udiff[0]*_Udiff[0]*_Udiff[0]));
-		for(int k=1;k<(_nVar-1);k++)
-		{
-			_Diffusion[i+k]= lambda*_Udiff[k]/(_Udiff[0]*_Udiff[0]*Cv);
-		}
-		_Diffusion[_nVar*_nVar-1]=-lambda/(_Udiff[0]*Cv);
+		for(int i=1;i<_nVar-1;i++)
+			_Diffusion[i*_nVar+i] = mu;
+			//TODO faut-il ajouter diffusion thermique i.e regarder où la diffusion thermique intervient dans l'équation en enthalpie interne
 	}
 }
+
+//TODO demander bouundary condition en euler complet ?
 void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *normale){
 	_idm[0] = _nVar*j;
 	for(int k=1; k<_nVar; k++)
@@ -595,7 +572,7 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 
 void NavierStokes::convectionMatrices()
 {
-	//entree: URoe = [rho, u, H, Cv, de_dp],
+	//entree: URoe = [rho, u, H],
 	//sortie: matrices Roe+  et Roe-
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
@@ -1276,6 +1253,7 @@ void NavierStokes::primToCons(const double *P, const int &i, double *W, const in
 
 void NavierStokes::primToConsJacobianMatrix(double *V)
 {
+	// TODO à modifier
 	double pression=V[0];
 	double temperature=V[_nVar-1];
 	double vitesse[_Ndim];
@@ -1388,42 +1366,24 @@ void NavierStokes::consToPrim(const double *Wcons, double* Wprim,double porosity
 	}
 }
 
+
+Vector IsothermalSinglePhase::staggeredVFFCFlux()
+{
+	*_runLogFile<< "NavierStokes::staggeredVFFCFlux is not yet available "<<  endl;
+	_runLogFile->close();
+	throw CdmathException("NavierStokes::staggeredVFFCFlux is not yet available");
+}
 void NavierStokes::entropicShift(double* n)//TO do: make sure _Vi and _Vj are well set
 {
-	/*Left and right values */
-	double ul_n = 0, ul_2=0, ur_n=0,	ur_2 = 0; //valeurs de vitesse normale et |u|² a droite et a gauche
-	for(int i=0;i<_Ndim;i++)
-	{
-		ul_n += _Vi[1+i]*n[i];
-		ul_2 += _Vi[1+i]*_Vi[1+i];
-		ur_n += _Vj[1+i]*n[i];
-		ur_2 += _Vj[1+i]*_Vj[1+i];
-	}
-
-	double cl = _compressibleFluid->vitesseSonEnthalpie(_Vi[_Ndim+1]-ul_2/2);//vitesse du son a l'interface
-	double cr = _compressibleFluid->vitesseSonEnthalpie(_Vj[_Ndim+1]-ur_2/2);//vitesse du son a l'interface
-
-	_entropicShift[0]=fabs(ul_n-cl - (ur_n-cr));
-	_entropicShift[1]=fabs(ul_n     - ur_n);
-	_entropicShift[2]=fabs(ul_n+cl - (ur_n+cr));
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<"Entropic shift left eigenvalues: "<<endl;
-		cout<<"("<< ul_n-cl<< ", " <<ul_n<<", "<<ul_n+cl << ")";
-		cout<<endl;
-		cout<<"Entropic shift right eigenvalues: "<<endl;
-		cout<<"("<< ur_n-cr<< ", " <<ur_n<<", "<<ur_n+cr << ")";
-		cout<< endl;
-		cout<<"eigenvalue jumps "<<endl;
-		cout<< _entropicShift[0] << ", " << _entropicShift[1] << ", "<< _entropicShift[2] <<endl;
-	}
+		*_runLogFile<< "NavierStokes::entropicShift is not yet available "<<  endl;
+	_runLogFile->close();
+	throw CdmathException("NavierStokes::entropicShift is not yet available");
 }
 
 Vector NavierStokes::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<"SinglePhase::convectionFlux start"<<endl;
+		cout<<"NavierStokes::convectionFlux start"<<endl;
 		cout<<"Ucons"<<endl;
 		cout<<U<<endl;
 		cout<<"Vprim"<<endl;
@@ -1492,78 +1452,33 @@ void NavierStokes::ConvetionMatrixConservativeVariables(double u_n, double H,Vec
 }
 void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, double H, Vector vitesse)
 {
-	//On remplit la matrice de Roe en variables primitives : F(V_L)-F(V_R)=Aroe (V_L-V_R)
+	//On remplit la matrice de Roe en variables primitives : G(V_L)-G(V_R)=Aroe (V_L-V_R)
 	//EOS is more involved with primitive variables
 	// call to getDensityDerivatives(double concentration, double pression, double temperature,double v2) needed
 
-	//#todo définir dp_dt et dp_drho
-	double dp_drho = 
-	double dp_dT = 0;
+	//Todo : en particulier défnir une fonctino qui donne les dérivées de rho
+	double drho_dp, drho_rh = fluide0.getRhoDerivatives();
 	//Première ligne 
-	_AroeImplicit[0*_nVar+0]=u_n/dp_drho;
+	_AroeImplicit[0*_nVar+0] = u_n * drho_dp;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
-	_AroeImplicit[0*_nVar+1+_Ndim]= -u_n * dp_dT/dp_drho;
-	//Deuxième ligne à 1 + _Ndim ligne
+		_AroeImplicit[0*_nVar+1+i] = rho*_vec_normal[i];
+	_AroeImplicit[0*_nVar+1+_Ndim] = u_n * drho_dh;
+	//Deuxième ligne à (1 + _Ndim) ligne
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0]= dp_drho * u_n * vitesse[i]+_vec_normal[i];
+		_AroeImplicit[(1+i)*_nVar+0] = drho_dp * u_n * vitesse[i]+_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j]=rho*vitesse[i]*_vec_normal[j];
-		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
-		_AroeImplicit[(1+i)*_nVar+1+_Ndim]=_drho_sur_dT*u_n*vitesse[i];
+			_AroeImplicit[(1+i)*_nVar+1+j] = rho * vitesse[i]*_vec_normal[j];
+		_AroeImplicit[(1+i)*_nVar+1+i] += rho*u_n;
+		_AroeImplicit[(1+i)*_nVar+1+_Ndim] = drho_dh * u_n * vitesse[i];
 	}
-	_AroeImplicit[(1+_Ndim)*_nVar+0]=(_drhoE_sur_dp+1)*u_n;
-	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[(1+_Ndim)*_nVar+1+i]=rho*(H*_vec_normal[i]+u_n*vitesse[i]);
-	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim]=_drhoE_sur_dT*u_n;
+	//Dernière ligne
+	_AroeImplicit[(1+_Ndim)*_nVar+0] = drho_sur_dp * u_n * H;
+	for(int i=0;i<_Ndim;i++)1
+		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho*(H*_vec_normal[i]+u_n*vitesse[i]);
+	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = u_n * (H * drho_dh + rho);
 }
-void NavierStokes::staggeredRoeUpwindingMatrixConservativeVariables( double u_n, double H,Vector velocity, double k, double K)
-{
-	//Calcul de décentrement de type décalé pour formulation de Roe
-	if(fabs(u_n)>_precision)
-	{
-		//premiere ligne (masse)
-		_absAroe[0]=0;
-		for(int idim=0; idim<_Ndim;idim++)
-			_absAroe[1+idim]=_vec_normal[idim];
-		_absAroe[_nVar-1]=0;
 
-		//lignes intermadiaires(qdm)
-		for(int idim=0; idim<_Ndim;idim++)
-		{
-			//premiere colonne
-			_absAroe[(1+idim)*_nVar]=-K*_vec_normal[idim] - u_n*_Uroe[1+idim];
-			//colonnes intermediaires
-			for(int jdim=0; jdim<_Ndim;jdim++)
-				_absAroe[(1+idim)*_nVar + jdim + 1] = _Uroe[1+idim]*_vec_normal[jdim]+k*_vec_normal[idim]*_Uroe[1+jdim];
-			//matrice identite
-			_absAroe[(1+idim)*_nVar + idim + 1] += u_n;
-			//derniere colonne
-			_absAroe[(1+idim)*_nVar + _nVar-1]=-k*_vec_normal[idim];
-		}
-
-		//derniere ligne (energie)
-		_absAroe[_nVar*(_nVar-1)] = (-K - H)*u_n;
-		for(int idim=0; idim<_Ndim;idim++)
-			_absAroe[_nVar*(_nVar-1)+idim+1]=H*_vec_normal[idim] + k*u_n*_Uroe[idim+1];
-		_absAroe[_nVar*_nVar -1] = (1 - k)*u_n;
-
-		double signu;
-		if(u_n>0)
-			signu=1;
-		else if (u_n<0)
-			signu=-1;
-
-		for(int i=0; i<_nVar*_nVar;i++)
-			_absAroe[i] *= signu;
-	}
-	else//umn=0 ->centered scheme
-	{
-		for(int i=0; i<_nVar*_nVar;i++)
-			_absAroe[i] =0;
-	}
-}
 void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n,double H, Vector vitesse)
 {
 	//Not used. Suppress or use in alternative implicitation in primitive variable of the staggered-roe scheme
@@ -1584,73 +1499,6 @@ void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, dou
 	for(int i=0;i<_Ndim;i++)
 		_AroeImplicit[(1+_Ndim)*_nVar+1+i]=rho*(H*_vec_normal[i]+u_n*vitesse[i]);
 	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim]=_drhoE_sur_dT*u_n;
-}
-
-Vector NavierStokes::staggeredVFFCFlux()
-{
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"SinglePhase::staggeredVFFCFlux() start"<<endl;
-
-	if(_spaceScheme!=staggered || _nonLinearFormulation!=VFFC)
-	{
-		*_runLogFile<< "SinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding, pressure = "<<  endl;
-		_runLogFile->close();
-		throw CdmathException("SinglePhase::staggeredVFFCFlux: staggeredVFFCFlux method should be called only for VFFC formulation and staggered upwinding");
-	}
-	else//_spaceScheme==staggered && _nonLinearFormulation==VFFC
-	{
-		Vector Fij(_nVar);
-
-		double uijn=0, phiqn=0, uin=0, ujn=0;
-		for(int idim=0;idim<_Ndim;idim++)
-		{
-			uijn+=_vec_normal[idim]*_Uroe[1+idim];//URoe = rho, u, H
-			uin +=_vec_normal[idim]*_Ui[1+idim];
-			ujn +=_vec_normal[idim]*_Uj[1+idim];
-		}
-		
-		if( (uin>0 && ujn >0) || (uin>=0 && ujn <=0 && uijn>0) ) // formerly (uijn>_precision)
-		{
-			for(int idim=0;idim<_Ndim;idim++)
-				phiqn+=_vec_normal[idim]*_Ui[1+idim];//phi rho u n
-			Fij(0)=phiqn;
-			for(int idim=0;idim<_Ndim;idim++)
-				Fij(1+idim)=phiqn*_Vi[1+idim]+_Vj[0]*_vec_normal[idim]*_porosityj;
-			Fij(_nVar-1)=phiqn/_Ui[0]*(_Ui[_nVar-1]+_Vj[0]*sqrt(_porosityj/_porosityi));
-		}
-		else if( (uin<0 && ujn <0) || (uin>=0 && ujn <=0 && uijn<0) ) // formerly (uijn<-_precision)
-		{
-			for(int idim=0;idim<_Ndim;idim++)
-				phiqn+=_vec_normal[idim]*_Uj[1+idim];//phi rho u n
-			Fij(0)=phiqn;
-			for(int idim=0;idim<_Ndim;idim++)
-				Fij(1+idim)=phiqn*_Vj[1+idim]+_Vi[0]*_vec_normal[idim]*_porosityi;
-			Fij(_nVar-1)=phiqn/_Uj[0]*(_Uj[_nVar-1]+_Vi[0]*sqrt(_porosityi/_porosityj));
-		}
-		else//case (uin<=0 && ujn >=0) or (uin>=0 && ujn <=0 && uijn==0), apply centered scheme
-		{
-			Vector Ui(_nVar), Uj(_nVar), Vi(_nVar), Vj(_nVar), Fi(_nVar), Fj(_nVar);
-			Vector normale(_Ndim);
-			for(int i1=0;i1<_Ndim;i1++)
-				normale(i1)=_vec_normal[i1];
-			for(int i1=0;i1<_nVar;i1++)
-			{
-				Ui(i1)=_Ui[i1];
-				Uj(i1)=_Uj[i1];
-				Vi(i1)=_Vi[i1];
-				Vj(i1)=_Vj[i1];
-			}
-			Fi=convectionFlux(Ui,Vi,normale,_porosityi);
-			Fj=convectionFlux(Uj,Vj,normale,_porosityj);
-			Fij=(Fi+Fj)/2;//+_maxvploc*(Ui-Uj)/2;
-		}
-		if(_verbose && _nbTimeStep%_freqSave ==0)
-		{
-			cout<<"SinglePhase::staggeredVFFCFlux() endf uijn="<<uijn<<endl;
-			cout<<Fij<<endl;
-		}
-		return Fij;
-	}
 }
 
 

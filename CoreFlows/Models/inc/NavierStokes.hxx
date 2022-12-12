@@ -195,25 +195,26 @@ protected :
 	//!Computation of the Roe matrix
 	void convectionMatrixConservativeVariables(double u_n, double total_enthalpy,Vector velocity, double k, double K);
 	void convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector velocity);
-	//!Computation of the staggered Roe upwinding matrix in conservative variables
-	void staggeredRoeUpwindingMatrixConservativeVariables(  double u_n, double total_enthalpy, Vector velocity, double k, double K);
 	//!Computation of the staggered Roe upwinding matrix in primitive variables
 	void staggeredRoeUpwindingMatrixPrimitiveVariables(double density, double u_n,double total_enthalpy, Vector velocity);
 	/**** staggered VFFC scheme has some specific features (no need for Roe matrix), hence some specific functions ******/
 	//!Computes the interfacial flux for the VFFC formulation of the staggered upwinding
-	Vector staggeredVFFCFlux();
-	//!Computes the matrices A^+ and A^- for the VFFC formulation of the staggered upwinding
-	void staggeredVFFCMatricesConservativeVariables(double u_n);
-	//!Computes the matrices A^+ and A^- for the VFFC formulation of the staggered upwinding using Primitive Variables
-	void staggeredVFFCMatricesPrimitiveVariables(double u_n);
-	//!Compute the corrected interfacial state for lowMach, pressureCorrection and staggered versions of the VFRoe formulation
-	void applyVFRoeLowMachCorrections(bool isBord, string groupname="");
+
+	// //!Computes the matrices A^+ and A^- for the VFFC formulation of the staggered upwinding
+	// void staggeredVFFCMatricesConservativeVariables(double u_n);
+	// //!Computes the matrices A^+ and A^- for the VFFC formulation of the staggered upwinding using Primitive Variables
+	// void staggeredVFFCMatricesPrimitiveVariables(double u_n);
+	// //!Compute the corrected interfacial state for lowMach, pressureCorrection and staggered versions of the VFRoe formulation
+	// void applyVFRoeLowMachCorrections(bool isBord, string groupname="");
+
 	//!Special preconditioner based on a matrix scaling strategy
 	void computeScaling(double offset);
 	//!Calcule les saut de valeurs propres pour la correction entropique
+
+	//Todo not yet emplemented, rajouter une erreur 
 	void entropicShift(double* n);
-	// Fonctions utilisant la loi d'etat
-	/** Fluid equation of state **/
+	Vector staggeredVFFCFlux();
+	//TODO cette classe fonctionne avec fluide incompressible et compressible
 	CompressibleFluid *_compressibleFluid;//This class works only with compressible fluids
 	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
@@ -228,6 +229,7 @@ protected :
 
 	bool _saveAllFields;
 	Field _Enthalpy, _Pressure, _Density, _Temperature, _Momentum, _TotalEnergy, _Vitesse, _VitesseX, _VitesseY, _VitesseZ, _MachNumber;
-
+	bool _isSingularSystem;
+	Vec _constantPressureVector; //TODO quelle utilité dans le code ?
 	};
 #endif /* SINGLEPHASE_HXX_*/

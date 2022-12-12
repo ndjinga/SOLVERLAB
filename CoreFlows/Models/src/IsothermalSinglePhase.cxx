@@ -683,9 +683,6 @@ void IsothermalSinglePhase::addDiffusionToSecondMember
 			_Vj[k] = _Vextdiff[k];
 		_inv_dxj=_inv_dxi;
 	}
-	//J'ai remplacé toutes les égalités du type Vj = Vext 
-	//car si Vj pointe à la même adresse que Vext : lorsqu'on fait delete[] Vj on fait implicitement delete[] Vext => 
-	//donc dès qu'il voit plus tard dans le code delete[] Vext il essaie de désallouer une deuxième fois
 
 	//on n'a pas de contribution sur la masse
 	_phi[0]=0;
