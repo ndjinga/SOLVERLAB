@@ -224,9 +224,8 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 			_Diffusion[i] = 0;
 		for(int i=1;i<_nVar-1;i++)
 			_Diffusion[i*_nVar+i] = mu;
-		//TODO récupérer les dérivées de T par rapport à enthalpie et pression
-		double dT_dp = 0;
-		double dT_dh = 0;
+		//TODO à définir
+		double dT_dp, dT_dh  = _fluides[0]->getTemperatureDerivatives(p,h);
 		_Diffusion[(_nVar-1)*_nVar]= - lambda * dT_dp;
 		_Diffusion[_nVar*_nVar-1]= - lambda * dT_dh;
 	}
@@ -1186,7 +1185,7 @@ Vector NavierStokes::convectionFlux(Vector U,Vector V, Vector normale, double po
 		cout<<"Flux F(U,V)"<<endl;
 		cout<<F<<endl;
 	}
-	
+
 	return F;
 }
 
