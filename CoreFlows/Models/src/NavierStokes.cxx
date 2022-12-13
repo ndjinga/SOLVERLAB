@@ -214,7 +214,7 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 
 	if(_timeScheme==Implicit)
 	{
-		//TODO caluler ses états si on est en incompressible
+		//TODO incompressible
 		double rho = _fluides[0]->getDensityFromEnthalpy(_Vdiff[0],_Vdiff[ _nVar-1 ] );
 		double T = _fluides[0]->getTemperatureFromEnthalpy( _Vdiff[ _nVar -1], rho );
 		
@@ -610,14 +610,6 @@ void NavierStokes::convectionMatrices()
 	c = 1/sqrt(invSound).0;
 
 	vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
-	//Todo : modifier valeurs propres pour les adapter à euler complet
-	_maxvploc=fabs(u_n)+c;
-	if(_maxvploc>_maxvp)
-		_maxvp=_maxvploc;
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"NavierStokes::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
-
 
 	if(invSound==0.){//infinite sound speed
 		if(_timeScheme==Explicit)
@@ -655,13 +647,13 @@ void NavierStokes::convectionMatrices()
 		_maxvp=_maxvploc;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
-		cout<<"IsothermalSinglePhase::convectionMatrices, "<< nb_vp_dist<< " eigenvalues, u_n= "<<u_n<<", c= "<<c<<endl;
+		cout<<"NavierStokes::convectionMatrices, "<< nb_vp_dist<< " eigenvalues, u_n= "<<u_n<<", c= "<<c<<endl;
 
 	if(_entropicCorrection)
 	{
-		*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: entropy scheme not available for IsothermalSinglePhase"<<endl;
+		*_runLogFile<<"NavierStokes::convectionMatrices: entropy scheme not available for NavierStokes"<<endl;
 		_runLogFile->close();
-		throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for IsothermalSinglePhase");
+		throw CdmathException("NavierStokes::convectionMatrices: entropy scheme not available for NavierStokes");
 	}
 
 	/******** Construction des matrices de decentrement ********/
@@ -1263,7 +1255,7 @@ void NavierStokes::primToCons(const double *P, const int &i, double *W, const in
 
 void NavierStokes::primToConsJacobianMatrix(double *V)
 {
-	// TODO à modifier
+	// TODO peut-on rendre générique cette fonction et cacher les équations d'état dans une fonction dédiée ?
 	double pression=V[0];
 	double temperature=V[_nVar-1];
 	double vitesse[_Ndim];
@@ -1342,40 +1334,6 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 		displayMatrix(_primToConsJacoMat,_nVar," Jacobienne primToCons: ");
 	}
 }
-
-void NavierStokes::consToPrim(const double *Wcons, double* Wprim,double porosity)
-{
-	assert( Wcons[0]>0);//Density should be positive
-	assert( Wcons[_nVar-1]>0);//Total energy should be positive
-
-	double q_2 = 0;
-	for(int k=1;k<=_Ndim;k++)
-		q_2 += Wcons[k]*Wcons[k];
-	q_2 /= Wcons[0];	//phi rho u²
-	double rhoe=(Wcons[(_Ndim+2)-1]-q_2/2)/porosity;
-	double rho=Wcons[0]/porosity;
-	Wprim[0] =  _compressibleFluid->getPressure(rhoe,rho);//pressure p
-	if (Wprim[0]<0){
-		cout << "pressure = "<< Wprim[0] << " < 0 " << endl;
-		*_runLogFile<< "pressure = "<< Wprim[0] << " < 0 " << endl;
-		_runLogFile->close();
-		throw CdmathException("SinglePhase::consToPrim: negative pressure");
-	}
-	for(int k=1;k<=_Ndim;k++)
-		Wprim[k] = Wcons[k]/Wcons[0];//velocity u
-	Wprim[(_Ndim+2)-1] =  _compressibleFluid->getTemperatureFromPressure(Wprim[0],Wcons[0]/porosity);
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<"ConsToPrim Vecteur conservatif"<<endl;
-		for(int k=0;k<_nVar;k++)
-			cout<<Wcons[k]<<endl;
-		cout<<"ConsToPrim Vecteur primitif"<<endl;
-		for(int k=0;k<_nVar;k++)
-			cout<<Wprim[k]<<endl;
-	}
-}
-
 
 Vector IsothermalSinglePhase::staggeredVFFCFlux()
 {

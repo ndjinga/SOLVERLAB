@@ -216,7 +216,6 @@ protected :
 	Vector staggeredVFFCFlux();
 	//TODO cette classe fonctionne avec fluide incompressible et compressible
 	CompressibleFluid *_compressibleFluid;//This class works only with compressible fluids
-	void consToPrim(const double *Ucons, double* Vprim,double porosity=1);
 	void primToCons(const double *V, const int &i, double *U, const int &j);
 	void primToConsJacobianMatrix(double *V);
 	/** \fn getDensityDerivatives
