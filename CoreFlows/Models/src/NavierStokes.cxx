@@ -214,7 +214,6 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 
 	if(_timeScheme==Implicit)
 	{
-		//TODO incompressible
 		double rho = _fluides[0]->getDensityFromEnthalpy(_Vdiff[0],_Vdiff[ _nVar-1 ] );
 		double T = _fluides[0]->getTemperatureFromEnthalpy( _Vdiff[ _nVar -1], rho );
 		
@@ -233,234 +232,89 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 	}
 }
 
-//TODO demander bouundary condition en euler complet ?
 void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *normale){
 	_idm[0] = _nVar*j;
 	for(int k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
 
-	double porosityj=_porosityField(j);
-
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< " face unit normal vector "<<endl;
-		for(int k=0; k<_Ndim; k++){
+		for(int k=0; k<_Ndim; k++)
 			cout<<normale[k]<<", ";
-		}
 		cout<<endl;
 	}
 
 	if (_limitField[nameOfGroup].bcType==Wall){
-		VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne conservatif
-		double q_n=0;//q_n=quantité de mouvement normale à la face frontière;
+		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne primitif
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+		{
+			cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< ", inner primitive state Vi = "<<endl;
+			for(int k=0; k<_nVar; k++)
+				cout<<_externalStates[k]<<", ";
+			cout<<endl;
+		}
+		double u_n=0;//u_n=vitesse normale à la face frontière;
 		for(int k=0; k<_Ndim; k++)
-			q_n+=_externalStates[(k+1)]*normale[k];
+			u_n+=_externalStates[(k+1)]*normale[k];
 			
 		//Pour la convection, inversion du sens de la vitesse normale
 		for(int k=0; k<_Ndim; k++)
-			_externalStates[(k+1)]-= 2*q_n*normale[k];
-
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-
-		VecAssemblyBegin(_Uext);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-
-		//Pour la diffusion, paroi à vitesse et temperature imposees
-		_idm[0] = _nVar*j;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//L'état fantome contient à présent les variables primitives internes
-		double pression=_externalStates[0];
-		double T=_limitField[nameOfGroup].T;
-		double rho=_compressibleFluid->getDensity(pression,T);
-
-		_externalStates[0]=porosityj*rho;
-		_externalStates[1]=_externalStates[0]*_limitField[nameOfGroup].v_x[0];
-		double v2=0;
-		v2 +=_limitField[nameOfGroup].v_x[0]*_limitField[nameOfGroup].v_x[0];
-		if(_Ndim>1)
-		{
-			v2 +=_limitField[nameOfGroup].v_y[0]*_limitField[nameOfGroup].v_y[0];
-			_externalStates[2]=_externalStates[0]*_limitField[nameOfGroup].v_y[0];
-			if(_Ndim==3)
-			{
-				_externalStates[3]=_externalStates[0]*_limitField[nameOfGroup].v_z[0];
-				v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
-			}
-		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_compressibleFluid->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uextdiff);
+			_externalStates[(k+1)]-= 2*u_n*normale[k];
 	}
 	else if (_limitField[nameOfGroup].bcType==Neumann){
-		VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On prend l'état fantôme égal à l'état interne (conditions limites de Neumann)
-
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-
-		VecAssemblyBegin(_Uext);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uextdiff);
+		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On prend l'état fantôme égal à l'état interne (conditions limites de Neumann)
 	}
 	else if (_limitField[nameOfGroup].bcType==Inlet){
-		VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne (conditions limites de Neumann)
-		double q_int_n=0;//q_int_n=composante normale de la quantité de mouvement à la face frontière;
+		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne 
+		double u_int_n=0;//u_int_n=composante normale de la vitesse à la face frontière;
 		for(int k=0; k<_Ndim; k++)
-			q_int_n+=_externalStates[(k+1)]*normale[k];//On calcule la vitesse normale sortante
+			u_int_n+=_externalStates[(k+1)]*normale[k];//On calcule la vitesse normale sortante
 
-		double q_ext_n=_limitField[nameOfGroup].v_x[0]*normale[0];
+		double u_ext_n=_limitField[nameOfGroup].v_x[0]*normale[0];
 		if(_Ndim>1)
 			{
-				q_ext_n+=_limitField[nameOfGroup].v_y[0]*normale[1];
+				u_ext_n+=_limitField[nameOfGroup].v_y[0]*normale[1];
 				if(_Ndim>2)
-						q_ext_n+=_limitField[nameOfGroup].v_z[0]*normale[2];
+					u_ext_n+=_limitField[nameOfGroup].v_z[0]*normale[2];
 			}
 
-		if(q_int_n+q_ext_n<=0){//Interfacial velocity goes inward
-			VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On met à jour l'état fantome avec les variables primitives internes
-			double pression=_externalStates[0];
-			double T=_limitField[nameOfGroup].T;
-			double rho=_compressibleFluid->getDensity(pression,T);
-
-			_externalStates[0]=porosityj*rho;//Composante fantome de masse
-			_externalStates[1]=_externalStates[0]*(_limitField[nameOfGroup].v_x[0]);//Composante fantome de qdm x
-			double v2=0;
-			v2 +=(_limitField[nameOfGroup].v_x[0])*(_limitField[nameOfGroup].v_x[0]);
+		if(u_int_n+u_ext_n<=0)
+		{//Interfacial velocity goes inward
+		    _externalStates[1] = _limitField[nameOfGroup].v_x[0];
+			//TODO il y a til enthalpie dans -limitField[nameOfGroup] ?
+			_externalStates[_nVar - 1] = _limitField[nameOfGroup].h;
 			if(_Ndim>1)
 			{
-				v2 +=_limitField[nameOfGroup].v_y[0]*_limitField[nameOfGroup].v_y[0];
-				_externalStates[2]=_externalStates[0]*_limitField[nameOfGroup].v_y[0];//Composante fantome de qdm y
-				if(_Ndim==3)
-				{
-					_externalStates[3]=_externalStates[0]*_limitField[nameOfGroup].v_z[0];//Composante fantome de qdm z
-					v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
-				}
-			}
-			_externalStates[_nVar-1] = _externalStates[0]*(_compressibleFluid->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);//Composante fantome de l'nrj
+      		   _externalStates[2] = _limitField[nameOfGroup].v_y[0];
+                if(_Ndim>2)
+			        _externalStates[3] = _limitField[nameOfGroup].v_z[0];
+            }			
 		}
 		else if(_nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid possibly going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
-
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
-	}
-	else if (_limitField[nameOfGroup].bcType==InletRotationVelocity){
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-		double u_int_n=0;//u_int_n=composante normale de la vitesse intérieure à la face frontière;
-		for(int k=0; k<_Ndim; k++)
-			u_int_n+=_externalStates[(k+1)]*normale[k];
-
-		double u_ext_n=0;
-        //ghost velocity
-        if(_Ndim>1)
-        {
-            Vector omega(3);
-            omega[0]=_limitField[nameOfGroup].v_x[0];
-            omega[1]=_limitField[nameOfGroup].v_y[0];
-            
-            Vector Normale(3);
-            Normale[0]=normale[0];
-            Normale[1]=normale[1];
-
-            if(_Ndim==3)
-            {
-                omega[2]=_limitField[nameOfGroup].v_z[0];
-                Normale[2]=normale[2];
-            }
-            
-            Vector tangent_vel=omega%Normale;
-			u_ext_n=-0.01*tangent_vel.norm();
-			//Changing external state velocity
-            for(int k=0; k<_Ndim; k++)
-                _externalStates[(k+1)]=u_ext_n*normale[k] + tangent_vel[k];
-        }
-
-		if(u_ext_n + u_int_n <= 0){
-			double pression=_externalStates[0];
-			double T=_limitField[nameOfGroup].T;
-			double rho=_compressibleFluid->getDensity(pression,T);
-
-			double v2=0;
-			v2 +=_externalStates[1]*_externalStates[1];//v_x*v_x
-			_externalStates[0]=porosityj*rho;
-			_externalStates[1]*=_externalStates[0];
-			if(_Ndim>1)
-			{
-				v2 +=_externalStates[2]*_externalStates[2];//+v_y*v_y
-				_externalStates[2]*=_externalStates[0];
-				if(_Ndim==3)
-				{
-					v2 +=_externalStates[3]*_externalStates[3];//+v_z*v_z
-					_externalStates[3]*=_externalStates[0];
-				}
-			}
-			_externalStates[_nVar-1] = _externalStates[0]*(_compressibleFluid->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
-		}
-		else if(_nbTimeStep%_freqSave ==0)
-		{
-			/*
-			 * cout<< "Warning : fluid going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
-			 */ 
-			VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On définit l'état fantôme avec l'état interne
-			if(_nbTimeStep%_freqSave ==0)
-				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Wall boundary condition."<<endl;
-			
-			//Changing external state momentum
-            for(int k=0; k<_Ndim; k++)
-                _externalStates[(k+1)]-=2*_externalStates[0]*u_int_n*normale[k];
-		}
-
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
 	}
 	else if (_limitField[nameOfGroup].bcType==InletPressure){
-		VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne
+		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état primitif interne
 
-		//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
-		Cell Cj=_mesh.getCell(j);
-		double hydroPress=Cj.x()*_GravityField3d[0];
-		if(_Ndim>1){
-			hydroPress+=Cj.y()*_GravityField3d[1];
-			if(_Ndim>2)
-				hydroPress+=Cj.z()*_GravityField3d[2];
-		}
-		hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
-
-		//Building the primitive external state
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
 		double u_n=0;//u_n=vitesse normale à la face frontière;
 		for(int k=0; k<_Ndim; k++)
 			u_n+=_externalStates[(k+1)]*normale[k];
         
 		if(u_n<=0)
 		{
-			_externalStates[0]=porosityj*_compressibleFluid->getDensity(_limitField[nameOfGroup].p+hydroPress,_limitField[nameOfGroup].T);
+			//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
+			Cell Cj=_mesh.getCell(j);
+			double hydroPress=Cj.x()*_GravityField3d[0];
+			if(_Ndim>1){
+				hydroPress+=Cj.y()*_GravityField3d[1];
+				if(_Ndim>2)
+					hydroPress+=Cj.z()*_GravityField3d[2];
+			}
+			hydroPress*= _fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature) ;//multiplication by rho the total density
+			
+			//First component : total pressure
+			_externalStates[0] = hydroPress + _limitField[nameOfGroup].p;
 			
 	        //Contribution from the tangential velocity
 	        if(_Ndim>1)
@@ -483,102 +337,82 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 	
 				//Changing external state velocity
 	            for(int k=0; k<_Ndim; k++)
-	                _externalStates[(k+1)]=u_n*normale[k] + abs(u_n)*tangent_vel[k];
+	                _externalStates[(k+1)]=u_n*normale[k] + tangent_vel[k];
 	        }
 		}
 		else{
 			/*
 			if(_nbTimeStep%_freqSave ==0)
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Neumann boundary condition for velocity and temperature (only pressure value is imposed as in outlet BC)."<<endl;
-			_externalStates[0]=porosityj*_compressibleFluid->getDensity(_limitField[nameOfGroup].p+hydroPress, _externalStates[_nVar-1]);
+			_externalStates[0]=_porosityj*(_limitField[nameOfGroup].p+hydroPress);
 			*/
 			if(_nbTimeStep%_freqSave ==0)
-				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Wall boundary condition."<<endl;
-			_externalStates[0]=porosityj*_compressibleFluid->getDensity(_externalStates[0]+hydroPress, _externalStates[_nVar-1]);
-			//Changing external state velocity
-            for(int k=0; k<_Ndim; k++)
-                _externalStates[(k+1)]-=2*u_n*normale[k];
+				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Neumann boundary condition."<<endl;
 		}
-
-		double v2=0;
-		for(int k=0; k<_Ndim; k++)
-		{
-			v2+=_externalStates[(k+1)]*_externalStates[(k+1)];
-			_externalStates[(k+1)]*=_externalStates[0] ;//qdm component
-		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_compressibleFluid->getInternalEnergy( _externalStates[_nVar-1],_externalStates[0]) + v2/2);//nrj component
-
-
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
 	}
 	else if (_limitField[nameOfGroup].bcType==Outlet){
-		VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne conservatif
-		double q_n=0;//q_n=quantité de mouvement normale à la face frontière;
+		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates); //On remplace l'état fantôme par l'état interne PRIMITIF
+		double u_n=0;//u_n=vitesse normale à la face frontière;
 		for(int k=0; k<_Ndim; k++)
-			q_n+=_externalStates[(k+1)]*normale[k];
+		    u_n+=_externalStates[(k+1)]*normale[k];
 
-		if(q_n < -_precision &&  _nbTimeStep%_freqSave ==0)
+		if(u_n < -_precision &&  _nbTimeStep%_freqSave ==0)
+		    cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<" with velocity "<< u_n<<endl;
+        else
         {
-			cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<" with flow rate "<< q_n<<endl;
-            cout<< "Applying Neumann boundary condition for velocity and temperature"<<endl;
-        }
-
-		double hydroPress=0;
-		if( _VV.getSpaceDimension()>1)
-		{
-			//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
-			Cell Cj=_mesh.getCell(j);
-			hydroPress=(Cj.x()-_gravityReferencePoint[0])*_GravityField3d[0];
-			if(_Ndim>1){
-				hydroPress+=(Cj.y()-_gravityReferencePoint[1])*_GravityField3d[1];
-				if(_Ndim>2)
-					hydroPress+(Cj.z()-_gravityReferencePoint[2])*_GravityField3d[2];
-			}
-			hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
-			if(_verbose && _nbTimeStep%_freqSave ==0)
+			double hydroPress=0;
+			if( _VV.getSpaceDimension()>1)
 			{
-				cout<<"Cond lim outlet densite= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
-				cout<<"Cond lim outlet pression ref= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
+				//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
+				Cell Cj=_mesh.getCell(j);
+				double hydroPress=(Cj.x()-_gravityReferencePoint[0])*_GravityField3d[0];
+				if(_Ndim>1){
+					hydroPress+=(Cj.y()-_gravityReferencePoint[1])*_GravityField3d[1];
+					if(_Ndim>2)
+						hydroPress+=(Cj.z()-_gravityReferencePoint[2])*_GravityField3d[2];
+				}
+				hydroPress*= _fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature) ;//multiplication by rho the total density
+		
+				if(_verbose && _nbTimeStep%_freqSave ==0)
+				{
+					cout<<"Cond lim outlet pressure= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
+					cout<<"Cond lim outlet reference pressure= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
+				}
 			}
+			_externalStates[0] = hydroPress + _limitField[nameOfGroup].p;
 		}
-
-		//Building the external state
-		_idm[0] = _nVar*j;// Kieu
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-
-		_externalStates[0]=porosityj*_compressibleFluid->getDensity(_limitField[nameOfGroup].p+hydroPress, _externalStates[_nVar-1]);
-		double v2=0;
-		for(int k=0; k<_Ndim; k++)
-		{
-			v2+=_externalStates[(k+1)]*_externalStates[(k+1)];
-			_externalStates[(k+1)]*=_externalStates[0] ;
-		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_compressibleFluid->getInternalEnergy( _externalStates[_nVar-1],_externalStates[0]) + v2/2);
-		_idm[0] = 0;
-		for(int k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
 	}else {
 		cout<<"Boundary condition not set for boundary named "<<nameOfGroup<< " _limitField[nameOfGroup].bcType= "<<_limitField[nameOfGroup].bcType<<endl;
-		cout<<"Accepted boundary condition are Neumann, Wall, Inlet, and Outlet"<<endl;
-		*_runLogFile<<"Boundary condition not set for boundary named. Accepted boundary condition are Neumann, Wall, Inlet, and Outlet"<<endl;
+		cout<<"Accepted boundary condition are Neumann, Wall, Inlet, InletPressure and Outlet"<<endl;
+		*_runLogFile<<"Boundary condition not set for boundary named. Accepted boundary condition are Neumann, Wall, Inlet, InletPressure and Outlet"<<endl;
 		_runLogFile->close();
 		throw CdmathException("Unknown boundary condition");
+	}
+
+	for(int k=0; k<_nVar; k++){
+		_Vext[k] = _externalStates[k];
+		_Vextdiff[k] = _externalStates[k];//Will be changed later for wall boundary condition
+	}
+
+	if (_limitField[nameOfGroup].bcType==Wall)	//Pour la diffusion, paroi à vitesse et temperature imposees
+	{
+		_Vextdiff[0] =_externalStates[0];
+		_Vextdiff[1] =_limitField[nameOfGroup].v_x[0];
+
+		if(_Ndim>1)
+		{
+			_Vextdiff[2] = _limitField[nameOfGroup].v_y[0];
+			if(_Ndim==3)
+				_Vextdiff[3] = _limitField[nameOfGroup].v_z[0];
+		}
+	}
+	
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< ", ghost primitive state Vj = "<<endl;
+		for(int k=0; k<_nVar; k++)
+			cout<<_externalStates[k]<<", ";
+		cout<<endl;
 	}
 }
 
@@ -600,13 +434,10 @@ void NavierStokes::convectionMatrices()
 	}
 	vector<std::complex<double> > vp_dist(3,0);
 
-	double  invSound, H, K, k, c;
+	double  invSound, H, c;
 	/***********Calcul des valeurs propres ********/
-	H = _Uroe[_nVar-1];
+	H = _Uroe[_nVar-1 ];
 	invSound = 1/_compressibleFluid->vitesseSonEnthalpie(H-u_2/2).0;
-	//#todo : récupérer inv soundspeed à partir de la moyenne des états ?
-	k = _compressibleFluid->constante("gamma") - 1;//A generaliser pour porosite et stephane gas law
-	K = u_2*k/2; //g-1/2 *|u|²
 	c = 1/sqrt(invSound).0;
 
 	vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
@@ -660,13 +491,16 @@ void NavierStokes::convectionMatrices()
 	if( _spaceScheme ==centered){
 		if(_usePrimitiveVarsInNewton)//We use primitive variables in Newton iterations
 		{
-			convectionMatrixPrimitiveVariables(u_n);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
+			convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 			for(int i=0; i<_nVar*_nVar;i++)
 				_absAroeImplicit[i] = 0;
 		}
 		else//We use conservative variables in Newton iterations
 		{
-			convectionMatrixConservativeVariables(u_n);//Ici on calcule Acons et on le stocke dans _Aroe
+			k = _compressibleFluid->constante("gamma") - 1;//A generaliser pour porosite et stephane gas law
+			K = u_2*k/2; //g-1/2 *|u|²
+			//TODO que deviennent K, k avec une loi d'état générale 
+			convectionMatrixConservativeVariables(u_n, H, vitesse, k, K );//Ici on calcule Acons et on le stocke dans _Aroe
 			for(int i=0; i<_nVar*_nVar;i++)
 				_absAroe[i] = 0;
 		}
@@ -686,7 +520,8 @@ void NavierStokes::convectionMatrices()
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
 		Polynoms::abs_par_interp_directe( nb_vp_dist, vp_dist, _Aroe, _nVar,_precision, _absAroe,y);//Ici on calcule |Acons| et on le stocke dans _absAroe
 		
-		/* Calcul de JacU(rho, velocity, 1/c^2) */
+		//Calcul de JacU
+		//TODO calcul de primToCons
 		primToConsJacobianMatrix(_Uroe[0], _Uroe+1,_Uroe[_nVar]);//Ici on calcule la jacobienne nabla U en l'état de Roe et on la stocke dans _primConsJacoMat
 		//Calcul du produit |Acons|JacU
 		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _absAroeImplicit);
@@ -694,11 +529,12 @@ void NavierStokes::convectionMatrices()
 	else if( _spaceScheme ==staggered ){
 		if(_entropicCorrection)//To do: study entropic correction for staggered
 		{
-			*_runLogFile<<"IsothermalSinglePhase::convectionMatrices: entropy scheme not available for staggered scheme"<<endl;
+			*_runLogFile<<"NavierStokes::convectionMatrices: entropy scheme not available for staggered scheme"<<endl;
 			_runLogFile->close();
-			throw CdmathException("IsothermalSinglePhase::convectionMatrices: entropy scheme not available for staggered scheme");
+			throw CdmathException("NavierStokes::convectionMatrices: entropy scheme not available for staggered scheme");
 		}
 		/* Calcul de Aprim */
+		//TODO Calcul de staggered
 		convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2],vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 		/* Calcul du décentrement staggered */
 		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);//Ici on calcule le décentrement staggered et on le stocke dans _absAroeImplicit
@@ -1239,25 +1075,25 @@ void  NavierStokes::jacobianDiff(const int &j, string nameOfGroup)
 
 void NavierStokes::primToCons(const double *P, const int &i, double *W, const int &j){
 	//cout<<"SinglePhase::primToCons i="<<i<<", j="<<j<<", P[i*(_Ndim+2)]="<<P[i*(_Ndim+2)]<<", P[i*(_Ndim+2)+(_Ndim+1)]="<<P[i*(_Ndim+2)+(_Ndim+1)]<<endl;
+	double rho = _fluides[0]->getDensityFromEnthalpy( P[i*(_Ndim+2)], P[i*(_Ndim+2)+(_Ndim+1)] );
+	double T = _fluides[0]->getTemperatureFromEnthalpy( _Vdiff[ _nVar -1], rho );
 
 	assert( P[i*(_Ndim+2)]>0);//Pressure should be positive
-	assert( P[i*(_Ndim+2)+(_Ndim+1)]>0);//Temperature should be positive
+	assert( T > 0);//Temperature should be positive
 
-	double rho=_compressibleFluid->getDensity(P[i*(_Ndim+2)], P[i*(_Ndim+2)+(_Ndim+1)]);
 	W[j*(_Ndim+2)] =  _porosityField(j)*rho;//phi*rho
 	for(int k=0; k<_Ndim; k++)
-		W[j*(_Ndim+2)+(k+1)] = W[j*(_Ndim+2)]*P[i*(_Ndim+2)+(k+1)];//phi*rho*u
+		W[j*(_Ndim+2)+(k+1)] = W[j*(_Ndim+2)] * P[i*(_Ndim+2)+(k+1)];//phi*rho*u
 
-	W[j*(_Ndim+2)+(_Ndim+1)] = W[j*(_Ndim+2)]*_compressibleFluid->getInternalEnergy(P[i*(_Ndim+2)+ (_Ndim+1)],rho);//rho*e
+	W[j*(_Ndim+2)+(_Ndim+1)] = W[j*(_Ndim+2)] * _fluides[0]->getInternalEnergy(P[i*(_Ndim+2)+ (_Ndim+1)],rho);//rho*e
 	for(int k=0; k<_Ndim; k++)
 		W[j*(_Ndim+2)+(_Ndim+1)] += W[j*(_Ndim+2)]*P[i*(_Ndim+2)+(k+1)]*P[i*(_Ndim+2)+(k+1)]*0.5;//phi*rho*e+0.5*phi*rho*u^2
 }
 
 void NavierStokes::primToConsJacobianMatrix(double *V)
 {
-	// TODO peut-on rendre générique cette fonction et cacher les équations d'état dans une fonction dédiée ?
-	double pression=V[0];
-	double temperature=V[_nVar-1];
+	double pression = V[0];
+	double h = V[_nVar-1];
 	double vitesse[_Ndim];
 	for(int idim=0;idim<_Ndim;idim++)
 		vitesse[idim]=V[1+idim];
@@ -1265,70 +1101,36 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 	for(int idim=0;idim<_Ndim;idim++)
 		v2+=vitesse[idim]*vitesse[idim];
 
-	double rho=_compressibleFluid->getDensity(pression,temperature);
-	double gamma=_compressibleFluid->constante("gamma");
-	double cv=_compressibleFluid->constante("cv");
+	double rho=_fluides[0]->getDensityFromEnthalpy(pression,h);
+	//TODO à définir
+	double drho_dp, drho_dh = fluides[0]->getDensityDerivatives(pression, h);
+	double de_dp, de_dh = fluides[0]->getInternalEnergyDerivatives(pression, h)
 
-	for(int k=0;k<_nVar*_nVar; k++)
+	for(int k=0;k<_nVar*_nVar; k++){
 		_primToConsJacoMat[k]=0;
-
-	if(		!_useDellacherieEOS)
-	{
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_compressibleFluid);
-		double e=fluide0->getInternalEnergy(temperature);
-		double E=e+0.5*v2;
-		/* To do : replace the formulas usind p0 and q by calls to sound speed */
-		double Pinf = fluide0->constante("p0");
-		double    q = fluide0->constante("q");
-
-		_primToConsJacoMat[0]=1/((gamma-1)*(e-q));
-		_primToConsJacoMat[_nVar-1]=-rho*cv/(e-q);
-
-		for(int idim=0;idim<_Ndim;idim++)
-		{
-			_primToConsJacoMat[_nVar+idim*_nVar]=vitesse[idim]/((gamma-1)*(e-q));
-			_primToConsJacoMat[_nVar+idim*_nVar+1+idim]=rho;
-			_primToConsJacoMat[_nVar+idim*_nVar+_nVar-1]=-rho*vitesse[idim]*cv/(e-q);
-		}
-		_primToConsJacoMat[(_nVar-1)*_nVar]=E/((gamma-1)*(e-q));
-		for(int idim=0;idim<_Ndim;idim++)
-			_primToConsJacoMat[(_nVar-1)*_nVar+1+idim]=rho*vitesse[idim];
-		_primToConsJacoMat[(_nVar-1)*_nVar+_nVar-1]=rho*cv*(1-E/(e-q));
 	}
-	else if(	_useDellacherieEOS)
-	{
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_compressibleFluid);
-		double h=fluide0->getEnthalpy(temperature);
-		double H=h+0.5*v2;
-		double cp=_compressibleFluid->constante("cp");
-		/* To do : replace the formulas usind p0 and q by calls to sound speed */
-		double Pinf = fluide0->constante("p0");
-		double    q = fluide0->constante("q");
-
-		_primToConsJacoMat[0]=gamma/((gamma-1)*(h-q));
-		_primToConsJacoMat[_nVar-1]=-rho*cp/(h-q);
-
-		for(int idim=0;idim<_Ndim;idim++)
-		{
-			_primToConsJacoMat[_nVar+idim*_nVar]=gamma*vitesse[idim]/((gamma-1)*(h-q));
-			_primToConsJacoMat[_nVar+idim*_nVar+1+idim]=rho;
-			_primToConsJacoMat[_nVar+idim*_nVar+_nVar-1]=-rho*vitesse[idim]*cp/(h-q);
-		}
-		_primToConsJacoMat[(_nVar-1)*_nVar]=gamma*H/((gamma-1)*(h-q))-1;
-		for(int idim=0;idim<_Ndim;idim++)
-			_primToConsJacoMat[(_nVar-1)*_nVar+1+idim]=rho*vitesse[idim];
-		_primToConsJacoMat[(_nVar-1)*_nVar+_nVar-1]=rho*cp*(1-H/(h-q));
+	//première ligne
+	_primToConsJacoMat[0] = drho_dp;
+	_primToConsJacoMat[_nVar -1] = drho_dh;
+	//Deuxième ligne à (Ndim+1) ligne
+	for(int i=0; i< _Ndim; i++){
+		_primToConsJacoMat[i*_nVar] = drho_dp * vitesse[i];
+		_primToConsJacoMat[i*_nVar + _nVar-1] = drho_dh * vitesse[i];
+		_primToConsJacoMat[i*_nVar + 1+i] = rho;
 	}
-	else
-	{
-		*_runLogFile<<"SinglePhase::primToConsJacobianMatrix: eos should be StiffenedGas or StiffenedGasDellacherie"<<endl;
-		_runLogFile->close();
-		throw CdmathException("SinglePhase::primToConsJacobianMatrix: eos should be StiffenedGas or StiffenedGasDellacherie");
+	//Dernière ligne
+	double E = h - pression/rho.0 + v2/2.0 ;
+	_primToConsJacoMat[(_nVar-1) * _nVar ] = drho_dp * E + rho(de_dp + v2/2.0);
+	_primToConsJacoMat[(_nVar-1) * _nVar + _nVar -1] = drho_dh * E + rho(de_dh + v2/2.0);
+	for(int j=0; j< _Ndim; j++){
+		_primToConsJacoMat[(_nVar-1) * _nVar + 1+j] = rho * vitesse[i];
+
 	}
+
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout<<" SinglePhase::primToConsJacobianMatrix" << endl;
+		cout<<" NavierStokes::primToConsJacobianMatrix" << endl;
 		displayVector(_Vi,_nVar," _Vi " );
 		cout<<" Jacobienne primToCons: " << endl;
 		displayMatrix(_primToConsJacoMat,_nVar," Jacobienne primToCons: ");
@@ -1357,27 +1159,26 @@ Vector NavierStokes::convectionFlux(Vector U,Vector V, Vector normale, double po
 		cout<<"Vprim"<<endl;
 		cout<<V<<endl;
 	}
-
-	double phirho=U(0);//phi rho
-	Vector phiq(_Ndim);//phi rho u
+	double h = V[_nVar-1];
+	double phirho=U[0];//phi rho
+	Vector phiq[_Ndim];//phi rho u
 	for(int i=0;i<_Ndim;i++)
-		phiq(i)=U(1+i);
+		phiq[i]=U[1+i];
 
-	double pression=V(0);
-	Vector vitesse(_Ndim);
+	double pression=V[0];
+	Vector vitesse[_Ndim];
 	for(int i=0;i<_Ndim;i++)
-		vitesse(i)=V(1+i);
-	double Temperature= V(1+_Ndim);
+		vitesse[i]=V[1+i];
+		v2 += vitesse[i] * vitesse[i];
 
 	double vitessen=vitesse*normale;
 	double rho=phirho/porosity;
-	double e_int=_compressibleFluid->getInternalEnergy(Temperature,rho);
 
-	Vector F(_nVar);
-	F(0)=phirho*vitessen;
+	Vector F[_nVar];
+	F[0] = phirho*vitessen;
 	for(int i=0;i<_Ndim;i++)
-		F(1+i)=phirho*vitessen*vitesse(i)+pression*normale(i)*porosity;
-	F(1+_Ndim)=phirho*(e_int+0.5*vitesse*vitesse+pression/rho)*vitessen;
+		F[1+i] = phirho*vitessen*vitesse[i]+pression*normale[i]*porosity;
+	F[1+_Ndim] = phirho*( h - pression/rho.0 + v2/2.0)*vitessen;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -1385,7 +1186,7 @@ Vector NavierStokes::convectionFlux(Vector U,Vector V, Vector normale, double po
 		cout<<"Flux F(U,V)"<<endl;
 		cout<<F<<endl;
 	}
-
+	
 	return F;
 }
 
@@ -1448,8 +1249,7 @@ void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, d
 
 void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n,double H, Vector vitesse)
 {
-	//Not used. Suppress or use in alternative implicitation in primitive variable of the staggered-roe scheme
-	//Calcul de décentrement de type décalé pour formulation Roe
+	//Calcul de décentrement de type décalé pour formulation Roe en variables primitives
 	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
 	for(int i=0;i<_Ndim;i++)
 		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
