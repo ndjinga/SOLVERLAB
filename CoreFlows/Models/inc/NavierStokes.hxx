@@ -211,7 +211,6 @@ protected :
 	void computeScaling(double offset);
 	//!Calcule les saut de valeurs propres pour la correction entropique
 
-	//Todo not yet emplemented, rajouter une erreur 
 	void entropicShift(double* n);
 	Vector staggeredVFFCFlux();
 	//TODO cette classe fonctionne avec fluide incompressible et compressible
@@ -224,11 +223,12 @@ protected :
 	 * @param temperature
 	 * @param square of the velocity vector
 	*/
-	void getDensityDerivatives( double pressure, double temperature, double v2);
+	void getDensityDerivatives( double pressure, double temperature, double v2 );
 
 	bool _saveAllFields;
 	Field _Enthalpy, _Pressure, _Density, _Temperature, _Momentum, _TotalEnergy, _Vitesse, _VitesseX, _VitesseY, _VitesseZ, _MachNumber;
 	bool _isSingularSystem;
-	Vec _constantPressureVector; //TODO quelle utilité dans le code ?
+	bool _isCompressibleFluid;
+	Vec _constantPressureVector; 
 	};
 #endif /* SINGLEPHASE_HXX_*/

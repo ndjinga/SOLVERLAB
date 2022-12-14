@@ -76,22 +76,74 @@ void NavierStokes::initialize(){
 	{
 		_Enthalpy=Field("Enthalpy",CELLS,_mesh,1);
 		_Pressure=Field("Pressure",CELLS,_mesh,1);
+		_Pressure.setInfoOnComponent(0,"Pressure_(Pa)");
 		_Density=Field("Density",CELLS,_mesh,1);
+		_Density.setInfoOnComponent(0,"Density_(kg/m^3)");
 		_Temperature=Field("Temperature",CELLS,_mesh,1);
 		_MachNumber=Field("MachNumber",CELLS,_mesh,1);
+		_MachNumber.setInfoOnComponent(0,"Mach number");
 		_VitesseX=Field("Velocity x",CELLS,_mesh,1);
+		_VitesseX.setInfoOnComponent(0,"Velocity_x_(m/s)");
 		if(_Ndim>1)
 		{
 			_VitesseY=Field("Velocity y",CELLS,_mesh,1);
+			_VitesseY.setInfoOnComponent(0,"Velocity_y_(m/s)");
 			if(_Ndim>2)
 				_VitesseZ=Field("Velocity z",CELLS,_mesh,1);
-		}
+				_VitesseZ.setInfoOnComponent(0,"Velocity_z_(m/s)");
+		}	
 	}
 
-	if(_entropicCorrection)
-		_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
+	//* In case of an incompressible fluid, pressure may be defined up to a constant hence a singular inear system (no uniqueness unless outlet boundary condition) */
+	if(_isCompressibleFluid)
+		_isSingularSystem=false;
+	else
+	{
+		_isSingularSystem=true;//unless outlet boundary condition
+		/* Check the presence of an unless outlet boundary condition */
+		for(  map<string, LimitField>::iterator it = _limitField.begin() ; it!=_limitField.end() ; it++ )
+		{
+			if( (it->second).bcType == Outlet or (it->second).bcType == InletPressure )
+			{
+				_isSingularSystem=false;
+				break;
+			}
+		}
+	if(_verbose && _nbTimeStep%_freqSave ==0)	
+		if(_isSingularSystem)
+			cout<<"!!!!!!!########## singular system ###########!!!!!!!!!!"<<endl;
+		else
+			cout<<"!!!!!!!########## non singular system ###########!!!!!!!!!!"<<endl;
+	}
 
 	ProblemFluid::initialize();
+	/* Deal with the particular case of singular systems */
+	if( _isSingularSystem )
+	{
+		cout<<"No pressure imposed at the boundary : the PDEs solution pressure is defined up to a constant."<<endl;
+		cout<<"Singular linear system : the discrete pressure will be computed to have a zero mean."<<endl;
+		/* Build vector in the kernel of the system matrix */
+		VecDuplicate(_conservativeVars, &_constantPressureVector);//Vector _constantPressureVector has same parallel structure as _conservativeVars
+		VecZeroEntries(_constantPressureVector);
+		IS pressureCoeffsIS;
+		ISCreateStride(PETSC_COMM_SELF, _Nmailles,0,_nVar, &pressureCoeffsIS);
+		VecISSet(_constantPressureVector, pressureCoeffsIS,1./sqrt(_Nmailles));
+		VecAssemblyBegin(_constantPressureVector);
+		VecAssemblyEnd(_constantPressureVector);
+		ISDestroy(&pressureCoeffsIS);
+		
+		/* Give kernel vector to the system matrix */
+		MatNullSpace nullsp;
+		MatNullSpaceCreate(PETSC_COMM_SELF, PETSC_FALSE, 1, &_constantPressureVector, &nullsp);//Declaration of a kernel containing a vector of constant pressure but NOT containing constant vectors
+		//MatSetTransposeNullSpace(_A, nullsp);//To be used if the linear solver needs the kernel of the transpose matrix
+		MatSetNullSpace(_A, nullsp);
+		MatNullSpaceDestroy(&nullsp);
+	}
+	//PCFactorSetShiftType(_pc,MAT_SHIFT_INBLOCKS);//To be used in case of a zero pivot
+	//PCFactorSetShiftAmount(_pc,1e-10);//To be used in case of a zero pivot
+	//PCFactorSetColumnPivot(_pc,0.80);
+	//PCFactorSetZeroPivot(_pc,1e-5);
+	//PCFactorReorderForNonzeroDiagonal(_pc,1e-5);
 }
 //#Todo _constantPressureVector ?
 void IsothermalSinglePhase::terminate(){
@@ -281,7 +333,6 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 		if(u_int_n+u_ext_n<=0)
 		{//Interfacial velocity goes inward
 		    _externalStates[1] = _limitField[nameOfGroup].v_x[0];
-			//TODO il y a til enthalpie dans -limitField[nameOfGroup] ?
 			_externalStates[_nVar - 1] = _limitField[nameOfGroup].h;
 			if(_Ndim>1)
 			{
@@ -471,7 +522,6 @@ void NavierStokes::convectionMatrices()
 		}
 	}
 	
-	//TODO : redondant ?
 	_maxvploc=fabs(u_n)+c;
 	if(_maxvploc>_maxvp)
 		_maxvp=_maxvploc;
@@ -496,9 +546,9 @@ void NavierStokes::convectionMatrices()
 		}
 		else//We use conservative variables in Newton iterations
 		{
+			//TODO calculer k, K pour une loi d'état générale
 			k = _compressibleFluid->constante("gamma") - 1;//A generaliser pour porosite et stephane gas law
 			K = u_2*k/2; //g-1/2 *|u|²
-			//TODO que deviennent K, k avec une loi d'état générale 
 			convectionMatrixConservativeVariables(u_n, H, vitesse, k, K );//Ici on calcule Acons et on le stocke dans _Aroe
 			for(int i=0; i<_nVar*_nVar;i++)
 				_absAroe[i] = 0;
@@ -512,7 +562,7 @@ void NavierStokes::convectionMatrices()
 		/* Calcul de Aprim */
 		convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 		/* Calcul de Acons (first step in the the computaton of upwinding matrix) */
-		convectionMatrixConservativeVariables(_Uroe[0], u_n, _Uroe[2],vitesse);//Ici on calcule Acons et on le stocke dans _Aroe
+		convectionMatrixConservativeVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule Acons et on le stocke dans _Aroe
 		/* Calcul de |Acons| */
 		vector< complex< double > > y (	nb_vp_dist,0);
 		for( int i=0 ; i<nb_vp_dist ; i++)
@@ -520,7 +570,6 @@ void NavierStokes::convectionMatrices()
 		Polynoms::abs_par_interp_directe( nb_vp_dist, vp_dist, _Aroe, _nVar,_precision, _absAroe,y);//Ici on calcule |Acons| et on le stocke dans _absAroe
 		
 		//Calcul de JacU
-		//TODO calcul de primToCons
 		primToConsJacobianMatrix(_Uroe[0], _Uroe+1,_Uroe[_nVar]);//Ici on calcule la jacobienne nabla U en l'état de Roe et on la stocke dans _primConsJacoMat
 		//Calcul du produit |Acons|JacU
 		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _absAroeImplicit);
@@ -659,6 +708,166 @@ void NavierStokes::addDiffusionToSecondMember(const int &i, const int &j, bool i
 	}
 }
 
+void NavierStokes::addSourceTermToSecondMember
+(	const int i, int nbVoisinsi,
+		const int j, int nbVoisinsj,
+		bool isBord, int ij, double mesureFace)//To do : generalise to unstructured meshes
+{
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+		cout<<"NavierStokes::addSourceTerm cell i= "<<i<< " cell j= "<< j<< " isbord "<<isBord<<endl;
+
+	_idm[0] = i*_nVar;
+	for(int k=1; k<_nVar;k++)
+		_idm[k] = _idm[k-1] + 1;
+	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
+	VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
+	sourceVector(_Si,_Ui,_Vi,i);
+
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "Terme source S(Ui), i= " << i<<endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Si[q] << endl;
+		cout << endl;
+	}
+	if(!isBord){
+		for(int k=0; k<_nVar; k++)
+			_idn[k] = _nVar*j + k;
+		VecGetValues(_conservativeVars, _nVar, _idn, _Uj);
+		VecGetValues(_primitiveVars, _nVar, _idn, _Vj);
+		sourceVector(_Sj,_Uj,_Vj,j);
+	}else
+	{
+		for(int k=0; k<_nVar; k++)
+			_Vj[k] = _Vext[k];
+		sourceVector(_Sj,_Uj,_Vj,i);
+	}
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		if(!isBord)
+			cout << "Terme source S(Uj), j= " << j<<endl;
+		else
+			cout << "Terme source S(Uj), cellule fantôme "<<endl;
+		for(int q=0; q<_nVar; q++)
+			cout << _Sj[q] << endl;
+		cout << endl;
+	}
+
+	//Compute pressure loss vector
+	double K;
+	if(_pressureLossFieldSet){
+		K=_pressureLossField(ij);
+		pressureLossVector(_pressureLossVector, K,_Ui, _Vi, _Uj, _Vj);	
+	}
+	else{
+		K=0;
+		for(int k=0; k<_nVar;k++)
+			_pressureLossVector[k]=0;
+	}
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout<<"interface i= "<<i<<", j= "<<j<<", ij="<<ij<<", K="<<K<<endl;
+		for(int k=0; k<_nVar;k++)
+			cout<< _pressureLossVector[k]<<", ";
+		cout<<endl;
+	}
+	//Contribution of the porosityField gradient:
+	if(!isBord)
+		porosityGradientSourceVector();
+	else{
+		for(int k=0; k<_nVar;k++)
+			_porosityGradientSourceVector[k]=0;
+	}
+
+	if (_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		if(!isBord)
+			cout<<"interface i= "<<i<<", j= "<<j<<", ij="<<ij<<", dxi= "<<1/_inv_dxi<<", dxj= "<<1/_inv_dxj<<endl;
+		else
+			cout<<"interface frontière i= "<<i<<", ij="<<ij<<", dxi= "<<1/_inv_dxi<<endl;
+		cout<<"Gradient de porosite à l'interface"<<endl;
+		for(int k=0; k<_nVar;k++)
+			cout<< _porosityGradientSourceVector[k]<<", ";
+		cout<<endl;
+	}
+
+	if(!isBord){
+		if(_wellBalancedCorrection){
+			for(int k=0; k<_nVar;k++)
+				_phi[k]=(_Si[k]+_Sj[k])/2+_pressureLossVector[k]+_porosityGradientSourceVector[k];
+			Polynoms::matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
+			for(int k=0; k<_nVar;k++){
+				_Si[k]=(_phi[k]-_l[k])*mesureFace/_perimeters(i);///nbVoisinsi;
+				_Sj[k]=(_phi[k]+_l[k])*mesureFace/_perimeters(j);///nbVoisinsj;
+			}
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i= " << i<<" venant  (après décentrement) de la face (i,j), j="<<j<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout << "Contribution au terme source Sj de la cellule j= " << j<<" venant  (après décentrement) de la face (i,j), i="<<i<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Sj[q] << endl;
+				cout << endl;
+				cout<<"ratio surface sur volume i = "<<mesureFace/_perimeters(i)<<" perimeter = "<< _perimeters(i)<<endl;
+				cout<<"ratio surface sur volume j = "<<mesureFace/_perimeters(j)<<" perimeter = "<< _perimeters(j)<<endl;
+				cout << endl;
+			}
+		}
+		else{
+			for(int k=0; k<_nVar;k++){
+				_Si[k]=_Si[k]/nbVoisinsi+_pressureLossVector[k]/2+_porosityGradientSourceVector[k]/2;//mesureFace/_perimeters(i)
+				_Sj[k]=_Sj[k]/nbVoisinsj+_pressureLossVector[k]/2+_porosityGradientSourceVector[k]/2;//mesureFace/_perimeters(j)
+			}
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i = " << i<<" venant  de la face (i,j), j="<<j<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout << "Contribution au terme source Sj de la cellule j = " << j<<" venant  de la face (i,j), i="<<i <<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Sj[q] << endl;
+				cout << endl;
+			}
+		}
+		_idn[0] = j;
+		VecSetValuesBlocked(_b, 1, _idn, _Sj, ADD_VALUES);
+	}else{
+		if(_wellBalancedCorrection){
+			for(int k=0; k<_nVar;k++)
+				_phi[k]=(_Si[k]+_Sj[k])/2+_pressureLossVector[k]+_porosityGradientSourceVector[k];
+			Polynoms::matrixProdVec(_signAroe, _nVar, _nVar, _phi, _l);
+			for(int k=0; k<_nVar;k++)
+				_Si[k]=(_phi[k]-_l[k])*mesureFace/_perimeters(i);///nbVoisinsi;
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i= " << i<<" venant  (après décentrement) de la face (i,bord)"<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout<<"ratio surface sur volume i ="<<mesureFace/_perimeters(i)<<" perimeter = "<< _perimeters(i)<<endl;
+				cout << endl;
+			}
+		}
+		else
+		{
+			for(int k=0; k<_nVar;k++)
+				_Si[k]=_Si[k]/nbVoisinsi+_pressureLossVector[k]/2+_porosityGradientSourceVector[k]/2;//mesureFace/_perimeters(i);//
+			if (_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution au terme source Si de la cellule i = " << i<<" venant de la face (i,bord) "<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _Si[q] << endl;
+				cout << endl;
+			}
+		}
+	}
+	_idm[0] = i;
+	VecSetValuesBlocked(_b, 1, _idm, _Si, ADD_VALUES);
+
+	if(_verbose && _nbTimeStep%_freqSave ==0 && _wellBalancedCorrection)
+		displayMatrix( _signAroe,_nVar,"Signe matrice de Roe");
+}
+
 void NavierStokes::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar * Vi, int i)
 {
 	double phirho=Ui[0], T =_fluides[0]->getTemperatureFromEnthalpy( Vi[ _nVar -1] );
@@ -688,7 +897,7 @@ void NavierStokes::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar 
 		else
 		{
 			double pression=Vi[0];
-			getDensityDerivatives( pression, T, norm_u*norm_u);
+			getDensityDerivatives( pression, T, norm_u*norm_u );
 			for(int k=0; k<_nVar;k++)
 			{
 				_GravityImplicitationMatrix[k*_nVar+0]      =-_gravite[k]*_drho_sur_dp;
@@ -1101,26 +1310,26 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 		v2+=vitesse[idim]*vitesse[idim];
 
 	double rho=_fluides[0]->getDensityFromEnthalpy(pression,h);
-	//TODO à définir
-	double drho_dp, drho_dh = fluides[0]->getDensityDerivatives(pression, h);
-	double de_dp, de_dh = fluides[0]->getInternalEnergyDerivatives(pression, h)
+	//TODO à définir getDensityDerivatives(pression, h);
+	// en particulier drho_sur_dh, drhoE_sur_dh 
 
+	getDensityDerivatives(pression, h);
 	for(int k=0;k<_nVar*_nVar; k++){
 		_primToConsJacoMat[k]=0;
 	}
 	//première ligne
-	_primToConsJacoMat[0] = drho_dp;
-	_primToConsJacoMat[_nVar -1] = drho_dh;
+	_primToConsJacoMat[0] = _drho_sur_dp;
+	_primToConsJacoMat[_nVar -1] = _drho_sur_dh;
 	//Deuxième ligne à (Ndim+1) ligne
 	for(int i=0; i< _Ndim; i++){
-		_primToConsJacoMat[i*_nVar] = drho_dp * vitesse[i];
-		_primToConsJacoMat[i*_nVar + _nVar-1] = drho_dh * vitesse[i];
+		_primToConsJacoMat[i*_nVar] = _drho_sur_dh * vitesse[i];
+		_primToConsJacoMat[i*_nVar + _nVar-1] = _drho_sur_dh * vitesse[i];
 		_primToConsJacoMat[i*_nVar + 1+i] = rho;
 	}
 	//Dernière ligne
 	double E = h - pression/rho.0 + v2/2.0 ;
-	_primToConsJacoMat[(_nVar-1) * _nVar ] = drho_dp * E + rho(de_dp + v2/2.0);
-	_primToConsJacoMat[(_nVar-1) * _nVar + _nVar -1] = drho_dh * E + rho(de_dh + v2/2.0);
+	_primToConsJacoMat[(_nVar-1) * _nVar ] = _drhoE_sur_dp;
+	_primToConsJacoMat[(_nVar-1) * _nVar + _nVar -1] = _drhoE_sur_dh;
 	for(int j=0; j< _Ndim; j++){
 		_primToConsJacoMat[(_nVar-1) * _nVar + 1+j] = rho * vitesse[i];
 
@@ -1223,30 +1432,31 @@ void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, d
 	//EOS is more involved with primitive variables
 	// call to getDensityDerivatives(double concentration, double pression, double temperature,double v2) needed
 
-	//Todo : en particulier défnir une fonctino qui donne les dérivées de rho
-	double drho_dp, drho_rh = fluide0.getRhoDerivatives();
+	//TODO à définir
+
+	getDensityDerivatives(p,h);
 	//Première ligne 
-	_AroeImplicit[0*_nVar+0] = u_n * drho_dp;
+	_AroeImplicit[0*_nVar+0] = u_n * _drho_sur_dp;
 	for(int i=0;i<_Ndim;i++)
 		_AroeImplicit[0*_nVar+1+i] = rho*_vec_normal[i];
-	_AroeImplicit[0*_nVar+1+_Ndim] = u_n * drho_dh;
+	_AroeImplicit[0*_nVar+1+_Ndim] = u_n * _drho_sur_dh;
 	//Deuxième ligne à (1 + _Ndim) ligne
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0] = drho_dp * u_n * vitesse[i]+_vec_normal[i];
+		_AroeImplicit[(1+i)*_nVar+0] = _drho_sur_dp * u_n * vitesse[i]+_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
 			_AroeImplicit[(1+i)*_nVar+1+j] = rho * vitesse[i]*_vec_normal[j];
 		_AroeImplicit[(1+i)*_nVar+1+i] += rho*u_n;
-		_AroeImplicit[(1+i)*_nVar+1+_Ndim] = drho_dh * u_n * vitesse[i];
+		_AroeImplicit[(1+i)*_nVar+1+_Ndim] = _drho_sur_dh * u_n * vitesse[i];
 	}
 	//Dernière ligne
-	_AroeImplicit[(1+_Ndim)*_nVar+0] = drho_sur_dp * u_n * H;
+	_AroeImplicit[(1+_Ndim)*_nVar+0] = _drho_sur_dp * u_n * H;
 	for(int i=0;i<_Ndim;i++)1
-		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho*(H*_vec_normal[i]+u_n*vitesse[i]);
-	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = u_n * (H * drho_dh + rho);
+		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * (H*_vec_normal[i]+u_n*vitesse[i]);
+	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = u_n * (H * _drho_sur_dh + rho);
 }
 
-void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n,double H, Vector vitesse)
+void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n, double H, Vector vitesse)
 {
 	//Calcul de décentrement de type décalé pour formulation Roe en variables primitives
 	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;

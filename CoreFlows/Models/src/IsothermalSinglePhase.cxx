@@ -106,8 +106,8 @@ void IsothermalSinglePhase::initialize(){
 	*_runLogFile<<"\n Initialising the isothermal single phase model (memory allocations for matrices, vectors and fields) \n"<<endl;
 
 	_Uroe = new double[_nVar+1];//Deleted in ProblemFluid::terminate()
-	_Vextdiff= new double[_nVar];
-	_Vext= new double[_nVar];
+	_Vextdiff, _Vext, _Vdiff= new double[_nVar];
+	
 
 	_gravite = vector<double>(_nVar,0);//Not to be confused with _GravityField3d (size _Ndim). _gravite (size _Nvar) is usefull for dealing with source term and implicitation of gravity vector
 	for(int i=0; i<_Ndim; i++)
@@ -115,7 +115,6 @@ void IsothermalSinglePhase::initialize(){
 
 	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
 
-	_Vdiff = new double[_nVar];
 	
 	if(_saveVelocity || _saveAllFields)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
@@ -161,7 +160,7 @@ void IsothermalSinglePhase::initialize(){
 		else
 			cout<<"!!!!!!!########## non singular system ###########!!!!!!!!!!"<<endl;
 	}
-	
+	//TODO Singular system ?
 	ProblemFluid::initialize();
 
 	/* Deal with the particular case of singular systems */
