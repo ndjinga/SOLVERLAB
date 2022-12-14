@@ -26,7 +26,7 @@ public :
 	 * \param [in] int : mesh dimension
 	 * \param [in] bool : There are two possible equations of state for the fluid
 	 *  */
-	NavierStokes(phaseType fluid, pressureEstimate pEstimate,int dim,bool useDellacherieEOS=false);
+	NavierStokes(phaseType fluid, pressureEstimate pEstimate,int dim,bool useDellacherieEOS=false, bool isCompressibleFluid=true);
 
 	/** \fn setViscosityConstant
 	 * \brief sets the viscosity
