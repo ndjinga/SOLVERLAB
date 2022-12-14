@@ -141,6 +141,28 @@ public :
 			_limitField[groupName]=LimitField(Wall,-1,vector<double>(1,v_x),vector<double>(1,v_y),vector<double>(1,v_z),getReferenceTemperature(),-1,-1,-1);
 	};
 
+	/** \fn addSourceTermToSecondMember
+	 * \brief Adds the contribution of source terms to the right hand side of the system: gravity,
+	 *  phase change, heat power and friction
+	 * @param i,j : left and right cell number
+	 * @param nbNeighboursi, integer giving the number of neighbours of cell i
+	 * @param nbNeighboursj, integer giving the number of neighbours of cell j
+	 * @param boolean isBoundary is true for a boundary face (i,j) and false otherwise
+	 * @param double mesureFace the lenght or area of the face
+	 * */
+	void addSourceTermToSecondMember(const int i, int nbNeighboursi,const int j, int nbNeighboursj,bool isBoundary, int ij, double mesureFace);
+
+	/** \fn addConvectionToSecondMember
+	 * \brief Adds the contribution of the convection to the system right hand side for a face (i,j) inside the domain
+	 * @param i left cell number
+	 * @param j right cell number
+	 * @param isBord is a boolean that is true if the interface (i,j) is a boundary interface
+	 * @param groupname : is a string that may be used when isBord is true to specify which boundary the face (i,j) belongs to
+	 * */
+	void addConvectionToSecondMember(const int &i,const int &j,bool isBord, string groupname="");
+
+
+
 	//EOS functions
 	double getReferencePressure()    { return _Pref; };
 	double getReferenceTemperature() { return _Tref; };

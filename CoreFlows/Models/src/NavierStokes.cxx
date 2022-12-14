@@ -638,6 +638,130 @@ void NavierStokes::computeScaling(double maxvp)
 	_invBlockDiag[_nVar - 1]=  1./_blockDiag[_nVar - 1] ;// 1.;//
 }
 
+
+void IsothermalSinglePhase::addConvectionToSecondMember(const int &i, const int &j, bool isBord, string groupname)
+{
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+		cout<<"ProblemFluid::addConvectionToSecondMember start"<<endl;
+
+	//extraction des valeurs
+	for(int k=0; k<_nVar; k++)
+		_idm[k] = _nVar*i + k;
+	VecGetValues(_conservativeVars, _nVar, _idm, _Ui);
+	VecGetValues(_primitiveVars,    _nVar, _idm, _Vi);
+
+	if(!isBord){
+		for(int k=0; k<_nVar; k++)
+			_idn[k] = _nVar*j + k;
+		VecGetValues(_conservativeVars, _nVar, _idn, _Uj);
+		VecGetValues(_primitiveVars,    _nVar, _idn, _Vj);
+	}
+	else{
+		for(int k=0; k<_nVar; k++)
+			_Vj[k]= _Vext[k];
+		primToCons(_Vj, 0, _Uj, 0);
+	}
+	_idm[0] = i;
+	_idn[0] = j;
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "addConvectionToSecondMember : état primitif i= "    << i << endl << " _Vi=" ;
+		for(int q=0; q<_nVar; q++)
+			cout << _Vi[q] << ", ";
+		cout << endl;
+		cout << "addConvectionToSecondMember : état conservatif i= " << i << endl << " _Ui=" ;
+		for(int q=0; q<_nVar; q++)
+			cout << _Ui[q] << ", ";
+		cout << endl;
+		cout << "addConvectionToSecondMember : état primitif j= "    << j << endl << " _Vj=" ;
+		for(int q=0; q<_nVar; q++)
+			cout << _Vj[q] <<  ", ";
+		cout << endl;
+		cout << "addConvectionToSecondMember : état conservatif j= " << j << endl << " _Uj=" ;
+		for(int q=0; q<_nVar; q++)
+			cout << _Uj[q] <<  ", ";
+		cout << endl;
+	}
+	
+	if(_usePrimitiveVarsInNewton)//We use primitive variables in Newton iterations
+	{
+		for(int k=0; k<_nVar; k++)
+			_temp[k]=(_Vi[k] - _Vj[k])*_inv_dxi;//(Vi-Vj)*_inv_dxi
+		Polynoms::matrixProdVec(_AroeMinusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^-(V_i-V_j)/dx
+		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
+
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+		{
+			cout << "Ajout convection au 2nd membre pour les etats " << i << "," << j << endl;
+			cout << "(Vi - Vj)*_inv_dxi= "<<endl;;
+			for(int q=0; q<_nVar; q++)
+				cout << _temp[q] << endl;
+			cout << endl;
+			cout << "Contribution convection à " << i << endl;
+			cout << "A^-*(Vi - Vj)*_inv_dxi= "<<endl;
+			for(int q=0; q<_nVar; q++)
+				cout << _phi[q] << endl;
+			cout << endl;
+		}
+
+		if(!isBord)
+		{
+			for(int k=0; k<_nVar; k++)
+				_temp[k]*=_inv_dxj/_inv_dxi;//(Vi-Vj)*_inv_dxi
+			Polynoms::matrixProdVec(_AroePlusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^+(V_i-V_j)/dx
+			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
+	
+			if(_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution convection à  " << j << endl;
+				cout << "A^+*(Vi - Vj)*_inv_dxi= "<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _phi[q] << endl;
+				cout << endl;
+			}
+		}
+	}
+	else//We use conservative variables in Newton iterations
+	{
+		for(int k=0; k<_nVar; k++)
+			_temp[k]=(_Ui[k] - _Uj[k])*_inv_dxj;//(Ui-Uj)*_inv_dxj
+		Polynoms::matrixProdVec(_AroeMinus, _nVar, _nVar, _temp, _phi);//phi=A^-(U_i-U_j)/dx
+		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
+
+		if(_verbose && _nbTimeStep%_freqSave ==0)
+		{
+			cout << "Ajout convection au 2nd membre pour les etats " << i << "," << j << endl;
+			cout << "(Ui - Uj)*_inv_dxj= "<<endl;;
+			for(int q=0; q<_nVar; q++)
+				cout << _temp[q] << endl;
+			cout << endl;
+			cout << "Contribution convection à " << i << endl;
+			cout << "A^-*(Ui - Uj)*_inv_dxj= "<<endl;
+			for(int q=0; q<_nVar; q++)
+				cout << _phi[q] << endl;
+			cout << endl;
+		}
+
+		if(!isBord)
+		{
+			for(int k=0; k<_nVar; k++)
+				_temp[k]*=_inv_dxj/_inv_dxi;//(Ui-Uj)*_inv_dxj
+			Polynoms::matrixProdVec(_AroePlus, _nVar, _nVar, _temp, _phi);//phi=A^+(U_i-U_j)/dx
+			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
+	
+			if(_verbose && _nbTimeStep%_freqSave ==0)
+			{
+				cout << "Contribution convection à  " << j << endl;
+				cout << "A^+*(Ui - Uj)*_inv_dxj= "<<endl;
+				for(int q=0; q<_nVar; q++)
+					cout << _phi[q] << endl;
+				cout << endl;
+			}
+		}
+	}
+}
+
 void NavierStokes::addDiffusionToSecondMember(const int &i, const int &j, bool isBord)
 {
 	double rho = _fluides[0]->getDensityFromEnthalpy( _Vdiff[0], _Vdiff[ _nVar-1 ] );
@@ -661,7 +785,6 @@ void NavierStokes::addDiffusionToSecondMember(const int &i, const int &j, bool i
 	//on n'a pas de contribution sur la masse
 	_phi[0]=0;
 	//contribution visqueuse sur la quantite de mouvement
-	//TODO Pourquoi dans singlephase il y a _Vj
 	for(int k=1; k<_nVar-1; k++)
 		_phi[k] = _inv_dxi*2/(1/_inv_dxi+1/_inv_dxj)*mu*(_porosityj*_Vj[k] - _porosityi*_Vi[k]);
 	//contribution visqueuse sur l'energie
@@ -708,10 +831,7 @@ void NavierStokes::addDiffusionToSecondMember(const int &i, const int &j, bool i
 	}
 }
 
-void NavierStokes::addSourceTermToSecondMember
-(	const int i, int nbVoisinsi,
-		const int j, int nbVoisinsj,
-		bool isBord, int ij, double mesureFace)//To do : generalise to unstructured meshes
+void NavierStokes::addSourceTermToSecondMember(const int i, int nbVoisinsi,const int j, int nbVoisinsj, bool isBord, int ij, double mesureFace)//To do : generalise to unstructured meshes
 {
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"NavierStokes::addSourceTerm cell i= "<<i<< " cell j= "<< j<< " isbord "<<isBord<<endl;
@@ -897,6 +1017,7 @@ void NavierStokes::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar 
 		else
 		{
 			double pression=Vi[0];
+			//TODO drho_sur_dT ou drho_sur_dh? getDensityDerivatives à définir
 			getDensityDerivatives( pression, T, norm_u*norm_u );
 			for(int k=0; k<_nVar;k++)
 			{
@@ -1452,7 +1573,7 @@ void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, d
 	//Dernière ligne
 	_AroeImplicit[(1+_Ndim)*_nVar+0] = _drho_sur_dp * u_n * H;
 	for(int i=0;i<_Ndim;i++)1
-		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * (H*_vec_normal[i]+u_n*vitesse[i]);
+		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * (H * _vec_normal[i] + u_n * vitesse[i]);
 	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = u_n * (H * _drho_sur_dh + rho);
 }
 

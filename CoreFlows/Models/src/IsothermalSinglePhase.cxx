@@ -160,7 +160,7 @@ void IsothermalSinglePhase::initialize(){
 		else
 			cout<<"!!!!!!!########## non singular system ###########!!!!!!!!!!"<<endl;
 	}
-	//TODO Singular system ?
+	//TODO Singular system
 	ProblemFluid::initialize();
 
 	/* Deal with the particular case of singular systems */
