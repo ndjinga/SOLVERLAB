@@ -145,7 +145,7 @@ void NavierStokes::initialize(){
 	//PCFactorSetZeroPivot(_pc,1e-5);
 	//PCFactorReorderForNonzeroDiagonal(_pc,1e-5);
 }
-//#Todo _constantPressureVector ?
+
 void IsothermalSinglePhase::terminate(){
 	delete[] _Vdiff,_Vextdiff,_Vext;
 	
@@ -277,7 +277,7 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 		for(int i=1;i<_nVar-1;i++)
 			_Diffusion[i*_nVar+i] = mu;
 		//TODO à définir
-		double dT_dp, dT_dh  = _fluides[0]->getTemperatureDerivatives(p,h);
+		double dT_dp, dT_dh  = getTemperatureDerivatives(p,h);
 		_Diffusion[(_nVar-1)*_nVar]= - lambda * dT_dp;
 		_Diffusion[_nVar*_nVar-1]= - lambda * dT_dh;
 	}
@@ -582,7 +582,6 @@ void NavierStokes::convectionMatrices()
 			throw CdmathException("NavierStokes::convectionMatrices: entropy scheme not available for staggered scheme");
 		}
 		/* Calcul de Aprim */
-		//TODO Calcul de staggered
 		convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2],vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 		/* Calcul du décentrement staggered */
 		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);//Ici on calcule le décentrement staggered et on le stocke dans _absAroeImplicit
@@ -1549,11 +1548,9 @@ void NavierStokes::ConvectionMatrixConservativeVariables(double u_n, double H,Ve
 }
 void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, double H, Vector vitesse)
 {
-	//On remplit la matrice de Roe en variables primitives : G(V_L)-G(V_R)=Aroe (V_L-V_R)
-	//EOS is more involved with primitive variables
-	// call to getDensityDerivatives(double concentration, double pression, double temperature,double v2) needed
+	//G(V_L)-G(V_R)=Aroe_prim (V_L-V_R)
 
-	//TODO à définir
+	//TODO getDensityDerivatives à définir
 
 	getDensityDerivatives(p,h);
 	//Première ligne 
@@ -1579,23 +1576,25 @@ void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, d
 
 void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n, double H, Vector vitesse)
 {
-	//Calcul de décentrement de type décalé pour formulation Roe en variables primitives
-	_AroeImplicit[0*_nVar+0]=_drho_sur_dp*u_n;
+	//Calcul de décentrement de type décalé en variables primitives
+	//TODO à définir
+	getDensityDerivatives(p,h);
+	_AroeImplicit[0*_nVar+0] =_drho_sur_dp * u_n;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[0*_nVar+1+i]=rho*_vec_normal[i];
-	_AroeImplicit[0*_nVar+1+_Ndim]=_drho_sur_dT*u_n;
+		_AroeImplicit[0*_nVar+1+i] =rho * _vec_normal[i];
+	_AroeImplicit[0*_nVar+1+_Ndim] =_drho_sur_dT * u_n;
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0]=_drho_sur_dp *u_n*vitesse[i]-_vec_normal[i];
+		_AroeImplicit[(1+i)*_nVar+0] =_drho_sur_dp * u_n*vitesse[i]-_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j]=rho*vitesse[i]*_vec_normal[j];
-		_AroeImplicit[(1+i)*_nVar+1+i]+=rho*u_n;
-		_AroeImplicit[(1+i)*_nVar+1+_Ndim]=_drho_sur_dT*u_n*vitesse[i];
+			_AroeImplicit[(1+i)*_nVar+1+j] = rho * vitesse[i]*_vec_normal[j];
+		_AroeImplicit[(1+i)*_nVar+1+i] += rho * u_n;
+		_AroeImplicit[(1+i)*_nVar+1+_Ndim] =_drho_sur_dT * u_n * vitesse[i];
 	}
-	_AroeImplicit[(1+_Ndim)*_nVar+0]=(_drhoE_sur_dp+1)*u_n;
+	_AroeImplicit[(1+_Ndim)*_nVar+0]= (_drhoE_sur_dp+1) * u_n;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[(1+_Ndim)*_nVar+1+i]=rho*(H*_vec_normal[i]+u_n*vitesse[i]);
-	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim]=_drhoE_sur_dT*u_n;
+		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * ( H *_vec_normal[i]+u_n * vitesse[i]);
+	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = _drhoE_sur_dT * u_n;
 }
 
 
