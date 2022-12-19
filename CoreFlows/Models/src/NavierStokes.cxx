@@ -9,7 +9,7 @@
 
 using namespace std;
 
-NavierStokes::NavierStokes(phaseType fluid, pressureEstimate pEstimate, int dim, bool useDellacherieEOS){
+NavierStokes::NavierStokes(phaseType fluid, pressureEstimate pEstimate, int dim, bool isCompressibleFluid)){
 	_Ndim=dim;
 	_nVar=_Ndim+2;
 	_nbPhases  = 1;
@@ -1465,7 +1465,7 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 	}
 }
 
-Vector IsothermalSinglePhase::staggeredVFFCFlux()
+Vector NavierStokes::staggeredVFFCFlux()
 {
 	*_runLogFile<< "NavierStokes::staggeredVFFCFlux is not yet available "<<  endl;
 	_runLogFile->close();
@@ -1546,6 +1546,7 @@ void NavierStokes::ConvectionMatrixConservativeVariables(double u_n, double H,Ve
 		_Aroe[_nVar*(_nVar-1)+idim+1]=H*_vec_normal[idim] - k*u_n*_Uroe[idim+1];
 	_Aroe[_nVar*_nVar -1] = (1 + k)*u_n;
 }
+
 void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, double H, Vector vitesse)
 {
 	//G(V_L)-G(V_R)=Aroe_prim (V_L-V_R)
@@ -1599,7 +1600,7 @@ void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, dou
 
 
 
-void SinglePhase::testConservation()
+void NavierStokes::testConservation()
 {
 	double SUM, DELTA, x;
 	int I;
@@ -1637,7 +1638,7 @@ void SinglePhase::testConservation()
 	}
 }
 
-void SinglePhase::getDensityDerivatives( double pressure, double temperature, double v2)
+void NavierStokes::getDensityDerivatives( double pressure, double temperature, double v2)
 {
 	double rho=_compressibleFluid->getDensity(pressure,temperature);
 	double gamma=_compressibleFluid->constante("gamma");
@@ -1684,7 +1685,7 @@ void SinglePhase::getDensityDerivatives( double pressure, double temperature, do
 	}
 }
 
-void SinglePhase::save(){
+void NavierStokes::save(){
     PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
     *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
 
@@ -2049,7 +2050,7 @@ void SinglePhase::save(){
 		_restartWithNewFileName=false;
 }
 
-Field& SinglePhase::getPressureField()
+Field& NavierStokes::getPressureField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getPressureField, Call initialize first");
@@ -2067,7 +2068,7 @@ Field& SinglePhase::getPressureField()
 	return _Pressure;
 }
 
-Field& SinglePhase::getTemperatureField()
+Field& NavierStokes::getTemperatureField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getTemperatureField, Call initialize first");
@@ -2085,7 +2086,7 @@ Field& SinglePhase::getTemperatureField()
 	return _Temperature;
 }
 
-Field& SinglePhase::getVelocityField()
+Field& NavierStokes::getVelocityField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getVelocityField, Call initialize first");
@@ -2113,7 +2114,7 @@ Field& SinglePhase::getVelocityField()
 	return _Vitesse;
 }
 
-Field& SinglePhase::getMachNumberField()
+Field& NavierStokes::getMachNumberField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getMachNumberField, Call initialize first");
@@ -2148,7 +2149,7 @@ Field& SinglePhase::getMachNumberField()
 	return _MachNumber;
 }
 
-Field& SinglePhase::getVelocityXField()
+Field& NavierStokes::getVelocityXField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getVelocityXField, Call initialize first");
@@ -2169,7 +2170,7 @@ Field& SinglePhase::getVelocityXField()
 	return _VitesseX;
 }
 
-Field& SinglePhase::getVelocityYField()
+Field& NavierStokes::getVelocityYField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getVelocityYField, Call initialize first");
@@ -2193,7 +2194,7 @@ Field& SinglePhase::getVelocityYField()
 		return _VitesseY;
 }
 
-Field& SinglePhase::getVelocityZField()
+Field& NavierStokes::getVelocityZField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getVelocityZField, Call initialize first");
@@ -2217,7 +2218,7 @@ Field& SinglePhase::getVelocityZField()
 		return _VitesseZ;
 }
 
-Field& SinglePhase::getDensityField()
+Field& NavierStokes::getDensityField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getDensityField, Call initialize first");
@@ -2235,7 +2236,7 @@ Field& SinglePhase::getDensityField()
 	return _Density;
 }
 
-Field& SinglePhase::getMomentumField()//not yet managed by parameter _saveAllFields
+Field& NavierStokes::getMomentumField()//not yet managed by parameter _saveAllFields
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getMomentumField, Call initialize first");
@@ -2253,7 +2254,7 @@ Field& SinglePhase::getMomentumField()//not yet managed by parameter _saveAllFie
 	return _Momentum;
 }
 
-Field& SinglePhase::getTotalEnergyField()//not yet managed by parameter _saveAllFields
+Field& NavierStokes::getTotalEnergyField()//not yet managed by parameter _saveAllFields
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getTotalEnergyField, Call initialize first");
@@ -2269,7 +2270,7 @@ Field& SinglePhase::getTotalEnergyField()//not yet managed by parameter _saveAll
 	return _TotalEnergy;
 }
 
-Field& SinglePhase::getEnthalpyField()
+Field& NavierStokes::getEnthalpyField()
 {
 	if(!_initializedMemory)
 		throw CdmathException("SinglePhase::getEnthalpyField, Call initialize first");
@@ -2294,7 +2295,7 @@ Field& SinglePhase::getEnthalpyField()
 	return _Enthalpy;
 }
 
-vector<string> SinglePhase::getOutputFieldsNames()
+vector<string> NavierStokes::getOutputFieldsNames()
 {
 	vector<string> result(8);
 	
@@ -2310,7 +2311,7 @@ vector<string> SinglePhase::getOutputFieldsNames()
 	return result;
 }
 
-Field& SinglePhase::getOutputField(const string& nameField )
+Field& NavierStokes::getOutputField(const string& nameField )
 {
 	if(nameField=="pressure" || nameField=="Pressure" || nameField=="PRESSURE" || nameField=="PRESSION" || nameField=="Pression"  || nameField=="pression" )
 		return getPressureField();
