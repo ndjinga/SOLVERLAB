@@ -146,7 +146,7 @@ void NavierStokes::initialize(){
 	//PCFactorReorderForNonzeroDiagonal(_pc,1e-5);
 }
 
-void IsothermalSinglePhase::terminate(){
+void Navierstokes::terminate(){
 	delete[] _Vdiff,_Vextdiff,_Vext;
 	
 	if( _isSingularSystem )
@@ -624,6 +624,7 @@ void NavierStokes::convectionMatrices()
 			displayMatrix(_AroePlus,  _nVar,"Matrice _AroePlus en variables conservatives");
 		}
 }
+
 void NavierStokes::computeScaling(double maxvp)
 {
 	_blockDiag[0]=1;
@@ -1638,7 +1639,7 @@ void NavierStokes::testConservation()
 	}
 }
 
-void NavierStokes::getDensityDerivatives( double pressure, double temperature, double v2)
+void NavierStokes::getDensityDerivatives( double pressure, double temperature, double v2 )
 {
 	double rho=_compressibleFluid->getDensity(pressure,temperature);
 	double gamma=_compressibleFluid->constante("gamma");
