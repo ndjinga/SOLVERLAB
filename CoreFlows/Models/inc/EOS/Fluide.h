@@ -32,8 +32,6 @@ class Fluide{
 
   //order 0 derivatives
   virtual double getDensity(double p, double T)=0;
-  virtual double getInverseSoundSpeed(double p, double T)=0;
-
   virtual double getInternalEnergy(double T, double rho=0)=0;
   virtual double getTemperatureFromPressure(double  p, double rho)=0;
   virtual double getTemperatureFromEnthalpy(const double  h, const double rho)=0;
@@ -49,8 +47,13 @@ class Fluide{
   void setConductivity(double lambda) { _lambda= lambda;};
 
   //order 1 derivatives
-  double getdTdh(){return _Cp;}
-  double getdTde(){return _Cv;}
+  virtual double getInverseSoundSpeed(double p, double T)=0;
+  double getDhDT_P(){return _Cp;}// Dh/DT at constant pressure
+  double getDeDT_rho(){return _Cv;}// De/DT at constant density
+  virtual double getDrhoDT_P(double P,double T)=0;// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
+  virtual double getDpDT_rho(double P,double T)=0;// Dp/DT at constant density (cf->coefficient de compressibilité isochore)
+  double getDpDT_h  (double P,double T){ double rho=getDensity(P,T); return -_Cp/(1/rho+T/(rho*rho)*getDrhoDT_P(P,T));}// Dh/DT at constant pressure
+  double getDrhoDT_e(double P,double T){ double rho=getDensity(P,T); return  _Cv*rho*rho/(T*getDpDT_rho(P,T)-P);}// Dh/DT at constant pressure
   
   //return constants mu, lambda, dragCoeff
   double constante(string name)
@@ -84,6 +87,7 @@ class CompressibleFluid:public Fluide{
     _gamma=0;/* ratio of cp and cv */
   }
   
+  //order 0 derivatives
   virtual double getInternalEnergy(double T, double rho=0)=0;
   virtual double getTemperatureFromPressure(double  p, double rho)=0;
   virtual double getTemperatureFromEnthalpy(const double  h, const double rho)=0;
@@ -94,6 +98,10 @@ class CompressibleFluid:public Fluide{
   /*For the newton scheme in the IsothermalTwoFluid model */
   virtual double getPressureDerivativeRhoE()  = 0;
   virtual double getDensityFromEnthalpy(double p, double h) = 0;
+
+  //order 1 derivatives
+  virtual double getDrhoDT_P(double P,double T)=0;// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
+  virtual double getDpDT_rho(double P,double T)=0;// Dp/DT at constant density (cf->coefficient de compressibilité isochore)
   virtual double vitesseSonEnthalpie(double h) = 0;
   virtual double vitesseSonTemperature(const double T, const double rho)
   {
@@ -146,22 +154,18 @@ class IncompressibleFluid:public Fluide{
 	_href=eref+pref/rho;
   }
   
-  double getDensity(double p, double T)
-  {
-  	return _rho;
-  }
-  double getInverseSoundSpeed(double P, double T)
-  {
-  	return 0;
-  }
-
-  double getInternalEnergy(double T, double rho=0){ return _eref; };
-  double getTemperatureFromPressure(double  p, double rho){ return _Tref;};
-  double getTemperatureFromEnthalpy(const double  h, const double rho){ return _Tref;};
-  double getEnthalpy(double T, double rho){ return _href;};
-  double getPressure(double  rhoe,const double  rho){ return _Pref;};
-  double getPressureFromEnthalpy(double  h,const double  rho){ return _Pref;};
+  double getDensity(double p, double T){return _rho;}
+  double getInternalEnergy(double T, double rho=0){ return _eref; }
+  double getTemperatureFromPressure(double  p, double rho){ return _Tref;}
+  double getTemperatureFromEnthalpy(const double  h, const double rho){ return _Tref;}
+  double getEnthalpy(double T, double rho){ return _href;}
+  double getPressure(double  rhoe,const double  rho){ return _Pref;}
+  double getPressureFromEnthalpy(double  h,const double  rho){ return _Pref;}
   
+  //order 1 derivatives
+  double getInverseSoundSpeed(double P, double T){return 0;}
+  double getDrhoDT_P(double P,double T){return 0.;}// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
+  double getDpDT_rho(double P,double T){return 0.;}//not srure what to return here
 };
 
 #endif
