@@ -38,8 +38,10 @@ class StiffenedGas:public CompressibleFluid{
   	return _gamma*(p+_p0)/((_gamma-1)*(h-_q));
   }
   double vitesseSonEnthalpie(double h) { assert(h>0);  return sqrt((_gamma-1)*h);  };
-  double getDrhoDT_P(double P,double T){return 1/T;};
-  double getDpDT_rho(double P,double T){return 1/T;};
+  double getDrhoDe_P(double P,double T){ double e=getInternalEnergy(T); return    -(P+_gamma*_p0)/((_gamma-1.)*(e - _q)*(e - _q));};
+  double getDpDe_rho(double P,double T){ return (_gamma-1.)*getDensity(P,T);};
+  double getDrhoDT_P(double P,double T){ double e=getInternalEnergy(T); return -_Cv*(P+_gamma*_p0)/((_gamma-1.)*(e - _q)*(e - _q));};
+  double getDpDT_rho(double P,double T){ return (_gamma-1.)*getDensity(P,T)*_Cv;};
 
   double getInternalEnergy(double T, double rho=0);
   double getEnthalpy(double T, double rho);
@@ -109,9 +111,11 @@ class StiffenedGasDellacherie:public CompressibleFluid{
 	assert(h-_q>0);
   	return _gamma*(p+_p0)/((_gamma-1)*(h-_q));
   }
-  double vitesseSonEnthalpie(double h) {  assert(h>0); return sqrt((_gamma-1)*h);  }
-  double getDrhoDT_P(double P,double T){return 1/T;};
-  double getDpDT_rho(double P,double T){return 1/T;};
+  double vitesseSonEnthalpie(double h) { assert(h>0); return sqrt((_gamma-1)*h);  }
+  double getDrhoDe_P(double P,double T){ double h=getEnthalpy(T); return -_Cp/_Cv*(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
+  double getDpDe_rho(double P,double T){ return (_gamma-1.)/_gamma*getDensity(P,T)*_Cp/_Cv;};
+  double getDrhoDT_P(double P,double T){ double h=getEnthalpy(T); return -_Cp*(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
+  double getDpDT_rho(double P,double T){ return (_gamma-1.)/_gamma*getDensity(P,T)*_Cp;};
 };
 
 #endif

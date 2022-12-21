@@ -48,10 +48,12 @@ class Fluide{
 
   //order 1 derivatives
   virtual double getInverseSoundSpeed(double p, double T)=0;
+  virtual double getDrhoDT_P(double P,double T)=0;// Drho/DT at constant pressure (cf->alpha coefficient de dilatation isobare)
+  virtual double getDpDT_rho(double P,double T)=0;// Dp/DT at constant density (cf->beta coefficient de compressibilité isochore)
+  virtual double getDrhoDe_P(double P,double T)=0;
+  virtual double getDpDe_rho(double P,double T)=0;
   double getDhDT_P(){return _Cp;}// Dh/DT at constant pressure
   double getDeDT_rho(){return _Cv;}// De/DT at constant density
-  virtual double getDrhoDT_P(double P,double T)=0;// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
-  virtual double getDpDT_rho(double P,double T)=0;// Dp/DT at constant density (cf->coefficient de compressibilité isochore)
   double getDpDT_h  (double P,double T){ double rho=getDensity(P,T); return -_Cp/(1/rho+T/(rho*rho)*getDrhoDT_P(P,T));}// Dh/DT at constant pressure
   double getDrhoDT_e(double P,double T){ double rho=getDensity(P,T); return  _Cv*rho*rho/(T*getDpDT_rho(P,T)-P);}// Dh/DT at constant pressure
   
@@ -100,6 +102,8 @@ class CompressibleFluid:public Fluide{
   virtual double getDensityFromEnthalpy(double p, double h) = 0;
 
   //order 1 derivatives
+  virtual double getDrhoDe_P(double P,double T)=0;
+  virtual double getDpDe_rho(double P,double T)=0;
   virtual double getDrhoDT_P(double P,double T)=0;// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
   virtual double getDpDT_rho(double P,double T)=0;// Dp/DT at constant density (cf->coefficient de compressibilité isochore)
   virtual double vitesseSonEnthalpie(double h) = 0;
@@ -164,8 +168,10 @@ class IncompressibleFluid:public Fluide{
   
   //order 1 derivatives
   double getInverseSoundSpeed(double P, double T){return 0;}
+  double getDrhoDe_P(double P,double T){return 0.;};
+  double getDpDe_rho(double P,double T){return 0.;};//not sure what to return here
   double getDrhoDT_P(double P,double T){return 0.;}// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
-  double getDpDT_rho(double P,double T){return 0.;}//not srure what to return here
+  double getDpDT_rho(double P,double T){return 0.;}//not sure what to return here
 };
 
 #endif
