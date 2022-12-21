@@ -58,6 +58,8 @@ class Fluide{
   virtual double getDrhoDh_rho(double P,double T)=0;
   double getDpDT_h  (double P,double T){ double rho=getDensity(P,T); return -_Cp/(1/rho+T/(rho*rho)*getDrhoDT_P(P,T));}// Dh/DT at constant pressure
   double getDrhoDT_e(double P,double T){ double rho=getDensity(P,T); return  _Cv*rho*rho/(T*getDpDT_rho(P,T)-P);}// Dh/DT at constant pressure
+  virtual double getDeDp_h(double P,double T)=0;
+  virtual double getDeDh_p(double P,double T)=0;
   
   //return constants mu, lambda, dragCoeff
   double constante(string name)
@@ -111,7 +113,9 @@ class CompressibleFluid:public Fluide{
   virtual double getDhDT_P(double P,double T)=0;// Dh/DT at constant pressure->specific heat
   virtual double getDeDT_rho(double P,double T)=0;// De/DT at constant density->specific heat
   virtual double getDrhoDP_h(double P,double T)=0;
-  virtual double getDrhoDh_rho(double P,double T)=0;
+  virtual double getDrhoDh_p(double P,double T)=0;
+  virtual double getDeDp_h(double P,double T)=0;
+  virtual double getDeDh_p(double P,double T)=0;
 
   double getInverseSoundSpeed(double P, double T)
   {
@@ -181,7 +185,9 @@ class IncompressibleFluid:public Fluide{
   double getDrhoDT_P(double P,double T){return 0.;}// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
   double getDpDT_rho(double P,double T){return 0.;}//not sure what to return here
   double getDrhoDP_h(double P,double T){return 0.;};
-  double getDrhoDh_rho(double P,double T){return 0.;};
+  double getDrhoDh_p(double P,double T){return 0.;};
+  double getDeDp_h(double P,double T){return 0.;}//not sure what to return here
+  double getDeDh_p(double P,double T){return 0.;}//not sure what to return here
 };
 
 #endif
