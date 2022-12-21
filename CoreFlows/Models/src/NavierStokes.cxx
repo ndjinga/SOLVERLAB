@@ -1674,9 +1674,9 @@ void NavierStokes::getDensityDerivatives( double pressure, double temperature, d
 	}
 	else
 	{
-		*_runLogFile<< "SinglePhase::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie" << endl;
+		*_runLogFile<< "NavierStokes::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie" << endl;
 		_runLogFile->close();
-		throw CdmathException("SinglePhase::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie");
+		throw CdmathException("NavierStokes::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie");
 	}
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
