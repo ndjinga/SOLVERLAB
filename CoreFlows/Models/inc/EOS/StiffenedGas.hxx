@@ -41,6 +41,7 @@ class StiffenedGas:public CompressibleFluid{
   double getDhDT_P(double P,double T){return _Cp;}// Dh/DT at constant pressure
   double getDeDT_rho(double P,double T){return _Cv;}// De/DT at constant density
   double getDrhoDe_P(double P,double T){ double e=getInternalEnergy(T); return    -(P+_gamma*_p0)/((_gamma-1.)*(e - _q)*(e - _q));};
+  double getDrhoDP_e(double P,double T){ return 1./((_gamma-1.)*getInternalEnergy(T));};
   double getDpDe_rho(double P,double T){ return (_gamma-1.)*getDensity(P,T);};
   double getDrhoDT_P(double P,double T){ double e=getInternalEnergy(T); return -_Cv*(P+_gamma*_p0)/((_gamma-1.)*(e - _q)*(e - _q));};
   double getDpDT_rho(double P,double T){ return (_gamma-1.)*getDensity(P,T)*_Cv;};
@@ -121,6 +122,7 @@ class StiffenedGasDellacherie:public CompressibleFluid{
   double getDhDT_P(double P,double T){return _Cp;}// Dh/DT at constant pressure
   double getDeDT_rho(double P,double T){return _Cv;}// De/DT at constant density
   double getDrhoDe_P(double P,double T){ double h=getEnthalpy(T); return -_Cp/_Cv*(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
+  double getDrhoDP_e(double P,double T){ double rho=getDensity(P,T); return 1./((_gamma-1.)*getInternalEnergy(T, rho));};
   double getDpDe_rho(double P,double T){ return (_gamma-1.)/_gamma*getDensity(P,T)*_Cp/_Cv;};
   double getDrhoDT_P(double P,double T){ double h=getEnthalpy(T); return -_Cp*(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
   double getDpDT_rho(double P,double T){ return (_gamma-1.)/_gamma*getDensity(P,T)*_Cp;};

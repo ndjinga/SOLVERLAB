@@ -53,6 +53,7 @@ class Fluide{
   virtual double getDhDT_P(double P,double T)=0;// Dh/DT at constant pressure->specific heat
   virtual double getDeDT_rho(double P,double T)=0;// De/DT at constant density->specific heat
   virtual double getDrhoDe_P(double P,double T)=0;
+  virtual double getDrhoDP_e(double P,double T)=0;
   virtual double getDpDe_rho(double P,double T)=0;
   virtual double getDrhoDP_h(double P,double T)=0;
   virtual double getDrhoDh_p(double P,double T)=0;
@@ -107,6 +108,7 @@ class CompressibleFluid:public Fluide{
 
   //order 1 derivatives
   virtual double getDrhoDe_P(double P,double T)=0;
+  virtual double getDrhoDP_e(double P,double T)=0;
   virtual double getDpDe_rho(double P,double T)=0;
   virtual double getDrhoDT_P(double P,double T)=0;// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
   virtual double getDpDT_rho(double P,double T)=0;// Dp/DT at constant density (cf->coefficient de compressibilité isochore) ->relates to the internal pressure
@@ -181,6 +183,7 @@ class IncompressibleFluid:public Fluide{
   double getDhDT_P(double P,double T){return _Cp;}// Dh/DT at constant pressure
   double getDeDT_rho(double P,double T){return _Cv;}// De/DT at constant density
   double getDrhoDe_P(double P,double T){return 0.;};
+  double getDrhoDP_e(double P,double T){return 0.;};
   double getDpDe_rho(double P,double T){return 0.;};//not sure what to return here
   double getDrhoDT_P(double P,double T){return 0.;}// Drho/DT at constant pressure (cf->coefficient de dilatation isobare)
   double getDpDT_rho(double P,double T){return 0.;}//not sure what to return here
