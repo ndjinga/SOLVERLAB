@@ -38,8 +38,19 @@ class StiffenedGas:public CompressibleFluid{
   	return _gamma*(p+_p0)/((_gamma-1)*(h-_q));
   }
   double vitesseSonEnthalpie(double h) { assert(h>0);  return sqrt((_gamma-1)*h);  };
+  double getDhDT_P(double P,double T){return _Cp;}// Dh/DT at constant pressure
+  double getDeDT_rho(double P,double T){return _Cv;}// De/DT at constant density
+  double getDrhoDe_P(double P,double T){ double e=getInternalEnergy(T); return    -(P+_gamma*_p0)/((_gamma-1.)*(e - _q)*(e - _q));};
+  double getDrhoDP_e(double P,double T){ return 1./((_gamma-1.)*getInternalEnergy(T));};
+  double getDpDe_rho(double P,double T){ return (_gamma-1.)*getDensity(P,T);};
+  double getDrhoDT_P(double P,double T){ double e=getInternalEnergy(T); return -_Cv*(P+_gamma*_p0)/((_gamma-1.)*(e - _q)*(e - _q));};
+  double getDpDT_rho(double P,double T){ return (_gamma-1.)*getDensity(P,T)*_Cv;};
+  double getDrhoDP_h(double P,double T)  { double rho=getDensity( P, T); double h=getEnthalpy(T,rho); return _gamma/((_gamma-1.)*(h - _q));};
+  double getDrhoDh_p(double P,double T){ double rho=getDensity( P, T); double h=getEnthalpy(T,rho); return -(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
+  double getDeDp_h(double P,double T){ double rho=getDensity( P, T); double h=getEnthalpy(T,rho); return ((h+(_gamma-1)*_q)*_gamma*(_p0+P))-_gamma*(h*(_gamma*_p0+P)+(_gamma-1)*P*_q)/(_gamma*(_p0+P)*_gamma*(_p0+P));}
+  double getDeDh_p(double P,double T){return (_gamma*_p0+P)/(_gamma*(_p0+P));}
 
-  double getInternalEnergy(double T, double rho=0);
+  double getInternalEnergy(double T, double rho=0);//e is a linear function of T
   double getEnthalpy(double T, double rho);
   double getTemperatureFromPressure(double  p, double rho);
   double getTemperatureFromEnthalpy(const double  h, const double rho);
@@ -75,7 +86,7 @@ class StiffenedGas:public CompressibleFluid{
 
 /*! \class StiffenedGasDellacherie Fluide.hxx "Fluide.hxx"
  *  \brief Class implementing a particular stiffened gas law including saturation properties
- *  \details \f$P=(\gamma - 1)/\gamma * rho (h(T)-q) - p0\f$
+ *  \details \f$P=(\gamma - 1)/\gamma * rho (h(T)-q) - p0\f$, formally equivalent to \f$P=(\gamma - 1) * rho (e(T)-q) - \gamma*p0 \f$
  */
 class StiffenedGasDellacherie:public CompressibleFluid{
  private:
@@ -87,8 +98,8 @@ class StiffenedGasDellacherie:public CompressibleFluid{
   /* Loi des gaz raidis avec coefficients imposés suivant S. Dellacherie*/
   StiffenedGasDellacherie( double gamma, double p0, double q, double cv);
 
-  double getInternalEnergy(double T, double rho);
-  double getEnthalpy(double T, double rho=0);
+  double getInternalEnergy(double T, double rho);//Problem here since e cannot depend on the sole temperature
+  double getEnthalpy(double T, double rho=0);//e is a linear function of T
   double getTemperatureFromPressure(double  p, double rho);
   double getTemperatureFromEnthalpy(const double  h, const double rho=0);
   double getDensity(double p, double T);
@@ -107,7 +118,18 @@ class StiffenedGasDellacherie:public CompressibleFluid{
 	assert(h-_q>0);
   	return _gamma*(p+_p0)/((_gamma-1)*(h-_q));
   }
-  double vitesseSonEnthalpie(double h) {  assert(h>0); return sqrt((_gamma-1)*h);  }
+  double vitesseSonEnthalpie(double h) { assert(h>0); return sqrt((_gamma-1)*h);  }
+  double getDhDT_P(double P,double T){return _Cp;}// Dh/DT at constant pressure
+  double getDeDT_rho(double P,double T){return _Cv;}// De/DT at constant density
+  double getDrhoDe_P(double P,double T){ double h=getEnthalpy(T); return -_Cp/_Cv*(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
+  double getDrhoDP_e(double P,double T){ double rho=getDensity(P,T); return 1./((_gamma-1.)*getInternalEnergy(T, rho));};
+  double getDpDe_rho(double P,double T){ return (_gamma-1.)/_gamma*getDensity(P,T)*_Cp/_Cv;};
+  double getDrhoDT_P(double P,double T){ double h=getEnthalpy(T); return -_Cp*(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
+  double getDpDT_rho(double P,double T){ return (_gamma-1.)/_gamma*getDensity(P,T)*_Cp;};
+  double getDrhoDP_h(double P,double T){ double h=getEnthalpy(T); return _gamma/((_gamma-1.)*(h - _q));};
+  double getDrhoDh_p(double P,double T){ double h=getEnthalpy(T); return -(P+_p0)*_gamma/((_gamma-1.)*(h - _q)*(h - _q));};
+  double getDeDp_h(double P,double T){ double h=getEnthalpy(T);return ((h+(_gamma-1)*_q)*_gamma*(_p0+P))-_gamma*(h*(_gamma*_p0+P)+(_gamma-1)*P*_q)/(_gamma*(_p0+P)*_gamma*(_p0+P));}
+  double getDeDh_p(double P,double T){return (_gamma*_p0+P)/(_gamma*(_p0+P));}
 };
 
 #endif
