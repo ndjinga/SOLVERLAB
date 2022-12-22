@@ -55,7 +55,7 @@ class Fluide{
   virtual double getDrhoDe_P(double P,double T)=0;
   virtual double getDpDe_rho(double P,double T)=0;
   virtual double getDrhoDP_h(double P,double T)=0;
-  virtual double getDrhoDh_rho(double P,double T)=0;
+  virtual double getDrhoDh_p(double P,double T)=0;
   double getDpDT_h  (double P,double T){ double rho=getDensity(P,T); return -_Cp/(1/rho+T/(rho*rho)*getDrhoDT_P(P,T));}// Dh/DT at constant pressure
   double getDrhoDT_e(double P,double T){ double rho=getDensity(P,T); return  _Cv*rho*rho/(T*getDpDT_rho(P,T)-P);}// Dh/DT at constant pressure
   virtual double getDeDp_h(double P,double T)=0;
