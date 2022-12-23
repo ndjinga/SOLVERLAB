@@ -270,7 +270,7 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 		double T = _fluides[0]->getTemperatureFromEnthalpy( _Vdiff[ _nVar -1], rho );
 		
 		double lambda = _fluides[0]->getConductivity( T, _Vdiff[0] );
-		double mu     = _fluides[0]-getViscosity( T, rho  );
+		double mu     = _fluides[0]->getViscosity( T, rho  );
 		_fluides[0]->getConductivity( T, _Vdiff[0] );
 		for(int i=0; i<_nVar*_nVar;i++)
 			_Diffusion[i] = 0;
@@ -585,6 +585,7 @@ void NavierStokes::convectionMatrices()
 		convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2],vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 		/* Calcul du décentrement staggered */
 		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);//Ici on calcule le décentrement staggered et on le stocke dans _absAroeImplicit
+		
 	}
 	else
 	{
@@ -990,7 +991,9 @@ void NavierStokes::addSourceTermToSecondMember(const int i, int nbVoisinsi,const
 
 void NavierStokes::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar * Vi, int i)
 {
-	double phirho=Ui[0], T =_fluides[0]->getTemperatureFromEnthalpy( Vi[ _nVar -1] );
+	double P = Vi[0];
+	double h = Vi[ _nVar -1];
+	double phirho=Ui[0], T =_fluides[0]->getTemperatureFromEnthalpy(P, h);
 	double norm_u=0;
 	for(int k=0; k<_Ndim; k++)
 		norm_u+=Vi[1+k]*Vi[1+k];
@@ -1016,13 +1019,15 @@ void NavierStokes::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar 
 				_GravityImplicitationMatrix[k*_nVar]=-_gravite[k];
 		else
 		{
-			double pression=Vi[0];
-			//TODO drho_sur_dT ou drho_sur_dh? getDensityDerivatives à définir
-			getDensityDerivatives( pression, T, norm_u*norm_u );
+			double P = Vi[ 0 ];
+			double h = Vi[_nVar -1];
+			double Temperature = _fluides[0]->getTemperatureFromEnthalpy(p,h);
+			double drho_sur_dp = _fluides[0]->getDrhoDP_e(pression, Temperature);
+			double drho_sur_dT = _fluides[0]->getDrhoDT_P(pression, Temperature)
 			for(int k=0; k<_nVar;k++)
 			{
-				_GravityImplicitationMatrix[k*_nVar+0]      =-_gravite[k]*_drho_sur_dp;
-				_GravityImplicitationMatrix[k*_nVar+_nVar-1]=-_gravite[k]*_drho_sur_dT;
+				_GravityImplicitationMatrix[k*_nVar+0]      =-_gravite[k] * drho_sur_dp;
+				_GravityImplicitationMatrix[k*_nVar+_nVar-1]=-_gravite[k] * drho_sur_dT;
 			}
 		}
 	}
@@ -1421,41 +1426,49 @@ void NavierStokes::primToCons(const double *P, const int &i, double *W, const in
 
 void NavierStokes::primToConsJacobianMatrix(double *V)
 {
-	double pression = V[0];
+	double P = V[0];
 	double h = V[_nVar-1];
+	double rho = _fluides[0]->getDensityFromEnthalpy(P, h);
+	double T = _fluides[0]->getTemperatureFromEnthalpy(P,h);
+	double e = h - pression/rho.0;
 	double vitesse[_Ndim];
+
 	for(int idim=0;idim<_Ndim;idim++)
 		vitesse[idim]=V[1+idim];
 	double v2=0;
 	for(int idim=0;idim<_Ndim;idim++)
 		v2+=vitesse[idim]*vitesse[idim];
+	
+	double E = e + v2/2.0 ;
 
-	double rho=_fluides[0]->getDensityFromEnthalpy(pression,h);
-	//TODO à définir getDensityDerivatives(pression, h);
-	// en particulier drho_sur_dh, drhoE_sur_dh 
+	double drho_sur_dh = _fluides[0]->getDrhoDh_p(P, T);
+	double drho_sur_dp = _fluides[0]->getDrhoDP_h(P, T); 
+	double de_sur_dp = _fluides[0]->getDeDp_h(P,T);
+	double de_sur_dh = _fluides[0]->getDeDh_p(P,T);
+	double drhoE_sur_dp = drho_sur_dp * E + rho * (de_sur_dp + v2); 
+	double drhoE_sur_dh = drho_sur_dh * E + rho * (de_sur_dh + v2)
 
 	getDensityDerivatives(pression, h);
 	for(int k=0;k<_nVar*_nVar; k++){
 		_primToConsJacoMat[k]=0;
 	}
 	//première ligne
-	_primToConsJacoMat[0] = _drho_sur_dp;
-	_primToConsJacoMat[_nVar -1] = _drho_sur_dh;
+	_primToConsJacoMat[0] = drho_sur_dp;
+	_primToConsJacoMat[_nVar -1] = drho_sur_dh;
 	//Deuxième ligne à (Ndim+1) ligne
 	for(int i=0; i< _Ndim; i++){
-		_primToConsJacoMat[i*_nVar] = _drho_sur_dh * vitesse[i];
-		_primToConsJacoMat[i*_nVar + _nVar-1] = _drho_sur_dh * vitesse[i];
+		_primToConsJacoMat[i*_nVar] = drho_sur_dh * vitesse[i];
+		_primToConsJacoMat[i*_nVar + _nVar-1] = drho_sur_dh * vitesse[i];
 		_primToConsJacoMat[i*_nVar + 1+i] = rho;
 	}
 	//Dernière ligne
-	double E = h - pression/rho.0 + v2/2.0 ;
-	_primToConsJacoMat[(_nVar-1) * _nVar ] = _drhoE_sur_dp;
-	_primToConsJacoMat[(_nVar-1) * _nVar + _nVar -1] = _drhoE_sur_dh;
+
+	_primToConsJacoMat[(_nVar-1) * _nVar ] = drhoE_sur_dp;
+	_primToConsJacoMat[(_nVar-1) * _nVar + _nVar -1] = drhoE_sur_dh;
 	for(int j=0; j< _Ndim; j++){
 		_primToConsJacoMat[(_nVar-1) * _nVar + 1+j] = rho * vitesse[i];
 
 	}
-
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -1472,7 +1485,7 @@ Vector NavierStokes::staggeredVFFCFlux()
 	_runLogFile->close();
 	throw CdmathException("NavierStokes::staggeredVFFCFlux is not yet available");
 }
-void NavierStokes::entropicShift(double* n)//TO do: make sure _Vi and _Vj are well set
+void NavierStokes::entropicShift(double* n)
 {
 		*_runLogFile<< "NavierStokes::entropicShift is not yet available "<<  endl;
 	_runLogFile->close();
@@ -1552,28 +1565,41 @@ void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, d
 {
 	//G(V_L)-G(V_R)=Aroe_prim (V_L-V_R)
 
-	//TODO getDensityDerivatives à définir
+	//TODO bien défini ?
+	double P = _V[0];
+	double h = _V[_nVar-1];
+	double T = _fluides[0]->getTemperatureFromEnthalpy(P,h);
+	double vitesse[_Ndim];
 
-	getDensityDerivatives(p,h);
+	for(int idim=0;idim<_Ndim;idim++)
+		vitesse[idim]=V[1+idim];
+	double v2=0;
+	for(int idim=0;idim<_Ndim;idim++)
+		v2+=vitesse[idim]*vitesse[idim];
+	
+	//TODO quelles valeurs de P et T ?
+	double drho_sur_dh = _fluides[0]->getDrhoDh_p(P, T);
+	double drho_sur_dp = _fluides[0]->getDrhoDP_h(P, T); 
+
 	//Première ligne 
-	_AroeImplicit[0*_nVar+0] = u_n * _drho_sur_dp;
+	_AroeImplicit[0*_nVar+0] = u_n * drho_sur_dp;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[0*_nVar+1+i] = rho*_vec_normal[i];
-	_AroeImplicit[0*_nVar+1+_Ndim] = u_n * _drho_sur_dh;
+		_AroeImplicit[0*_nVar+1+i] = rho * _vec_normal[i];
+	_AroeImplicit[0*_nVar+1+_Ndim] = u_n * drho_sur_dh;
 	//Deuxième ligne à (1 + _Ndim) ligne
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0] = _drho_sur_dp * u_n * vitesse[i]+_vec_normal[i];
+		_AroeImplicit[(1+i)*_nVar+0] = drho_sur_dp * u_n * vitesse[i] + _vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j] = rho * vitesse[i]*_vec_normal[j];
-		_AroeImplicit[(1+i)*_nVar+1+i] += rho*u_n;
-		_AroeImplicit[(1+i)*_nVar+1+_Ndim] = _drho_sur_dh * u_n * vitesse[i];
+			_AroeImplicit[(1+i)*_nVar+1+j] = rho * vitesse[i] *_vec_normal[j];
+		_AroeImplicit[(1+i)*_nVar+1+i] += rho * u_n;
+		_AroeImplicit[(1+i)*_nVar+1+_Ndim] = drho_sur_dh * u_n * vitesse[i];
 	}
 	//Dernière ligne
-	_AroeImplicit[(1+_Ndim)*_nVar+0] = _drho_sur_dp * u_n * H;
+	_AroeImplicit[(1+_Ndim)*_nVar+0] = drho_sur_dp * u_n * H;
 	for(int i=0;i<_Ndim;i++)1
 		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * (H * _vec_normal[i] + u_n * vitesse[i]);
-	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = u_n * (H * _drho_sur_dh + rho);
+	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = u_n * (H * drho_sur_dh + rho);
 }
 
 void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n, double H, Vector vitesse)
@@ -1598,7 +1624,6 @@ void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, dou
 		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * ( H *_vec_normal[i]+u_n * vitesse[i]);
 	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = _drhoE_sur_dT * u_n;
 }
-
 
 
 void NavierStokes::testConservation()
@@ -1636,53 +1661,6 @@ void NavierStokes::testConservation()
 			cout << SUM << ", variation relative: " << fabs(DELTA /SUM)  << endl;
 		else
 			cout << " a une somme quasi nulle,  variation absolue: " << fabs(DELTA) << endl;
-	}
-}
-
-void NavierStokes::getDensityDerivatives( double pressure, double temperature, double v2 )
-{
-	double rho=_compressibleFluid->getDensity(pressure,temperature);
-	double gamma=_compressibleFluid->constante("gamma");
-
-	if(	!_useDellacherieEOS)
-	{
-		StiffenedGas* fluide0=dynamic_cast<StiffenedGas*>(_compressibleFluid);
-		double e = fluide0->getInternalEnergy(temperature);
-		double cv=fluide0->constante("cv");
-		double E=e+0.5*v2;
-		/* To do : replace the formula using q by calls to sound speed */
-		double q = fluide0->constante("q");
-
-		_drho_sur_dp=1/((gamma-1)*(e-q));
-		_drho_sur_dT=-rho*cv/(e-q);
-		_drhoE_sur_dp=E/((gamma-1)*(e-q));
-		_drhoE_sur_dT=rho*cv*(1-E/(e-q));
-	}
-	else if(_useDellacherieEOS )
-	{
-		StiffenedGasDellacherie* fluide0=dynamic_cast<StiffenedGasDellacherie*>(_compressibleFluid);
-		double h=fluide0->getEnthalpy(temperature);
-		double H=h+0.5*v2;
-		double cp=fluide0->constante("cp");
-		/* To do : replace the formula using q by calls to sound speed */
-		double q = fluide0->constante("q");
-
-		_drho_sur_dp=gamma/((gamma-1)*(h-q));
-		_drho_sur_dT=-rho*cp/(h-q);
-		_drhoE_sur_dp=gamma*H/((gamma-1)*(h-q))-1;
-		_drhoE_sur_dT=rho*cp*(1-H/(h-q));
-	}
-	else
-	{
-		*_runLogFile<< "NavierStokes::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie" << endl;
-		_runLogFile->close();
-		throw CdmathException("NavierStokes::getDensityDerivatives: eos should be StiffenedGas or StiffenedGasDellacherie");
-	}
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout<<"_drho_sur_dp= "<<_drho_sur_dp<<", _drho_sur_dT= "<<_drho_sur_dT<<endl;
-		cout<<"_drhoE_sur_dp= "<<_drhoE_sur_dp<<", _drhoE_sur_dT= "<<_drhoE_sur_dT<<endl;
 	}
 }
 
