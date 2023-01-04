@@ -94,7 +94,7 @@ void NavierStokes::initialize(){
 		}	
 	}
 
-	//* In case of an incompressible fluid, pressure may be defined up to a constant hence a singular inear system (no uniqueness unless outlet boundary condition) */
+	//* In case of an incompressible fluid, pressure may be defined up to a constant hence a singular linear system (no uniqueness unless outlet boundary condition) */
 	if(_isCompressibleFluid)
 		_isSingularSystem=false;
 	else
@@ -233,7 +233,7 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 
 	if(IsBord)
 		for(int k=0; k<_nVar; k++)
-			_Vj[k]=_Vextdiff[k];
+			_Vj[k] = _Vextdiff[k];
 	else
 		VecGetValues(_primitiveVars, _nVar, _idm, _Vj);
 
@@ -277,9 +277,10 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 		for(int i=1;i<_nVar-1;i++)
 			_Diffusion[i*_nVar+i] = mu;
 		//TODO à définir
-		double dT_dp, dT_dh  = getTemperatureDerivatives(p,h);
-		_Diffusion[(_nVar-1)*_nVar]= - lambda * dT_dp;
-		_Diffusion[_nVar*_nVar-1]= - lambda * dT_dh;
+		double dT_sur_dp = 0;
+		double dT_sur_dh = 0;
+		_Diffusion[(_nVar-1) * _nVar]= - lambda * dT_sur_dp;
+		_Diffusion[_nVar *_nVar - 1]= - lambda * dT_sur_dh;
 	}
 }
 
@@ -296,7 +297,7 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 		cout<<endl;
 	}
 
-	if (_limitField[nameOfGroup].bcType==Wall){
+	if (_limitField[nameOfGroup].bcType == Wall){
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne primitif
 		if(_verbose && _nbTimeStep%_freqSave ==0)
 		{
@@ -305,13 +306,13 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 				cout<<_externalStates[k]<<", ";
 			cout<<endl;
 		}
-		double u_n=0;//u_n=vitesse normale à la face frontière;
+		double u_n = 0;//u_n=vitesse normale à la face frontière;
 		for(int k=0; k<_Ndim; k++)
-			u_n+=_externalStates[(k+1)]*normale[k];
+			u_n +=_externalStates[(k+1)] * normale[k];
 			
 		//Pour la convection, inversion du sens de la vitesse normale
 		for(int k=0; k<_Ndim; k++)
-			_externalStates[(k+1)]-= 2*u_n*normale[k];
+			_externalStates[(k+1)]-= 2 * u_n * normale[k];
 	}
 	else if (_limitField[nameOfGroup].bcType==Neumann){
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On prend l'état fantôme égal à l'état interne (conditions limites de Neumann)
@@ -320,14 +321,14 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne 
 		double u_int_n=0;//u_int_n=composante normale de la vitesse à la face frontière;
 		for(int k=0; k<_Ndim; k++)
-			u_int_n+=_externalStates[(k+1)]*normale[k];//On calcule la vitesse normale sortante
+			u_int_n += _externalStates[(k+1)] * normale[k];//On calcule la vitesse normale sortante
 
-		double u_ext_n=_limitField[nameOfGroup].v_x[0]*normale[0];
+		double u_ext_n = _limitField[nameOfGroup].v_x[0] * normale[0];
 		if(_Ndim>1)
 			{
-				u_ext_n+=_limitField[nameOfGroup].v_y[0]*normale[1];
+				u_ext_n += _limitField[nameOfGroup].v_y[0] * normale[1];
 				if(_Ndim>2)
-					u_ext_n+=_limitField[nameOfGroup].v_z[0]*normale[2];
+					u_ext_n += _limitField[nameOfGroup].v_z[0] * normale[2];
 			}
 
 		if(u_int_n+u_ext_n<=0)
@@ -344,23 +345,24 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 		else if(_nbTimeStep%_freqSave ==0)
 			cout<< "Warning : fluid possibly going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
 	}
-	else if (_limitField[nameOfGroup].bcType==InletPressure){
+	else if (_limitField[nameOfGroup].bcType == InletPressure){
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état primitif interne
 
-		double u_n=0;//u_n=vitesse normale à la face frontière;
+		double u_n = 0;//u_n=vitesse normale à la face frontière;
 		for(int k=0; k<_Ndim; k++)
-			u_n+=_externalStates[(k+1)]*normale[k];
+			u_n += _externalStates[(k+1)] * normale[k];
         
-		if(u_n<=0)
+		if(u_n <= 0)
 		{
 			//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
 			Cell Cj=_mesh.getCell(j);
-			double hydroPress=Cj.x()*_GravityField3d[0];
+			double hydroPress = Cj.x() * _GravityField3d[0];
 			if(_Ndim>1){
-				hydroPress+=Cj.y()*_GravityField3d[1];
+				hydroPress += Cj.y() * _GravityField3d[1];
 				if(_Ndim>2)
-					hydroPress+=Cj.z()*_GravityField3d[2];
+					hydroPress += Cj.z() * _GravityField3d[2];
 			}
+			//TODO _TEmperature ??
 			hydroPress*= _fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature) ;//multiplication by rho the total density
 			
 			//First component : total pressure
@@ -400,11 +402,11 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Neumann boundary condition."<<endl;
 		}
 	}
-	else if (_limitField[nameOfGroup].bcType==Outlet){
+	else if (_limitField[nameOfGroup].bcType == Outlet){
 		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates); //On remplace l'état fantôme par l'état interne PRIMITIF
 		double u_n=0;//u_n=vitesse normale à la face frontière;
 		for(int k=0; k<_Ndim; k++)
-		    u_n+=_externalStates[(k+1)]*normale[k];
+		    u_n+=_externalStates[(k+1)] * normale[k];
 
 		if(u_n < -_precision &&  _nbTimeStep%_freqSave ==0)
 		    cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<" with velocity "<< u_n<<endl;
@@ -421,6 +423,7 @@ void NavierStokes::setBoundaryState(string nameOfGroup, const int &j,double *nor
 					if(_Ndim>2)
 						hydroPress+=(Cj.z()-_gravityReferencePoint[2])*_GravityField3d[2];
 				}
+				//TODO _Temperature ??
 				hydroPress*= _fluides[0]->getDensity(_limitField[nameOfGroup].p, _Temperature) ;//multiplication by rho the total density
 		
 				if(_verbose && _nbTimeStep%_freqSave ==0)
@@ -490,9 +493,11 @@ void NavierStokes::convectionMatrices()
 	invSound = 1/_compressibleFluid->vitesseSonEnthalpie(H-u_2/2).0;
 	c = 1/sqrt(invSound).0;
 
-	vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
+	vp_dist[0] = u_n-c;
+	vp_dist[1] = u_n;
+	vp_dist[2] = u_n+c;
 
-	if(invSound==0.){//infinite sound speed
+	if(invSound == 0.){//infinite sound speed
 		if(_timeScheme==Explicit)
 			throw CdmathException("Explicit scheme cannot be used for incompressible fluids since dt=0");
 		else
@@ -537,7 +542,7 @@ void NavierStokes::convectionMatrices()
 	}
 
 	/******** Construction des matrices de decentrement ********/
-	if( _spaceScheme ==centered){
+	if( _spaceScheme == centered){
 		if(_usePrimitiveVarsInNewton)//We use primitive variables in Newton iterations
 		{
 			convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
@@ -564,7 +569,7 @@ void NavierStokes::convectionMatrices()
 		/* Calcul de Acons (first step in the the computaton of upwinding matrix) */
 		convectionMatrixConservativeVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule Acons et on le stocke dans _Aroe
 		/* Calcul de |Acons| */
-		vector< complex< double > > y (	nb_vp_dist,0);
+		vector< complex< double > > y(	nb_vp_dist,0);
 		for( int i=0 ; i<nb_vp_dist ; i++)
 			y[i] = Polynoms::abs_generalise(vp_dist[i]);
 		Polynoms::abs_par_interp_directe( nb_vp_dist, vp_dist, _Aroe, _nVar,_precision, _absAroe,y);//Ici on calcule |Acons| et on le stocke dans _absAroe
@@ -582,7 +587,8 @@ void NavierStokes::convectionMatrices()
 			throw CdmathException("NavierStokes::convectionMatrices: entropy scheme not available for staggered scheme");
 		}
 		/* Calcul de Aprim */
-		convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2],vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
+		//TODO en quel état ?
+		convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 		/* Calcul du décentrement staggered */
 		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);//Ici on calcule le décentrement staggered et on le stocke dans _absAroeImplicit
 		
@@ -635,6 +641,7 @@ void NavierStokes::computeScaling(double maxvp)
 		_blockDiag[q]=1./maxvp;//
 		_invBlockDiag[q]= maxvp;//1.;//
 	}
+	//TODO gamma ?
 	_blockDiag[_nVar - 1]=(_compressibleFluid->constante("gamma")-1)/(maxvp*maxvp);//1
 	_invBlockDiag[_nVar - 1]=  1./_blockDiag[_nVar - 1] ;// 1.;//
 }
@@ -709,7 +716,7 @@ void IsothermalSinglePhase::addConvectionToSecondMember(const int &i, const int 
 		if(!isBord)
 		{
 			for(int k=0; k<_nVar; k++)
-				_temp[k]*=_inv_dxj/_inv_dxi;//(Vi-Vj)*_inv_dxi
+				_temp[k]*= _inv_dxj/_inv_dxi;//(Vi-Vj)*_inv_dxi
 			Polynoms::matrixProdVec(_AroePlusImplicit, _nVar, _nVar, _temp, _phi);//phi=A^+(V_i-V_j)/dx
 			VecSetValuesBlocked(_b, 1, _idn, _phi, ADD_VALUES);
 	
@@ -726,7 +733,7 @@ void IsothermalSinglePhase::addConvectionToSecondMember(const int &i, const int 
 	else//We use conservative variables in Newton iterations
 	{
 		for(int k=0; k<_nVar; k++)
-			_temp[k]=(_Ui[k] - _Uj[k])*_inv_dxj;//(Ui-Uj)*_inv_dxj
+			_temp[k]=(_Ui[k] - _Uj[k]) * _inv_dxj;//(Ui-Uj)*_inv_dxj
 		Polynoms::matrixProdVec(_AroeMinus, _nVar, _nVar, _temp, _phi);//phi=A^-(U_i-U_j)/dx
 		VecSetValuesBlocked(_b, 1, _idm, _phi, ADD_VALUES);
 
@@ -1019,9 +1026,7 @@ void NavierStokes::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar 
 				_GravityImplicitationMatrix[k*_nVar]=-_gravite[k];
 		else
 		{
-			double P = Vi[ 0 ];
-			double h = Vi[_nVar -1];
-			double Temperature = _fluides[0]->getTemperatureFromEnthalpy(p,h);
+	
 			double drho_sur_dp = _fluides[0]->getDrhoDP_e(pression, Temperature);
 			double drho_sur_dT = _fluides[0]->getDrhoDT_P(pression, Temperature)
 			for(int k=0; k<_nVar;k++)
@@ -1253,7 +1258,7 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 			v[k]=_Vj[1+k];
 			v2+=v[k]*v[k];
 		}
-
+		//TODO compressible fluid density ? 
 		double rho_ext=_compressibleFluid->getDensity(_limitField[nameOfGroup].p, _externalStates[_nVar-1]);
 		double rho_int = _externalStates[0];
 		double density_ratio=rho_ext/rho_int;
@@ -1450,7 +1455,7 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 
 	getDensityDerivatives(pression, h);
 	for(int k=0;k<_nVar*_nVar; k++){
-		_primToConsJacoMat[k]=0;
+		_primToConsJacoMat[k] = 0;
 	}
 	//première ligne
 	_primToConsJacoMat[0] = drho_sur_dp;
@@ -1462,7 +1467,6 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 		_primToConsJacoMat[i*_nVar + 1+i] = rho;
 	}
 	//Dernière ligne
-
 	_primToConsJacoMat[(_nVar-1) * _nVar ] = drhoE_sur_dp;
 	_primToConsJacoMat[(_nVar-1) * _nVar + _nVar -1] = drhoE_sur_dh;
 	for(int j=0; j< _Ndim; j++){
@@ -1519,8 +1523,8 @@ Vector NavierStokes::convectionFlux(Vector U,Vector V, Vector normale, double po
 	Vector F[_nVar];
 	F[0] = phirho*vitessen;
 	for(int i=0;i<_Ndim;i++)
-		F[1+i] = phirho*vitessen*vitesse[i]+pression*normale[i]*porosity;
-	F[1+_Ndim] = phirho*( h - pression/rho.0 + v2/2.0)*vitessen;
+		F[1+i] = phirho * vitessen * vitesse[i] + pression*  normale[i] * porosity;
+	F[1+_Ndim] = phirho * ( h - pression/rho.0 + v2/2.0) * vitessen;
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
@@ -1535,24 +1539,25 @@ Vector NavierStokes::convectionFlux(Vector U,Vector V, Vector normale, double po
 void NavierStokes::ConvectionMatrixConservativeVariables(double u_n, double H,Vector velocity, double k, double K)
 {
 	/******** Construction de la matrice de Roe *********/
+	//TODO enlever k et K
 	//premiere ligne (masse)
 	_Aroe[0]=0;
 	for(int idim=0; idim<_Ndim;idim++)
 		_Aroe[1+idim]=_vec_normal[idim];
 	_Aroe[_nVar-1]=0;
 
-	//lignes intermadiaires(qdm)
+	//lignes intermédiaires(qdm)
 	for(int idim=0; idim<_Ndim;idim++)
 	{
 		//premiere colonne
-		_Aroe[(1+idim)*_nVar]=K*_vec_normal[idim] - u_n*_Uroe[1+idim];
+		_Aroe[(1+idim)*_nVar] = K*_vec_normal[idim] - u_n*_Uroe[1+idim];
 		//colonnes intermediaires
 		for(int jdim=0; jdim<_Ndim;jdim++)
-			_Aroe[(1+idim)*_nVar + jdim + 1] = _Uroe[1+idim]*_vec_normal[jdim]-k*_vec_normal[idim]*_Uroe[1+jdim];
+			_Aroe[(1+idim)*_nVar + jdim + 1] = _Uroe[1+idim] * _vec_normal[jdim]- k *_vec_normal[idim] * _Uroe[1+jdim];
 		//matrice identite
 		_Aroe[(1+idim)*_nVar + idim + 1] += u_n;
 		//derniere colonne
-		_Aroe[(1+idim)*_nVar + _nVar-1]=k*_vec_normal[idim];
+		_Aroe[(1+idim)*_nVar + _nVar-1] = k * _vec_normal[idim];
 	}
 	//derniere ligne (energie)
 	_Aroe[_nVar*(_nVar-1)] = (K - H)*u_n;
@@ -1565,7 +1570,6 @@ void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, d
 {
 	//G(V_L)-G(V_R)=Aroe_prim (V_L-V_R)
 
-	//TODO bien défini ?
 	double P = _V[0];
 	double h = _V[_nVar-1];
 	double T = _fluides[0]->getTemperatureFromEnthalpy(P,h);
@@ -1605,24 +1609,47 @@ void NavierStokes::convectionMatrixPrimitiveVariables( double rho, double u_n, d
 void NavierStokes::staggeredRoeUpwindingMatrixPrimitiveVariables(double rho, double u_n, double H, Vector vitesse)
 {
 	//Calcul de décentrement de type décalé en variables primitives
-	//TODO à définir
-	getDensityDerivatives(p,h);
-	_AroeImplicit[0*_nVar+0] =_drho_sur_dp * u_n;
+	//TODO en quel état prendre les valeurs ? pourquoi V ?
+	double P = V[0];
+	double h = V[_nVar-1];
+	double rho = _fluides[0]->getDensityFromEnthalpy(P, h);
+	double T = _fluides[0]->getTemperatureFromEnthalpy(P,h);
+	double drho_sur_dh = _fluides[0]->getDrhoDh_p(P, T);
+	double drho_sur_dp = _fluides[0]->getDrhoDP_h(P, T); 
+	double e = h - pression/rho.0;
+
+
+	for(int idim=0;idim<_Ndim;idim++)
+		vitesse[idim] = V[1+idim];
+	double v2=0;
+	for(int idim=0;idim<_Ndim;idim++)
+		v2+=vitesse[idim]*  vitesse[idim];
+	
+	double E = e + v2/2.0 ;
+
+	double de_sur_dp = _fluides[0]->getDeDp_h(P,T);
+	double de_sur_dh = _fluides[0]->getDeDh_p(P,T);
+	double drhoE_sur_dp = drho_sur_dp * E + rho * (de_sur_dp + v2); 
+	//TODO définir drhoE_sur_DT 
+	double drho_sur_dT =  _fluides[0]->getDrhoDT_P(P, T);
+	double drhoE_sur_dT = 0;
+
+	_AroeImplicit[0*_nVar+0] = drho_sur_dp * u_n;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[0*_nVar+1+i] =rho * _vec_normal[i];
-	_AroeImplicit[0*_nVar+1+_Ndim] =_drho_sur_dT * u_n;
+		_AroeImplicit[0*_nVar+1+i] = rho * _vec_normal[i];
+	_AroeImplicit[0*_nVar+1+_Ndim] = drho_sur_dT * u_n;
 	for(int i=0;i<_Ndim;i++)
 	{
-		_AroeImplicit[(1+i)*_nVar+0] =_drho_sur_dp * u_n*vitesse[i]-_vec_normal[i];
+		_AroeImplicit[(1+i)*_nVar+0] = drho_sur_dp * u_n * vitesse[i] -_vec_normal[i];
 		for(int j=0;j<_Ndim;j++)
-			_AroeImplicit[(1+i)*_nVar+1+j] = rho * vitesse[i]*_vec_normal[j];
+			_AroeImplicit[(1+i)*_nVar+1+j] = rho * vitesse[i] * _vec_normal[j];
 		_AroeImplicit[(1+i)*_nVar+1+i] += rho * u_n;
-		_AroeImplicit[(1+i)*_nVar+1+_Ndim] =_drho_sur_dT * u_n * vitesse[i];
+		_AroeImplicit[(1+i)*_nVar+1+_Ndim] = drho_sur_dT * u_n * vitesse[i];
 	}
-	_AroeImplicit[(1+_Ndim)*_nVar+0]= (_drhoE_sur_dp+1) * u_n;
+	_AroeImplicit[(1+_Ndim)*_nVar+0] = (drhoE_sur_dp + 1) * u_n;
 	for(int i=0;i<_Ndim;i++)
-		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * ( H *_vec_normal[i]+u_n * vitesse[i]);
-	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = _drhoE_sur_dT * u_n;
+		_AroeImplicit[(1+_Ndim)*_nVar+1+i] = rho * (H *_vec_normal[i] + u_n * vitesse[i]);
+	_AroeImplicit[(1+_Ndim)*_nVar+1+_Ndim] = drhoE_sur_dT * u_n;
 }
 
 
