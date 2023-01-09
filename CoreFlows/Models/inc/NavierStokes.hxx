@@ -229,10 +229,8 @@ protected :
 	// //!Compute the corrected interfacial state for lowMach, pressureCorrection and staggered versions of the VFRoe formulation
 	// void applyVFRoeLowMachCorrections(bool isBord, string groupname="");
 
-	//!Special preconditioner based on a matrix scaling strategy
-	void computeScaling(double offset);
+	
 	//!Calcule les saut de valeurs propres pour la correction entropique
-
 	void entropicShift(double* n);
 	Vector staggeredVFFCFlux();
 	//TODO cette classe fonctionne avec fluide incompressible et compressible

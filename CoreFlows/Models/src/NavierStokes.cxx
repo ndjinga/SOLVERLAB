@@ -37,6 +37,7 @@ NavierStokes::NavierStokes(phaseType fluid, pressureEstimate pEstimate, int dim,
 		if(fluid==Gas){
 			cout<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
 			*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
+			//TODO _compressible fluid ?
 			_compressibleFluid = new StiffenedGas(102,_Pref,_Tref,2.44e6, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C
 		}
 		else{
@@ -67,7 +68,7 @@ void NavierStokes::initialize(){
 	for(int i=0; i<_Ndim; i++)
 		_gravite[i+1]=_GravityField3d[i];
 
-	_GravityImplicitationMatrix = new PetscScalar[_nVar*_nVar];//Deleted in ProblemFluid::terminate()
+	_GravityImplicitationMatrix = new PetscScalar[_nVar * _nVar];//Deleted in ProblemFluid::terminate()
 
 	if(_saveVelocity || _saveAllFields)
 		_Vitesse=Field("Velocity",CELLS,_mesh,3);//Forcement en dimension 3 pour le posttraitement des lignes de courant
@@ -267,7 +268,7 @@ void NavierStokes::diffusionStateAndMatrices(const long &i,const long &j, const 
 	if(_timeScheme==Implicit)
 	{
 		double rho = _fluides[0]->getDensityFromEnthalpy(_Vdiff[0],_Vdiff[ _nVar-1 ] );
-		double T = _fluides[0]->getTemperatureFromEnthalpy( _Vdiff[ _nVar -1], rho );
+		double T   = _fluides[0]->getTemperatureFromEnthalpy( _Vdiff[ _nVar-1], rho );
 		
 		double lambda = _fluides[0]->getConductivity( T, _Vdiff[0] );
 		double mu     = _fluides[0]->getViscosity( T, rho  );
@@ -481,9 +482,9 @@ void NavierStokes::convectionMatrices()
 
 	for(int idim=0; idim <_Ndim; idim++)
 	{
-		u_2 += _Uroe[1+idim]*_Uroe[1+idim];
-		u_n += _Uroe[1+idim]*_vec_normal[idim];
-		vitesse[idim]=_Uroe[1+idim];
+		u_2 += _Uroe[1+idim] * _Uroe[1+idim];
+		u_n += _Uroe[1+idim] * _vec_normal[idim];
+		vitesse[idim] = _Uroe[1+idim];
 	}
 	vector<std::complex<double> > vp_dist(3,0);
 
@@ -589,7 +590,7 @@ void NavierStokes::convectionMatrices()
 		/* Calcul de Aprim */
 		convectionMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule Aprim et on le stocke dans _AroeImplicit
 		/* Calcul du décentrement staggered */
-		staggeredRoeUpwindingMatrixPrimitiveVariables( u_n);//Ici on calcule le décentrement staggered et on le stocke dans _absAroeImplicit
+		staggeredRoeUpwindingMatrixPrimitiveVariables(_Uroe[0], u_n, _Uroe[2], vitesse);//Ici on calcule le décentrement staggered et on le stocke dans _absAroeImplicit
 		
 	}
 	else
@@ -631,22 +632,7 @@ void NavierStokes::convectionMatrices()
 		}
 }
 
-void NavierStokes::computeScaling(double maxvp)
-{
-	_blockDiag[0]=1;
-	_invBlockDiag[0]=1;
-	for(int q=1; q<_nVar-1; q++)
-	{
-		_blockDiag[q]=1./maxvp;//
-		_invBlockDiag[q]= maxvp;//1.;//
-	}
-	//TODO gamma ?
-	_blockDiag[_nVar - 1]=(_compressibleFluid->constante("gamma")-1)/(maxvp*maxvp);//1
-	_invBlockDiag[_nVar - 1]=  1./_blockDiag[_nVar - 1] ;// 1.;//
-}
-
-
-void IsothermalSinglePhase::addConvectionToSecondMember(const int &i, const int &j, bool isBord, string groupname)
+void NavierStokes::addConvectionToSecondMember(const int &i, const int &j, bool isBord, string groupname)
 {
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 		cout<<"ProblemFluid::addConvectionToSecondMember start"<<endl;
@@ -665,7 +651,7 @@ void IsothermalSinglePhase::addConvectionToSecondMember(const int &i, const int 
 	}
 	else{
 		for(int k=0; k<_nVar; k++)
-			_Vj[k]= _Vext[k];
+			_Vj[k] = _Vext[k];
 		primToCons(_Vj, 0, _Uj, 0);
 	}
 	_idm[0] = i;
@@ -1134,10 +1120,10 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 	_idm[0] = _nVar*j;
 	for(k=1; k<_nVar; k++)
 		_idm[k] = _idm[k-1] + 1;
-	VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);
-	double q_n=0;//quantité de mouvement normale à la paroi
+	VecGetValues(_primtiveVars, _nVar, _idm, _externalStates);
+	double u_n = 0; //vitesse normale à la paroi
 	for(k=0; k<_Ndim; k++)
-		q_n+=_externalStates[(k+1)] * normale[k];
+		u_n += _externalStates[(k+1)] * normale[k];
 
 	// loop of boundary types
 	if (_limitField[nameOfGroup].bcType==Wall)
@@ -1151,7 +1137,7 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 	else if (_limitField[nameOfGroup].bcType==Inlet)
 	{
 		return;
-		if(q_n<0){
+		if(u_n<0){
 			double v[_Ndim], ve[_Ndim], v2, ve2;
 
 			_idm[0] = _nVar*j;
@@ -1180,7 +1166,7 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 			double total_energy = internal_energy + ve2/2;
 
 			//Mass line
-			_Jcb[0]=v2/(2*internal_energy);
+			_Jcb[0] = v2/(2*internal_energy);
 			for(k=0; k<_Ndim;k++)
 				_Jcb[1+k] = -v[k]/internal_energy;
 			_Jcb[_nVar-1] = 1/internal_energy;
@@ -1217,7 +1203,7 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 		_Jcb[(_nVar-1)*_nVar]=_compressibleFluid->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2;
 		 */
 	}
-	else if (_limitField[nameOfGroup].bcType==InletPressure && q_n<0){
+	else if (_limitField[nameOfGroup].bcType==InletPressure && u_n<0){
 		return;
 		double v[_Ndim], v2=0;
 		_idm[0] = _nVar*j;
@@ -1229,7 +1215,6 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 			v[k]=_Vj[1+k];
 			v2+=v[k]*v[k];
 		}
-//TODO compressible fluid density ? 
 		double rho_ext = _fluides[0]->getDensity(_limitField[nameOfGroup].p, _limitField[nameOfGroup].T);
 		double rho_int = _externalStates[0];
 		double density_ratio = rho_ext/rho_int;
@@ -1244,7 +1229,7 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 			_Jcb[(_nVar-1)*_nVar+1+k] = density_ratio*v[k];
 	}
 	// not wall, not inlet, not inletPressure
-	else if(_limitField[nameOfGroup].bcType==Outlet || (_limitField[nameOfGroup].bcType==InletPressure && q_n>=0))
+	else if(_limitField[nameOfGroup].bcType==Outlet || (_limitField[nameOfGroup].bcType==InletPressure && u_n>=0))
 	{
 		return;
 		double v[_Ndim], v2=0;
@@ -1257,8 +1242,8 @@ void NavierStokes::jacobian(const int &j, string nameOfGroup,double * normale)
 			v[k]=_Vj[1+k];
 			v2+=v[k]*v[k];
 		}
-		//TODO compressible fluid density ? 
-		double rho_ext = _fluides[0]->getDensity(_limitField[nameOfGroup].p, _externalStates[_nVar-1]);
+		//TODO rho_int ,
+		double rho_ext = _fluides[0]->getDensityFromEnthalpy(_limitField[nameOfGroup].p, _externalStates[_nVar-1]);
 		double rho_int = _externalStates[0];
 		double density_ratio = rho_ext/rho_int;
 		double internal_energy = fluides[0]->getInternalEnergy(_externalStates[_nVar-1], rho_int);
@@ -1375,9 +1360,9 @@ void  NavierStokes::jacobianDiff(const int &j, string nameOfGroup)
 			ve2 += ve[2]*ve[2];
 			v2 = v[2]*v[2];
 		}
-		//TODO compressible fluid density ? 
+		//TODO enlever dans toutes les fonctions Uj ?
 		double rho=_Uj[0];
-		double internal_energy=_compressibleFluid->getInternalEnergy(_limitField[nameOfGroup].T,rho);
+		double internal_energy=_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho);
 		double total_energy=internal_energy+ve2/2;
 
 		//Mass line
@@ -1415,7 +1400,7 @@ void  NavierStokes::jacobianDiff(const int &j, string nameOfGroup)
 void NavierStokes::primToCons(const double *P, const int &i, double *W, const int &j){
 	//cout<<"SinglePhase::primToCons i="<<i<<", j="<<j<<", P[i*(_Ndim+2)]="<<P[i*(_Ndim+2)]<<", P[i*(_Ndim+2)+(_Ndim+1)]="<<P[i*(_Ndim+2)+(_Ndim+1)]<<endl;
 	double rho = _fluides[0]->getDensityFromEnthalpy( P[i*(_Ndim+2)], P[i*(_Ndim+2)+(_Ndim+1)] );
-	double T = _fluides[0]->getTemperatureFromEnthalpy( _Vdiff[ _nVar -1], rho );
+	double T = _fluides[0]->getTemperatureFromEnthalpy(  P[i*(_Ndim+2)+(_Ndim+1)], rho );
 
 	assert( P[i*(_Ndim+2)]>0);//Pressure should be positive
 	assert( T > 0);//Temperature should be positive
@@ -1439,10 +1424,10 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 	double vitesse[_Ndim];
 
 	for(int idim=0;idim<_Ndim;idim++)
-		vitesse[idim]=V[1+idim];
-	double v2=0;
+		vitesse[idim] = V[1+idim];
+	double v2 = 0;
 	for(int idim=0;idim<_Ndim;idim++)
-		v2+=vitesse[idim]*vitesse[idim];
+		v2 += vitesse[idim] * vitesse[idim];
 	
 	double E = e + v2/2.0 ;
 
@@ -1453,7 +1438,6 @@ void NavierStokes::primToConsJacobianMatrix(double *V)
 	double drhoE_sur_dp = drho_sur_dp * E + rho * (de_sur_dp + v2); 
 	double drhoE_sur_dh = drho_sur_dh * E + rho * (de_sur_dh + v2)
 
-	getDensityDerivatives(pression, h);
 	for(int k=0;k<_nVar*_nVar; k++){
 		_primToConsJacoMat[k] = 0;
 	}
