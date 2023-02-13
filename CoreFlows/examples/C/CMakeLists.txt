@@ -196,7 +196,7 @@ if( SOLVERLAB_WITH_MPI )#Tests parallèles
   add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_2Procs_CUBE.exe           COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshCube.med) 
   set_property (TEST WaveSystem_3DFV_SphericalExplosion_MPI_2Procs_CUBE.exe PROPERTY LABELS "C++ wave 3D fv riemann mpi 2Proc tetrahedra CUBE cdmath")     
   add_test(NAME WaveSystem_3DFV_SphericalExplosion_MPI_2Procs_TETRAHEDRON.exe    COMMAND "${MPIEXEC}" "-n" "2" "./WaveSystem_FV_SphericalExplosion_MPI.exe" resources/meshTetrahedron10.med) 
-  set_property (TEST WaveSystem_3DFV_SphericalExplosion_MPI_2Proc_TETRAHEDRON.exe PROPERTY LABELS "C++ wave 3D fv riemann mpi 2Proc tetrahedra TETRAHEDRON cdmath")     
+  set_property (TEST WaveSystem_3DFV_SphericalExplosion_MPI_2Procs_TETRAHEDRON.exe PROPERTY LABELS "C++ wave 3D fv riemann mpi 2Proc tetrahedra TETRAHEDRON cdmath")
 
 endif( SOLVERLAB_WITH_MPI )
 
