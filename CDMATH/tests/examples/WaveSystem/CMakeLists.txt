@@ -1,6 +1,6 @@
 file(GLOB WaveSystem_EXAMPLES_TO_INSTALL 
 
-  WaveSystem1DUpwind WaveSystem1DUpwind_RiemannProblem WaveSystem1Staggered_RiemannProblem WaveSystem2DUpwind_RiemannProblem
+  WaveSystem1DUpwind WaveSystem1DUpwind_RiemannProblem WaveSystem1DStaggered_RiemannProblem WaveSystem1DRiemannProblem_staggered_dispersion WaveSystem2DUpwind_RiemannProblem
   WaveSystem_Stationary/WaveSystemUpwind WaveSystem_Stationary/WaveSystemCentered WaveSystem_Stationary/WaveSystemPStag WaveSystem_Stationary/WaveSystemStaggered 
   WaveSystem_Shock/WaveSystemUpwind WaveSystem_Shock/WaveSystemCentered WaveSystem_Shock/WaveSystemPStag WaveSystem_Shock/WaveSystemStaggered 
 )
@@ -20,6 +20,7 @@ IF (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
     ADD_SUBDIRECTORY(WaveSystem1DUpwind)
     ADD_SUBDIRECTORY(WaveSystem1DStaggered_RiemannProblem)
+    ADD_SUBDIRECTORY(WaveSystem1DRiemannProblem_staggered_dispersion)
     ADD_SUBDIRECTORY(WaveSystem1DUpwind_RiemannProblem)
     ADD_SUBDIRECTORY(WaveSystem2DUpwind_RiemannProblem)
     ADD_SUBDIRECTORY(WaveSystem_Stationary/WaveSystemUpwind)

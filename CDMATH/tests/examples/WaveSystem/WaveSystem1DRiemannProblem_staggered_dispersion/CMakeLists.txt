@@ -1,0 +1,9 @@
+
+
+if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
+
+    ADD_TEST(ExampleWaveSystem_1DStaggered_RiemannProblem_dispersion ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WaveSystem1DRiemannProblem_staggered_dispersion.py)
+
+endif (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
+
+

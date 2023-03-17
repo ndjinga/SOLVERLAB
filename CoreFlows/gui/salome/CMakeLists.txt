@@ -27,6 +27,12 @@ ELSE()
   MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
 ENDIF()
 					    								#
+# Versioning
+# ===========
+set(PROJECT_NAME "Salome${CMAKE_PROJECT_NAME}")
+message(STATUS "Setting ${PROJECT_NAME} version to: ${SOLVERLAB_VERSION}")
+SALOME_SETUP_VERSION(${SOLVERLAB_VERSION})
+
 # Find Salome KERNEL 
 # ==================
 SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
