@@ -9,6 +9,7 @@ Examples of use
 - [Example of stable numerical scheme for the 1D heat equation](tests/doc/1DHeatEquation/HeatEquation1D_RegularGrid.ipynb)
 - [Examples of unstable numerical methods for the 1D linear transport equation](tests/doc/1DTransportEquation/UnstableSchemes/TransportEquation1D_UnstableSchemes.ipynb)
 - [Shock formation and numerical capture issues for the 1D Burgers' equations](tests/doc/1DBurgersEquation/BurgersEquation1D.ipynb)
+- [Entropic vs Non entropic solution and their numerical capture for the 1D Burgers' equations](tests/doc/1DBurgersEquation_RarefactionWave/BurgersEquation1DEntropicSchemes.ipynb)
 - [Numerical convergence and maximum principle analysis for the linear finite element method applied to the 2D Poisson equation](tests/doc/2DPoissonEF/Convergence_Poisson_FE_SQUARE.ipynb)
 - [Numerical convergence analysis for the FV5 finite volume method applied to the 2D Poisson equation](tests/doc/2DPoissonVF/Convergence_Poisson_FV5_SQUARE.ipynb)
 - [Numerical convergence analysis for the linear finite element and FV5 finite volume methods applied to the 2D Poisson equation with discontinuous boundary conditions](tests/doc/2DPoisson_StiffBC_DISK/2DPoisson_StiffBC_DISK.ipynb)
