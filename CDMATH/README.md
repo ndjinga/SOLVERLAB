@@ -1,7 +1,7 @@
 SOLVERLAB-CDMATH
 ================
 
-SOLVERLAB-CDMATH is a geometrical and numerical toolbox designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The library originates from [CDMATH](http://cdmath.jimdo.com), a collaborative workgroup with the same name. It is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://petsc.org/release/) for the handling of matrices and linear solvers. The library is currently developed for linux distributions and is maintained on Ubuntu 14.04 LTS, 16.04 LTS, 18.04 LTS and 20.04 LTS, as well as on Fedora 24, 26, 28, 30 and 32.
+SOLVERLAB-CDMATH is a geometrical and numerical toolbox designed for numerical analysts who work on the discretisation of partial differential equations on general shapes and meshes and would rather focus on high-level scripting. The library originates from [CDMATH](http://cdmath.jimdo.com), a collaborative workgroup with the same name. It is based on the [MEDcoupling](https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html) C++/python library of the [SALOME](http://www.salome-platform.org/) project for the handling of meshes and fields, and on the C++ library [PETSC](https://petsc.org/release/) for the handling of matrices and linear solvers. The library is currently developed for linux distributions and is maintained on Ubuntu 18.04 LTS, 20.04 LTS and 20.04 LTS, as well as on Fedora 30, 32 and 34.
 
 Examples of use
 ---------------
