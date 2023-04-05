@@ -46,8 +46,8 @@ The corresponding binary files can be found  [here](https://www.salome-platform.
   CDMATH/tests/doc/1DTransportEquation/RegularGrid/TransportEquation1D_RegularGrid.ipynb)
 - [Example of stable numerical scheme for the 1D heat equation](CDMATH/tests/doc/1DHeatEquation/HeatEquation1D_RegularGrid.ipynb)
 - [Examples of unstable numerical methods for the 1D linear transport equation](CDMATH/tests/doc/1DTransportEquation/UnstableSchemes/TransportEquation1D_UnstableSchemes.ipynb)
+- [Shock formation and numerical capture issues for the 1D Burgers' equations](CDMATH/tests/doc/1DBurgersEquation_ShockWave/BurgersEquation1D.ipynb)
 - [Entropic vs Non entropic solution and their numerical capture for the 1D Burgers' equations](CDMATH/tests/doc/1DBurgersEquation_RarefactionWave/BurgersEquation1DEntropicSchemes.ipynb)
-- [Shock formation and numerical capture issues for the 1D Burgers' equations](tests/doc/1DBurgersEquation/BurgersEquation1D.ipynb)
 - [Influence of the mesh on the convergence and low Mach precision for the UPWIND finite volume method applied to the 2D wave system](
   CDMATH/tests/doc/2DWaveSystemVF_stationary/Convergence_WaveSystem_Upwind_SQUARE.ipynb)
 - [Influence of the mesh on the convergence and low Mach precision for the CENTERED finite volume method applied to the 2D wave system](
