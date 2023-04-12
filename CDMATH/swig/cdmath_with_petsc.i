@@ -559,7 +559,7 @@ typedef enum { SVD_LARGEST,
   std::string __repr__()
   {
      std::ostringstream oss;
-     oss << self->getField()->simpleRepr();
+     oss << self->getMEDCouplingField()->simpleRepr();
      return oss.str();
     }
 }

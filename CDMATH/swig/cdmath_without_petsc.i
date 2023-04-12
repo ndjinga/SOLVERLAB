@@ -419,7 +419,7 @@ def VectorIdiv(self,*args):
   std::string __repr__()
   {
      std::ostringstream oss;
-     oss << self->getField()->simpleRepr();
+     oss << self->getMEDCouplingField()->simpleRepr();
      return oss.str();
     }
 }
