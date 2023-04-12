@@ -44,6 +44,17 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 50, conc1.getNumberOfElements() );
 	CPPUNIT_ASSERT_EQUAL( 2.3, conc1.getTime() );
 
+    //Tests MEDCouplingField interface
+    MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMEDCouplingField = conc1.getField();
+    Field fieldFromMEDCoupling(myMEDCouplingField);
+    for (int j=0;j<fieldFromMEDCoupling.getNumberOfComponents();j++)
+    	for (int i=0;i<fieldFromMEDCoupling.getNumberOfElements();i++)
+    		CPPUNIT_ASSERT_EQUAL( double(i+j), fieldFromMEDCoupling(i,j) );
+	CPPUNIT_ASSERT_EQUAL( 2, fieldFromMEDCoupling.getNumberOfComponents() );
+	CPPUNIT_ASSERT_EQUAL( 50, fieldFromMEDCoupling.getNumberOfElements() );
+	CPPUNIT_ASSERT_EQUAL( 2.3, fieldFromMEDCoupling.getTime() );
+    fieldFromMEDCoupling.writeMED(fileNameMED,false);
+    
 	Field conc1n("CONCENTRATION",NODES,M,2,1.2) ;
 	CPPUNIT_ASSERT_EQUAL( 1.2, conc1n.getTime() );
     for (int j=0;j<conc1n.getNumberOfComponents();j++)
