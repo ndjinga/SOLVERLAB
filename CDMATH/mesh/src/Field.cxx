@@ -54,6 +54,31 @@ Field::Field(const std::string fieldName, EntityType type, const Mesh& mesh, int
 
 	buildFieldMemoryStructure();
 }
+
+Field::Field(const MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> field )
+{
+	_field = field->deepCopy();
+	_numberOfComponents = _field->getNumberOfComponents() ;
+	int iteration, order;
+	_time = _field->getTime(iteration, order);
+
+	_mesh=Mesh(_field->getMesh() );
+	switch (field->getTypeOfField()) 
+	{
+		case ON_CELLS:
+			_typeField=CELLS;
+			break;
+		case ON_NODES:
+			_typeField=NODES;
+			break;
+		default:
+			throw CdmathException("Input field type cannot be used in SOLVERLAB. Field values should be on nodes or cells.");
+	}
+	
+	_fieldName=_field->getName();
+}
+
+//Allocation d'un tableau pour le stockage des valeurs du champs_field
 void Field::buildFieldMemoryStructure()
 {
 	MEDCouplingUMesh* mu=_mesh.getMEDCouplingMesh()->buildUnstructured();
