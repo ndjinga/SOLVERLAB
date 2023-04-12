@@ -12,7 +12,6 @@
 
 #include "ProblemCoreFlows.hxx"
 #include "SparseMatrixPetsc.hxx"
-#include "MEDCouplingFieldDouble.hxx"
 
 #include <limits.h>
 #include <unistd.h>

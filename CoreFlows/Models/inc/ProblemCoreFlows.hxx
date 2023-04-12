@@ -32,6 +32,8 @@
 #include "Face.hxx"
 #include "CdmathException.hxx"
 
+#include "MEDCouplingFieldDouble.hxx"
+
 using namespace std;
 
 //! enumeration linearSolver
