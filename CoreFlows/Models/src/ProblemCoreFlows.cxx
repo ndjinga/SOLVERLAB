@@ -144,9 +144,17 @@ void ProblemCoreFlows::setPrecision(double precision)
 {
 	_precision=precision;
 }
+
 void ProblemCoreFlows::setInitialField(const MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMEDCouplingField )
 {
     Field VV(myMEDCouplingField);
+    return ProblemCoreFlows::setInitialField( VV );
+}
+
+void ProblemCoreFlows::setInitialField( MEDCoupling::MEDCouplingFieldDouble* myMEDCouplingField )
+{
+	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMCAutoMEDCouplingField(myMEDCouplingField);
+    Field VV(myMCAutoMEDCouplingField);
     return ProblemCoreFlows::setInitialField( VV );
 }
 

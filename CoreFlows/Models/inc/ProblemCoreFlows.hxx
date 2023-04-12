@@ -358,7 +358,15 @@ public :
 	/** \fn setInitialField
 	 * \brief sets the initial field
 	 * \details
-	 * \param [in] MEDCouplingField
+	 * \param [in] MEDCouplingField*
+	 * \param [out] void
+	 *  */
+	void setInitialField( MEDCoupling::MEDCouplingFieldDouble* myMEDCouplingield );
+
+	/** \fn setInitialField
+	 * \brief sets the initial field
+	 * \details
+	 * \param [in] MCAuto<MEDCoupling::MEDCouplingFieldDouble>
 	 * \param [out] void
 	 *  */
 	void setInitialField( const MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMEDCouplingield );
