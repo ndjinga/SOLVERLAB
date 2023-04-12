@@ -3,6 +3,8 @@
 
 import sys
 import solverlab
+import medcoupling
+import MEDLoader
 
 #===============================================================================================================================
 # Name        : Simulation of a 2D heat equation 
@@ -36,18 +38,25 @@ def DiffusionEquation_2DSpherical(FECalculation, fileName):
 	# Definition of field support parameter
 	if( FECalculation):
 		supportOfField=solverlab.NODES
+		typeOfField=medcoupling.ON_NODES
 	else:
 		supportOfField=solverlab.CELLS	
+		typeOfField=medcoupling.ON_CELLS
 	
     # Set the mesh and initial data
-	initial_data_inputfile="../resources/meshSquare";
-	initial_data_fieldName="Solid temperature";
-	print("Loading unstructured mesh and initial data", " in file ", initial_data_inputfile )
-	initial_data_time_iteration=0# default value is 0
-	initial_data_time_sub_iteration=0# default value is 0
-	initial_data_time_meshLevel=0# default value is 0
-	myProblem.setInitialField(initial_data_inputfile, initial_data_fieldName, initial_data_time_iteration, initial_data_time_sub_iteration, initial_data_time_meshLevel, supportOfField)
-
+	use_field_in_memory=False
+	if(not use_field_in_memory):#On lit le champ dans un fichier
+		initial_data_inputfile="../resources/meshSquare";
+		initial_data_fieldName="Solid temperature";
+		print("Loading unstructured mesh and initial data", " in file ", initial_data_inputfile )
+		initial_data_time_iteration=0# default value is 0
+		initial_data_time_sub_iteration=0# default value is 0
+		initial_data_time_meshLevel=0# default value is 0
+		myProblem.setInitialField(initial_data_inputfile, initial_data_fieldName, initial_data_time_iteration, initial_data_time_sub_iteration, initial_data_time_meshLevel, supportOfField)
+	else:#On utilise un champ en mémoire
+		my_field_in_memory=MEDLoader.ReadField(typeOfField,"../resources/meshSquare.med","Mesh_1",0,"Solid temperature",0,0)
+		myProblem.setInitialField( my_field_in_memory )
+		
     #### Optional physical values (default value is zero) : fluid temperature field, heat transfert coefficient, heat power field 
 	# Loading and setting fluid temperature field
 	fluid_temperature_inputfile="../resources/meshSquare";
