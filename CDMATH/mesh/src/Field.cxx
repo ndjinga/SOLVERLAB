@@ -20,6 +20,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
+#include <cassert>
 
 using namespace MEDCoupling;
 using namespace std;
@@ -57,13 +58,13 @@ Field::Field(const std::string fieldName, EntityType type, const Mesh& mesh, int
 
 Field::Field(const MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> field )
 {
-	_field = field->deepCopy();
+	_field = field->clone(true);//Use same mesh but new data array for the new field
 	_numberOfComponents = _field->getNumberOfComponents() ;
 	int iteration, order;
 	_time = _field->getTime(iteration, order);
 
 	_mesh=Mesh(_field->getMesh() );
-	switch (field->getTypeOfField()) 
+	switch (_field->getTypeOfField()) 
 	{
 		case ON_CELLS:
 			_typeField=CELLS;
@@ -504,17 +505,17 @@ Field::Field( const Field & f )
 //----------------------------------------------------------------------
 {
 	_mesh=f.getMesh() ;
-	MCAuto<MEDCouplingFieldDouble> f1=f.getField()->deepCopy();
+	MCAuto<MEDCouplingFieldDouble> f1=f.getMEDCouplingField()->clone(true);
 	_field=f1;
 	_typeField=f.getTypeOfField();
 }
 
 //----------------------------------------------------------------------
 MCAuto<MEDCouplingFieldDouble>
-Field::getField ( void )  const
+Field::getMEDCouplingField ( void )  const
 //----------------------------------------------------------------------
 {
-	return _field ;
+	return _field->clone(true);
 }
 
 //----------------------------------------------------------------------
@@ -522,7 +523,7 @@ void
 Field::setFieldByMEDCouplingFieldDouble ( const MEDCouplingFieldDouble* field )
 //----------------------------------------------------------------------
 {
-	MCAuto<MEDCouplingFieldDouble> ff=field->deepCopy();
+	MCAuto<MEDCouplingFieldDouble> ff=field->clone(true);
 	_field=ff;
 }
 
@@ -917,7 +918,7 @@ Field::operator= ( const Field& f )
 	_numberOfComponents=f.getNumberOfComponents();
 	_time=f.getTime();
 	_fieldName=f.getName();
-	MCAuto<MEDCouplingFieldDouble> f1=f.getField()->deepCopy();
+	MCAuto<MEDCouplingFieldDouble> f1=f.getMEDCouplingField()->clone(true);
 	_field=f1;
 	return *this;
 }
@@ -925,7 +926,7 @@ Field::operator= ( const Field& f )
 Field Field::deepCopy( ) const
 {
     Field F(getName(), getTypeOfField(), getMesh(), getNumberOfComponents(), getTime()) ;
-	MCAuto<MEDCouplingFieldDouble> f1=getField()->deepCopy();
+	MCAuto<MEDCouplingFieldDouble> f1=getMEDCouplingField()->clone(true);
 	F.setFieldByMEDCouplingFieldDouble(f1);
     
     return F;
@@ -945,8 +946,8 @@ Field::operator+= ( const Field& f )
 	if(f.getNumberOfComponents() != getNumberOfComponents())
 		throw CdmathException("Field::operator+= : Field addition requires identical number of components");
 
-	_field->setMesh(f.getField()->getMesh());
-	(*_field)+=(*f.getField());
+	_field->setMesh(f.getMEDCouplingField()->getMesh());
+	(*_field)+=(*f.getMEDCouplingField());
 	return *this;
 }
 
@@ -963,8 +964,8 @@ Field::operator-= ( const Field& f )
 	if(f.getNumberOfComponents() != getNumberOfComponents())
 		throw CdmathException("Field::operator-= : Field subtraction requires identical number of components");
 
-	_field->setMesh(f.getField()->getMesh());
-	(*_field)-=(*f.getField());
+	_field->setMesh(f.getMEDCouplingField()->getMesh());
+	(*_field)-=(*f.getMEDCouplingField());
 	return *this;
 }
 
@@ -1246,7 +1247,7 @@ Field::getFieldValues(int compo) const
 std::ostream& operator<<(std::ostream& out, const Field& field )
 {
 	cout << "Field " << field.getName() << " : " << endl ;
-	out<< field.getField().retn()->getArray()->repr();
+	out<< field.getMEDCouplingField().retn()->getArray()->repr();
 	return out;
 }
 

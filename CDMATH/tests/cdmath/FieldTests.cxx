@@ -45,14 +45,14 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 2.3, conc1.getTime() );
 
     //Tests MEDCouplingField interface
-    MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMEDCouplingField = conc1.getField();
+    MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMEDCouplingField = conc1.getMEDCouplingField();
     Field fieldFromMEDCoupling(myMEDCouplingField);
-    for (int j=0;j<fieldFromMEDCoupling.getNumberOfComponents();j++)
-    	for (int i=0;i<fieldFromMEDCoupling.getNumberOfElements();i++)
-    		CPPUNIT_ASSERT_EQUAL( double(i+j), fieldFromMEDCoupling(i,j) );
 	CPPUNIT_ASSERT_EQUAL( 2, fieldFromMEDCoupling.getNumberOfComponents() );
 	CPPUNIT_ASSERT_EQUAL( 50, fieldFromMEDCoupling.getNumberOfElements() );
 	CPPUNIT_ASSERT_EQUAL( 2.3, fieldFromMEDCoupling.getTime() );
+    for (int j=0;j<fieldFromMEDCoupling.getNumberOfComponents();j++)
+    	for (int i=0;i<fieldFromMEDCoupling.getNumberOfElements();i++)
+    		CPPUNIT_ASSERT_EQUAL( double(i+j), fieldFromMEDCoupling(i,j) );
     fieldFromMEDCoupling.writeMED(fileNameMED,false);
     
 	Field conc1n("CONCENTRATION",NODES,M,2,1.2) ;
@@ -150,7 +150,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT_EQUAL( 50, conc6.getNumberOfElements() );
 
 	Field conc7("CONCENTRATION",CELLS,M,2) ;
-	MCAuto<MEDCouplingFieldDouble> f1=conc1.getField();
+	MCAuto<MEDCouplingFieldDouble> f1=conc1.getMEDCouplingField();
 	conc7.setFieldByMEDCouplingFieldDouble(f1);
     conc7.setName("CONC");
     for (int i=0;i<conc7.getNumberOfElements();i++)
@@ -168,7 +168,7 @@ FieldTests::testClassField( void )
 	CPPUNIT_ASSERT(conc77.getInfoOnComponent(0).compare("compo1")==0 );
 	CPPUNIT_ASSERT(conc77.getInfoOnComponent(1).compare("compo2")==0 );
 
-	MCAuto<MEDCouplingFieldDouble> f2=conc1.getField();
+	MCAuto<MEDCouplingFieldDouble> f2=conc1.getMEDCouplingField();
 	conc77.setFieldByDataArrayDouble(f2->getArray());
     conc77.setName("CONC");
     for (int i=0;i<conc77.getNumberOfElements();i++)

@@ -251,7 +251,7 @@ class Field
      * return the MEDCouplingField pointer
      * return _field
      */
-    MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> getField ( void )  const ;
+    MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> getMEDCouplingField ( void )  const ;
 
     void setFieldByMEDCouplingFieldDouble ( const MEDCoupling::MEDCouplingFieldDouble* field );
 
