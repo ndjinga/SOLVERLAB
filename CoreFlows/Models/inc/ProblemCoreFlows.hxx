@@ -354,6 +354,14 @@ public :
 	void setInitialField(const Field &VV);
 
 	/** \fn setInitialField
+	 * \brief sets the initial field
+	 * \details
+	 * \param [in] MEDCouplingField
+	 * \param [out] void
+	 *  */
+	void setInitialField( const MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMEDCouplingield );
+
+	/** \fn setInitialField
 	 * \brief sets the initial field from a field in a med file
 	 * \details
 	 * \param [in] string : the file name

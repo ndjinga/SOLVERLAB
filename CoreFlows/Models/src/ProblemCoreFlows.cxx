@@ -12,6 +12,7 @@
 
 #include "ProblemCoreFlows.hxx"
 #include "SparseMatrixPetsc.hxx"
+#include "MEDCouplingFieldDouble.hxx"
 
 #include <limits.h>
 #include <unistd.h>
@@ -144,6 +145,12 @@ void ProblemCoreFlows::setPrecision(double precision)
 {
 	_precision=precision;
 }
+void ProblemCoreFlows::setInitialField(const MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMEDCouplingField )
+{
+    Field VV(myMEDCouplingField);
+    return ProblemCoreFlows::setInitialField( VV );
+}
+
 void ProblemCoreFlows::setInitialField(const Field &VV)
 {
 	if(_Ndim != VV.getSpaceDimension()){
