@@ -20,7 +20,6 @@
 #include <fstream>
 #include <sstream>
 #include <cstring>
-#include <cassert>
 
 using namespace MEDCoupling;
 using namespace std;
