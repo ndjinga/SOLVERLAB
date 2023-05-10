@@ -169,30 +169,30 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
     # Picture settings
     fig, ([axDensity, axMomentum],[axVelocity, axPressure]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
     fig.suptitle('Comparison of finite volume schemes')
-    lineDensity_staggered=, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_staggered, label='conservative staggered') #new picture for video # Returns a tuple of line objects, thus the comma
-    lineDensity_upwind=, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_upwind, label='upwind') #new picture for video # Returns a tuple of line objects, thus the comma
-    lineDensity_centered=, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_centered, label='centered') #new picture for video # Returns a tuple of line objects, thus the comma
+    lineDensity_staggered, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_staggered, label='conservative staggered') #new picture for video # Returns a tuple of line objects, thus the comma
+    lineDensity_upwind, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_upwind, label='upwind') #new picture for video # Returns a tuple of line objects, thus the comma
+    lineDensity_centered, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_centered, label='centered') #new picture for video # Returns a tuple of line objects, thus the comma
     axDensity.set(xlabel='x (m)', ylabel='Density')
     axDensity.set_xlim(a,b)
     axDensity.set_ylim(min_initial_rho - 0.1*(max_initial_rho-min_initial_rho), max_initial_rho +  0.1*(max_initial_rho-min_initial_rho) )
     axDensity.legend()
-    lineMomentum_staggered=, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_staggered, label='conservative staggered')
-    lineMomentum_upwind=, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_upwind, label='upwind')
-    lineMomentum_centered=, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_centered, label='centered')
+    lineMomentum_staggered, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_staggered, label='conservative staggered')
+    lineMomentum_upwind, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_upwind, label='upwind')
+    lineMomentum_centered, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_centered, label='centered')
     axMomentum.set(xlabel='x (m)', ylabel='Momentum')
     axMomentum.set_xlim(a,b)
     axMomentum.set_ylim(min_initial_q - 0.1*(max_initial_q-min_initial_q), max_initial_q +  0.1*(max_initial_q-min_initial_q) )
     axMomentum.legend()
-    lineVelocity_staggered=, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_staggered, label='conservative staggered')
-    lineVelocity_upwind=, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_upwind, label='upwind')
-    lineVelocity_centered=, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_centered, label='centered')
+    lineVelocity_staggered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_staggered, label='conservative staggered')
+    lineVelocity_upwind, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_upwind, label='upwind')
+    lineVelocity_centered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_centered, label='centered')
     axVelocity.set(xlabel='x (m)', ylabel='Velocity')
     axVelocity.set_xlim(a,b)
     axVelocity.set_ylim(min_initial_v - 0.4*abs(min_initial_v), max_initial_v +  0.05*abs(max_initial_v) )
     axVelocity.legend()
-    linePressure_staggered=, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_staggered, label='conservative staggered')
-    linePressure_upwind=, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_upwind, label='upwind')
-    linePressure_centered=, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_centered, label='centered')
+    linePressure_staggered, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_staggered, label='conservative staggered')
+    linePressure_upwind, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_upwind, label='upwind')
+    linePressure_centered, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_centered, label='centered')
     axPressure.set(xlabel='x (m)', ylabel='Pressure')
     axPressure.set_xlim(a,b)
     axPressure.set_ylim(min_initial_p - 0.05*abs(min_initial_p), max_initial_p +  0.05*abs(max_initial_p) )
@@ -213,6 +213,8 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
             Uk_upwind  = Un_upwind.deepCopy()
             dUn_staggered = Un_staggered.deepCopy()
             Uk_staggered  = Un_staggered.deepCopy()
+            dUn_centered = Un_centered.deepCopy()
+            Uk_centered  = Un_centered.deepCopy()
             # UPWIND SCHEME
             residu = 1.
             k=0
@@ -239,7 +241,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_upwind[j*nbComp+1]
                         rho_r = rho_l # Conditions de Neumann
                         q_r   =   q_l
-                        Ap_upwind= (RoeMatrix(rho_l,q_l,rho_r,q_r) + staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_upwind= (RoeMatrix(rho_l,q_l,rho_r,q_r) + upwindDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Ap_upwind)
                         divMat_upwind.addValue(j*nbComp,(j-1)*nbComp,Ap_upwind*(-1.))
                         dUi[0] = Uk_upwind[(j-1)*nbComp+0]-Uk_upwind[j*nbComp+0]
@@ -252,13 +254,13 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_upwind[(j-1)*nbComp+1]
                         rho_r = Uk_upwind[j*nbComp+0]
                         q_r   = Uk_upwind[j*nbComp+1]
-                        Ap_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r) + staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r) + upwindDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
                         ###############################################################
                         rho_l = Uk_upwind[j*nbComp+0]
                         q_l   = Uk_upwind[j*nbComp+1]
                         rho_r = Uk_upwind[(j+1)*nbComp+0]
                         q_r   = Uk_upwind[(j+1)*nbComp+1]
-                        Am_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r) - staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Am_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r) - upwindDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
                         divMat_upwind.addValue(j*nbComp,(j+1)*nbComp,Am_upwind)
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Am_upwind*(-1.))
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Ap_upwind)
@@ -299,7 +301,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
             k=0
             while (k<newton_max and residu > precision ):
                 #DEBUT BOUCLE NEWTON
-                divMat_upwind.zeroEntries()#sets the matrix coefficients to zero
+                divMat_staggered.zeroEntries()#sets the matrix coefficients to zero
                 for j in range(nbCells):# 
                     if ( j==0) : 
                         rho_r = Uk_staggered[j*nbComp+0]
@@ -374,6 +376,87 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
             lineMomentum_staggered.set_ydata(q_field_staggered)
             lineVelocity_staggered.set_ydata(v_field_staggered)
             linePressure_staggered.set_ydata(p_field_staggered)
+
+            # CENTERED SCHEME
+            residu = 1.
+            k=0
+            while (k<newton_max and residu > precision ):
+                #DEBUT BOUCLE NEWTON
+                divMat_centered.zeroEntries()#sets the matrix coefficients to zero
+                for j in range(nbCells):# 
+                    if ( j==0) : 
+                        rho_r = Uk_centered[j*nbComp+0]
+                        q_r   = Uk_centered[j*nbComp+1]
+                        rho_l = rho_r # Conditions de Neumann
+                        q_l   =   q_r
+                        Am_centered=  (RoeMatrix(rho_l,q_l,rho_r,q_r) - centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        divMat_centered.addValue(j*nbComp,(j+1)*nbComp,Am_centered)
+                        divMat_centered.addValue(j*nbComp,    j*nbComp,Am_centered*(-1.))
+                        dUi[0] = Uk_centered[(j+1)*nbComp+0]-Uk_centered[j*nbComp+0]
+                        dUi[1] = Uk_centered[(j+1)*nbComp+1]-Uk_centered[j*nbComp+1]
+                        temp = Am_centered*dUi
+                        #print("Bloc 0 matrix  :   ", Am_centered)
+                        Rhs_centered[j*nbComp+0] = -temp[0]-(Uk_centered[j*nbComp+0]-Un_centered[j*nbComp+0]) 
+                        Rhs_centered[j*nbComp+1] = -temp[1]-(Uk_centered[j*nbComp+1]-Un_centered[j*nbComp+1]) 
+                    elif ( j==nbCells-1) :
+                        rho_l = Uk_centered[j*nbComp+0]
+                        q_l   = Uk_centered[j*nbComp+1]
+                        rho_r = rho_l # Conditions de Neumann
+                        q_r   =   q_l
+                        Ap_centered= (RoeMatrix(rho_l,q_l,rho_r,q_r) + centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        divMat_centered.addValue(j*nbComp,    j*nbComp,Ap_centered)
+                        divMat_centered.addValue(j*nbComp,(j-1)*nbComp,Ap_centered*(-1.))
+                        dUi[0] = Uk_centered[(j-1)*nbComp+0]-Uk_centered[j*nbComp+0]
+                        dUi[1] = Uk_centered[(j-1)*nbComp+1]-Uk_centered[j*nbComp+1]
+                        temp = Ap_centered*dUi
+                        Rhs_centered[j*nbComp+0] = temp[0]-(Uk_centered[j*nbComp+0]-Un_centered[j*nbComp+0]) 
+                        Rhs_centered[j*nbComp+1] = temp[1]-(Uk_centered[j*nbComp+1]-Un_centered[j*nbComp+1]) 
+                    else :
+                        rho_l = Uk_centered[(j-1)*nbComp+0]
+                        q_l   = Uk_centered[(j-1)*nbComp+1]
+                        rho_r = Uk_centered[j*nbComp+0]
+                        q_r   = Uk_centered[j*nbComp+1]
+                        Ap_centered = (RoeMatrix(rho_l,q_l,rho_r,q_r) + centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        ###############################################################
+                        rho_l = Uk_centered[j*nbComp+0]
+                        q_l   = Uk_centered[j*nbComp+1]
+                        rho_r = Uk_centered[(j+1)*nbComp+0]
+                        q_r   = Uk_centered[(j+1)*nbComp+1]
+                        Am_centered = (RoeMatrix(rho_l,q_l,rho_r,q_r) - centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        divMat_centered.addValue(j*nbComp,(j+1)*nbComp,Am_centered)
+                        divMat_centered.addValue(j*nbComp,    j*nbComp,Am_centered*(-1.))
+                        divMat_centered.addValue(j*nbComp,    j*nbComp,Ap_centered)
+                        divMat_centered.addValue(j*nbComp,(j-1)*nbComp,Ap_centered*(-1.))
+                        dUi1[0] = Uk_centered[(j+1)*nbComp+0]-Uk_centered[j*nbComp+0]
+                        dUi1[1] = Uk_centered[(j+1)*nbComp+1]-Uk_centered[j*nbComp+1]
+                        dUi2[0] = Uk_centered[(j-1)*nbComp+0]-Uk_centered[j*nbComp+0]
+                        dUi2[1] = Uk_centered[(j-1)*nbComp+1]-Uk_centered[j*nbComp+1] 
+                        temp1 = Am_centered*dUi1
+                        temp2 = Ap_centered*dUi2
+                        Rhs_centered[j*nbComp+0] = -temp1[0] + temp2[0] -(Uk_centered[j*nbComp+0]-Un_centered[j*nbComp+0]) 
+                        Rhs_centered[j*nbComp+1] = -temp1[1] + temp2[1] -(Uk_centered[j*nbComp+1]-Un_centered[j*nbComp+1]) 
+                divMat_centered.diagonalShift(1)#only after  filling all coefficients
+                LS_centered=cdmath.LinearSolver(divMat_centered,Rhs_centered,iterGMRESMax, precision, "GMRES","LU")
+                dUk_centered=LS_centered.solve(); 
+                residu = dUk_centered.norm()
+                #stop
+                Uk_centered+=dUk_centered
+                if(not LS_centered.getStatus()):
+                    print("Staggered scheme Linear system did not converge ", LS_centered.getNumberOfIter(), " GMRES iterations")
+                    raise ValueError("Staggered scheme : Pas de convergence du système linéaire");
+                k=k+1
+            Un_centered = Uk_centered.deepCopy()
+            dUn_centered-=Un_centered
+            for k in range(nbCells):
+                rho_field_centered[k] = Un_centered[k*(dim+1)+0]
+                q_field_centered[k]   = Un_centered[k*(dim+1)+1] 
+            v_field_centered   = [   q_field_centered[i]/rho_field_centered[i]  for i in range(nx)]
+            p_field_centered   = [ rho_field_centered[i]*(c0*c0)       for i in range(nx)]
+
+            lineDensity_centered.set_ydata(rho_field_centered)
+            lineMomentum_centered.set_ydata(q_field_centered)
+            lineVelocity_centered.set_ydata(v_field_centered)
+            linePressure_centered.set_ydata(p_field_centered)
 
             writer.grab_frame()
 
