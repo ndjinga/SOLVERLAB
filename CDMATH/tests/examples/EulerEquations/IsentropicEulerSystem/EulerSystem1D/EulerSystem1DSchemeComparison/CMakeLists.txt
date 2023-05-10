@@ -1,7 +1,7 @@
 
 if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
-    ADD_TEST(ExampleIsentropicEulerSystem_1DShock_ComparaisonSchémas ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystem1DComparaisonSchémas.py )
+    ADD_TEST(ExampleIsentropicEulerSystem_1DShock_SchemeComparison ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EulerSystem1DSchemeComparison.py )
 
 endif (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
 
