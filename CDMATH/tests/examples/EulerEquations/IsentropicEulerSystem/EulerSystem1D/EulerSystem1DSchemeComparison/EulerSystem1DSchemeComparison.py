@@ -126,15 +126,13 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
     v_field_upwind   = [   q_field_upwind[i]/rho_field_upwind[i]  for i in range(nx)]
     p_field_upwind   = [ rho_field_upwind[i]*(c0*c0)       for i in range(nx)]
 
-    rho_field_staggered = rho_field_upwind 
-    q_field_staggered = q_field_upwind
-    v_field_staggered   = v_field_upwind
-    p_field_staggered   = p_field_upwind
+    rho_field_staggered, q_field_staggered = initial_conditions_Riemann_problem(a,b,nx)
+    v_field_staggered   = [   q_field_staggered[i]/rho_field_staggered[i]  for i in range(nx)]
+    p_field_staggered   = [ rho_field_staggered[i]*(c0*c0)       for i in range(nx)]
 
-    rho_field_centered = rho_field_upwind
-    q_field_centered = q_field_upwind
-    v_field_centered   = v_field_upwind
-    p_field_centered   = p_field_upwind
+    rho_field_centered, q_field_centered = initial_conditions_Riemann_problem(a,b,nx)
+    v_field_centered   = [   q_field_centered[i]/rho_field_centered[i]  for i in range(nx)]
+    p_field_centered   = [ rho_field_centered[i]*(c0*c0)       for i in range(nx)]
 
     max_initial_rho=max(rho_field_upwind)
     min_initial_rho=min(rho_field_upwind)
