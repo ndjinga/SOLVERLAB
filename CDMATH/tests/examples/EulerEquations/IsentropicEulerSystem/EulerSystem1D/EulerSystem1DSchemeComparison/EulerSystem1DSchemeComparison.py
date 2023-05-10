@@ -30,9 +30,8 @@ def initial_conditions_Riemann_problem(a,b,nx):
 
     return rho_initial, q_initial
 
-def upwindJacobianMatricesm(coeff,rho_l,q_l,rho_r,q_r):
+def RoeMatrix(rho_l,q_l,rho_r,q_r):
     RoeMat   = cdmath.Matrix(2,2);
-    Dmac     = cdmath.Matrix(2,2);   
     
     u_l=q_l/rho_l  
     u_r=q_r/rho_r
@@ -47,18 +46,12 @@ def upwindJacobianMatricesm(coeff,rho_l,q_l,rho_r,q_r):
     RoeMat[1,0]   = c0*c0 - u*u
     RoeMat[1,1]   = 2*u
     
-    Dmac[0,0]= abs(u)-u;
-    Dmac[0,1]= 1;
-    Dmac[1,0]= -c0*c0-u*u;
-    Dmac[1,1]= abs(u)+u; 
-
-    return (RoeMat-Dmac)*coeff*0.5
+    return RoeMat
  
-def upwindJacobianMatricesp(coeff,rho_l,q_l,rho_r,q_r):
-    RoeMat   = cdmath.Matrix(2,2);
-    Dmac = cdmath.Matrix(2,2);   
+def staggeredDMatrix(rho_l,q_l,rho_r,q_r):
+    Dmac     = cdmath.Matrix(2,2);   
     
-    u_l=q_l/rho_l 
+    u_l=q_l/rho_l  
     u_r=q_r/rho_r
 
     if rho_l<0 or rho_r<0 :
@@ -66,18 +59,13 @@ def upwindJacobianMatricesp(coeff,rho_l,q_l,rho_r,q_r):
         raise ValueError("Negative density")
     u = (u_l*sqrt(rho_l)+u_r*sqrt(rho_r))/(sqrt(rho_l)+sqrt(rho_r));   
 
-    RoeMat[0,0]   = 0
-    RoeMat[0,1]   = 1
-    RoeMat[1,0]   = c0*c0 - u*u
-    RoeMat[1,1]   = 2*u
-    
     Dmac[0,0]= abs(u)-u;
     Dmac[0,1]= 1;
     Dmac[1,0]= -c0*c0-u*u;
     Dmac[1,1]= abs(u)+u; 
 
-    return (RoeMat+Dmac)*coeff*0.5
-
+    return Dmac
+ 
 def EulerSystemStaggered(ntmax, tmax, cfl, a,b,nx, output_freq, meshName):
     dim=1
     nbComp=dim+1
@@ -169,7 +157,7 @@ def EulerSystemStaggered(ntmax, tmax, cfl, a,b,nx, output_freq, meshName):
                         q_r   = Uk[j*nbComp+1]
                         rho_l = rho_r # Conditions de Neumann
                         q_l   =   q_r
-                        Am= upwindJacobianMatricesm(dt/dx,rho_l,q_l,rho_r,q_r)
+                        Am=  (RoeMatrix(rho_l,q_l,rho_r,q_r) - staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
                         divMat.addValue(j*nbComp,(j+1)*nbComp,Am)
                         divMat.addValue(j*nbComp,    j*nbComp,Am*(-1.))
                         dUi=cdmath.Vector(2)
@@ -185,7 +173,7 @@ def EulerSystemStaggered(ntmax, tmax, cfl, a,b,nx, output_freq, meshName):
                         q_l   = Uk[j*nbComp+1]
                         rho_r = rho_l # Conditions de Neumann
                         q_r   =   q_l
-                        Ap= upwindJacobianMatricesp(dt/dx,rho_l,q_l,rho_r,q_r)
+                        Ap= (RoeMatrix(rho_l,q_l,rho_r,q_r) + staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
                         divMat.addValue(j*nbComp,    j*nbComp,Ap)
                         divMat.addValue(j*nbComp,(j-1)*nbComp,Ap*(-1.))
                         dUi=cdmath.Vector(2)
@@ -200,13 +188,13 @@ def EulerSystemStaggered(ntmax, tmax, cfl, a,b,nx, output_freq, meshName):
                         q_l   = Uk[(j-1)*nbComp+1]
                         rho_r = Uk[j*nbComp+0]
                         q_r   = Uk[j*nbComp+1]
-                        Ap = upwindJacobianMatricesp(dt/dx,rho_l,q_l,rho_r,q_r)
+                        Ap = (RoeMatrix(rho_l,q_l,rho_r,q_r) + staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
                         ###############################################################
                         rho_l = Uk[j*nbComp+0]
                         q_l   = Uk[j*nbComp+1]
                         rho_r = Uk[(j+1)*nbComp+0]
                         q_r   = Uk[(j+1)*nbComp+1]
-                        Am = upwindJacobianMatricesm(dt/dx,rho_l,q_l,rho_r,q_r)
+                        Am = (RoeMatrix(rho_l,q_l,rho_r,q_r) - staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
                         divMat.addValue(j*nbComp,(j+1)*nbComp,Am)
                         divMat.addValue(j*nbComp,    j*nbComp,Am*(-1.))
                         divMat.addValue(j*nbComp,    j*nbComp,Ap)
