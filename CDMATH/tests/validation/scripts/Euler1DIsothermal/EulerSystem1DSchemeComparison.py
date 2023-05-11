@@ -102,7 +102,6 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     it=0;
     iterGMRESMax=50
     newton_max = 50
-    isStationary=False
 
     #iteration vectors
     Un_staggered =cdmath.Vector(nbCells*(dim+1))
@@ -224,7 +223,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
         plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_0"+".png")
 
         # Starting time loop
-        while (it<ntmax and time <= tmax and not isStationary):
+        while (it<ntmax and time <= tmax ):
             dUn_upwind = Un_upwind.deepCopy()
             Uk_upwind  = Un_upwind.deepCopy()
             dUn_staggered = Un_staggered.deepCopy()
@@ -495,7 +494,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                 var_tot_centered[it]+=abs(ljp1-lj)
 
             #Sauvegardes
-            if(it==1 or it%output_freq==0 or it>=ntmax or isStationary or time >=tmax):
+            if(it==1 or it%output_freq==0 or it>=ntmax or time >=tmax):
                 print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
                 #print("Upwind : Last linear system converged in ", LS_upwind.getNumberOfIter(), " GMRES iterations", ", residu final:   ",residu)
 
@@ -517,28 +516,20 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     
     plt.savefig("TotalVariation_SchemeComparison.png")
     
-
-    print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
     if(it>=ntmax):
         print("Nombre de pas de temps maximum ntmax= ", ntmax, " atteint")
-        return
-    elif(isStationary):
-        print("Régime stationnaire atteint au pas de temps ", it, ", t= ", time)
-        print("------------------------------------------------------------------------------------")
-        plt.savefig("EulerSystem"+str(dim)+"Staggered"+meshName+"_Stat.png")
-        return
     else:
         print("Temps maximum Tmax= ", tmax, " atteint")
-        return
 
-def solve( a,b,nx, meshName, meshType, cfl,c0):
+    return var_tot_upwind[ntmax], var_tot_staggered[ntmax], var_tot_centered[ntmax]
+
+def solve( a,b,nx, meshName, meshType, cfl,c0,ntmax):
     print("Resolution of the Euler system in dimension 1 on "+str(nx)+ " cells")
     print("Initial data : ", "Riemann problem")
     print("Boundary conditions : ", "Neumann")
-    print("Mesh name : ",meshName , ", ", nx, " cells, sound speed = ",c0)
+    print("Mesh name : ",meshName , ", ", nx, " cells, sound speed = ",c0, ", ntmax=",ntmax)
     # Problem data
     tmax = 10.
-    ntmax = 20
     output_freq = 10
     EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,c0)
     return
@@ -547,6 +538,7 @@ if __name__ == """__main__""":
     a=0.
     b=2.
     nx=400
+    ntmax = 20
     cfl=0.99
     c0=330.#reference sound speed for water at 15 bars
     solve( a,b,nx,"SquareRegularSquares","RegularSquares",cfl,c0)
