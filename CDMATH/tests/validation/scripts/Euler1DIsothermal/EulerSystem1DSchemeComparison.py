@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 from math import sqrt, log
 
-c0=330.#reference sound speed for water at 15 bars
 precision=1e-5
 rho0=1
 
@@ -31,7 +30,7 @@ def initial_conditions_Riemann_problem(a,b,nx):
 
     return rho_initial, q_initial
 
-def RoeMatrix(rho_l,q_l,rho_r,q_r):
+def RoeMatrix(rho_l,q_l,rho_r,q_r,c0):
     RoeMat   = cdmath.Matrix(2,2);
     
     u_l=q_l/rho_l  
@@ -49,7 +48,7 @@ def RoeMatrix(rho_l,q_l,rho_r,q_r):
     
     return RoeMat
  
-def staggeredDMatrix(rho_l,q_l,rho_r,q_r):
+def staggeredDMatrix(rho_l,q_l,rho_r,q_r,c0):
     Dmac     = cdmath.Matrix(2,2);   
     
     u_l=q_l/rho_l  
@@ -67,7 +66,7 @@ def staggeredDMatrix(rho_l,q_l,rho_r,q_r):
 
     return Dmac
  
-def upwindDMatrix(rho_l,q_l,rho_r,q_r):
+def upwindDMatrix(rho_l,q_l,rho_r,q_r,c0):
     Dupwind     = cdmath.Matrix(2,2);   
     
     u_l=q_l/rho_l  
@@ -85,12 +84,12 @@ def upwindDMatrix(rho_l,q_l,rho_r,q_r):
 
     return Dupwind
  
-def centeredDMatrix(rho_l,q_l,rho_r,q_r):
+def centeredDMatrix(rho_l,q_l,rho_r,q_r,c0):
     Dcentered     = cdmath.Matrix(2,2);   
     
     return Dcentered
  
-def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName):
+def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName, c0):
     dim=1
     nbComp=dim+1
     nbCells = nx
@@ -244,7 +243,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_r   = Uk_upwind[j*nbComp+1]
                         rho_l = rho_r # Conditions de Neumann
                         q_l   =   q_r
-                        Am_upwind=  (RoeMatrix(rho_l,q_l,rho_r,q_r) - upwindDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Am_upwind=  (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - upwindDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_upwind.addValue(j*nbComp,(j+1)*nbComp,Am_upwind)
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Am_upwind*(-1.))
                         dUi[0] = Uk_upwind[(j+1)*nbComp+0]-Uk_upwind[j*nbComp+0]
@@ -258,7 +257,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_upwind[j*nbComp+1]
                         rho_r = rho_l # Conditions de Neumann
                         q_r   =   q_l
-                        Ap_upwind= (RoeMatrix(rho_l,q_l,rho_r,q_r) + upwindDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_upwind= (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + upwindDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Ap_upwind)
                         divMat_upwind.addValue(j*nbComp,(j-1)*nbComp,Ap_upwind*(-1.))
                         dUi[0] = Uk_upwind[(j-1)*nbComp+0]-Uk_upwind[j*nbComp+0]
@@ -271,13 +270,13 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_upwind[(j-1)*nbComp+1]
                         rho_r = Uk_upwind[j*nbComp+0]
                         q_r   = Uk_upwind[j*nbComp+1]
-                        Ap_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r) + upwindDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + upwindDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         ###############################################################
                         rho_l = Uk_upwind[j*nbComp+0]
                         q_l   = Uk_upwind[j*nbComp+1]
                         rho_r = Uk_upwind[(j+1)*nbComp+0]
                         q_r   = Uk_upwind[(j+1)*nbComp+1]
-                        Am_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r) - upwindDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Am_upwind = (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - upwindDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_upwind.addValue(j*nbComp,(j+1)*nbComp,Am_upwind)
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Am_upwind*(-1.))
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Ap_upwind)
@@ -326,7 +325,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_r   = Uk_staggered[j*nbComp+1]
                         rho_l = rho_r # Conditions de Neumann
                         q_l   =   q_r
-                        Am_staggered=  (RoeMatrix(rho_l,q_l,rho_r,q_r) - staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Am_staggered=  (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - staggeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_staggered.addValue(j*nbComp,(j+1)*nbComp,Am_staggered)
                         divMat_staggered.addValue(j*nbComp,    j*nbComp,Am_staggered*(-1.))
                         dUi[0] = Uk_staggered[(j+1)*nbComp+0]-Uk_staggered[j*nbComp+0]
@@ -340,7 +339,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_staggered[j*nbComp+1]
                         rho_r = rho_l # Conditions de Neumann
                         q_r   =   q_l
-                        Ap_staggered= (RoeMatrix(rho_l,q_l,rho_r,q_r) + staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_staggered= (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + staggeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_staggered.addValue(j*nbComp,    j*nbComp,Ap_staggered)
                         divMat_staggered.addValue(j*nbComp,(j-1)*nbComp,Ap_staggered*(-1.))
                         dUi[0] = Uk_staggered[(j-1)*nbComp+0]-Uk_staggered[j*nbComp+0]
@@ -353,13 +352,13 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_staggered[(j-1)*nbComp+1]
                         rho_r = Uk_staggered[j*nbComp+0]
                         q_r   = Uk_staggered[j*nbComp+1]
-                        Ap_staggered = (RoeMatrix(rho_l,q_l,rho_r,q_r) + staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_staggered = (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + staggeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         ###############################################################
                         rho_l = Uk_staggered[j*nbComp+0]
                         q_l   = Uk_staggered[j*nbComp+1]
                         rho_r = Uk_staggered[(j+1)*nbComp+0]
                         q_r   = Uk_staggered[(j+1)*nbComp+1]
-                        Am_staggered = (RoeMatrix(rho_l,q_l,rho_r,q_r) - staggeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Am_staggered = (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - staggeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_staggered.addValue(j*nbComp,(j+1)*nbComp,Am_staggered)
                         divMat_staggered.addValue(j*nbComp,    j*nbComp,Am_staggered*(-1.))
                         divMat_staggered.addValue(j*nbComp,    j*nbComp,Ap_staggered)
@@ -408,7 +407,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_r   = Uk_centered[j*nbComp+1]
                         rho_l = rho_r # Conditions de Neumann
                         q_l   =   q_r
-                        Am_centered=  (RoeMatrix(rho_l,q_l,rho_r,q_r) - centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Am_centered=  (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - centeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_centered.addValue(j*nbComp,(j+1)*nbComp,Am_centered)
                         divMat_centered.addValue(j*nbComp,    j*nbComp,Am_centered*(-1.))
                         dUi[0] = Uk_centered[(j+1)*nbComp+0]-Uk_centered[j*nbComp+0]
@@ -422,7 +421,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_centered[j*nbComp+1]
                         rho_r = rho_l # Conditions de Neumann
                         q_r   =   q_l
-                        Ap_centered= (RoeMatrix(rho_l,q_l,rho_r,q_r) + centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_centered= (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + centeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_centered.addValue(j*nbComp,    j*nbComp,Ap_centered)
                         divMat_centered.addValue(j*nbComp,(j-1)*nbComp,Ap_centered*(-1.))
                         dUi[0] = Uk_centered[(j-1)*nbComp+0]-Uk_centered[j*nbComp+0]
@@ -435,13 +434,13 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
                         q_l   = Uk_centered[(j-1)*nbComp+1]
                         rho_r = Uk_centered[j*nbComp+0]
                         q_r   = Uk_centered[j*nbComp+1]
-                        Ap_centered = (RoeMatrix(rho_l,q_l,rho_r,q_r) + centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Ap_centered = (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + centeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         ###############################################################
                         rho_l = Uk_centered[j*nbComp+0]
                         q_l   = Uk_centered[j*nbComp+1]
                         rho_r = Uk_centered[(j+1)*nbComp+0]
                         q_r   = Uk_centered[(j+1)*nbComp+1]
-                        Am_centered = (RoeMatrix(rho_l,q_l,rho_r,q_r) - centeredDMatrix(rho_l,q_l,rho_r,q_r))*(0.5*dt/dx)
+                        Am_centered = (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - centeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_centered.addValue(j*nbComp,(j+1)*nbComp,Am_centered)
                         divMat_centered.addValue(j*nbComp,    j*nbComp,Am_centered*(-1.))
                         divMat_centered.addValue(j*nbComp,    j*nbComp,Ap_centered)
@@ -532,16 +531,16 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
         print("Temps maximum Tmax= ", tmax, " atteint")
         return
 
-def solve( a,b,nx, meshName, meshType, cfl):
+def solve( a,b,nx, meshName, meshType, cfl,c0):
     print("Resolution of the Euler system in dimension 1 on "+str(nx)+ " cells")
     print("Initial data : ", "Riemann problem")
     print("Boundary conditions : ", "Neumann")
-    print("Mesh name : ",meshName , ", ", nx, " cells")
+    print("Mesh name : ",meshName , ", ", nx, " cells, sound speed = ",c0)
     # Problem data
     tmax = 10.
     ntmax = 20
     output_freq = 10
-    EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName)
+    EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,c0)
     return
 
 if __name__ == """__main__""":
@@ -549,4 +548,5 @@ if __name__ == """__main__""":
     b=2.
     nx=400
     cfl=0.99
-    solve( a,b,nx,"SquareRegularSquares","RegularSquares",cfl)
+    c0=330.#reference sound speed for water at 15 bars
+    solve( a,b,nx,"SquareRegularSquares","RegularSquares",cfl,c0)
