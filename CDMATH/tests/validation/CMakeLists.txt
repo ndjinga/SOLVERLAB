@@ -103,6 +103,7 @@ WaveSystem_LinearSolvers/2DTriangles
 WaveSystem_LinearSolvers/2DSquares
 ReferenceSolutions/
 EulerEquations/1DToroBenchmark
+EulerEquations/1DEulerIsentropicMeshRefinement
 test_synthesis 
 )
 
