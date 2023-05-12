@@ -23,8 +23,8 @@ def initial_conditions_Riemann_problem(a,b,nx):
     print("Initial data Riemann problem")
     dx = (b - a) / nx #space step
     x=[a+0.5*dx + i*dx for i in range(nx)]   # array of cell center (1D mesh)
-    rho_initial = [ (xi<(a+b)/2)*rho0        + (xi>=(a+b)/2)*rho0       for xi in x]#Constant density
-    #rho_initial = [ (xi+(a+b)/2)*rho0               for xi in x]#NonConstant density
+    #rho_initial = [ (xi<(a+b)/2)*rho0        + (xi>=(a+b)/2)*rho0       for xi in x]#Constant density
+    rho_initial = [ (xi+(a+b)/2)*rho0               for xi in x]#NonConstant density
     q_initial   = [ (xi<(a+b)/2)*rho0*(-10) + (xi>=(a+b)/2)*rho0*2*(-10)  for xi in x]
     #q_initial   = [ (xi+(a+b)/2)*rho0*(-10) for xi in x]
 
@@ -514,7 +514,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     plt.plot(time_tab, var_tot_centered, label='Implicit centered')
     plt.legend()
     
-    plt.savefig("TotalVariation_SchemeComparison_"+str(nx)+"_soundSpeed"+str(c0)+".png")
+    plt.savefig("TotalVariation_SchemeComparison_"+str(nx)+"Cells_soundSpeed"+str(c0)+".png")
     
     if(it>=ntmax):
         print("Nombre de pas de temps maximum ntmax= ", ntmax, " atteint")

@@ -104,6 +104,7 @@ WaveSystem_LinearSolvers/2DSquares
 ReferenceSolutions/
 EulerEquations/1DToroBenchmark
 EulerEquations/1DEulerIsentropicMeshRefinement
+EulerEquations/1DEulerIsentropicIncreaseSoundSpeed
 test_synthesis 
 )
 
