@@ -218,9 +218,9 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     FFMpegWriter = manimation.writers['ffmpeg']
     metadata = dict(title="Scheme comparison for the 1D isothermal Euler System", artist = "CEA Saclay", comment="Shock tube")
     writer=FFMpegWriter(fps=10, metadata=metadata, codec='h264')
-    with writer.saving(fig, "1DEuler_System_Scheme_Comparison"+".mp4", ntmax):
+    with writer.saving(fig, "1DEuler_System_Scheme_Comparison_"+str(nx)+"Cells_soundSpeed"+str(c0)+""+".mp4", ntmax):
         writer.grab_frame()
-        plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_0"+".png")
+        plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_0_"+str(nx)+"Cells_soundSpeed"+str(c0)+""+".png")
 
         # Starting time loop
         while (it<ntmax and time <= tmax ):
@@ -498,7 +498,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                 print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
                 #print("Upwind : Last linear system converged in ", LS_upwind.getNumberOfIter(), " GMRES iterations", ", residu final:   ",residu)
 
-                plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_"+str(it)+".png")
+                plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_"+str(it)+"_"+str(nx)+"Cells_soundSpeed"+str(c0)+".png")
                 print
 
     # Plot total variation
@@ -514,7 +514,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     plt.plot(time_tab, var_tot_centered, label='Implicit centered')
     plt.legend()
     
-    plt.savefig("TotalVariation_SchemeComparison.png")
+    plt.savefig("TotalVariation_SchemeComparison_"+str(nx)+"_soundSpeed"+str(c0)+".png")
     
     if(it>=ntmax):
         print("Nombre de pas de temps maximum ntmax= ", ntmax, " atteint")
@@ -531,8 +531,9 @@ def solve( a,b,nx, meshName, meshType, cfl,c0,ntmax):
     # Problem data
     tmax = 10.
     output_freq = 10
-    EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,c0)
-    return
+    
+    return EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,c0)
+    
 
 if __name__ == """__main__""":
     a=0.
@@ -541,4 +542,4 @@ if __name__ == """__main__""":
     ntmax = 20
     cfl=0.99
     c0=330.#reference sound speed for water at 15 bars
-    solve( a,b,nx,"SquareRegularSquares","RegularSquares",cfl,c0)
+    solve( a,b,nx,"1D","RegularGrid",cfl,c0,ntmax)
