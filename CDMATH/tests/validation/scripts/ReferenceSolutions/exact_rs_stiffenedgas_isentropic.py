@@ -2,8 +2,8 @@
 # -*-coding:utf-8 -*
 
 ######################################################################################################################
-#	This file contains a class to solve for the exact solution of the Riemann Problem for the one dimensional isentropic Euler
-#	equations with Laplace law equation of state P=c1*rho^gamma + pinf
+#	This file contains a class to solve for the exact solution of the Riemann Problem for the one dimensional 
+#	isentropic Euler equations with Laplace law equation of state P=c1*rho^gamma + pinf
 #
 #	Author: Michael Ndjinga
 #	Date:	15/09/2022
@@ -14,12 +14,15 @@ from math import pow, fabs, sqrt
 
 class exact_rs_stiffenedgas_isentropic :
 
-	def __init__(self, gamma_L, gamma_R, tol=1.e-6, max_iter=100):
+	def __init__(self, gamma, pinf, c1=1., tol=1.e-6, max_iter=100):
 		self.TOL = tol
 		self.MAX_NB_ITER = max_iter
 	
-		self.gamma_L = gamma_L
-		self.gamma_R = gamma_R
+		assert gamma >= 1, "gamma should be greater than 1"
+		assert c1    >= 0, "c1 should be positive"
+		self.gamma = gamma
+		self.pinf  = pinf
+		self.c1    = c1
 		
 		self.S_STAR = 0.
 		self.P_STAR = 0.
@@ -38,8 +41,8 @@ class exact_rs_stiffenedgas_isentropic :
 	def solve_RP (self, W_L, W_R):
 		assert len(W_L) == 2, "Left state should have two components (p, u)"
 		assert len(W_R) == 2, "Right state should have two components (p, u)"
-		assert W_L[0] >= 0.0, "Left density should be positive"
-		assert W_R[0] >= 0.0, "Right density should be positive"
+		assert W_L[0] >= 0.0, "Left pressure should be positive"
+		assert W_R[0] >= 0.0, "Right pressure should be positive"
 		
 		print("")
 		print("Solving Riemann problem for left state W_L=", W_L, ", and right state W_R=",W_R)
@@ -51,8 +54,36 @@ class exact_rs_stiffenedgas_isentropic :
 		
 		# Calculate u_star
 	
-		self.S_STAR = 0.5*(W_L[1]+W_R[1]) + 0.5*(self.f(self.P_STAR,W_R[0],self.gamma_R) - self.f(self.P_STAR,W_L[0],self.gamma_L))
+		self.S_STAR = 0.5*(W_L[1]+W_R[1]) + 0.5*(self.f(self.P_STAR,W_R[0],self.gamma, self.pinf) - self.f(self.P_STAR,W_L[0],self.gamma,self.pinf))
 	
+		# Solution now depends on character of 1st and 2nd waves
+	
+		if (self.P_STAR > W_L[0]):
+			# Left shock
+			rho_L = pow((W_L[0] - self.pinf)/c1, 1/gamma)
+			self.S_L = W_L[0] - (self.Q_K(self.P_STAR,W_L[0],rho_L,self.gamma,self.pinf)/rho_L)
+		else:
+			# Left rarefaction
+	
+			a_L = self.a(W_L[0], self.gamma, self.pinf)
+			a_star = self.a(self.P_STAR , self.gamma, self.pinf)
+	
+			self.S_HL = W_L[1] - a_L
+			self.S_TL = self.S_STAR - a_star
+	
+		if (self.P_STAR > W_R[0]):
+			# Right shock
+			rho_R = pow((W_R[0] - self.pinf)/c1, 1/gamma)
+			self.S_R = W_R[0] + (self.Q_K(self.P_STAR,W_R[0],rho_R,self.gamma,self.pinf)/rho_R)
+		else:
+			# Right rarefaction
+	
+			a_R = self.a(W_R[0],self.gamma, self.pinf)
+			a_star = self.a(self.P_STAR , self.gamma, self.pinf)
+	
+			self.S_HR = W_R[1] + a_R
+			self.S_TR = self.S_STAR + a_star
+
 	
 	def sample_solution (self, W_L, W_R, S):
 		W = [0.]*2
@@ -138,17 +169,17 @@ class exact_rs_stiffenedgas_isentropic :
 
 	def total_pressure_function (self, p_star, p_L, u_L, p_R, u_R):
 
-		return	self.f(p_star, p_L, self.gamma_L)	+ self.f(p_star, p_R, self.gamma_R) + u_R - u_L
+		return	self.f(p_star, p_L, self.gamma, self.pinf)	+ self.f(p_star, p_R, self.gamma, self.pinf) + u_R - u_L
 
 	def total_pressure_function_deriv (self, p_star, p_L, p_R ):
 
-		return 	self.f_deriv (p_star, p_L, self.gamma_L) + self.f_deriv (p_star, p_R, self.gamma_R)
+		return 	self.f_deriv (p_star, p_L, self.gamma, self.pinf) + self.f_deriv (p_star, p_R, self.gamma, self.pinf)
 
 
 	def f (self, p_star, p, gamma):
 		if (p_star > p):
 		
-			return (p_star - p)/self.Q_K(p_star, p, gamma)
+			return (p_star - p)/self.Q_K(p_star, p, gamma, pinf)
 		
 		else:
 		
@@ -185,17 +216,17 @@ class exact_rs_stiffenedgas_isentropic :
 
 	# Misc functions
 
-	def Q_K (self, p_star, rho, p, gamma):
-		A = 2.0/((gamma+1.0)*rho)
-		B = (p+pinf)*(gamma-1.0)/(gamma+1.0)
-		return sqrt((p_star+pinf+B)/A)
+	def Q_K (self, p_star, p, rho, gamma, pinf):
+		rho_star =  pow((p_star - pinf)/c1, 1/gamma)
+		return (p_star - p)*(1/rho-1/rho_star)
 
 	
 
 	# Equation of state functions
 
-	def a (self, rho, p, gamma, pinf):#sound speed
-		return sqrt(gamma*((p+pinf)/rho))
+	def a (self, p, gamma, pinf):#sound speed
+		rho = pow((p - self.pinf)/c1, 1/gamma)
+		return sqrt(gamma*((p-pinf)/rho))
 
 	#Determine the solution value at position x and time t
 	def rho_u_p_solution (initialLeftState, initialRightState, x, t, gamma, pinf, offset=0):
