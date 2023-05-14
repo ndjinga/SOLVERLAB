@@ -10,7 +10,7 @@
 #   Description : Translated from C++ package developped by Murray Cutforth
 #######################################################################################################################
 
-from math import pow, fabs, sqrt
+from math import pow, fabs, sqrt, log
 
 class exact_rs_stiffenedgas_isentropic :
 
@@ -182,8 +182,10 @@ class exact_rs_stiffenedgas_isentropic :
 			return (p_star - p)/self.Q_K(p_star, p, gamma, pinf)
 		
 		else:
-		
-			return (2.0*self.a(p,gamma,pinf)/(gamma-1.0))*(pow((p_star )/(p ), (gamma-1.0)/(2.0*gamma)) - 1.0)
+			if (gamma>1):
+				return (2.0*self.a(p,gamma,pinf)/(gamma-1.0))*(pow((p_star )/(p ), (gamma-1.0)/(2.0*gamma)) - 1.0)
+			else:
+				return sqrt(self.c1)*log( (p_star - pinf)/(p - pinf))
 		
 
 	def f_deriv (self, p_star, rho, p, gamma):
@@ -195,8 +197,10 @@ class exact_rs_stiffenedgas_isentropic :
 			return sqrt(A/(B+p_star+pinf))*(1.0 - ((p_star-p)/(2.0*(B+p_star+pinf))))
 		
 		else:
-		
-			return (1.0/(rho*self.a(p,gamma,pinf)))*pow((p_star+pinf)/(p+pinf), -(gamma+1.0)/(2.0*gamma))
+			if (gamma>1):
+				return (1.0/(rho*self.a(p,gamma,pinf)))*pow((p_star+pinf)/(p+pinf), -(gamma+1.0)/(2.0*gamma))
+			else:
+				return sqrt(self.c1)/(p_star - pinf)
 		
 
 
@@ -218,7 +222,7 @@ class exact_rs_stiffenedgas_isentropic :
 
 	def Q_K (self, p_star, p, rho, gamma, pinf):
 		rho_star =  pow((p_star - pinf)/c1, 1/gamma)
-		return (p_star - p)*(1/rho-1/rho_star)
+		return (p_star - p)/(1/rho-1/rho_star)
 
 	
 
