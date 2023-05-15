@@ -14,7 +14,7 @@ from math import pow, fabs, sqrt, log
 
 class exact_rs_stiffenedgas_isentropic :
 
-	def __init__(self, gamma, pinf, c1=1., tol=1.e-6, max_iter=100):
+	def __init__(self, gamma, c1=1, pinf=0., tol=1.e-6, max_iter=100):
 		self.TOL = tol
 		self.MAX_NB_ITER = max_iter
 	
@@ -176,29 +176,29 @@ class exact_rs_stiffenedgas_isentropic :
 		return 	self.f_deriv (p_star, p_L, self.gamma, self.pinf) + self.f_deriv (p_star, p_R, self.gamma, self.pinf)
 
 
-	def f (self, p_star, p, gamma):
+	def f (self, p_star, p, gamma, pinf):
 		if (p_star > p):
 		
 			return (p_star - p)/self.Q_K(p_star, p, gamma, pinf)
 		
 		else:
 			if (gamma>1):
-				return (2.0*self.a(p,gamma,pinf)/(gamma-1.0))*(pow((p_star )/(p ), (gamma-1.0)/(2.0*gamma)) - 1.0)
+				return (2.0*self.a(p,gamma,pinf)/(gamma-1.0))*(pow((p_star - pinf )/(p - pinf), (gamma-1.0)/(2.0*gamma)) - 1.0)
 			else:
 				return sqrt(self.c1)*log( (p_star - pinf)/(p - pinf))
 		
 
 	def f_deriv (self, p_star, rho, p, gamma):
-		A = 2.0/((gamma+1.0)*rho)
-		B = (p+pinf)*(gamma-1.0)/(gamma+1.0)
 	
 		if (p_star > p):
+			A = 2.0/((gamma+1.0)*rho)
+			B = (p-pinf)*(gamma-1.0)/(gamma+1.0)
 		
-			return sqrt(A/(B+p_star+pinf))*(1.0 - ((p_star-p)/(2.0*(B+p_star+pinf))))
+			return sqrt(A/(B+p_star-pinf))*(1.0 - ((p_star-p)/(2.0*(B+p_star-pinf))))
 		
 		else:
 			if (gamma>1):
-				return (1.0/(rho*self.a(p,gamma,pinf)))*pow((p_star+pinf)/(p+pinf), -(gamma+1.0)/(2.0*gamma))
+				return (1.0/(rho*self.a(p,gamma,pinf)))*pow((p_star-pinf)/(p-pinf), -(gamma+1.0)/(2.0*gamma))
 			else:
 				return sqrt(self.c1)/(p_star - pinf)
 		
@@ -207,14 +207,14 @@ class exact_rs_stiffenedgas_isentropic :
 	# Functions to find the state inside a rarefaction fan
 
 	def set_left_rarefaction_fan_state (self, W_L, S, W):
-		a_L = self.a(W_L[0],self.gamma_L)
-		W[1] = (2.0/(self.gamma_L+1.0))*(a_L + S + ((self.gamma_L-1.0)/2.0)*W_L[1])
-		W[0] = (W_L[0] + self.pinf_L)*pow((2.0/(self.gamma_L+1.0)) + ((self.gamma_L-1.0)/(a_L*(self.gamma_L+1.0)))*(W_L[1] - S), (2.0*self.gamma_L)/(self.gamma_L-1.0)) 
+		a_L = self.a(W_L[0],self.gamma)
+		W[1] = (2.0/(self.gamma+1.0))*(a_L + S + ((self.gamma-1.0)/2.0)*W_L[1])
+		W[0] = (W_L[0] + self.pinf)*pow((2.0/(self.gamma+1.0)) + ((self.gamma-1.0)/(a_L*(self.gamma+1.0)))*(W_L[1] - S), (2.0*self.gamma)/(self.gamma-1.0)) 
 
 	def set_right_rarefaction_fan_state (self, W_R, S, W):
-		a_R = self.a(W_R[0],self.gamma_R)
-		W[1] = (2.0/(self.gamma_R+1.0))*(- a_R + S + ((self.gamma_R-1.0)/2.0)*W_R[1])
-		W[0] = (W_R[0] + self.pinf_R)*pow((2.0/(self.gamma_R+1.0)) - ((self.gamma_R-1.0)/(a_R*(self.gamma_R+1.0)))*(W_R[1] - S), (2.0*self.gamma_R)/(self.gamma_R-1.0)) 
+		a_R = self.a(W_R[0],self.gamma)
+		W[1] = (2.0/(self.gamma+1.0))*(- a_R + S + ((self.gamma-1.0)/2.0)*W_R[1])
+		W[0] = (W_R[0] + self.pinf)*pow((2.0/(self.gamma+1.0)) - ((self.gamma-1.0)/(a_R*(self.gamma+1.0)))*(W_R[1] - S), (2.0*self.gamma)/(self.gamma-1.0)) 
 
 
 
@@ -233,8 +233,8 @@ class exact_rs_stiffenedgas_isentropic :
 		return sqrt(gamma*((p-pinf)/rho))
 
 	#Determine the solution value at position x and time t
-	def rho_u_p_solution (initialLeftState, initialRightState, x, t, gamma, pinf, offset=0):
-		RS = exact_rs_stiffenedgas(gamma, gamma, pinf, pinf);
+	def p_u_solution (initialLeftState, initialRightState, x, t, gamma, c1=1, pinf=0, offset=0, tol=1.e-6, max_iter=100):
+		RS = exact_rs_stiffenedgas_isentropic(gamma, c1, pinf, tol, max_iter);
 		RS.solve_RP(initialLeftState, initialRightState);
 		return 	RS.sample_solution(initialLeftState, initialRightState, (x - offset)/t);
 
