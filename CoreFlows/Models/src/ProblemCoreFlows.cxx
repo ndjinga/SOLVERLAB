@@ -491,6 +491,10 @@ void ProblemCoreFlows::setLinearSolver(linearSolver kspType, preconditioner pcTy
 		_runLogFile->close();
 		throw CdmathException("!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" );
 	}
+
+	PetscPrintf(PETSC_COMM_WORLD,"Linear solver ", _ksptype, ", preconditioner ",_pctype);
+	*_runLogFile << "Linear solver " << _ksptype << ", preconditioner " <<_pctype << endl;
+	_runLogFile->close();
 }
 
 void ProblemCoreFlows::setLinearSolver(std::string solverName, std::string pcName, double maxIts)
