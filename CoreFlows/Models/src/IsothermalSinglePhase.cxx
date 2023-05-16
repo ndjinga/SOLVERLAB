@@ -169,7 +169,7 @@ void IsothermalSinglePhase::initialize(){
 	/* Deal with the particular case of singular systems */
 	if( _isSingularSystem )
 	{
-		cout<<"No pressure imposed at the boundary : the PDEs solution pressure is defined up to a constant."<<endl;
+		cout<<"No pressure imposed at the boundary : the pressure is defined up to a constant."<<endl;
 		cout<<"Singular linear system : the discrete pressure will be computed to have a zero mean."<<endl;
 		/* Build vector in the kernel of the system matrix */
 		VecDuplicate(_conservativeVars, &_constantPressureVector);//Vector _constantPressureVector has same parallel structure as _conservativeVars
