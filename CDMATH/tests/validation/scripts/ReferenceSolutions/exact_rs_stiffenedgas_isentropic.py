@@ -14,7 +14,7 @@ from math import pow, fabs, sqrt, log
 
 class exact_rs_stiffenedgas_isentropic :
 
-	def __init__(self, gamma, c1=1, pinf=0., tol=1.e-6, max_iter=100):
+	def __init__(self, gamma=1., c1=1.e5, pinf=0., tol=1.e-6, max_iter=100):
 		self.TOL = tol
 		self.MAX_NB_ITER = max_iter
 	
@@ -223,6 +223,9 @@ class exact_rs_stiffenedgas_isentropic :
 	def Q_K (self, p_star, p, rho, gamma, pinf):
 		rho_star =  pow((p_star - pinf)/c1, 1/gamma)
 		return (p_star - p)/(1/rho-1/rho_star)
+
+	def rho( p, gamma, C1, pinf):
+		return pow((p_star - pinf)/c1, 1/gamma)
 
 	
 
