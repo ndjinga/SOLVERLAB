@@ -24,9 +24,10 @@ def initial_conditions_Riemann_problem(a,b,nx):
     dx = (b - a) / nx #space step
     x=[a+0.5*dx + i*dx for i in range(nx)]   # array of cell center (1D mesh)
     #rho_initial = [ (xi<(a+b)/2)*rho0        + (xi>=(a+b)/2)*rho0       for xi in x]#Constant density
-    rho_initial = [ (xi+(a+b)/2)*rho0               for xi in x]#NonConstant density
-    q_initial   = [ (xi<(a+b)/2)*rho0*(-10) + (xi>=(a+b)/2)*rho0*2*(-10)  for xi in x]
-    #q_initial   = [ (xi+(a+b)/2)*rho0*(-10) for xi in x]
+    #rho_initial = [ (xi+(a+b)/2)*rho0               for xi in x]#Affine NonConstant density
+    #q_initial   = [ rho0*(-10) for xi in x]#Constant momentum
+    rho_initial = [ (xi<(a+b)/2)*rho0        + (xi>=(a+b)/2)*2*rho0        for xi in x]#simple discontinuité density
+    q_initial   = [ (xi<(a+b)/2)*rho0*(-10)  + (xi>=(a+b)/2)*2*rho0*(-10)  for xi in x]#Constant velocity with jump on density
 
     return rho_initial, q_initial
 
@@ -180,7 +181,10 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
         lj =   Un_centered[(j  )*nbComp+1]/Un_centered[(j  )*nbComp+0] + c0*log(Un_centered[(j  )*nbComp+0])
         ljp1 = Un_centered[(j+1)*nbComp+1]/Un_centered[(j+1)*nbComp+0] + c0*log(Un_centered[(j+1)*nbComp+0])
         var_tot_centered[it]+=abs(ljp1-lj)
-    
+    var_tot_upwind[it]/=c0
+    var_tot_staggered[it]/=c0
+    var_tot_centered[it]/=c0
+
     # Picture settings
     fig, ([axDensity, axMomentum],[axVelocity, axPressure]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
     fig.suptitle('Comparison of finite volume schemes')
@@ -492,6 +496,9 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                 lj =   Un_centered[(j  )*nbComp+1]/Un_centered[(j  )*nbComp+0] + c0*log(Un_centered[(j  )*nbComp+0])
                 ljp1 = Un_centered[(j+1)*nbComp+1]/Un_centered[(j+1)*nbComp+0] + c0*log(Un_centered[(j+1)*nbComp+0])
                 var_tot_centered[it]+=abs(ljp1-lj)
+            var_tot_upwind[it]/=c0
+            var_tot_staggered[it]/=c0
+            var_tot_centered[it]/=c0
 
             #Sauvegardes
             if(it==1 or it%output_freq==0 or it>=ntmax or time >=tmax):
@@ -509,9 +516,9 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     plt.ylim(0, max(max(var_tot_upwind), max(var_tot_staggered), max(var_tot_centered)) )
     plt.title("Evolution of the total variation")
 
-    plt.plot(time_tab, var_tot_upwind, label='Implicit upwind')
+    plt.plot(time_tab, var_tot_upwind,    label='Implicit upwind')
     plt.plot(time_tab, var_tot_staggered, label='Implicit staggered')
-    plt.plot(time_tab, var_tot_centered, label='Implicit centered')
+    plt.plot(time_tab, var_tot_centered,  label='Implicit centered')
     plt.legend()
     
     plt.savefig("TotalVariation_SchemeComparison_"+str(nx)+"Cells_soundSpeed"+str(c0)+".png")
