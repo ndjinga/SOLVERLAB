@@ -220,6 +220,10 @@ void ProblemFluid::initialize()
 			throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
 		}
 
+		PetscPrintf(PETSC_COMM_WORLD,"PETSc Newton solver ", snestype);
+		*_runLogFile << "PETSc Newton solver " << snestype << endl;
+		_runLogFile->close();
+
 		SNESCreate(PETSC_COMM_WORLD, &_snes);
 		SNESSetType( _snes, snestype);
 		SNESGetLineSearch( _snes, &_linesearch);
@@ -240,7 +244,13 @@ void ProblemFluid::initialize()
 		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
 		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
 	}
-
+	else
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
+		*_runLogFile << "SOLVERLAB Newton solver" << endl;
+		_runLogFile->close();
+	}
+	
 	_initializedMemory=true;
 	save();//save initial data
 }
