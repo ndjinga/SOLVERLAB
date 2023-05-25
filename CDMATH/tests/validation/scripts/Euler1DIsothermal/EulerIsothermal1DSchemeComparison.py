@@ -165,7 +165,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     temp1 = cdmath.Vector(2)
     temp2 = cdmath.Vector(2)
 
-    print("Starting computation of the non linear Euler system with various scheme …")
+    print("Starting computation of the non linear Euler system with various schemes …")
     divMat_upwind=cdmath.SparseMatrixPetsc(nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp)
     divMat_staggered=cdmath.SparseMatrixPetsc(nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp)
     divMat_centered=cdmath.SparseMatrixPetsc(nbCells*nbComp,nbCells*nbComp,(nbVoisinsMax+1)*nbComp)
@@ -200,14 +200,14 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     lineMomentum_centered, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_centered, label='centered')
     axMomentum.set(xlabel='x (m)', ylabel='Momentum')
     axMomentum.set_xlim(a,b)
-    axMomentum.set_ylim(min_initial_q - 0.1*(max_initial_q-min_initial_q), max_initial_q +  0.1*(max_initial_q-min_initial_q) )
+    axMomentum.set_ylim(2*min_initial_q - 0.1*(max_initial_q-min_initial_q), max_initial_q +  0.1*(max_initial_q-min_initial_q) )
     axMomentum.legend()
     lineVelocity_staggered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_staggered, label='conservative staggered')
     lineVelocity_upwind, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_upwind, label='upwind')
     lineVelocity_centered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_centered, label='centered')
     axVelocity.set(xlabel='x (m)', ylabel='Velocity')
     axVelocity.set_xlim(a,b)
-    axVelocity.set_ylim(min_initial_v - 0.4*abs(min_initial_v), max_initial_v +  0.05*abs(max_initial_v) )
+    axVelocity.set_ylim(2*min_initial_v - 0.4*abs(min_initial_v), max_initial_v +  0.05*abs(max_initial_v) )
     axVelocity.legend()
     linePressure_staggered, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_staggered, label='conservative staggered')
     linePressure_upwind, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_upwind, label='upwind')
@@ -242,10 +242,10 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                 divMat_upwind.zeroEntries()#sets the matrix coefficients to zero
                 for j in range(nbCells):# 
                     if ( j==0) : 
-                        rho_r = Uk_upwind[j*nbComp+0]
-                        q_r   = Uk_upwind[j*nbComp+1]
-                        rho_l = rho_r # Conditions de Neumann
-                        q_l   =   q_r
+                        rho_l = Uk_upwind[j*nbComp+0]
+                        q_l   = Uk_upwind[j*nbComp+1]
+                        rho_r = Uk_upwind[(j+1)*nbComp+0]
+                        q_r   = Uk_upwind[(j+1)*nbComp+1]
                         Am_upwind=  (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - upwindDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_upwind.addValue(j*nbComp,(j+1)*nbComp,Am_upwind)
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Am_upwind*(-1.))
@@ -256,10 +256,10 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                         Rhs_upwind[j*nbComp+0] = -temp[0]-(Uk_upwind[j*nbComp+0]-Un_upwind[j*nbComp+0]) 
                         Rhs_upwind[j*nbComp+1] = -temp[1]-(Uk_upwind[j*nbComp+1]-Un_upwind[j*nbComp+1]) 
                     elif ( j==nbCells-1) :
-                        rho_l = Uk_upwind[j*nbComp+0]
-                        q_l   = Uk_upwind[j*nbComp+1]
-                        rho_r = rho_l # Conditions de Neumann
-                        q_r   =   q_l
+                        rho_l = Uk_upwind[(j-1)*nbComp+0]
+                        q_l   = Uk_upwind[(j-1)*nbComp+1]
+                        rho_r = Uk_upwind[j*nbComp+0]
+                        q_r   = Uk_upwind[j*nbComp+1]
                         Ap_upwind= (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + upwindDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_upwind.addValue(j*nbComp,    j*nbComp,Ap_upwind)
                         divMat_upwind.addValue(j*nbComp,(j-1)*nbComp,Ap_upwind*(-1.))
@@ -324,10 +324,10 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                 divMat_staggered.zeroEntries()#sets the matrix coefficients to zero
                 for j in range(nbCells):# 
                     if ( j==0) : 
-                        rho_r = Uk_staggered[j*nbComp+0]
-                        q_r   = Uk_staggered[j*nbComp+1]
-                        rho_l = rho_r # Conditions de Neumann
-                        q_l   =   q_r
+                        rho_l = Uk_staggered[j*nbComp+0]
+                        q_l   = Uk_staggered[j*nbComp+1]
+                        rho_r = Uk_staggered[(j+1)*nbComp+0]
+                        q_r   = Uk_staggered[(j+1)*nbComp+1]
                         Am_staggered=  (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - staggeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_staggered.addValue(j*nbComp,(j+1)*nbComp,Am_staggered)
                         divMat_staggered.addValue(j*nbComp,    j*nbComp,Am_staggered*(-1.))
@@ -338,10 +338,10 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                         Rhs_staggered[j*nbComp+0] = -temp[0]-(Uk_staggered[j*nbComp+0]-Un_staggered[j*nbComp+0]) 
                         Rhs_staggered[j*nbComp+1] = -temp[1]-(Uk_staggered[j*nbComp+1]-Un_staggered[j*nbComp+1]) 
                     elif ( j==nbCells-1) :
-                        rho_l = Uk_staggered[j*nbComp+0]
-                        q_l   = Uk_staggered[j*nbComp+1]
-                        rho_r = rho_l # Conditions de Neumann
-                        q_r   =   q_l
+                        rho_l = Uk_staggered[(j-1)*nbComp+0]
+                        q_l   = Uk_staggered[(j-1)*nbComp+1]
+                        rho_r = Uk_staggered[j*nbComp+0]
+                        q_r   = Uk_staggered[j*nbComp+1]
                         Ap_staggered= (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + staggeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_staggered.addValue(j*nbComp,    j*nbComp,Ap_staggered)
                         divMat_staggered.addValue(j*nbComp,(j-1)*nbComp,Ap_staggered*(-1.))
@@ -406,24 +406,23 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                 divMat_centered.zeroEntries()#sets the matrix coefficients to zero
                 for j in range(nbCells):# 
                     if ( j==0) : 
-                        rho_r = Uk_centered[j*nbComp+0]
-                        q_r   = Uk_centered[j*nbComp+1]
-                        rho_l = rho_r # Conditions de Neumann
-                        q_l   =   q_r
+                        rho_l = Uk_centered[j*nbComp+0]
+                        q_l   = Uk_centered[j*nbComp+1]
+                        rho_r = Uk_centered[(j+1)*nbComp+0]
+                        q_r   = Uk_centered[(j+1)*nbComp+1]
                         Am_centered=  (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) - centeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_centered.addValue(j*nbComp,(j+1)*nbComp,Am_centered)
                         divMat_centered.addValue(j*nbComp,    j*nbComp,Am_centered*(-1.))
                         dUi[0] = Uk_centered[(j+1)*nbComp+0]-Uk_centered[j*nbComp+0]
                         dUi[1] = Uk_centered[(j+1)*nbComp+1]-Uk_centered[j*nbComp+1]
                         temp = Am_centered*dUi
-                        #print("Bloc 0 matrix  :   ", Am_centered)
                         Rhs_centered[j*nbComp+0] = -temp[0]-(Uk_centered[j*nbComp+0]-Un_centered[j*nbComp+0]) 
                         Rhs_centered[j*nbComp+1] = -temp[1]-(Uk_centered[j*nbComp+1]-Un_centered[j*nbComp+1]) 
                     elif ( j==nbCells-1) :
-                        rho_l = Uk_centered[j*nbComp+0]
-                        q_l   = Uk_centered[j*nbComp+1]
-                        rho_r = rho_l # Conditions de Neumann
-                        q_r   =   q_l
+                        rho_l = Uk_centered[(j-1)*nbComp+0]
+                        q_l   = Uk_centered[(j-1)*nbComp+1]
+                        rho_r = Uk_centered[j*nbComp+0]
+                        q_r   = Uk_centered[j*nbComp+1]
                         Ap_centered= (RoeMatrix(rho_l,q_l,rho_r,q_r,c0) + centeredDMatrix(rho_l,q_l,rho_r,q_r,c0))*(0.5*dt/dx)
                         divMat_centered.addValue(j*nbComp,    j*nbComp,Ap_centered)
                         divMat_centered.addValue(j*nbComp,(j-1)*nbComp,Ap_centered*(-1.))
