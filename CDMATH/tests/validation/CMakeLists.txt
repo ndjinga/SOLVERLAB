@@ -106,6 +106,7 @@ WaveSystemRiemannProblemComparison/
 EulerEquations/1DToroBenchmark
 EulerEquations/1DEulerIsentropicMeshRefinement
 EulerEquations/1DEulerIsentropicIncreaseSoundSpeed
+EulerEquations/1DEulerIsentropicIncreaseCFL
 test_synthesis 
 )
 
