@@ -222,9 +222,9 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     FFMpegWriter = manimation.writers['ffmpeg']
     metadata = dict(title="Scheme comparison for the 1D isothermal Euler System", artist = "CEA Saclay", comment="Shock tube")
     writer=FFMpegWriter(fps=10, metadata=metadata, codec='h264')
-    with writer.saving(fig, "1DEuler_System_Scheme_Comparison_"+str(nx)+"Cells_soundSpeed"+str(c0)+""+".mp4", ntmax):
+    with writer.saving(fig, "1DEuler_System_Scheme_Comparison_"+str(nx)+"Cells_soundSpeed"+str(c0)+"_CFL_"+str(cfl)+".mp4", ntmax):
         writer.grab_frame()
-        plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_0_"+str(nx)+"Cells_soundSpeed"+str(c0)+""+".png")
+        plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_0_"+str(nx)+"Cells_soundSpeed"+str(c0)+"_CFL_"+str(cfl)+".png")
 
         # Starting time loop
         while (it<ntmax and time <= tmax ):
@@ -504,7 +504,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
                 print("-- Iter: " + str(it) + ", Time: " + str(time) + ", dt: " + str(dt))
                 #print("Upwind : Last linear system converged in ", LS_upwind.getNumberOfIter(), " GMRES iterations", ", residu final:   ",residu)
 
-                plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_"+str(it)+"_"+str(nx)+"Cells_soundSpeed"+str(c0)+".png")
+                plt.savefig("EulerSystem"+str(dim)+"D_Scheme_Comparison"+meshName+"_"+str(it)+"_"+str(nx)+"Cells_soundSpeed"+str(c0)+"_CFL_"+str(cfl)+".png")
                 print
 
     # Plot total variation
@@ -520,7 +520,7 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
     plt.plot(time_tab, var_tot_centered,  label='Implicit centered')
     plt.legend()
     
-    plt.savefig("TotalVariation_SchemeComparison_"+str(nx)+"Cells_soundSpeed"+str(c0)+".png")
+    plt.savefig("TotalVariation_SchemeComparison_"+str(nx)+"Cells_soundSpeed"+str(c0)+"_CFL_"+str(cfl)+".png")
     
     if(it>=ntmax):
         print("Nombre de pas de temps maximum ntmax= ", ntmax, " atteint")
