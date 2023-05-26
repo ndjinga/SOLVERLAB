@@ -9,7 +9,7 @@ import time, json
 
 def test_validationEulerIsothermal_1D_cfl_increase():
     start = time.time()
-    cflList=[ .5, 1, 10, 20]
+    cflList=[ 0.1, 0.5, 1, 10, 20]
     meshType="Regular_1D grid"
     mesh_name='regular1DGrid'
     testColor="Green"

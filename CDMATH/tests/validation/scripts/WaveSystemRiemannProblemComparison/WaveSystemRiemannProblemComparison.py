@@ -501,7 +501,7 @@ def solve( a,b,nx, meshName, meshType, cfl,c0,ntmax):
     print("Resolution of the wave system in dimension 1 on "+str(nx)+ " cells")
     print("Initial data : ", "Riemann problem")
     print("Boundary conditions : ", "Neumann")
-    print("Mesh name : ",meshName , ", ", nx, " cells, sound speed = ",c0, ", ntmax=",ntmax)
+    print("Mesh name : ",meshName , ", ", nx, " cells, sound speed = ",c0, ", ntmax=",ntmax, ", cfl= ", cfl)
     # Problem data
     tmax = 10.
     output_freq = 10
