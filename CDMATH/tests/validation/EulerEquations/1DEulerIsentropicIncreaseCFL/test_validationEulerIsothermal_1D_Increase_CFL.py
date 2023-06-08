@@ -9,7 +9,7 @@ import time, json
 
 def test_validationEulerIsothermal_1D_cfl_increase():
     start = time.time()
-    cflList=[ 0.1, 0.5, 1, 10, 20]
+    cflList=[ 0.5, 1, 10, 20]
     meshType="Regular_1D grid"
     mesh_name='regular1DGrid'
     testColor="Green"
@@ -37,9 +37,9 @@ def test_validationEulerIsothermal_1D_cfl_increase():
     plt.close()
     plt.figure()
     plt.plot(cflList, var_tot_upwind,    label='Implicit upwind')
-    plt.plot(cflList, var_tot_staggered, label='Implicit staggered')
+    plt.plot(cflList, var_tot_staggered, label='Implicit (pseudo)staggered')
     plt.plot(cflList, var_tot_centered,  label='Implicit centered')
-    plt.xlabel('CFLnumber')
+    plt.xlabel('CFL number')
     plt.ylabel('Total variation')
     plt.title('Total variation of finite volume schemes')
     plt.legend()

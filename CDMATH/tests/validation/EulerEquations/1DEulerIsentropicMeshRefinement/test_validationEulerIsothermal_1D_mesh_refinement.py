@@ -37,7 +37,7 @@ def test_validationEulerIsothermal_1D_mesh_refinement():
     plt.close()
     plt.figure()
     plt.plot(meshList, var_tot_upwind, label='Implicit upwind')
-    plt.plot(meshList, var_tot_staggered, label='Implicit staggered')
+    plt.plot(meshList, var_tot_staggered, label='Implicit (pseudo)staggered')
     plt.plot(meshList, var_tot_centered, label='Implicit centered')
     plt.xlabel('Mesh size')
     plt.ylabel('Total variation')

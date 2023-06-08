@@ -187,31 +187,32 @@ def EulerSystemSchemeComparison(ntmax, tmax, cfl, a,b,nx, output_freq, meshName,
 
     # Picture settings
     fig, ([axDensity, axMomentum],[axVelocity, axPressure]) = plt.subplots(2, 2,sharex=True, figsize=(10,10))
+    #fig, ([axDensity, axMomentum]) = plt.subplots(1, 2,sharex=True, figsize=(10,10))
     fig.suptitle('Comparison of finite volume schemes')
-    lineDensity_staggered, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_staggered, label='staggered') #new picture for video # Returns a tuple of line objects, thus the comma
-    lineDensity_upwind, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_upwind, label='upwind') #new picture for video # Returns a tuple of line objects, thus the comma
-    lineDensity_centered, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_centered, label='centered') #new picture for video # Returns a tuple of line objects, thus the comma
+    lineDensity_staggered, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_staggered, label='implicit (pseudo)staggered') #new picture for video # Returns a tuple of line objects, thus the comma
+    lineDensity_upwind, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_upwind, label='implicit upwind') #new picture for video # Returns a tuple of line objects, thus the comma
+    lineDensity_centered, = axDensity.plot([a+0.5*dx + i*dx for i in range(nx)], rho_field_centered, label='implicit centered') #new picture for video # Returns a tuple of line objects, thus the comma
     axDensity.set(xlabel='x (m)', ylabel='Density')
     axDensity.set_xlim(a,b)
     axDensity.set_ylim(min_initial_rho - 0.1*(max_initial_rho-min_initial_rho), max_initial_rho +  0.1*(max_initial_rho-min_initial_rho) )
     axDensity.legend()
-    lineMomentum_staggered, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_staggered, label='staggered')
-    lineMomentum_upwind, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_upwind, label='upwind')
-    lineMomentum_centered, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_centered, label='centered')
+    lineMomentum_staggered, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_staggered, label='implicit (pseudo)staggered')
+    lineMomentum_upwind, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_upwind, label='implicit upwind')
+    lineMomentum_centered, = axMomentum.plot([a+0.5*dx + i*dx for i in range(nx)], q_field_centered, label='implicit centered')
     axMomentum.set(xlabel='x (m)', ylabel='Momentum')
     axMomentum.set_xlim(a,b)
-    axMomentum.set_ylim(2*min_initial_q - 0.1*(max_initial_q-min_initial_q), max_initial_q +  0.1*(max_initial_q-min_initial_q) )
+    axMomentum.set_ylim(2*min_initial_q - 15*(max_initial_q-min_initial_q), max_initial_q +  0.2*(max_initial_q-min_initial_q) )
     axMomentum.legend()
-    lineVelocity_staggered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_staggered, label='staggered')
-    lineVelocity_upwind, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_upwind, label='upwind')
-    lineVelocity_centered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_centered, label='centered')
+    lineVelocity_staggered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_staggered, label='implicit (pseudo)staggered')
+    lineVelocity_upwind, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_upwind, label='implicit upwind')
+    lineVelocity_centered, = axVelocity.plot([a+0.5*dx + i*dx for i in range(nx)], v_field_centered, label='implicit centered')
     axVelocity.set(xlabel='x (m)', ylabel='Velocity')
     axVelocity.set_xlim(a,b)
-    axVelocity.set_ylim(2*min_initial_v - 0.4*abs(min_initial_v), max_initial_v +  0.05*abs(max_initial_v) )
+    axVelocity.set_ylim(2*min_initial_v - 10*abs(min_initial_v), max_initial_v +  0.1*abs(max_initial_v) )
     axVelocity.legend()
-    linePressure_staggered, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_staggered, label='staggered')
-    linePressure_upwind, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_upwind, label='upwind')
-    linePressure_centered, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_centered, label='centered')
+    linePressure_staggered, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_staggered, label='implicit (pseudo)staggered')
+    linePressure_upwind, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_upwind, label='implicit upwind')
+    linePressure_centered, = axPressure.plot([a+0.5*dx + i*dx for i in range(nx)], p_field_centered, label='implicit centered')
     axPressure.set(xlabel='x (m)', ylabel='Pressure')
     axPressure.set_xlim(a,b)
     axPressure.set_ylim(min_initial_p - 0.05*abs(min_initial_p), max_initial_p +  0.05*abs(max_initial_p) )

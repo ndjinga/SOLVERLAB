@@ -37,7 +37,7 @@ def test_validationEulerIsothermal_1D_mesh_refinement():
     plt.close()
     plt.figure()
     plt.plot(soundSpeedList, var_tot_upwind, label='Implicit upwind')
-    plt.plot(soundSpeedList, var_tot_staggered, label='Implicit staggered')
+    plt.plot(soundSpeedList, var_tot_staggered, label='Implicit (pseudo)staggered')
     plt.plot(soundSpeedList, var_tot_centered, label='Implicit centered')
     plt.xlabel('Sound speed')
     plt.ylabel('Total variation')
