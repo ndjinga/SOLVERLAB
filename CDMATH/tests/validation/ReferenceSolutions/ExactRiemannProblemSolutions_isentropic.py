@@ -116,7 +116,7 @@ def run_Riemann_problems(numsamples = 100):
 			return 1;
 	
 	
-		RS = exact_rs_stiffenedgas.exact_rs_stiffenedgas(gamma, c1, pinf);
+		RS = exact_rs_stiffenedgas_isentropic.exact_rs_stiffenedgas_isentropic(gamma, c1, pinf);
 		RS.solve_RP(WL,WR);
 	
 		print( "")
@@ -155,7 +155,7 @@ def run_Riemann_problems(numsamples = 100):
 			q_field[i]  =rho_field[i]*u_field[i]
 			rho_field[i]=soln[0]
 
-			outfile.write( str( x ) + " " + str( soln[0]) + " " + str( soln[1]) + " " + str( soln[2]) + " " + str(exact_rs_stiffenedgas.stiffenedgas_e(soln[0], soln[2], thisgamma, thispinf)) + " " + str(exact_rs_stiffenedgas.stiffenedgas_h(soln[0], soln[2], thisgamma, thispinf)) + " " + str(fabs(soln[1])/RS.a(soln[0], soln[2], thisgamma, thispinf)) + " " + str(thisz) + "\n")
+			outfile.write( str( x ) + " " + str( soln[0]) + " " + str( soln[1]) + " " + str( soln[2]) + " " + str(exact_rs_stiffenedgas_isentropic.stiffenedgas_e(soln[0], soln[2], thisgamma, thispinf)) + " " + str(exact_rs_stiffenedgas_isentropic.stiffenedgas_h(soln[0], soln[2], thisgamma, thispinf)) + " " + str(fabs(soln[1])/RS.a(soln[0], soln[2], thisgamma, thispinf)) + " " + str(thisz) + "\n")
 
 			x += dx;
 
