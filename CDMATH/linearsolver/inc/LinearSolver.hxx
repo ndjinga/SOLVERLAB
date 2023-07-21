@@ -79,8 +79,13 @@ public: //----------------------------------------------------------------
 	Vector getFinalResidual( ) const;
 
 	void setMatrix(const GenericMatrix& matrix) ;
+	void setMatrix(std::string filename, bool hdf5BinaryMode=false) ;
 
 	void setSndMember(const Vector& secondMember) ;
+	void setSndMember(std::string filename, bool hdf5BinaryMode=false) ;
+	
+	void saveMatrix(std::string filename, bool binaryMode);
+	void saveSndMember(std::string filename, bool binaryMode);
 
 	void setMatrixIsSingular(bool sing=true) ;
 

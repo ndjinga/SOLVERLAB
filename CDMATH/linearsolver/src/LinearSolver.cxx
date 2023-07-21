@@ -315,6 +315,62 @@ KSPSetOperators(_ksp,_mat,_mat);
 	KSPGetPC(_ksp,&_prec);
 }
 
+void 
+LinearSolver::setMatrix(std::string filename, bool hdf5BinaryMode)
+{
+	//Create the viewer to read the file
+	PetscViewer viewer;
+	PetscViewerCreate(PETSC_COMM_WORLD,&viewer);
+	if(hdf5BinaryMode)
+		PetscViewerSetType(viewer,PETSCVIEWERHDF5);
+	else
+		PetscViewerSetType(viewer,PETSCVIEWERBINARY);
+	PetscViewerSetFromOptions(viewer);
+	PetscViewerFileSetMode(viewer, FILE_MODE_READ);
+	PetscViewerFileSetName(viewer,filename.c_str());
+	
+	//Empty the matrix (delete current content)
+	if( _mat )
+		MatDestroy(&_mat);
+	
+	//Create and load the matrix
+	MatCreate(PETSC_COMM_WORLD, &_mat);
+	MatSetFromOptions(_mat);
+	MatLoad( _mat, viewer);	
+
+	PetscViewerDestroy(&viewer);
+
+	//Assemblage final
+	MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
+
+	KSPCreate(PETSC_COMM_WORLD, &_ksp);
+#ifdef PETSC_VERSION_GREATER_3_5
+KSPSetOperators(_ksp,_mat,_mat);
+#else
+	KSPSetOperators(_ksp,_mat,_mat,SAME_NONZERO_PATTERN);
+#endif
+
+	KSPGetPC(_ksp,&_prec);
+}
+
+void 
+LinearSolver::saveMatrix(std::string filename, bool binaryMode)
+{
+    MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
+
+	PetscViewer fileViewer;
+
+	if( binaryMode)
+		PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename.c_str(), FILE_MODE_WRITE, &fileViewer);
+	else
+		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
+     
+	MatView(_mat,fileViewer);
+	PetscViewerDestroy(&fileViewer);
+}
+
 void
 LinearSolver::setSndMember(const Vector& secondMember)
 {
@@ -323,6 +379,36 @@ LinearSolver::setSndMember(const Vector& secondMember)
 		VecDestroy(&_smb);
 	_smb=vectorToVec(secondMember);
 
+}
+
+void 
+LinearSolver::setSndMember(std::string filename, bool hdf5BinaryMode)
+{
+	//Create the viewer to read the file
+	PetscViewer viewer;
+	PetscViewerCreate(PETSC_COMM_WORLD,&viewer);
+	if(hdf5BinaryMode)
+		PetscViewerSetType(viewer,PETSCVIEWERHDF5);
+	else
+		PetscViewerSetType(viewer,PETSCVIEWERBINARY);
+	PetscViewerSetFromOptions(viewer);
+	PetscViewerFileSetMode(viewer, FILE_MODE_READ);
+	PetscViewerFileSetName(viewer,filename.c_str());
+	
+	//Empty the matrix (delete current content)
+	if( _smb )
+		VecDestroy(&_smb);
+	
+	//Create and load the vector
+	VecCreate(PETSC_COMM_WORLD, &_smb);
+	VecSetFromOptions(_smb);
+	VecLoad( _smb, viewer);	
+
+	PetscViewerDestroy(&viewer);
+
+	//Assemblage final
+	VecAssemblyBegin(_smb );
+	VecAssemblyEnd(_smb );
 }
 
 void
@@ -335,6 +421,23 @@ Vector
 LinearSolver::getSndMember(void) const
 {
 	return (_secondMember);
+}
+
+void 
+LinearSolver::saveSndMember(std::string filename, bool binaryMode)
+{
+    VecAssemblyBegin(_smb);
+	VecAssemblyEnd(_smb);
+
+	PetscViewer fileViewer;
+
+	if( binaryMode)
+		PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename.c_str(), FILE_MODE_WRITE, &fileViewer);
+	else
+		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
+     
+	VecView(_smb,fileViewer);
+	PetscViewerDestroy(&fileViewer);
 }
 
 string
