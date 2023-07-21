@@ -295,4 +295,11 @@ SparseMatrixPetscTests::testClassSparseMatrixPetsc( void )
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A8[1][0], 1.e-10 );
 	CPPUNIT_ASSERT_DOUBLES_EQUAL( 0.0, ev_A8[1][1], 1.e-10 );
 	A8.plotEigenvalues( "A8_plot_2",2);//plot only two eigenvalues
+	
+	SparseMatrixPetsc A9("A4.bin");//Load PETSc matrix from native petsc binary format
+	A9.saveToFile("A9.bin",true);//save binary (compressed) file
+	SparseMatrixPetsc A10;
+	A10.readPETScMatrixFromFile("A4.bin");
+	A10.saveToFile("A10.bin",true);
+	A10.readPETScMatrixFromFile("A8.bin");//read another file into the same matrix
 }
