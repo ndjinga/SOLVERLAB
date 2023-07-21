@@ -82,10 +82,13 @@ SparseMatrixPetsc::SparseMatrixPetsc(std::string filename, bool hdf5BinaryMode)
 	_mat = NULL;
 	readPETScMatrixFromFile( filename, hdf5BinaryMode);
 
-	_numberOfColumns=0;
-	_numberOfRows=0;
-	_numberOfNonZeros=0;
 	_isSparseMatrix=true;
+	//extract number of row and column
+	MatGetSize(_mat,&_numberOfRows,&_numberOfColumns);
+	//extract an upper bound for the total number of non zero coefficients
+	MatInfo info;
+	MatGetInfo(_mat,MAT_LOCAL,&info);
+	_numberOfNonZeros = info.nz_allocated;
 }
 
 //----------------------------------------------------------------------
