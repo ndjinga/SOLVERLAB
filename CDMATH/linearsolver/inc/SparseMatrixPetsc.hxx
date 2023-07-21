@@ -49,6 +49,13 @@ public:
      * @comment blockSize should always divide numberOfRows and numberOfColumns
 	 */
     SparseMatrixPetsc( int blockSize, int numberOfRows, int numberOfColumns, int nnz );
+    
+	/**
+	 * constructor for a sparse matrix stored in a binary file
+	 * @param filename : the name of the file containing the PETSc matrix in binary format
+	 * @param hdf5BinaryMode : the binaryformat, either PETSc native or HDF5
+	 */
+    SparseMatrixPetsc(std::string filename, bool hdf5BinaryMode = false);
 
 	/**
 	 * constructor by copy
@@ -116,6 +123,9 @@ public:
 	void printCoefficients(std::string matrixName="") const ;
 	//Save matrix coefficients into a file in ascii or binary mode
 	void saveToFile(std::string filename, bool binaryMode=false) const ;
+	//Read a matrix from a file in binary mode (either native petsc binary or hdf5 binary format
+	void readPETScMatrixFromFile(std::string filename, bool hdf5BinaryMode=false) ;
+	
 	double getMatrixCoeff(int i, int j) const;    
 
 	bool containsPetscMatrix() const;

@@ -76,6 +76,18 @@ SparseMatrixPetsc::SparseMatrixPetsc( int blockSize, int numberOfRows, int numbe
 	MatCreateSeqBAIJ(MPI_COMM_SELF,blockSize, _numberOfRows,_numberOfColumns,_numberOfNonZeros,NULL,&_mat);
 }
 
+SparseMatrixPetsc::SparseMatrixPetsc(std::string filename, bool hdf5BinaryMode)
+{
+	PetscInitialize(0, (char ***)"", PETSC_NULL, PETSC_NULL);
+	_mat = NULL;
+	readPETScMatrixFromFile( filename, hdf5BinaryMode);
+
+	_numberOfColumns=0;
+	_numberOfRows=0;
+	_numberOfNonZeros=0;
+	_isSparseMatrix=true;
+}
+
 //----------------------------------------------------------------------
 SparseMatrixPetsc::SparseMatrixPetsc(const SparseMatrixPetsc& matrix)
 //----------------------------------------------------------------------
@@ -454,6 +466,32 @@ SparseMatrixPetsc::saveToFile(string filename, bool binaryMode) const
      
 	MatView(_mat,fileViewer);
 	PetscViewerDestroy(&fileViewer);
+}
+
+void 
+SparseMatrixPetsc::readPETScMatrixFromFile(std::string filename, bool hdf5BinaryMode)
+{
+	//Create the viewer to read the file
+	PetscViewer viewer;
+	PetscViewerCreate(PETSC_COMM_WORLD,&viewer);
+	if(hdf5BinaryMode)
+		PetscViewerSetType(viewer,PETSCVIEWERHDF5);
+	else
+		PetscViewerSetType(viewer,PETSCVIEWERBINARY);
+	PetscViewerSetFromOptions(viewer);
+	PetscViewerFileSetMode(viewer, FILE_MODE_READ);
+	PetscViewerFileSetName(viewer,filename.c_str());
+	
+	//Empty the matrix (delete current content)
+	if( _mat )
+		MatDestroy(&_mat);
+	
+	//Create and load the matrix
+	MatCreate(PETSC_COMM_WORLD, &_mat);
+	MatSetFromOptions(_mat);
+	MatLoad( _mat, viewer);	
+
+	PetscViewerDestroy(&viewer);
 }
 
 double
