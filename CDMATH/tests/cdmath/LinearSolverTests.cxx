@@ -266,4 +266,38 @@ LinearSolverTests::testClassLinearSolver( void )
 	CPPUNIT_ASSERT_EQUAL(LS19.getNumberMaxOfIter(),500);
 	CPPUNIT_ASSERT_EQUAL(LS19.getTolerance(),1.E-10);
 	CPPUNIT_ASSERT_EQUAL(LS19.getNumberOfIter(),6);
+	
+	LS19.saveMatrixAndSndMember("MatrixAndRHS19.txt");//save matrix and RHS in ASCII file
+	LS19.saveMatrixAndSndMember("MatrixAndRHS19.bin", true);//save matrix and RHS in binary file
+	LS19.saveSndMember("SndMemberS19.txt");//save matrix in ASCII file
+	LS19.saveSndMember("SndMember19.bin", true);//save matrix in ASCII file
+	LS19.saveMatrix("Matrix19.txt");//save matrix in ASCII file
+	LS19.saveMatrix("Matrix19.bin", true);//save matrix in ASCII file
+	
+	LinearSolver LS20("MatrixAndRHS19.bin",500,1.E-10,"LSQR","ILU");//Read matrix and RHS in binary format
+    Vector X20=LS20.solve();
+	CPPUNIT_ASSERT_EQUAL(LS20.getStatus(),true);
+
+	for (int i=0;i<X20.getNumberOfRows();i++)
+    	CPPUNIT_ASSERT_DOUBLES_EQUAL(Xana2(i), X20(i), 1.E-10);
+
+	CPPUNIT_ASSERT_EQUAL(LS20.getNumberMaxOfIter(),500);
+	CPPUNIT_ASSERT_EQUAL(LS20.getTolerance(),1.E-10);
+	CPPUNIT_ASSERT_EQUAL(LS20.getNumberOfIter(),6);
+
+	LS20.setMatrix("Matrix19.bin");//Read matrix in binary format
+	LS20.setSndMember("SndMember19.bin");//Read RHS in binary format
+
+	LinearSolver LS21(LS20);
+	/*
+    Vector X21=LS21.solve();
+	CPPUNIT_ASSERT_EQUAL(LS21.getStatus(),true);
+
+	for (int i=0;i<X21.getNumberOfRows();i++)
+    	CPPUNIT_ASSERT_DOUBLES_EQUAL(Xana2(i), X21(i), 1.E-10);
+
+	CPPUNIT_ASSERT_EQUAL(LS21.getNumberMaxOfIter(),500);
+	CPPUNIT_ASSERT_EQUAL(LS21.getTolerance(),1.E-10);
+	CPPUNIT_ASSERT_EQUAL(LS21.getNumberOfIter(),6);
+	*/
 }

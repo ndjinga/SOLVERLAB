@@ -40,17 +40,18 @@ LinearSolver::LinearSolver ( void )
 }
 
 void
-LinearSolver::kspDuplicate(const KSP source, const Mat mat, KSP* destination) const
+LinearSolver::kspDuplicate(const KSP source, const Mat mat, KSP destination) const
 {
-	KSPCreate(PETSC_COMM_WORLD,&(*destination));
+	KSPCreate(PETSC_COMM_WORLD, &destination);
 #ifdef PETSC_VERSION_GREATER_3_5
-	KSPSetOperators(*destination,mat,mat);
+	KSPSetOperators(destination,mat,mat);
 #else
-	KSPSetOperators(*destination,mat,mat,SAME_NONZERO_PATTERN);
+	KSPSetOperators(destination,mat,mat,SAME_NONZERO_PATTERN);
 #endif
 	KSPType type;
-	KSPGetType(source,&type);
-	KSPSetType(*destination,type);
+	KSPGetType(source, &type);
+	cout<<"!!!!!!!!!!!!!!!!!!!!!ksp type = "<< type <<endl;
+	KSPSetType(destination, type);
 	/*
     PetscReal tol1,tol2,tol3;
     PetscInt maxIter;
@@ -76,7 +77,8 @@ LinearSolver::~LinearSolver ( void )
 		VecDestroy(&_smb);
 	if(_solution != NULL)
 		VecDestroy(&_solution);
-	KSPDestroy(&_ksp);
+	if(&_ksp != NULL)
+		KSPDestroy(&_ksp);
 	//PetscFinalize();
 }
 
@@ -181,6 +183,39 @@ LinearSolver::LinearSolver( const GenericMatrix& matrix,
 	setLinearSolver(matrix, secondMemberVector);
 }
 
+LinearSolver::LinearSolver( std::string filename, 
+		int numberMaxOfIter,
+		double tol,
+		string nameOfMethod,
+		string nameOfPc,
+		bool hdf5BinaryMode )
+{
+	_tol = tol;
+	_numberMaxOfIter = numberMaxOfIter;
+	_residu = 1.E30;
+	_convergence = false;
+	_numberOfIter = 0;
+	_isSingular = false;
+	_isSparseMatrix = true;//PETSc matrix is usually sparse, however dense matrices can occur
+	_computeConditionNumber=false;
+	_nameOfPc = nameOfPc;
+	_nameOfMethod = nameOfMethod;
+	_mat = NULL;
+	_smb = NULL;
+	_solution = NULL;
+	_prec = NULL;
+	_ksp = NULL;
+
+	setPreconditioner(nameOfPc);
+	setMethod(nameOfMethod);
+	setLinearSolver( filename, hdf5BinaryMode);
+	
+	 MatType type;
+	MatGetType( _mat, &type);
+	_isSparseMatrix = (type != MATDENSE) && (type != MATSEQDENSE) && (type != MATMPIDENSE );
+	_secondMember = vecToVector(_smb);
+}
+
 void
 LinearSolver::setPreconditioner(string pc)
 {
@@ -229,6 +264,21 @@ LinearSolver::setLinearSolver(const GenericMatrix& matrix, const Vector& secondM
 	PetscInitialize(0, (char ***)"", PETSC_NULL, PETSC_NULL);//All constructors lead here so we initialize petsc here
 	setMatrix(matrix);
 	setSndMember(secondMember);
+	VecDuplicate(_smb,&_solution);
+}
+
+
+void
+LinearSolver::setLinearSolver(const std::string filename, bool hdf5BinaryMode)
+{
+	if ((_nameOfPc.compare("ICC")==0 || _nameOfPc.compare("ILU")==0) && _isSparseMatrix==false)
+	{
+		string msg="LinearSolver::LinearSolver: preconditioner "+_nameOfPc+" is not compatible with dense matrix.\n";
+		throw CdmathException(msg);
+	}
+
+	PetscInitialize(0, (char ***)"", PETSC_NULL, PETSC_NULL);//All constructors lead here so we initialize petsc here
+	setMatrixAndSndMember( filename, hdf5BinaryMode);
 	VecDuplicate(_smb,&_solution);
 }
 
@@ -411,6 +461,55 @@ LinearSolver::setSndMember(std::string filename, bool hdf5BinaryMode)
 	VecAssemblyEnd(_smb );
 }
 
+void 
+LinearSolver::setMatrixAndSndMember(std::string filename, bool hdf5BinaryMode)
+{
+	//Create the viewer to read the file
+	PetscViewer viewer;
+	PetscViewerCreate(PETSC_COMM_WORLD,&viewer);
+	if(hdf5BinaryMode)
+		PetscViewerSetType(viewer,PETSCVIEWERHDF5);
+	else
+		PetscViewerSetType(viewer,PETSCVIEWERBINARY);
+	PetscViewerSetFromOptions(viewer);
+	PetscViewerFileSetMode(viewer, FILE_MODE_READ);
+	PetscViewerFileSetName(viewer,filename.c_str());
+	
+	//Empty the matrix (delete current content)
+	if( _mat )
+		MatDestroy(&_mat);
+	//Empty the matrix (delete current content)
+	if( _smb )
+		VecDestroy(&_smb);
+	
+	//Create and load the matrix
+	MatCreate(PETSC_COMM_WORLD, &_mat);
+	MatSetFromOptions(_mat);
+	MatLoad( _mat, viewer);	
+	//Create and load the vector
+	VecCreate(PETSC_COMM_WORLD, &_smb);
+	VecSetFromOptions(_smb);
+	VecLoad( _smb, viewer);	
+
+	PetscViewerDestroy(&viewer);
+
+	//Assemblage final
+	MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
+	VecAssemblyBegin(_smb );
+	VecAssemblyEnd(_smb );
+
+	//Confugure KSP
+	KSPCreate(PETSC_COMM_WORLD, &_ksp);
+#ifdef PETSC_VERSION_GREATER_3_5
+KSPSetOperators(_ksp,_mat,_mat);
+#else
+	KSPSetOperators(_ksp,_mat,_mat,SAME_NONZERO_PATTERN);
+#endif
+
+	KSPGetPC(_ksp,&_prec);
+}
+
 void
 LinearSolver::setMatrixIsSingular(bool sing)
 {
@@ -436,6 +535,26 @@ LinearSolver::saveSndMember(std::string filename, bool binaryMode)
 	else
 		PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
      
+	VecView(_smb,fileViewer);
+	PetscViewerDestroy(&fileViewer);
+}
+
+void 
+LinearSolver::saveMatrixAndSndMember(std::string filename, bool binaryMode)
+{
+    MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
+    VecAssemblyBegin(_smb);
+	VecAssemblyEnd(_smb);
+
+	PetscViewer fileViewer;
+
+	if( binaryMode)
+		PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename.c_str(), FILE_MODE_WRITE, &fileViewer);
+	else
+		PetscViewerASCIIOpen( PETSC_COMM_WORLD, filename.c_str(), &fileViewer);
+     
+	MatView(_mat,fileViewer);
 	VecView(_smb,fileViewer);
 	PetscViewerDestroy(&fileViewer);
 }
@@ -470,11 +589,9 @@ LinearSolver::LinearSolver ( const LinearSolver& LS )
 	_solution=NULL;
 	VecDuplicate(LS.getKSPSolution(),&_solution);
 	_ksp=NULL;
-	kspDuplicate(LS.getPetscKsp(),_mat,&_ksp);
+	kspDuplicate(LS.getPetscKsp(),_mat,_ksp);
 	_prec=NULL;
-	precDuplicate(LS.getPetscPc(),_ksp,&_prec);
-	//    _ksp=LS.getPetscKsp();
-	//    _prec=LS.getPetscPc();
+	//precDuplicate(LS.getPetscPc(),_ksp,&_prec);
 	_isSparseMatrix=LS.isSparseMatrix();
 }
 
@@ -857,7 +974,7 @@ LinearSolver::operator= ( const LinearSolver& linearSolver )
 	_solution=NULL;
 	VecDuplicate(linearSolver.getKSPSolution(),&_solution);    				;
 	_ksp=NULL;
-	kspDuplicate(linearSolver.getPetscKsp(),_mat,&_ksp);
+	kspDuplicate(linearSolver.getPetscKsp(),_mat,_ksp);
 	_prec=NULL;
 	precDuplicate(linearSolver.getPetscPc(),_ksp,&_prec);
 	return (*this);
