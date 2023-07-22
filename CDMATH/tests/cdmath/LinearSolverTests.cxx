@@ -289,7 +289,7 @@ LinearSolverTests::testClassLinearSolver( void )
 	LS20.setSndMember("SndMember19.bin");//Read RHS in binary format
 
 	LinearSolver LS21(LS20);
-	/*
+	
     Vector X21=LS21.solve();
 	CPPUNIT_ASSERT_EQUAL(LS21.getStatus(),true);
 
@@ -299,5 +299,4 @@ LinearSolverTests::testClassLinearSolver( void )
 	CPPUNIT_ASSERT_EQUAL(LS21.getNumberMaxOfIter(),500);
 	CPPUNIT_ASSERT_EQUAL(LS21.getTolerance(),1.E-10);
 	CPPUNIT_ASSERT_EQUAL(LS21.getNumberOfIter(),6);
-	*/
 }
