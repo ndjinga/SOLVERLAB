@@ -110,8 +110,9 @@ public: //----------------------------------------------------------------
 	double getPetscRHSValue(int i) const 	;
 
 	void kspDuplicate(const KSP source, const Mat mat, KSP destination) const;
-
 	void precDuplicate(const PC source, const KSP ksp, PC destination) const;
+	KSP getPetscKsp() ;
+	PC getPetscPc() ;
 
 
 private: //----------------------------------------------------------------
@@ -121,8 +122,6 @@ private: //----------------------------------------------------------------
 	void setMatrixAndSndMember( const std::string filename, bool hdf5BinaryMode = false);//Reads matrix and RHS that were saved in the same binary file using function saveMatrixAndSndMember
 	
 	void setKsp() ;
-	KSP getPetscKsp() ;
-	PC getPetscPc() ;
 	Vec getKSPSolution() const { return _solution; }
 	
 	Vec vectorToVec( const Vector& myVector ) const ;

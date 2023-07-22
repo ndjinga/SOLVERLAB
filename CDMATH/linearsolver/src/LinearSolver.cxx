@@ -441,8 +441,7 @@ LinearSolver::setMatrix(const GenericMatrix& matrix)
 	//Assemblage final
 	MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
-
-	setKsp();//set ksp just after setting the matrix because the matrix may be destroyed after call to setMatrix.
+	PetscObjectReference((PetscObject)_mat);// _mat may be destroyed after call to setMatrix.
 }
 
 void 
@@ -474,7 +473,7 @@ LinearSolver::setMatrix(std::string filename, bool hdf5BinaryMode)
 	MatAssemblyBegin(_mat, MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_mat, MAT_FINAL_ASSEMBLY);
 
-	setKsp();//set ksp just after setting the matrix because the matrix may be destroyed after call to setMatrix.
+	PetscObjectReference((PetscObject)_mat);// _mat may be destroyed after call to setMatrix.
 }
 
 void 
@@ -501,7 +500,6 @@ LinearSolver::setSndMember(const Vector& secondMember)
 	if( _smb )
 		VecDestroy(&_smb);
 	_smb=vectorToVec(secondMember);
-
 }
 
 void 
@@ -532,6 +530,8 @@ LinearSolver::setSndMember(std::string filename, bool hdf5BinaryMode)
 	//Assemblage final
 	VecAssemblyBegin(_smb );
 	VecAssemblyEnd(_smb );
+
+	_secondMember=vecToVector(_smb);
 }
 
 void 
@@ -572,7 +572,9 @@ LinearSolver::setMatrixAndSndMember(std::string filename, bool hdf5BinaryMode)
 	VecAssemblyBegin(_smb );
 	VecAssemblyEnd(_smb );
 
-	setKsp();//set ksp just after setting the matrix because the matrix may be destroyed after call to setMatrix.
+	_secondMember=vecToVector(_smb);
+
+	PetscObjectReference((PetscObject)_mat);// _mat may be destroyed after call to setMatrix.
 }
 
 void
@@ -638,29 +640,42 @@ LinearSolver::getNameOfPc(void) const
 
 LinearSolver::LinearSolver ( LinearSolver& LS )
 {
-	KSPType type;
-	KSPGetType(LS.getPetscKsp(), &type);
-	cout<<"!!!!!!!!!!!!!!!!!!!!!ksp type constructeur2 = "<< type <<endl;
-
 	_tol=LS.getTolerance();
 	_nameOfMethod=LS.getNameOfMethod();
 	_numberMaxOfIter=LS.getNumberMaxOfIter();
-	_secondMember=LS.getSndMember();
 	_residu=LS.getResidu();
 	_convergence=LS.getStatus();
 	_numberOfIter=LS.getNumberOfIter();
 	_isSingular=LS.isMatrixSingular();
 	_nameOfPc=LS.getNameOfPc();
-	_mat=NULL;
+
+	_secondMember=LS.getSndMember();
+	
 	MatDuplicate(LS.getPetscMatrix(),MAT_COPY_VALUES,&_mat);
-	_smb=NULL;
-	VecDuplicate(LS.getPetscVector(),&_smb);    				;
-	_solution=NULL;
-	VecDuplicate(LS.getKSPSolution(),&_solution);
+	
+	Vec smb = LS.getPetscVector();
+	VecDuplicate(smb,&_smb); 
+	VecCopy(smb,_smb); 
+					
+	Vec solution = LS.getKSPSolution();
+	VecDuplicate( solution,&_solution);
+	VecCopy( solution,_solution);
+
+	//KSPType type;
+	//KSPGetType(LS.getPetscKsp(), &type);
+	//cout<<"!!!!!!!!!!!!!!!!!!!!!ksp type test = "<< type <<endl;
+
 	_ksp=NULL;
-	kspDuplicate(LS.getPetscKsp(),_mat,_ksp);
+	//kspDuplicate(LS.getPetscKsp(),_mat,_ksp);
+	//cout<<"KSPDuplicate OK"<<endl;
+
+	//PetscObjectReference((PetscObject)LS.getPetscKsp());
+	//PetscObjectReference((PetscObject)LS.getPetscPc());
+	//PetscObjectReference((PetscObject)LS.getPetscMatrix());
+
 	_prec=NULL;
-	precDuplicate(LS.getPetscPc(),_ksp,_prec);
+	//precDuplicate(LS.getPetscPc(),_ksp,_prec);
+	//cout<<"precDuplicate OK"<<endl;
 	_isSparseMatrix=LS.isSparseMatrix();
 }
 
@@ -723,6 +738,8 @@ LinearSolver::getPetscPc()
 Vector
 LinearSolver::solve( Vector X0 )
 {
+	setKsp();
+	
 	KSPSetTolerances(_ksp,_tol*_tol*_tol*_tol,_tol,PETSC_DEFAULT,_numberMaxOfIter);
 
 	PetscInt its;
@@ -987,10 +1004,11 @@ LinearSolver::operator= ( LinearSolver& linearSolver )
 
 	if( _ksp )
 		KSPDestroy(&_ksp);
-	kspDuplicate(linearSolver.getPetscKsp(),_mat,_ksp);
+	//kspDuplicate(linearSolver.getPetscKsp(),_mat,_ksp);
+	_ksp=NULL;
 
 	_prec=NULL;
-	precDuplicate(linearSolver.getPetscPc(),_ksp,_prec);
+//	precDuplicate(linearSolver.getPetscPc(),_ksp,_prec);
 	
 	
 
