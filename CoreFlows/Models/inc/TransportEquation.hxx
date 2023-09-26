@@ -234,7 +234,7 @@ protected :
 		return _Tref+(h-_href)/_cpref;
 	};
 	double voidFraction(double h){
-		double titre=(h-_href)/(_hsatv-_hsatl);
+		double titre=(h-_hsatl)/(_hsatv-_hsatl);
 		if (titre<0)
 			return 0;
 		else if (titre>1)
