@@ -56,7 +56,7 @@ CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_FE_Implicit.cxx  "${libs_
 add_executable(DiffusionEquation_2D_SQUARE_Implicit.exe DiffusionEquation_2D_SQUARE_Implicit.cxx)
 target_link_libraries(DiffusionEquation_2D_SQUARE_Implicit.exe CoreFlowsLibs )
 install(TARGETS DiffusionEquation_2D_SQUARE_Implicit.exe DESTINATION share/examples)
-
+#Generate several tests from the same executable ./DiffusionEquation_2D_SQUARE_Implicit.exe using various parameters (finite elemets vs volumes, Dirichlet vs Neumann)
 add_test(NAME DiffusionEquation_2D_SQUARE_Implicit_FE_Neumann.exe         COMMAND ./DiffusionEquation_2D_SQUARE_Implicit.exe FE NEUMANN )     
   set_property (TEST DiffusionEquation_2D_SQUARE_Implicit_FE_Neumann.exe PROPERTY LABELS "C++ diffusion heating 2D fe Neumann squares SQUARE coreflows")     
 add_test(NAME DiffusionEquation_2D_SQUARE_Implicit_FE_Dirichlet.exe         COMMAND ./DiffusionEquation_2D_SQUARE_Implicit.exe FE Dirichlet )     
@@ -127,11 +127,15 @@ CreateTestExecAndInstall(IsothermalTwoFluid_1DRiemannProblem.cxx  "${libs_for_te
 CreateTestExecAndInstall(IsothermalTwoFluid_2DInclinedSedimentation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity sedimentation structured inclined coreflows" )
 CreateTestExecAndInstall(IsothermalTwoFluid_2DVidangeReservoir.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity drainage structured coreflows" )
 
+add_executable(SaddlePointLinearSolver.exe PETSc/SaddlePointLinearSolver.c)
+target_link_libraries(SaddlePointLinearSolver.exe ${PETSC_LIBRARIES} )
+install(TARGETS SaddlePointLinearSolver.exe DESTINATION share/examples)
  
 add_executable(WaveSystem_FV_SphericalExplosion_CDMATH.exe WaveSystem_FV_SphericalExplosion_CDMATH.cxx)
 target_link_libraries(WaveSystem_FV_SphericalExplosion_CDMATH.exe CoreFlowsLibs )
 install(TARGETS WaveSystem_FV_SphericalExplosion_CDMATH.exe DESTINATION share/examples)
 
+#Generate several tests from the same executable WaveSystem_FV_SphericalExplosion_CDMATH.exe (change mesh name)
 add_test(NAME WaveSystem_2DFV_SphericalExplosion_CDMATH_SQUARE         COMMAND "./WaveSystem_FV_SphericalExplosion_CDMATH.exe")     
 set_property (TEST WaveSystem_2DFV_SphericalExplosion_CDMATH_SQUARE PROPERTY LABELS "C++ wave 2D fv riemann squares SQUARE cdmath")     
 add_test(NAME WaveSystem_2DFV_SphericalExplosion_CDMATH_HEXAGON        COMMAND "./WaveSystem_FV_SphericalExplosion_CDMATH.exe" resources/meshHexagonWithTriangles10.med)
