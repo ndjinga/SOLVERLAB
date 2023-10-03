@@ -30,6 +30,7 @@ int main( int argc, char **args ){
 	PetscInt i_p[n_p],i_u[n_u];
 
 	// Loading of the context of the matrix
+	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processor(s)...\n", mat_type, file[0], nprocs);	
 	PetscViewerCreate(PETSC_COMM_WORLD, &viewer);	
 	PetscViewerSetType(viewer,PETSCVIEWERBINARY);//Use PETSCVIEWERHDF5 for better parallel performance
 	PetscViewerFileSetMode(viewer,FILE_MODE_READ);
@@ -37,13 +38,13 @@ int main( int argc, char **args ){
 	
 	MatCreate(PETSC_COMM_WORLD, &A);
 	MatSetType(A,mat_type);
-	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processors...\n", mat_type, file[0], nprocs);	
 	MatLoad(A,viewer);
 	PetscViewerDestroy(&viewer);
+	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	
 
 	// Definition of the right hand side
-	PetscPrintf(PETSC_COMM_WORLD,"Definition of the vectors...\n");
+	PetscPrintf(PETSC_COMM_WORLD,"Creation of the vectors...\n");
 	VecCreate(PETSC_COMM_WORLD,&b);
 	//PetscObjectSetName((PetscObject)b,"RHS");
 	VecSetSizes(b,n,PETSC_DECIDE);
@@ -62,14 +63,17 @@ int main( int argc, char **args ){
 		i_u[i]=i;
 	}
 	VecSetValues(b,n_p,i_p,y,INSERT_VALUES);
+	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
 
 // 	Decomposition into blocks	
+	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
 	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u,PETSC_OWN_POINTER,&is_U);
 	ISCreateGeneral(PETSC_COMM_WORLD,n_p,(const PetscInt *) i_p,PETSC_OWN_POINTER,&is_P);
 	MatCreateSubMatrix(A,is_U, is_U,MAT_INITIAL_MATRIX,&M);
 	MatCreateSubMatrix(A,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A,is_P, is_U,MAT_INITIAL_MATRIX,&D);
 	MatCreateSubMatrix(A,is_P, is_P,MAT_INITIAL_MATRIX,&C);
+	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
 //	Application of the transformation
 	// Declaration
@@ -81,16 +85,17 @@ int main( int argc, char **args ){
 	MatCreateConstantDiagonal( PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 1, &I_u );
 	
 	// Creation of D_M_inv
-	MatDuplicate(I_u,MAT_SHARE_NONZERO_PATTERN,&D_M_inv);
 	VecCreate(PETSC_COMM_WORLD,&v);
 	VecSetSizes(v,n_u,PETSC_DECIDE);
 	VecSetFromOptions(v);
 	VecSetUp(v);
 	MatGetDiagonal(M,v);
 	VecReciprocal(v);
-	MatDiagonalSet(D_M_inv,v,INSERT_VALUES);
+	MatCreateDiagonal( v, &D_M_inv );
+	MatConvert(D_M_inv,MATAIJ,MAT_INPLACE_MATRIX,&D_M_inv);
 
 	// Creation of C_hat
+	MatSetFromOptions(D_M_inv);
 	MatMatMatMult(D,D_M_inv,G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);
 	MatAXPY(C_hat,1.0,C,SUBSET_NONZERO_PATTERN);
 	array[0]=C_hat;
@@ -135,11 +140,12 @@ int main( int argc, char **args ){
 	MatConvert(Pmat,MATAIJ,MAT_INPLACE_MATRIX,&Pmat);
 
 
-	PetscPrintf(PETSC_COMM_WORLD,"Definition of the solver...\n");
+	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 	KSPSetType(ksp,KSPFGMRES);
 	KSPSetOperators(ksp,A_hat,Pmat);
 	KSPGetPC(ksp,&pc);
+	PetscPrintf(PETSC_COMM_WORLD,"Setting thepreconditioner...\n");
 	PCSetType(pc,PCFIELDSPLIT);
 	PCFieldSplitSetIS(pc, "0",is_P_hat);
 	PCFieldSplitSetIS(pc, "1",is_U_hat);
@@ -149,8 +155,10 @@ int main( int argc, char **args ){
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
 	KSPSetUp(ksp);
+	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
 	KSPSolve(ksp,b,u);
 	KSPGetIterationNumber(ksp,&iter);
+	PetscPrintf(PETSC_COMM_WORLD,"... linear system solved\n");
 
 
 
