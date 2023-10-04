@@ -10,14 +10,10 @@ int main( int argc, char **args ){
 	PetscViewer viewer;
 	Mat A, S_hat, M,G,D,C,C_hat,G_hat;
 	PetscBool flg;
-	Vec b,u;
-	PetscInt n_u,n_p,n,iter, nprocs=1;
+	PetscInt n_u,n_p,n, nprocs=1;
 	IS is_U,is_P;
-	KSP ksp;
 	PC pc;
 	//int rank, size;
-//	PetscObjectSetName((PetscObject)A, "A");
-//	PetscObjectSetName((PetscObject)v, "v");
 	PetscInitialize(&argc,&args, (char*)0,help);
 	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
@@ -26,11 +22,11 @@ int main( int argc, char **args ){
 	PetscStrcpy(mat_type,MATAIJ);
 	PetscOptionsGetString(NULL,NULL,"-mat_type",mat_type,sizeof(mat_type),NULL);
 	n=n_u+n_p;
-	PetscScalar y[n_p];
 	PetscInt i_p[n_p],i_u[n_u];
 
 	// Loading of the context of the matrix
 	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processor(s)...\n", mat_type, file[0], nprocs);	
+	PetscPrintf(PETSC_COMM_WORLD,"nu = %d, np = %d\n", n_u,n_p);
 	PetscViewerCreate(PETSC_COMM_WORLD, &viewer);	
 	PetscViewerSetType(viewer,PETSCVIEWERBINARY);//Use PETSCVIEWERHDF5 for better parallel performance
 	PetscViewerFileSetMode(viewer,FILE_MODE_READ);
@@ -43,29 +39,14 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	
 
-	// Definition of the right hand side
-	PetscPrintf(PETSC_COMM_WORLD,"Creation of the vectors...\n");
-	VecCreate(PETSC_COMM_WORLD,&b);
-	//PetscObjectSetName((PetscObject)b,"RHS");
-	VecSetSizes(b,n,PETSC_DECIDE);
-	VecSetFromOptions(b);
-	VecSetUp(b);
-
-	VecDuplicate(b,&u);
-	//PetscObjectSetName((PetscObject)u,"Solution");
-	VecSet(b,0.0);
+// 	Decomposition into blocks	
 	// Definition of the transformation
 	for (int i = n_u;i<n;i++){
 		i_p[i-n_u]=i;
-		y[i-n_u]=1.0;
 	}
 	for (int i=0;i<n_u;i++){
 		i_u[i]=i;
 	}
-	VecSetValues(b,n_p,i_p,y,INSERT_VALUES);
-	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
-
-// 	Decomposition into blocks	
 	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
 	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u,PETSC_OWN_POINTER,&is_U);
 	ISCreateGeneral(PETSC_COMM_WORLD,n_p,(const PetscInt *) i_p,PETSC_OWN_POINTER,&is_P);
@@ -100,7 +81,7 @@ int main( int argc, char **args ){
 
 	// Creation of G_hat
 	MatMatMult(M,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&G_hat);//G_hat contains M*D_M_inv*G
-	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);//G_hat contains -G + M*D_M_inv*G
+	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);//G_hat contains G - M*D_M_inv*G
 	array[2]=G_hat;
 
 	// Creation of -D
@@ -115,10 +96,7 @@ int main( int argc, char **args ){
 	MatDuplicate(M,MAT_COPY_VALUES,&S_hat);
 	MatScale(S_hat,2.0);
 
-	// Check of the values of the right hand side
-//	PetscPrintf(PETSC_COMM_WORLD,"Check of the value of the vector...");
-//	VecView(b,PETSC_VIEWER_STDOUT_WORLD);
-//	Preparation of the preconditioner	
+	//Preparation of the preconditioner	
 	PetscInt i_p_hat[n_p],i_u_hat[n_u];
 	IS is_U_hat,is_P_hat;
 	
@@ -138,12 +116,35 @@ int main( int argc, char **args ){
 	MatConvert(Pmat,MATAIJ,MAT_INPLACE_MATRIX,&Pmat);
 
 
-	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver...\n");
+//##### Definition of the right hand side to test the preconditioner
+	Vec b,u,x_anal;
+	KSP ksp;
+	PetscScalar y[n_p];
+	double residu, abstol, rtol, norm_x_anal;
+	int iter;
+
+	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
+	VecCreate(PETSC_COMM_WORLD,&b);
+	VecSetSizes(b,n,PETSC_DECIDE);
+	VecSetFromOptions(b);
+
+	VecDuplicate(b,&x_anal);//x_anal will store the exact solution
+	VecDuplicate(b,&u);//u will store the numerical solution
+	VecSet(x_anal,0.0);
+
+	for (int i = n_u;i<n;i++){
+		y[i-n_u]=1.0;
+	}
+	VecSetValues(x_anal,n_p,i_p,y,INSERT_VALUES);
+	MatMult( A_hat, x_anal, b);
+	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
+
+	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 	KSPSetType(ksp,KSPFGMRES);
 	KSPSetOperators(ksp,A_hat,Pmat);
 	KSPGetPC(ksp,&pc);
-	PetscPrintf(PETSC_COMM_WORLD,"Setting thepreconditioner...\n");
+	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner...\n");
 	PCSetType(pc,PCFIELDSPLIT);
 	PCFieldSplitSetIS(pc, "0",is_P_hat);
 	PCFieldSplitSetIS(pc, "1",is_U_hat);
@@ -152,29 +153,23 @@ int main( int argc, char **args ){
 	PCSetFromOptions(pc);
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
-	KSPSetUp(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
 	KSPSolve(ksp,b,u);
+	//Extract informations about the convergence
 	KSPGetIterationNumber(ksp,&iter);
-	PetscPrintf(PETSC_COMM_WORLD,"... linear system solved\n");
+	KSPGetResidualNorm( ksp, &residu);
+	KSPGetTolerances( ksp, &rtol, &abstol, NULL, NULL);
+	PetscPrintf(PETSC_COMM_WORLD,"... linear system solved in %d iterations, final residual %e, absolute tolerance %e, relative tolerance %e\n", iter, residu, abstol, rtol);
 
-
-
-
-
-//	PetscPrintf(PETSC_COMM_WORLD,"Print of the solution...\n");
-//	PetscPrintf(PETSC_COMM_WORLD,"Print M...\n");
-//	MatView(A_hat,PETSC_VIEWER_STDOUT_WORLD);
-//	PetscPrintf(PETSC_COMM_WORLD,"Print G...\n");
-//	MatView(Pmat,PETSC_VIEWER_STDOUT_WORLD);
-//	PetscPrintf(PETSC_COMM_WORLD,"Print D...\n");
-//	MatView(D,PETSC_VIEWER_STDOUT_WORLD);
-//	PetscPrintf(PETSC_COMM_WORLD,"Print C...\n");
-//	MatView(G_hat,PETSC_VIEWER_STDOUT_WORLD);
 //	MatView(M,PETSC_VIEWER_STDOUT_WORLD);
-	VecView(u,PETSC_VIEWER_STDOUT_WORLD);
-	PetscPrintf(PETSC_COMM_WORLD,"Number of iterations : %d...\n",iter);
-
+//	VecView(u,PETSC_VIEWER_STDOUT_WORLD);
+	
+//##### Compute the error
+	double error = 0.;
+	VecAXPY(u, -1, x_anal);
+	VecNorm( u, NORM_2, &error);
+	VecNorm( x_anal, NORM_2, &norm_x_anal);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||x_anal - x_num|| = %e, ||x_anal - x_num||/||x_anal|| = %e", error, error/norm_x_anal);
 
 	
 	// Cleaning of the code

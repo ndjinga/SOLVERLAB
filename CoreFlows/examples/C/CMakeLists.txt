@@ -144,7 +144,7 @@ set_property (TEST SaddlePointLinearSolver_2DKershaw.exe PROPERTY LABELS "C++ PE
 add_test(NAME SaddlePointLinearSolver_2DCartesian.exe         COMMAND "./SaddlePointLinearSolver.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
 set_property (TEST SaddlePointLinearSolver_2DCartesian.exe PROPERTY LABELS "C++ PETSC multigrid")     
 
-    SET(MATRIX_FILE  PETSc/mTetra_PolyMAC_1.petsc  )
+    SET(MATRIX_FILE  PETSc/Tetra_PolyMAC_1.petsc  )
     SET(nu  68  )
     SET(np  40  )
 add_test(NAME SaddlePointLinearSolver_2DTriangle.exe         COMMAND "./SaddlePointLinearSolver.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
