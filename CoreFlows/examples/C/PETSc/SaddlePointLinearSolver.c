@@ -77,32 +77,30 @@ int main( int argc, char **args ){
 
 //	Application of the transformation
 	// Declaration
-	Mat D_M_inv,I_u,array[4],A_hat,Pmat;
+	Mat D_M_inv_G,array[4],A_hat,Pmat;
 	Vec v;
 	array[3]=M;
 
-	// Creation of identity of n_u
-	MatCreateConstantDiagonal( PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 1, &I_u );
-	
-	// Creation of D_M_inv
+	//Extraction of the diagonal of M
 	VecCreate(PETSC_COMM_WORLD,&v);
 	VecSetSizes(v,n_u,PETSC_DECIDE);
 	VecSetFromOptions(v);
 	VecSetUp(v);
 	MatGetDiagonal(M,v);
 	VecReciprocal(v);
-	MatCreateDiagonal( v, &D_M_inv );
-	MatConvert(D_M_inv,MATAIJ,MAT_INPLACE_MATRIX,&D_M_inv);
+	
+	// Creation of D_M_inv_G = D_M_inv*G
+	MatDuplicate(G,MAT_COPY_VALUES,&D_M_inv_G);//D_M_inv_G contains G
+	MatDiagonalScale( D_M_inv_G, v, NULL);//D_M_inv_G contains D_M_inv*G
 
 	// Creation of C_hat
-	MatSetFromOptions(D_M_inv);
-	MatMatMatMult(D,D_M_inv,G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);
-	MatAXPY(C_hat,1.0,C,SUBSET_NONZERO_PATTERN);
+	MatMatMult(D,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);//C_hat contains D*D_M_inv*G
+	MatAXPY(C_hat,1.0,C,SUBSET_NONZERO_PATTERN);//C_hat contains C + D*D_M_inv*G
 	array[0]=C_hat;
 
 	// Creation of G_hat
-	MatMatMatMult(M,D_M_inv,G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&G_hat);
-	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);
+	MatMatMult(M,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&G_hat);//G_hat contains M*D_M_inv*G
+	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);//G_hat contains -G + M*D_M_inv*G
 	array[2]=G_hat;
 
 	// Creation of -D
