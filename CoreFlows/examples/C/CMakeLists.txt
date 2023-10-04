@@ -147,8 +147,20 @@ set_property (TEST SaddlePointLinearSolver_2DCartesian.exe PROPERTY LABELS "C++ 
     SET(MATRIX_FILE  PETSc/Tetra_PolyMAC_1.petsc  )
     SET(nu  68  )
     SET(np  40  )
-add_test(NAME SaddlePointLinearSolver_2DTriangle.exe         COMMAND "./SaddlePointLinearSolver.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
-set_property (TEST SaddlePointLinearSolver_2DTriangle.exe PROPERTY LABELS "C++ PETSC multigrid")     
+add_test(NAME SaddlePointLinearSolver_3DTetra.exe         COMMAND "./SaddlePointLinearSolver.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_3DTetra.exe PROPERTY LABELS "C++ PETSC multigrid")     
+
+    SET(MATRIX_FILE  PETSc/Hexa_PolyMAC_1.petsc  )
+    SET(nu  36  )
+    SET(np  8  )
+add_test(NAME SaddlePointLinearSolver_3DHexa.exe         COMMAND "./SaddlePointLinearSolver.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_3DHexa.exe PROPERTY LABELS "C++ PETSC multigrid")     
+
+    SET(MATRIX_FILE  PETSc/Kershaw_PolyMAC_1.petsc  )
+    SET(nu  1728  )
+    SET(np  512  )
+add_test(NAME SaddlePointLinearSolver_3DKershaw.exe         COMMAND "./SaddlePointLinearSolver.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_3DKershaw.exe PROPERTY LABELS "C++ PETSC multigrid")     
 
 add_executable(WaveSystem_FV_SphericalExplosion_CDMATH.exe WaveSystem_FV_SphericalExplosion_CDMATH.cxx)
 target_link_libraries(WaveSystem_FV_SphericalExplosion_CDMATH.exe CoreFlowsLibs )

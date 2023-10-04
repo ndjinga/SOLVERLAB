@@ -4,7 +4,6 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 #include <petscksp.h>
 
 int main( int argc, char **args ){
-	//PetscErrorCode ierr;
 	//Defintion of the main objects and intialization of the problem
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
@@ -159,18 +158,22 @@ int main( int argc, char **args ){
 	KSPGetIterationNumber(ksp,&iter);
 	KSPGetResidualNorm( ksp, &residu);
 	KSPGetTolerances( ksp, &rtol, &abstol, NULL, NULL);
-	PetscPrintf(PETSC_COMM_WORLD,"... linear system solved in %d iterations, final residual %e, absolute tolerance %e, relative tolerance %e\n", iter, residu, abstol, rtol);
+	PetscPrintf(PETSC_COMM_WORLD,"... linear system solved in %d iterations, final residual %e, relative tolerance %e, absolute tolerance %e\n", iter, residu, rtol, abstol);
 
 //	MatView(M,PETSC_VIEWER_STDOUT_WORLD);
 //	VecView(u,PETSC_VIEWER_STDOUT_WORLD);
 	
-//##### Compute the error
+//##### Compute the error and check it is small
 	double error = 0.;
+	PetscErrorCode ierr=0;
+
 	VecAXPY(u, -1, x_anal);
 	VecNorm( u, NORM_2, &error);
 	VecNorm( x_anal, NORM_2, &norm_x_anal);
-	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||x_anal - x_num|| = %e, ||x_anal - x_num||/||x_anal|| = %e", error, error/norm_x_anal);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||x_anal - x_num|| = %e, ||x_anal - x_num||/||x_anal|| = %e\n", error, error/norm_x_anal);
 
+	PetscCheck( error/norm_x_anal < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
+	PetscPrintf(PETSC_COMM_WORLD,"PetscErrorCode ierr = %d", ierr);
 	
 	// Cleaning of the code
 	MatDestroy(&A);
@@ -186,5 +189,5 @@ int main( int argc, char **args ){
 	KSPDestroy(&ksp);
 
 	PetscFinalize();
-	return 0;
+	return ierr;
 }
