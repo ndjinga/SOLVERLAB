@@ -9,6 +9,7 @@ int main( int argc, char **args ){
 	PetscMPIInt    rank;        /* processor rank */
 	MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 	MPI_Comm_size(PETSC_COMM_WORLD,&size);
+	PetscErrorCode ierr=0;
 
 //##### Load the matrix in the file given in the command line
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
@@ -41,18 +42,22 @@ int main( int argc, char **args ){
 
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
-	PetscInt i_p[n_p],i_u[n_u];
-	n=n_u+n_p;
-	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
 	MatGetOwnershipRange( A, &irow_min, &irow_max);
-	PetscPrintf(PETSC_COMM_WORLD,"irow_min = %d, irow_max = %d \n", irow_min, irow_max);
 	MatGetSize( A, &nrows, &ncolumns);
-	PetscPrintf(PETSC_COMM_WORLD,"nrows = %d, ncolumns = %d \n", nrows, ncolumns);
+	int nb_pressure_lines = irow_max >= n_u ? irow_max - n_u : 0;
+	int nb_velocity_lines = irow_min <= n_u ? n_u - irow_min : 0;
+	PetscInt i_p[nb_pressure_lines],i_u[nb_velocity_lines];
+	n=n_u+n_p;
+
+	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not squared !!!\n");
+	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
+	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
+	PetscPrintf(PETSC_COMM_SELF,"irow_min = %d, irow_max = %d \n", irow_min, irow_max);
 	
-	for (int i = n_u;i<n;i++){
+	for (int i = n_u;i<irow_max;i++){
 		i_p[i-n_u]=i;
 	}
-	for (int i=0;i<n_u;i++){
+	for (int i=irow_min;i<n_u;i++){
 		i_u[i]=i;
 	}
 	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
@@ -62,6 +67,7 @@ int main( int argc, char **args ){
 	MatCreateSubMatrix(A,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A,is_P, is_U,MAT_INITIAL_MATRIX,&D);
 	MatCreateSubMatrix(A,is_P, is_P,MAT_INITIAL_MATRIX,&C);
+	MatDestroy(&A);
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
 //##### Application of the transformation A -> A_hat
@@ -134,7 +140,7 @@ int main( int argc, char **args ){
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
 	VecCreate(PETSC_COMM_WORLD,&b);
-	VecSetSizes(b,n,PETSC_DECIDE);
+	VecSetSizes(b,n_u+n_p,PETSC_DECIDE);
 	VecSetFromOptions(b);
 
 	VecDuplicate(b,&x_anal);//x_anal will store the exact solution
@@ -175,7 +181,6 @@ int main( int argc, char **args ){
 	
 //##### Compute the error and check it is small
 	double error = 0.;
-	PetscErrorCode ierr=0;
 
 	VecAXPY(u, -1, x_anal);
 	VecNorm( u, NORM_2, &error);
@@ -183,10 +188,8 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||x_anal - x_num|| = %e, ||x_anal - x_num||/||x_anal|| = %e\n", error, error/norm_x_anal);
 
 	PetscCheck( error/norm_x_anal < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
-	PetscPrintf(PETSC_COMM_WORLD,"PetscErrorCode ierr = %d", ierr);
 	
 	// Cleaning of the code
-	MatDestroy(&A);
 	MatDestroy(&M);
 	MatDestroy(&S_hat);
 	MatDestroy(&G_hat);
