@@ -1,31 +1,26 @@
-static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Parameters : \n -f0 : matrix fileName \n -nU :number of velocity lines \n -nP : number of pressure lines \n -nprocs : number of processors \n -mat_type : PETSc matrix type";
+static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Parameters : \n -f0 : matrix fileName \n -nU :number of velocity lines \n -nP : number of pressure lines \n -mat_type : PETSc matrix type \n";
 
 #include <petscis.h>
 #include <petscksp.h>
 
 int main( int argc, char **args ){
-	//Defintion of the main objects and intialization of the problem
+	PetscInitialize(&argc,&args, (char*)0,help);
+	PetscMPIInt    size;        /* size of communicator */
+	PetscMPIInt    rank;        /* processor rank */
+	MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+	MPI_Comm_size(PETSC_COMM_WORLD,&size);
+
+//##### Load the matrix in the file given in the command line
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
-	Mat A, S_hat, M,G,D,C,C_hat,G_hat;
+	Mat A;
 	PetscBool flg;
-	PetscInt n_u,n_p,n, nprocs=1;
-	IS is_U,is_P;
-	PC pc;
-	//int rank, size;
-	PetscInitialize(&argc,&args, (char*)0,help);
+
 	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);
-	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
-	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
-	PetscOptionsGetInt(NULL,NULL,"-nprocs",&nprocs,NULL);
 	PetscStrcpy(mat_type,MATAIJ);
 	PetscOptionsGetString(NULL,NULL,"-mat_type",mat_type,sizeof(mat_type),NULL);
-	n=n_u+n_p;
-	PetscInt i_p[n_p],i_u[n_u];
 
-	// Loading of the context of the matrix
-	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processor(s)...\n", mat_type, file[0], nprocs);	
-	PetscPrintf(PETSC_COMM_WORLD,"nu = %d, np = %d\n", n_u,n_p);
+	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processor(s)...\n", mat_type, file[0], size);	
 	PetscViewerCreate(PETSC_COMM_WORLD, &viewer);	
 	PetscViewerSetType(viewer,PETSCVIEWERBINARY);//Use PETSCVIEWERHDF5 for better parallel performance
 	PetscViewerFileSetMode(viewer,FILE_MODE_READ);
@@ -38,8 +33,22 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	
 
-// 	Decomposition into blocks	
-	// Definition of the transformation
+//####	Decomposition into 4 blocks	
+	Mat M, G, D, C;
+	PetscInt n_u, n_p, n, irow_min, irow_max, nrows, ncolumns;
+	IS is_U,is_P;
+	PC pc;
+
+	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
+	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
+	PetscInt i_p[n_p],i_u[n_u];
+	n=n_u+n_p;
+	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
+	MatGetOwnershipRange( A, &irow_min, &irow_max);
+	PetscPrintf(PETSC_COMM_WORLD,"irow_min = %d, irow_max = %d \n", irow_min, irow_max);
+	MatGetSize( A, &nrows, &ncolumns);
+	PetscPrintf(PETSC_COMM_WORLD,"nrows = %d, ncolumns = %d \n", nrows, ncolumns);
+	
 	for (int i = n_u;i<n;i++){
 		i_p[i-n_u]=i;
 	}
@@ -55,9 +64,10 @@ int main( int argc, char **args ){
 	MatCreateSubMatrix(A,is_P, is_P,MAT_INITIAL_MATRIX,&C);
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
-//	Application of the transformation
+//##### Application of the transformation A -> A_hat
 	// Declaration
-	Mat D_M_inv_G,array[4],A_hat,Pmat;
+	Mat D_M_inv_G,array[4];
+	Mat A_hat,Pmat, S_hat, C_hat,G_hat;
 	Vec v;
 	array[3]=M;
 
@@ -95,7 +105,7 @@ int main( int argc, char **args ){
 	MatDuplicate(M,MAT_COPY_VALUES,&S_hat);
 	MatScale(S_hat,2.0);
 
-	//Preparation of the preconditioner	
+	// Finalisation of the preconditioner	
 	PetscInt i_p_hat[n_p],i_u_hat[n_u];
 	IS is_U_hat,is_P_hat;
 	
