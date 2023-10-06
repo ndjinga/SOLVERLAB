@@ -11,7 +11,7 @@ int main( int argc, char **args ){
 	MPI_Comm_size(PETSC_COMM_WORLD,&size);
 	PetscErrorCode ierr=0;
 
-//##### Load the matrix in the file given in the command line
+//##### Load the matrix A in the file given in the command line
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
 	Mat A;
@@ -34,20 +34,22 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	
 
-//####	Decomposition into 4 blocks	
+//####	Decompose the matrix A into 4 blocks M, G, D, C
 	Mat M, G, D, C;
-	PetscInt n_u, n_p, n, irow_min, irow_max, nrows, ncolumns;
+	PetscInt nrows, ncolumns;//Total number of rows and columns of A
+	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
+	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n = n_u+ n_p
 	IS is_U,is_P;
 	PC pc;
 
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
+	n=n_u+n_p;
 	MatGetOwnershipRange( A, &irow_min, &irow_max);
 	MatGetSize( A, &nrows, &ncolumns);
 	int nb_pressure_lines = irow_max >= n_u ? irow_max - n_u : 0;
 	int nb_velocity_lines = irow_min <= n_u ? n_u - irow_min : 0;
 	PetscInt i_p[nb_pressure_lines],i_u[nb_velocity_lines];
-	n=n_u+n_p;
 
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not squared !!!\n");
 	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
@@ -67,7 +69,7 @@ int main( int argc, char **args ){
 	MatCreateSubMatrix(A,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A,is_P, is_U,MAT_INITIAL_MATRIX,&D);
 	MatCreateSubMatrix(A,is_P, is_P,MAT_INITIAL_MATRIX,&C);
-	MatDestroy(&A);
+	MatDestroy(&A);//Early destruction since A is a sequential matrix stored on processed 0
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
 //##### Application of the transformation A -> A_hat
@@ -103,7 +105,7 @@ int main( int argc, char **args ){
 	MatScale(D,-1.0);
 	array[1]=D;
 
-	// Creation of reordered A
+	// Creation of A_hat = reordered A
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&A_hat);
 	MatConvert(A_hat,MATAIJ,MAT_INPLACE_MATRIX,&A_hat);
 
