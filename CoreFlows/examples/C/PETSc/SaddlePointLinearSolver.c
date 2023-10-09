@@ -83,7 +83,7 @@ int main( int argc, char **args ){
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not squared !!!\n");
 	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
 	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
-	PetscPrintf(PETSC_COMM_SELF,"irow_min = %d, irow_max = %d \n", irow_min, irow_max);
+	PetscPrintf(PETSC_COMM_SELF,"Process %d, Local rows : irow_min = %d, irow_max = %d \n", rank, irow_min, irow_max);
 	
 	for (int i = n_u;i<irow_max;i++){
 		i_p[i-n_u]=i;
@@ -105,10 +105,10 @@ int main( int argc, char **args ){
 	// Declaration
 	Mat D_M_inv_G,array[4];
 	Mat A_hat,Pmat, C_hat,G_hat;
-	//Mat diag_2M;//2*diagonal part of M (to approximate the Schur complement)
+	Mat diag_2M;//Will store 2*diagonal part of M (to approximate the Schur complement)
 	Vec v;
 	
-	array[3]=M;
+	array[3]=M;//Bottom left block of A_hat
 
 	//Extraction of the diagonal of M
 	VecCreate(PETSC_COMM_WORLD,&v);
@@ -116,8 +116,9 @@ int main( int argc, char **args ){
 	VecSetFromOptions(v);
 	VecSetUp(v);
 	MatGetDiagonal(M,v);
-	//MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
-	//MatDiagonalScale(diag_2M, v, NULL);
+	MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
+	MatConvert(diag_2M,  MATAIJ, MAT_INPLACE_MATRIX, &diag_2M);
+	MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
 	VecReciprocal(v);
 	
 	// Creation of D_M_inv_G = D_M_inv*G
@@ -127,16 +128,16 @@ int main( int argc, char **args ){
 	// Creation of C_hat
 	MatMatMult(D,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);//C_hat contains D*D_M_inv*G
 	MatAXPY(C_hat,1.0,C,SUBSET_NONZERO_PATTERN);//C_hat contains C + D*D_M_inv*G
-	array[0]=C_hat;
+	array[0]=C_hat;//Top left block of A_hat
 
 	// Creation of G_hat
 	MatMatMult(M,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&G_hat);//G_hat contains M*D_M_inv*G
 	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);//G_hat contains G - M*D_M_inv*G
-	array[2]=G_hat;
+	array[2]=G_hat;//Bottom left block of A_hat
 
 	// Creation of -D
 	MatScale(D,-1.0);
-	array[1]=D;
+	array[1]=D;//Top right block of A_hat
 
 	// Creation of A_hat = transformed A_input
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&A_hat);
@@ -156,8 +157,8 @@ int main( int argc, char **args ){
 	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u_hat,PETSC_OWN_POINTER,&is_U_hat);
 
 	// Creation of Pmat
-	//array[3]=diag_2M;
-	array[1]=NULL;
+	array[3]=diag_2M;
+	array[1]=NULL;//Cancel top right block
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&Pmat);
 
 
@@ -165,8 +166,8 @@ int main( int argc, char **args ){
 	Vec b_input,X_hat,x_anal;
 	KSP ksp;
 	PetscScalar y[n_p];
-	double residu, abstol, rtol, norm_x_anal;
-	int iter;
+	double residu, abstol, rtol=1e-7, dtol, norm_x_anal;
+	int iter, numberMaxOfIter;
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
 	VecCreate(PETSC_COMM_WORLD,&b_input);
@@ -181,14 +182,16 @@ int main( int argc, char **args ){
 		y[i-n_u]=1.0;
 	}
 	VecSetValues(x_anal,n_p,i_p,y,INSERT_VALUES);
+	VecNormalize( x_anal, NULL);
 	MatMult( A_hat, x_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
 
 //##### Calling KSP solver
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
-	KSPSetType(ksp,KSPFGMRES);
+	KSPSetType(ksp,KSPGMRES);
 	KSPSetOperators(ksp,A_hat,Pmat);
+	KSPSetTolerances(ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT, PETSC_DEFAULT);
 	KSPGetPC(ksp,&pc);
 	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner...\n");
 	PCSetType(pc,PCFIELDSPLIT);
@@ -201,15 +204,45 @@ int main( int argc, char **args ){
 	KSPSetFromOptions(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
 	KSPSolve(ksp,b_input,X_hat);
+
 	//Extract informations about the convergence
+	KSPConvergedReason reason;
+	KSPGetConvergedReason(ksp,&reason);
 	KSPGetIterationNumber(ksp,&iter);
 	KSPGetResidualNorm( ksp, &residu);
-	KSPGetTolerances( ksp, &rtol, &abstol, NULL, NULL);
-	PetscPrintf(PETSC_COMM_WORLD,"... linear system solved in %d iterations, final residual %e, relative tolerance %e, absolute tolerance %e\n", iter, residu, rtol, abstol);
+	KSPGetTolerances( ksp, &rtol, &abstol, &dtol, &numberMaxOfIter);
 
-//	MatView(M,PETSC_VIEWER_STDOUT_WORLD);
-//	VecView(u,PETSC_VIEWER_STDOUT_WORLD);
-	
+	if (reason>0)
+		PetscPrintf(PETSC_COMM_WORLD, "Linear system converged in %d iterations \n", iter);
+	else
+		PetscPrintf(PETSC_COMM_WORLD, "!!!!!!!!!!!!!!!!!! Linear system diverged  after %d iterations !!!!!!!!!!!!!!\n", iter);
+		
+	switch(reason){
+		case 2:
+		    PetscPrintf(PETSC_COMM_WORLD, "residual 2-norm < rtol*||RHS||_2 with rtol = %e, final residual = %e\n", rtol, residu);
+		    break;
+		case 3:
+		    PetscPrintf(PETSC_COMM_WORLD, "residual 2-norm < atol with atol = %e, final residual = %e\n", abstol, residu);
+		    break;
+		case -4:
+		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! residual 2-norm > dtol*||RHS||_2 with dtol = %e, final residual = %e !!!!!!! \n", dtol, residu);
+		    break;
+		case -3:
+		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! Maximum number of iterations %d reached !!!!!!! \n", numberMaxOfIter);
+		    break;
+		case -11:
+		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! Construction of preconditioner failed !!!!!! \n");
+		    break;
+		case -5:
+		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! Generic breakdown of the linear solver (Could be due to a singular matrix or preconditioner)!!!!!! \n");
+		    break;
+		default:
+			if (reason>0)
+			    PetscPrintf(PETSC_COMM_WORLD, "PETSc convergence reason %d \n", reason);
+			else
+			    PetscPrintf(PETSC_COMM_WORLD, "PETSc divergence reason %d \n" , reason);
+		}
+
 //##### Compute the error and check it is small
 	double error = 0.;
 
@@ -230,8 +263,11 @@ int main( int argc, char **args ){
 	MatDestroy(&D);	
 	MatDestroy(&G);
 	MatDestroy(&C);
+	MatDestroy(&diag_2M);
 	VecDestroy(&b_input);
 	VecDestroy(&X_hat);
+	VecDestroy(&x_anal);
+	VecDestroy(&v);
 	KSPDestroy(&ksp);
 
 	PetscFinalize();
