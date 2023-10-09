@@ -1,5 +1,34 @@
 static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Parameters : \n -f0 : matrix fileName \n -nU :number of velocity lines \n -nP : number of pressure lines \n -mat_type : PETSc matrix type \n";
 
+/*************************************************************************************************/
+/* Implementation of a new preconditioner for the linear system A_{input} X_{output} = b_{input} */
+/*                                                                                               */
+/* Input  : - Matrix A_{input}    (system matrix, loaded from a file)                            */
+/*          - Vector b_{input}    (right hand side, made up for testing)                         */
+/* Output : - Vector X_{output}   (unknown vector, to be determined                              */
+/*                                                                                               */
+/* Auxilliary variables : - A_hat (transformed matrix)                                           */
+/*                        - X_hat (unknown of the transformed system)                            */
+/*                        - Pmat  (preconditioning matrix)                                       */
+/*                        - M top    left  submatrix of A_{input}                                */
+/*                        - G top    right submatrix of A_{input}                                */
+/*                        - D bottom left  submatrix of A_{input}                                */
+/*                        - C bottom right submatrix of A_{input}                                */
+/*                                                                                               */
+/*                                 *M   G*                                                       */
+/*                        A     = *       *                                                      */
+/*                                 *D   C*                                                       */
+/*                                                                                               */
+/*                                 *C_hat  -D*                                                   */
+/*                        A_hat = *           *                                                  */
+/*                                 *G_hat   M*                                                   */
+/*                                                                                               */
+/*                                 *C_hat   0*                                                   */
+/*                        Pmat  = *           *                                                  */
+/*                                 *G_hat   M*                                                   */
+/*                                                                                               */
+/*************************************************************************************************/
+
 #include <petscis.h>
 #include <petscksp.h>
 
@@ -14,7 +43,7 @@ int main( int argc, char **args ){
 //##### Load the matrix A in the file given in the command line
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
-	Mat A;
+	Mat A_input;
 	PetscBool flg;
 
 	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);
@@ -27,16 +56,16 @@ int main( int argc, char **args ){
 	PetscViewerFileSetMode(viewer,FILE_MODE_READ);
 	PetscViewerFileSetName(viewer,file[0]);
 	
-	MatCreate(PETSC_COMM_WORLD, &A);
-	MatSetType(A,mat_type);
-	MatLoad(A,viewer);
+	MatCreate(PETSC_COMM_WORLD, &A_input);
+	MatSetType(A_input,mat_type);
+	MatLoad(A_input,viewer);
 	PetscViewerDestroy(&viewer);
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	
 
-//####	Decompose the matrix A into 4 blocks M, G, D, C
+//####	Decompose the matrix A_input into 4 blocks M, G, D, C
 	Mat M, G, D, C;
-	PetscInt nrows, ncolumns;//Total number of rows and columns of A
+	PetscInt nrows, ncolumns;//Total number of rows and columns of A_input
 	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
 	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n = n_u+ n_p
 	IS is_U,is_P;
@@ -45,8 +74,8 @@ int main( int argc, char **args ){
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
 	n=n_u+n_p;
-	MatGetOwnershipRange( A, &irow_min, &irow_max);
-	MatGetSize( A, &nrows, &ncolumns);
+	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
+	MatGetSize( A_input, &nrows, &ncolumns);
 	int nb_pressure_lines = irow_max >= n_u ? irow_max - n_u : 0;
 	int nb_velocity_lines = irow_min <= n_u ? n_u - irow_min : 0;
 	PetscInt i_p[nb_pressure_lines],i_u[nb_velocity_lines];
@@ -65,18 +94,20 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
 	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u,PETSC_OWN_POINTER,&is_U);
 	ISCreateGeneral(PETSC_COMM_WORLD,n_p,(const PetscInt *) i_p,PETSC_OWN_POINTER,&is_P);
-	MatCreateSubMatrix(A,is_U, is_U,MAT_INITIAL_MATRIX,&M);
-	MatCreateSubMatrix(A,is_U, is_P,MAT_INITIAL_MATRIX,&G);
-	MatCreateSubMatrix(A,is_P, is_U,MAT_INITIAL_MATRIX,&D);
-	MatCreateSubMatrix(A,is_P, is_P,MAT_INITIAL_MATRIX,&C);
-	MatDestroy(&A);//Early destruction since A is a sequential matrix stored on processed 0
+	MatCreateSubMatrix(A_input,is_U, is_U,MAT_INITIAL_MATRIX,&M);
+	MatCreateSubMatrix(A_input,is_U, is_P,MAT_INITIAL_MATRIX,&G);
+	MatCreateSubMatrix(A_input,is_P, is_U,MAT_INITIAL_MATRIX,&D);
+	MatCreateSubMatrix(A_input,is_P, is_P,MAT_INITIAL_MATRIX,&C);
+	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on processed 0
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
 //##### Application of the transformation A -> A_hat
 	// Declaration
 	Mat D_M_inv_G,array[4];
-	Mat A_hat,Pmat, S_hat, C_hat,G_hat;
+	Mat A_hat,Pmat, C_hat,G_hat;
+	//Mat diag_2M;//2*diagonal part of M (to approximate the Schur complement)
 	Vec v;
+	
 	array[3]=M;
 
 	//Extraction of the diagonal of M
@@ -85,6 +116,8 @@ int main( int argc, char **args ){
 	VecSetFromOptions(v);
 	VecSetUp(v);
 	MatGetDiagonal(M,v);
+	//MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
+	//MatDiagonalScale(diag_2M, v, NULL);
 	VecReciprocal(v);
 	
 	// Creation of D_M_inv_G = D_M_inv*G
@@ -105,13 +138,8 @@ int main( int argc, char **args ){
 	MatScale(D,-1.0);
 	array[1]=D;
 
-	// Creation of A_hat = reordered A
+	// Creation of A_hat = transformed A_input
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&A_hat);
-	MatConvert(A_hat,MATAIJ,MAT_INPLACE_MATRIX,&A_hat);
-
-	// Creation of S_hat=2M: spectral equivalent to the Schur complement
-	MatDuplicate(M,MAT_COPY_VALUES,&S_hat);
-	MatScale(S_hat,2.0);
 
 	// Finalisation of the preconditioner	
 	PetscInt i_p_hat[n_p],i_u_hat[n_u];
@@ -128,34 +156,35 @@ int main( int argc, char **args ){
 	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u_hat,PETSC_OWN_POINTER,&is_U_hat);
 
 	// Creation of Pmat
+	//array[3]=diag_2M;
 	array[1]=NULL;
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&Pmat);
-	MatConvert(Pmat,MATAIJ,MAT_INPLACE_MATRIX,&Pmat);
 
 
 //##### Definition of the right hand side to test the preconditioner
-	Vec b,u,x_anal;
+	Vec b_input,X_hat,x_anal;
 	KSP ksp;
 	PetscScalar y[n_p];
 	double residu, abstol, rtol, norm_x_anal;
 	int iter;
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
-	VecCreate(PETSC_COMM_WORLD,&b);
-	VecSetSizes(b,n_u+n_p,PETSC_DECIDE);
-	VecSetFromOptions(b);
+	VecCreate(PETSC_COMM_WORLD,&b_input);
+	VecSetSizes(b_input,n_u+n_p,PETSC_DECIDE);
+	VecSetFromOptions(b_input);
 
-	VecDuplicate(b,&x_anal);//x_anal will store the exact solution
-	VecDuplicate(b,&u);//u will store the numerical solution
+	VecDuplicate(b_input,&x_anal);//x_anal will store the exact solution
+	VecDuplicate(b_input,&X_hat);//u will store the numerical solution
 	VecSet(x_anal,0.0);
 
 	for (int i = n_u;i<n;i++){
 		y[i-n_u]=1.0;
 	}
 	VecSetValues(x_anal,n_p,i_p,y,INSERT_VALUES);
-	MatMult( A_hat, x_anal, b);
+	MatMult( A_hat, x_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
 
+//##### Calling KSP solver
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 	KSPSetType(ksp,KSPFGMRES);
@@ -171,7 +200,7 @@ int main( int argc, char **args ){
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
-	KSPSolve(ksp,b,u);
+	KSPSolve(ksp,b_input,X_hat);
 	//Extract informations about the convergence
 	KSPGetIterationNumber(ksp,&iter);
 	KSPGetResidualNorm( ksp, &residu);
@@ -184,23 +213,25 @@ int main( int argc, char **args ){
 //##### Compute the error and check it is small
 	double error = 0.;
 
-	VecAXPY(u, -1, x_anal);
-	VecNorm( u, NORM_2, &error);
+	VecAXPY(X_hat, -1, x_anal);
+	VecNorm( X_hat, NORM_2, &error);
 	VecNorm( x_anal, NORM_2, &norm_x_anal);
 	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||x_anal - x_num|| = %e, ||x_anal - x_num||/||x_anal|| = %e\n", error, error/norm_x_anal);
 
 	PetscCheck( error/norm_x_anal < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
 	
+//##### Compute X from X_hat
+
+
 	// Cleaning of the code
 	MatDestroy(&M);
-	MatDestroy(&S_hat);
 	MatDestroy(&G_hat);
 	MatDestroy(&C_hat);
 	MatDestroy(&D);	
 	MatDestroy(&G);
 	MatDestroy(&C);
-	VecDestroy(&b);
-	VecDestroy(&u);
+	VecDestroy(&b_input);
+	VecDestroy(&X_hat);
 	KSPDestroy(&ksp);
 
 	PetscFinalize();
