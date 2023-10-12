@@ -9,6 +9,7 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                                                                                               */
 /* Auxilliary variables : - A_hat (transformed matrix)                                           */
 /*                        - X_hat (unknown of the transformed system)                            */
+/*                        - b_hat (RHS of the transformed system)                                */
 /*                        - Pmat  (preconditioning matrix)                                       */
 /*                        - M top    left  submatrix of A_{input}                                */
 /*                        - G top    right submatrix of A_{input}                                */
@@ -23,9 +24,9 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                        A_hat = *           *                                                  */
 /*                                 *G_hat   M*                                                   */
 /*                                                                                               */
-/*                                 *C_hat   0*                                                   */
-/*                        Pmat  = *           *                                                  */
-/*                                 *G_hat   M*                                                   */
+/*                                 *C_hat        0   *                                           */
+/*                        Pmat  = *                   *                                          */
+/*                                 *G_hat   2 diag(M)*                                           */
 /*                                                                                               */
 /*************************************************************************************************/
 
@@ -83,7 +84,7 @@ int main( int argc, char **args ){
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not squared !!!\n");
 	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
 	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
-	PetscPrintf(PETSC_COMM_SELF,"Process %d, Local rows : irow_min = %d, irow_max = %d \n", rank, irow_min, irow_max);
+	PetscPrintf(PETSC_COMM_SELF,"Process %d, local rows : irow_min = %d, irow_max = %d \n", rank, irow_min, irow_max);
 	
 	for (int i = n_u;i<irow_max;i++){
 		i_p[i-n_u]=i;
@@ -98,9 +99,46 @@ int main( int argc, char **args ){
 	MatCreateSubMatrix(A_input,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A_input,is_P, is_U,MAT_INITIAL_MATRIX,&D);
 	MatCreateSubMatrix(A_input,is_P, is_P,MAT_INITIAL_MATRIX,&C);
-	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on processed 0
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
+//##### Definition of the right hand side to test the preconditioner
+	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
+	Vec X_array[2];
+	KSP ksp;
+	PetscScalar y[n_p];
+	double residu, abstol, rtol=1e-7, dtol;
+	int iter, numberMaxOfIter;
+
+	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
+	VecCreate(PETSC_COMM_WORLD,&b_input);
+	VecSetSizes(b_input,n_u+n_p,PETSC_DECIDE);
+	VecSetFromOptions(b_input);
+
+	VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
+	VecDuplicate(b_input,&X_hat);// X_hat will store the numerical solution of the transformed system
+	VecDuplicate(b_input,&b_hat);// b_hat will store the right hand side of the transformed system
+	
+	VecSet(X_anal,0.0);
+
+	for (int i = n_u;i<n;i++){
+		y[i-n_u]=1.0/i;
+	}
+	VecSetValues(X_anal,n_p,i_p,y,INSERT_VALUES);
+	VecNormalize( X_anal, NULL);
+	MatMult( A_input, X_anal, b_input);
+	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
+	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on processed 0
+
+	//Swap the pressure and velocity components + change the sign of the pressure components of b_input
+	VecGetSubVector( b_input, is_P, &b_input_p);
+	VecGetSubVector( b_input, is_U, &b_input_u);
+	//VecScale(b_input_p, -1);
+	X_array[0] = b_input_p;
+	X_array[1] = b_input_u;
+
+	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &b_hat);//This may generate an error message : "Nest vector argument 3 not setup "
+	VecConcatenate(2, X_array, &b_hat, NULL);
+	
 //##### Application of the transformation A -> A_hat
 	// Declaration
 	Mat D_M_inv_G,array[4];
@@ -119,7 +157,7 @@ int main( int argc, char **args ){
 	MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
 	MatConvert(diag_2M,  MATAIJ, MAT_INPLACE_MATRIX, &diag_2M);
 	MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
-	VecReciprocal(v);
+	VecReciprocal(v);//Must first check that all the coefficients are non zero
 	
 	// Creation of D_M_inv_G = D_M_inv*G
 	MatDuplicate(G,MAT_COPY_VALUES,&D_M_inv_G);//D_M_inv_G contains G
@@ -161,35 +199,10 @@ int main( int argc, char **args ){
 	array[1]=NULL;//Cancel top right block
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&Pmat);
 
-
-//##### Definition of the right hand side to test the preconditioner
-	Vec b_input,X_hat,x_anal;
-	KSP ksp;
-	PetscScalar y[n_p];
-	double residu, abstol, rtol=1e-7, dtol, norm_x_anal;
-	int iter, numberMaxOfIter;
-
-	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
-	VecCreate(PETSC_COMM_WORLD,&b_input);
-	VecSetSizes(b_input,n_u+n_p,PETSC_DECIDE);
-	VecSetFromOptions(b_input);
-
-	VecDuplicate(b_input,&x_anal);//x_anal will store the exact solution
-	VecDuplicate(b_input,&X_hat);//u will store the numerical solution
-	VecSet(x_anal,0.0);
-
-	for (int i = n_u;i<n;i++){
-		y[i-n_u]=1.0;
-	}
-	VecSetValues(x_anal,n_p,i_p,y,INSERT_VALUES);
-	VecNormalize( x_anal, NULL);
-	MatMult( A_hat, x_anal, b_input);
-	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
-
 //##### Calling KSP solver
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
-	KSPSetType(ksp,KSPGMRES);
+	KSPSetType(ksp,KSPFGMRES);
 	KSPSetOperators(ksp,A_hat,Pmat);
 	KSPSetTolerances(ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT, PETSC_DEFAULT);
 	KSPGetPC(ksp,&pc);
@@ -203,7 +216,7 @@ int main( int argc, char **args ){
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
-	KSPSolve(ksp,b_input,X_hat);
+	KSPSolve(ksp,b_hat,X_hat);
 
 	//Extract informations about the convergence
 	KSPConvergedReason reason;
@@ -219,13 +232,13 @@ int main( int argc, char **args ){
 		
 	switch(reason){
 		case 2:
-		    PetscPrintf(PETSC_COMM_WORLD, "residual 2-norm < rtol*||RHS||_2 with rtol = %e, final residual = %e\n", rtol, residu);
+		    PetscPrintf(PETSC_COMM_WORLD, "Residual 2-norm < rtol*||RHS||_2 with rtol = %e, final residual = %e\n", rtol, residu);
 		    break;
 		case 3:
-		    PetscPrintf(PETSC_COMM_WORLD, "residual 2-norm < atol with atol = %e, final residual = %e\n", abstol, residu);
+		    PetscPrintf(PETSC_COMM_WORLD, "Residual 2-norm < atol with atol = %e, final residual = %e\n", abstol, residu);
 		    break;
 		case -4:
-		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! residual 2-norm > dtol*||RHS||_2 with dtol = %e, final residual = %e !!!!!!! \n", dtol, residu);
+		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! Residual 2-norm > dtol*||RHS||_2 with dtol = %e, final residual = %e !!!!!!! \n", dtol, residu);
 		    break;
 		case -3:
 		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! Maximum number of iterations %d reached !!!!!!! \n", numberMaxOfIter);
@@ -243,15 +256,48 @@ int main( int argc, char **args ){
 			    PetscPrintf(PETSC_COMM_WORLD, "PETSc divergence reason %d \n" , reason);
 		}
 
+//##### Compute X from X_hat
+	Vec X_hat_p;//Pressure components of the transformed unknown
+	Vec X_hat_u;//Velocity components of the transformed unknown
+	Vec X_p;//Pressure components of the main unknown
+	Vec X_u;//Velocity components of the transformed unknown
+	Vec X_output;
+	
+	VecGetSubVector( X_hat, is_P_hat, &X_hat_p);
+	VecGetSubVector( X_hat, is_U_hat, &X_hat_u);
+
+	VecDuplicate(X_hat_u,&X_u);
+	VecDuplicate(X_hat_p,&X_p);
+	VecCopy(X_hat_p,X_p);
+	MatMult( G, X_hat_p, X_u);
+	VecPointwiseMult(X_u,X_u,v);
+	VecAYPX( X_u, -1, X_hat_u);
+
+	X_array[0] = X_u;
+	X_array[1] = X_p;
+
+	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &X_output);//This generate an error message : "Nest vector argument 3 not setup "
+	VecConcatenate(2, X_array, &X_output, NULL);
+	
 //##### Compute the error and check it is small
-	double error = 0.;
+	Vec X_anal_p, X_anal_u;//Pressure and velocity components of the analitic solution
+	double error, error_p, error_u;
+	
+	VecGetSubVector( X_anal, is_P, &X_anal_p);
+	VecGetSubVector( X_anal, is_U, &X_anal_u);
 
-	VecAXPY(X_hat, -1, x_anal);
-	VecNorm( X_hat, NORM_2, &error);
-	VecNorm( x_anal, NORM_2, &norm_x_anal);
-	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||x_anal - x_num|| = %e, ||x_anal - x_num||/||x_anal|| = %e\n", error, error/norm_x_anal);
+	VecAXPY(  X_p, -1, X_anal_p);
+	VecNorm(  X_p, NORM_2, &error_p);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error p : ||X_anal_p - X_num_p|| = %e\n", error_p);
+	VecAXPY(  X_u, -1, X_anal_u);
+	VecNorm(  X_u, NORM_2, &error_u);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error u : ||X_anal_u - X_num_u|| = %e \n", error_u);
 
-	PetscCheck( error/norm_x_anal < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
+	VecAXPY(X_output, -1, X_anal);
+	VecNorm( X_output, NORM_2, &error);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||X_anal - X_num|| = %e, (remember ||X_anal||=1)\n", error);
+
+	PetscCheck( error < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
 	
 //##### Compute X from X_hat
 
@@ -266,7 +312,7 @@ int main( int argc, char **args ){
 	MatDestroy(&diag_2M);
 	VecDestroy(&b_input);
 	VecDestroy(&X_hat);
-	VecDestroy(&x_anal);
+	VecDestroy(&X_anal);
 	VecDestroy(&v);
 	KSPDestroy(&ksp);
 
