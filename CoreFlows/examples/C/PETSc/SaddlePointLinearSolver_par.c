@@ -79,6 +79,8 @@ int main( int argc, char **args ){
 	MatGetSize( A_input, &nrows, &ncolumns);
 	int nb_pressure_lines = irow_max >= n_u ? irow_max - n_u : 0;
 	int nb_velocity_lines = irow_min <= n_u ? n_u - irow_min : 0;
+	int min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
+	int max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
 	PetscInt i_p[nb_pressure_lines],i_u[nb_velocity_lines];
 
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not squared !!!\n");
@@ -86,10 +88,10 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
 	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d \n", rank, irow_min, irow_max);
 	
-	for (int i = n_u;i<irow_max;i++){
+	for (int i = min_pressure_lines;i<irow_max;i++){
 		i_p[i-n_u]=i;
 	}
-	for (int i=irow_min;i<n_u;i++){
+	for (int i=irow_min;i<max_velocity_lines;i++){
 		i_u[i]=i;
 	}
 	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
@@ -105,7 +107,7 @@ int main( int argc, char **args ){
 	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
 	Vec X_array[2];
 	KSP ksp;
-	PetscScalar y[n_p];
+	PetscScalar y[nb_pressure_lines];
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
 	VecCreate(PETSC_COMM_WORLD,&b_input);
@@ -118,10 +120,10 @@ int main( int argc, char **args ){
 
 	VecSet(X_anal,0.0);
 
-	for (int i = n_u;i<n;i++){
+	for (int i = min_pressure_lines;i<irow_max;i++){
 		y[i-n_u]=1.0/i;
 	}
-	VecSetValues(X_anal,n_p,i_p,y,INSERT_VALUES);
+	VecSetValues(X_anal,nb_pressure_lines,i_p,y,INSERT_VALUES);
 	VecNormalize( X_anal, NULL);
 	MatMult( A_input, X_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
@@ -140,13 +142,12 @@ int main( int argc, char **args ){
 
 //##### Application of the transformation A -> A_hat
 	// Declaration
-	Mat D_M_inv_G,array[4];
+	Mat D_M_inv_G, Mat_array[4];
 	Mat A_hat,Pmat, C_hat,G_hat;
 	Mat diag_2M;//Will store 2*diagonal part of M (to approximate the Schur complement)
 	Vec v;
 	
-	//array[3]=M;//Bottom right block of A_hat
-	array[0]=M;//Top left block of A_hat
+	Mat_array[0]=M;//Top left block of A_hat
 
 	//Extraction of the diagonal of M
 	VecCreate(PETSC_COMM_WORLD,&v);
@@ -166,29 +167,24 @@ int main( int argc, char **args ){
 	// Creation of C_hat
 	MatMatMult(D,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);//C_hat contains D*D_M_inv*G
 	MatAXPY(C_hat,1.0,C,SUBSET_NONZERO_PATTERN);//C_hat contains C + D*D_M_inv*G
-	//array[0]=C_hat;//Top left block of A_hat
-	array[3]=C_hat;//Bottom right block of A_hat
+	Mat_array[3]=C_hat;//Bottom right block of A_hat
 
 	// Creation of G_hat
 	MatMatMult(M,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&G_hat);//G_hat contains M*D_M_inv*G
 	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);//G_hat contains G - M*D_M_inv*G
-	//array[2]=G_hat;//Bottom left block of A_hat
-	array[1]=G_hat;//Top right block of A_hat
+	Mat_array[1]=G_hat;//Top right block of A_hat
 
 	// Creation of -D
 	MatScale(D,-1.0);
-	//array[1]=D;//Top right block of A_hat
-	array[2]=D;//Bottom left block of A_hat
+	Mat_array[2]=D;//Bottom left block of A_hat
 
 	// Creation of A_hat = transformed A_input
-	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&A_hat);
+	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&A_hat);
 
 	// Creation of Pmat
-	//array[3]=diag_2M;//use of spectrally equivalent matrix
-	//array[1]=NULL;//Cancel top right block
-	array[0]=diag_2M;//use of spectrally equivalent matrix
-	array[2]=NULL;//Cancel bottom left block
-	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,array,&Pmat);
+	Mat_array[0]=diag_2M;//use of spectrally equivalent matrix
+	Mat_array[2]=NULL;//Cancel bottom left block
+	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&Pmat);
 
 
 //##### Call KSP solver and monitor convergence
@@ -212,9 +208,6 @@ int main( int argc, char **args ){
 	KSPSetFromOptions(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
 	KSPSolve(ksp,b_input,X_hat);
-
-//	PetscPrintf(PETSC_COMM_WORLD,"X_hat = ");	
-//	VecView(X_hat, PETSC_VIEWER_STDOUT_WORLD);
 
 	//Extract informations about the convergence
 	KSPConvergedReason reason;
@@ -259,7 +252,7 @@ int main( int argc, char **args ){
 	Vec X_hat_u;//Velocity components of the transformed unknown
 	Vec X_p;//Pressure components of the main unknown
 	Vec X_u;//Velocity components of the transformed unknown
-	Vec X_output;
+	Vec X_output, X_output_array[2];
 	
 	VecGetSubVector( X_hat, is_P, &X_hat_p);
 	VecGetSubVector( X_hat, is_U, &X_hat_u);
@@ -271,11 +264,11 @@ int main( int argc, char **args ){
 	VecPointwiseMult(X_u,X_u,v);
 	VecAYPX( X_u, -1, X_hat_u);
 
-	X_array[0] = X_u;
-	X_array[1] = X_p;
+	X_output_array[0] = X_u;
+	X_output_array[1] = X_p;
 
 	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &X_output);//This generate an error message : "Nest vector argument 3 not setup "
-	VecConcatenate(2, X_array, &X_output, NULL);
+	VecConcatenate(2, X_output_array, &X_output, NULL);
 	
 //##### Compute the error and check it is small
 	Vec X_anal_p, X_anal_u;//Pressure and velocity components of the analitic solution
