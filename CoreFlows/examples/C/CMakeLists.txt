@@ -127,11 +127,13 @@ CreateTestExecAndInstall(IsothermalTwoFluid_1DRiemannProblem.cxx  "${libs_for_te
 CreateTestExecAndInstall(IsothermalTwoFluid_2DInclinedSedimentation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity sedimentation structured inclined coreflows" )
 CreateTestExecAndInstall(IsothermalTwoFluid_2DVidangeReservoir.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity drainage structured coreflows" )
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/PETSc DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+###### Initial version of the saddle point preconditoner (no Shat)
 add_executable(SaddlePointLinearSolver.exe PETSc/SaddlePointLinearSolver.c)
 target_link_libraries(SaddlePointLinearSolver.exe ${PETSC_LIBRARIES} )
 install(TARGETS SaddlePointLinearSolver.exe DESTINATION share/examples)
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/PETSc DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     SET(MATRIX_FILE  PETSc/Kershaw2D_PolyMAC_1.petsc  )
     SET(nu  612  )
     SET(np  289  )
@@ -162,6 +164,43 @@ set_property (TEST SaddlePointLinearSolver_3DHexa.exe PROPERTY LABELS "C++ PETSC
 add_test(NAME SaddlePointLinearSolver_3DKershaw.exe         COMMAND "./SaddlePointLinearSolver.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
 set_property (TEST SaddlePointLinearSolver_3DKershaw.exe PROPERTY LABELS "C++ PETSC multigrid")     
 
+###### Second version of the saddle point preconditoner (with Shat)
+add_executable(SaddlePointLinearSolver_Shat.exe PETSc/SaddlePointLinearSolver_Shat.c)
+target_link_libraries(SaddlePointLinearSolver_Shat.exe ${PETSC_LIBRARIES} )
+install(TARGETS SaddlePointLinearSolver_Shat.exe DESTINATION share/examples)
+
+    SET(MATRIX_FILE  PETSc/Kershaw2D_PolyMAC_1.petsc  )
+    SET(nu  612  )
+    SET(np  289  )
+add_test(NAME SaddlePointLinearSolver_2DKershaw_Shat.exe         COMMAND "./SaddlePointLinearSolver_Shat.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_2DKershaw_Shat.exe PROPERTY LABELS "C++ PETSC multigrid")     
+ 
+    SET(MATRIX_FILE  PETSc/Cartesian_PolyMAC_1.petsc  )
+    SET(nu  40  )
+    SET(np  16  )
+add_test(NAME SaddlePointLinearSolver_2DCartesian_Shat.exe         COMMAND "./SaddlePointLinearSolver_Shat.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_2DCartesian_Shat.exe PROPERTY LABELS "C++ PETSC multigrid")     
+
+    SET(MATRIX_FILE  PETSc/Tetra_PolyMAC_1.petsc  )
+    SET(nu  500  )
+    SET(np  215  )
+add_test(NAME SaddlePointLinearSolver_3DTetra_Shat.exe         COMMAND "./SaddlePointLinearSolver_Shat.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_3DTetra_Shat.exe PROPERTY LABELS "C++ PETSC multigrid")     
+
+    SET(MATRIX_FILE  PETSc/Hexa_PolyMAC_1.petsc  )
+    SET(nu  36  )
+    SET(np  8  )
+add_test(NAME SaddlePointLinearSolver_3DHexa_Shat.exe         COMMAND "./SaddlePointLinearSolver_Shat.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_3DHexa_Shat.exe PROPERTY LABELS "C++ PETSC multigrid")     
+
+    SET(MATRIX_FILE  PETSc/Kershaw_PolyMAC_1.petsc  )
+    SET(nu  1728  )
+    SET(np  512  )
+add_test(NAME SaddlePointLinearSolver_3DKershaw_Shat.exe         COMMAND "./SaddlePointLinearSolver_Shat.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu >> res.txt)     
+set_property (TEST SaddlePointLinearSolver_3DKershaw_Shat.exe PROPERTY LABELS "C++ PETSC multigrid")     
+
+
+###### Parallel (third) version of the saddle point preconditoner (no Shat)
 add_executable(SaddlePointLinearSolver_par.exe PETSc/SaddlePointLinearSolver_par.c)
 target_link_libraries(SaddlePointLinearSolver_par.exe ${PETSC_LIBRARIES} )
 install(TARGETS SaddlePointLinearSolver_par.exe DESTINATION share/examples)
@@ -197,6 +236,7 @@ add_test(NAME SaddlePointLinearSolver_3DKershaw_par.exe         COMMAND "./Saddl
 set_property (TEST SaddlePointLinearSolver_2DKershaw_par.exe PROPERTY LABELS "C++ PETSC multigrid")     
 
 
+###### Fourth version of the saddle point preconditoner (no Schur)
     SET(MATRIX_FILE  PETSc/Kershaw2D_PolyMAC_1.petsc  )
     SET(nu  612  )
     SET(np  289  )
