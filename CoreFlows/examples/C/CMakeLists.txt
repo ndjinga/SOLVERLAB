@@ -202,5 +202,5 @@ if( SOLVERLAB_WITH_MPI )#Tests parallèles
 
 endif( SOLVERLAB_WITH_MPI )
 
-add_subdirectory (PETSc)
+add_subdirectory (SaddlePointPreconditioner)
 
