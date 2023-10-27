@@ -19,6 +19,7 @@ void power_field_diffusionTest(Field & Phi){
 
 int main(int argc, char** argv)
 {
+	PetscInitialize(&argc,&argv, NULL,NULL);
 	//Preprocessing: mesh and group creation
 	double xinf=0.0;
 	double xsup=4.2;
@@ -36,7 +37,7 @@ int main(int argc, char** argv)
 	double rho_ur=10000;//Uranium density
 	double lambda_ur=5;
  
-    bool FEcalculation=true;
+	bool FEcalculation=true;
 	DiffusionEquation  myProblem(spaceDim,FEcalculation,rho_ur,cp_ur,lambda_ur);
 
 	//Set initial field

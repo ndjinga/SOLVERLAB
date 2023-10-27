@@ -5,6 +5,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	PetscInitialize(&argc,&argv, NULL,NULL);
 	//Preprocessing: mesh and group creation
 	double xinf=0.0;
 	double xsup=4.2;

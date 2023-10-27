@@ -24,7 +24,7 @@ using namespace std;
  
 int main(int argc, char *argv[])
 {
-	/* PETSc initialisation */
+	/* MPI initialisation */
 	MPI_Init(&argc, &argv);
 	int    size;        /* size of communicator */
 	int    rank;        /* processor rank */
