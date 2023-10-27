@@ -117,6 +117,9 @@ void DriftModel::initialize(){
 		}
 	}
 
+	_globalNbUnknowns = _nVar*_Nmailles;//Colocated discretisation
+	//_globalNbUnknowns = (_nVar-1)*_Nmailles + _Nfaces;//Staggered discretisation : velocity is on faces
+	
 	if(_entropicCorrection)
 		_entropicShift=vector<double>(3);//at most 3 distinct eigenvalues
 

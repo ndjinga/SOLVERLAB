@@ -46,14 +46,14 @@ FiveEqsTwoFluid::FiveEqsTwoFluid(pressureEstimate pEstimate, int dim){
 	_latentHeat=_hsatv-_hsatl;
 	_intPressCoeff=1.5;
     
-    _usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
+	_usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
 	//Save into the fluid list
 	_fluides.resize(2);
 	_fluides[0] = _fluidesCompressibles[0];
 	_fluides[1] = _fluidesCompressibles[1];
 
 	_fileName = "SolverlabFiveEquationTwoFluid";
-    PetscPrintf(PETSC_COMM_WORLD,"\n Five equation two-fluid problem for two phase flow\n");
+	PetscPrintf(PETSC_COMM_WORLD,"\n Five equation two-fluid problem for two phase flow\n");
 }
 
 void FiveEqsTwoFluid::initialize()
@@ -85,6 +85,9 @@ void FiveEqsTwoFluid::initialize()
 	if(_entropicCorrection)
 		_entropicShift=vector<double>(_nVar);
 
+	_globalNbUnknowns = _nVar*_Nmailles;//Colocated discretisation
+	//_globalNbUnknowns = (_nVar-2)*_Nmailles + _Nfaces;//Staggered discretisation : velocities are on faces
+	
 	ProblemFluid::initialize();
 }
 

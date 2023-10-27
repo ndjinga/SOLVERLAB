@@ -235,7 +235,7 @@ void DiffusionEquation::initialize()
 
 	/* Vectors creations */
 	VecCreate(PETSC_COMM_WORLD, &_Tk);//main unknown
-    VecSetSizes(_Tk,PETSC_DECIDE,_globalNbUnknowns);
+	VecSetSizes(_Tk,PETSC_DECIDE,_globalNbUnknowns);
 	VecSetFromOptions(_Tk);
 	VecGetLocalSize(_Tk, &_localNbUnknowns);
 	

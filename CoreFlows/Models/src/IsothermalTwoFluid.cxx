@@ -39,9 +39,9 @@ IsothermalTwoFluid::IsothermalTwoFluid(pressureEstimate pEstimate, int dim){
 	_intPressCoeff=1.5;
 
 	_fileName = "SolverlabIsothermalTwoFluid";
-    PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal two-fluid problem for two phase flow\n");
+	PetscPrintf(PETSC_COMM_WORLD,"\n Isothermal two-fluid problem for two phase flow\n");
     
-    _usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
+	_usePrimitiveVarsInNewton=false;//This class is designed only to solve linear system in conservative variables
 
 	//Save into the fluid list
 	_fluides.resize(2);
@@ -71,6 +71,9 @@ void IsothermalTwoFluid::initialize(){
 	}
 	if(_entropicCorrection)
 		_entropicShift=vector<double>(3,0);
+
+	_globalNbUnknowns = _nVar*_Nmailles;//Colocated discretisation
+	//_globalNbUnknowns = (_nVar-2)*_Nmailles + _Nfaces;//Staggered discretisation : velocities are on faces
 
 	ProblemFluid::initialize();
 }

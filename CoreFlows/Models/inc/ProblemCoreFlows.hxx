@@ -752,7 +752,7 @@ protected :
 
 	// Mesh info
 	int _Ndim;//space dimension
-	int _nVar;//Number of equations to sole
+	int _nVar;//Number of equations to solve
 	int _Nmailles;//number of cells
 	int _Nnodes;//number of nodes
 	int _Nfaces;//number of faces

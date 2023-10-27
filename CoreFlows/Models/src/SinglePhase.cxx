@@ -53,7 +53,7 @@ SinglePhase::SinglePhase(phaseType fluid, pressureEstimate pEstimate, int dim, b
 	_fluides.resize(1,_compressibleFluid);
 
 	_fileName = "SolverlabSinglePhase";
-    PetscPrintf(PETSC_COMM_WORLD,"\n Navier-Stokes equations for single phase flow\n");
+	PetscPrintf(PETSC_COMM_WORLD,"\n Navier-Stokes equations for single phase flow\n");
 }
 
 void SinglePhase::initialize(){
@@ -89,6 +89,9 @@ void SinglePhase::initialize(){
 
 	if(_entropicCorrection)
 		_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
+
+	_globalNbUnknowns = _nVar*_Nmailles;//Colocated discretisation
+	//_globalNbUnknowns = (_nVar-1)*_Nmailles + _Nfaces;//Staggered discretisation : velocities is on faces
 
 	ProblemFluid::initialize();
 }
