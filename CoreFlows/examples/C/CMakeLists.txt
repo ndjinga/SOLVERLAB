@@ -47,13 +47,13 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../resources DESTINATION ${CMAKE_CURRENT_B
 
 CreateTestExecAndInstall(CoupledTransportDiffusionEquations_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv coupled transport diffusion 1D heating structured coreflows")
 
-CreateTestExecAndInstall(TransportEquation_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv transport 1D heating structured coreflows" )
+CreateTestExecAndInstall(TransportEquation/TransportEquation_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv transport 1D heating structured coreflows" )
 
-CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod.cxx  "${libs_for_tests}" "C++ fv diffusion 1D explicit heating structured coreflows" )
-CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_Implicit.cxx  "${libs_for_tests}" "C++ fv diffusion 1D implicit heating structured coreflows" )
-CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_FE.cxx  "${libs_for_tests}" "C++ fe diffusion 1D explicit heating structured coreflows" )
-CreateTestExecAndInstall(DiffusionEquation_1DHeatedRod_FE_Implicit.cxx  "${libs_for_tests}" "C++ fe diffusion 1D implicit heating structured coreflows" )
-add_executable(DiffusionEquation_2D_SQUARE_Implicit.exe DiffusionEquation_2D_SQUARE_Implicit.cxx)
+CreateTestExecAndInstall(DiffusionEquation/DiffusionEquation_1DHeatedRod.cxx  "${libs_for_tests}" "C++ fv diffusion 1D explicit heating structured coreflows" )
+CreateTestExecAndInstall(DiffusionEquation/DiffusionEquation_1DHeatedRod_Implicit.cxx  "${libs_for_tests}" "C++ fv diffusion 1D implicit heating structured coreflows" )
+CreateTestExecAndInstall(DiffusionEquation/DiffusionEquation_1DHeatedRod_FE.cxx  "${libs_for_tests}" "C++ fe diffusion 1D explicit heating structured coreflows" )
+CreateTestExecAndInstall(DiffusionEquation/DiffusionEquation_1DHeatedRod_FE_Implicit.cxx  "${libs_for_tests}" "C++ fe diffusion 1D implicit heating structured coreflows" )
+add_executable(DiffusionEquation_2D_SQUARE_Implicit.exe DiffusionEquation/DiffusionEquation_2D_SQUARE_Implicit.cxx)
 target_link_libraries(DiffusionEquation_2D_SQUARE_Implicit.exe CoreFlowsLibs )
 install(TARGETS DiffusionEquation_2D_SQUARE_Implicit.exe DESTINATION share/examples)
 #Generate several tests from the same executable ./DiffusionEquation_2D_SQUARE_Implicit.exe using various parameters (finite elemets vs volumes, Dirichlet vs Neumann)
@@ -66,70 +66,70 @@ add_test(NAME DiffusionEquation_2D_SQUARE_Implicit_FV_Neumann.exe         COMMAN
 add_test(NAME DiffusionEquation_2D_SQUARE_Implicit_FV_Dirichlet.exe         COMMAND ./DiffusionEquation_2D_SQUARE_Implicit.exe FV DIRICHLET )     
   set_property (TEST DiffusionEquation_2D_SQUARE_Implicit_FV_Dirichlet.exe PROPERTY LABELS "C++ diffusion heating 2D fv Dirichlet squares SQUARE coreflows")     
 
-CreateTestExecAndInstall(StationaryDiffusionEquation_2DEF_StructuredTriangles.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D dirichlet structured triangles coreflows" )
-CreateTestExecAndInstall(StationaryDiffusionEquation_2DEF_StructuredTriangles_Neumann.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D neumann structured triangles coreflows" )
-CreateTestExecAndInstall(StationaryDiffusionEquation_2DEF_UnstructuredTriangles.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D dirichlet unstructured triangles coreflows" )
-CreateTestExecAndInstall(StationaryDiffusionEquation_2DFV_StructuredTriangles.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 2D dirichlet structured triangles coreflows" )
-CreateTestExecAndInstall(StationaryDiffusionEquation_2DFV_StructuredTriangles_Neumann.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 2D neumann structured triangles coreflows" )
-CreateTestExecAndInstall(StationaryDiffusionEquation_2DFV_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 2D dirichlet structured squares coreflows" )
-CreateTestExecAndInstall(StationaryDiffusionEquation_3DEF_StructuredTetrahedra.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 3D dirichlet structured tetrahedra coreflows" )
-CreateTestExecAndInstall(StationaryDiffusionEquation_3DFV_StructuredTetrahedra.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 3D dirichlet structured tetrahedra coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_2DEF_StructuredTriangles.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D dirichlet structured triangles coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_2DEF_StructuredTriangles_Neumann.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D neumann structured triangles coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_2DEF_UnstructuredTriangles.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 2D dirichlet unstructured triangles coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_2DFV_StructuredTriangles.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 2D dirichlet structured triangles coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_2DFV_StructuredTriangles_Neumann.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 2D neumann structured triangles coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_2DFV_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 2D dirichlet structured squares coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_3DEF_StructuredTetrahedra.cxx  "${libs_for_tests}" "C++ fe stationary diffusion 3D dirichlet structured tetrahedra coreflows" )
+CreateTestExecAndInstall(StationaryDiffusion/StationaryDiffusionEquation_3DFV_StructuredTetrahedra.cxx  "${libs_for_tests}" "C++ fv stationary diffusion 3D dirichlet structured tetrahedra coreflows" )
 
 CreateTestExecAndInstall(testEOS.cxx  "${libs_for_tests}" "C++ eos coreflows")
 
-CreateTestExecAndInstall(SinglePhase_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv singlephase 1D depressurisation structured coreflows" )
-CreateTestExecAndInstall(SinglePhase_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv singlephase 1D heating structured coreflows" )
-CreateTestExecAndInstall(SinglePhase_1DPorosityJump.cxx  "${libs_for_tests}" "C++ fv singlephase 1D porosity structured coreflows" )
-CreateTestExecAndInstall(SinglePhase_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann structured coreflows" )
-CreateTestExecAndInstall(SinglePhase_1DRiemannProblem_1bar.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann structured coreflows" )
-CreateTestExecAndInstall(SinglePhase_1DRiemannProblem_Implicit.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann implicit structured coreflows" )
-CreateTestExecAndInstall(SinglePhase_1DRiemannProblem_Implicit_LineSearch.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann implicit linesearch structured coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DHeatDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DHeatDrivenCavity_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating unstructured squares coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DHeatedChannelInclined.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares inclined coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DLidDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 2D viscosity structured squares coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DLidDrivenCavity_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 2D viscosity unstructured triangles coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DSphericalExplosion_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 2D riemann unstructured triangles coreflows" )
-CreateTestExecAndInstall(SinglePhase_3DSphericalExplosion_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 3D riemann unstructured triangles coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DWallHeatedChannel_ChangeSect.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares coreflows" )
-CreateTestExecAndInstall(SinglePhase_2DWallHeatedChannel.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares coreflows" )
-CreateTestExecAndInstall(SinglePhase_3DHeatDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 3D heating structured cubes coreflows" )
-CreateTestExecAndInstall(SinglePhase_HeatedWire_2Branches.cxx  "${libs_for_tests}" "C++ fv singlephase 1D branches heating unstructured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv singlephase 1D depressurisation structured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv singlephase 1D heating structured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_1DPorosityJump.cxx  "${libs_for_tests}" "C++ fv singlephase 1D porosity structured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann structured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_1DRiemannProblem_1bar.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann structured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_1DRiemannProblem_Implicit.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann implicit structured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_1DRiemannProblem_Implicit_LineSearch.cxx  "${libs_for_tests}" "C++ fv singlephase 1D riemann implicit linesearch structured coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DHeatDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DHeatDrivenCavity_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating unstructured squares coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DHeatedChannelInclined.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares inclined coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DLidDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 2D viscosity structured squares coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DLidDrivenCavity_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 2D viscosity unstructured triangles coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DSphericalExplosion_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 2D riemann unstructured triangles coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_3DSphericalExplosion_unstructured.cxx  "${libs_for_tests}" "C++ fv singlephase 3D riemann unstructured triangles coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DWallHeatedChannel_ChangeSect.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_2DWallHeatedChannel.cxx  "${libs_for_tests}" "C++ fv singlephase 2D heating structured squares coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_3DHeatDrivenCavity.cxx  "${libs_for_tests}" "C++ fv singlephase 3D heating structured cubes coreflows" )
+CreateTestExecAndInstall(SinglePhase/SinglePhase_HeatedWire_2Branches.cxx  "${libs_for_tests}" "C++ fv singlephase 1D branches heating unstructured coreflows" )
 
-CreateTestExecAndInstall(IsothermalSinglePhase_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D riemann explicit upwindstructured coreflows" )
-CreateTestExecAndInstall(IsothermalSinglePhase_1DRiemannProblem_Implicit.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D implicit upwind riemann structured coreflows" )
-CreateTestExecAndInstall(IsothermalSinglePhase_1DChannelGravity_Incompressible.cxx "${libs_for_tests}" "C++ fv isothermalsinglephase 1D incompressible implicit staggered gravity structured coreflows" )
-CreateTestExecAndInstall(IsothermalSinglePhase_2DLidDrivenCavity_Incompressible.cxx "${libs_for_tests}" "C++ fv isothermalsinglephase 1D incompressible  implicit staggered viscosity structured coreflows" )
-CreateTestExecAndInstall(IsothermalSinglePhase_2DPoiseuilleFlow.cxx "${libs_for_tests}" "C++ fv isothermalsinglephase 1D incompressible  implicit staggered viscosity structured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D riemann explicit upwindstructured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_Implicit.cxx  "${libs_for_tests}" "C++ fv isothermalsinglephase 1D implicit upwind riemann structured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase/IsothermalSinglePhase_1DChannelGravity_Incompressible.cxx "${libs_for_tests}" "C++ fv isothermalsinglephase 1D incompressible implicit staggered gravity structured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase/IsothermalSinglePhase_2DLidDrivenCavity_Incompressible.cxx "${libs_for_tests}" "C++ fv isothermalsinglephase 1D incompressible  implicit staggered viscosity structured coreflows" )
+CreateTestExecAndInstall(IsothermalSinglePhase/IsothermalSinglePhase_2DPoiseuilleFlow.cxx "${libs_for_tests}" "C++ fv isothermalsinglephase 1D incompressible  implicit staggered viscosity structured coreflows" )
 
-CreateTestExecAndInstall(DriftModel_1DBoilingAssembly.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D heating boiling structured coreflows" )
-CreateTestExecAndInstall(DriftModel_1DBoilingChannel.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D heating boiling structured coreflows" )
-CreateTestExecAndInstall(DriftModel_1DChannelGravity.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D gravity structured coreflows" )
-CreateTestExecAndInstall(DriftModel_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D depressurisation structured coreflows" )
-CreateTestExecAndInstall(DriftModel_1DPorosityJump.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D porosity structured" )
-CreateTestExecAndInstall(DriftModel_1DPressureLoss.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D pressureloss structured coreflows" )
-CreateTestExecAndInstall(DriftModel_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D riemann structured coreflows" )
-CreateTestExecAndInstall(DriftModel_1DVidangeReservoir.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D gravity drainage structured coreflows" )
-CreateTestExecAndInstall(DriftModel_2DInclinedBoilingChannel.cxx  "${libs_for_tests}" "C++ fv driftmodel 2D heating boiling structured inclined coreflows" )
-CreateTestExecAndInstall(DriftModel_2DInclinedChannelGravity.cxx  "${libs_for_tests}" "C++ fv driftmodel 2D gravity structured inclined coreflows" )
-CreateTestExecAndInstall(DriftModel_2DInclinedChannelGravityBarriers.cxx  "${libs_for_tests}" "C++ fv driftmodel 2D gravity barrier structured inclined coreflows" )
-CreateTestExecAndInstall(DriftModel_3DCanalCloison.cxx  "${libs_for_tests}" "C++ fv driftmodel 3D barrier structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DBoilingAssembly.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D heating boiling structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DBoilingChannel.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D heating boiling structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DChannelGravity.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D gravity structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D depressurisation structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DPorosityJump.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D porosity structured" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DPressureLoss.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D pressureloss structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D riemann structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_1DVidangeReservoir.cxx  "${libs_for_tests}" "C++ fv driftmodel 1D gravity drainage structured coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_2DInclinedBoilingChannel.cxx  "${libs_for_tests}" "C++ fv driftmodel 2D heating boiling structured inclined coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_2DInclinedChannelGravity.cxx  "${libs_for_tests}" "C++ fv driftmodel 2D gravity structured inclined coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_2DInclinedChannelGravityBarriers.cxx  "${libs_for_tests}" "C++ fv driftmodel 2D gravity barrier structured inclined coreflows" )
+CreateTestExecAndInstall(DriftModel/DriftModel_3DCanalCloison.cxx  "${libs_for_tests}" "C++ fv driftmodel 3D barrier structured coreflows" )
 
-CreateTestExecAndInstall(FiveEqsTwoFluid_1DBoilingChannel.cxx  "${libs_for_tests}" "C++ fv fiveqs 1D heating boiling structured coreflows" )
-CreateTestExecAndInstall(FiveEqsTwoFluid_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv fiveqs 1D depressurisation structured coreflows" )
-CreateTestExecAndInstall(FiveEqsTwoFluid_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv fiveqs 1D riemann structured coreflows" )
-CreateTestExecAndInstall(FiveEqsTwoFluid_2DInclinedBoilingChannel.cxx  "${libs_for_tests}" "C++ fv fiveqs 2D heating boiling structured inclined coreflows" )
-CreateTestExecAndInstall(FiveEqsTwoFluid_2DInclinedSedimentation.cxx  "${libs_for_tests}" "C++ fv fiveqs 2D gravity sedimentation structured inclined coreflows" )
+CreateTestExecAndInstall(FiveEqsTwoFluid/FiveEqsTwoFluid_1DBoilingChannel.cxx  "${libs_for_tests}" "C++ fv fiveqs 1D heating boiling structured coreflows" )
+CreateTestExecAndInstall(FiveEqsTwoFluid/FiveEqsTwoFluid_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv fiveqs 1D depressurisation structured coreflows" )
+CreateTestExecAndInstall(FiveEqsTwoFluid/FiveEqsTwoFluid_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv fiveqs 1D riemann structured coreflows" )
+CreateTestExecAndInstall(FiveEqsTwoFluid/FiveEqsTwoFluid_2DInclinedBoilingChannel.cxx  "${libs_for_tests}" "C++ fv fiveqs 2D heating boiling structured inclined coreflows" )
+CreateTestExecAndInstall(FiveEqsTwoFluid/FiveEqsTwoFluid_2DInclinedSedimentation.cxx  "${libs_for_tests}" "C++ fv fiveqs 2D gravity sedimentation structured inclined coreflows" )
 
-CreateTestExecAndInstall(IsothermalTwoFluid_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 1D depressurisation structured coreflows" )
-CreateTestExecAndInstall(IsothermalTwoFluid_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 1D riemann structured coreflows" )
-#CreateTestExecAndInstall(IsothermalTwoFluid_1DSedimentation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 1D gravity sedimentation structured coreflows" )
-CreateTestExecAndInstall(IsothermalTwoFluid_2DInclinedSedimentation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity sedimentation structured inclined coreflows" )
-CreateTestExecAndInstall(IsothermalTwoFluid_2DVidangeReservoir.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity drainage structured coreflows" )
+CreateTestExecAndInstall(IsothermalTwoFluid/IsothermalTwoFluid_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 1D depressurisation structured coreflows" )
+CreateTestExecAndInstall(IsothermalTwoFluid/IsothermalTwoFluid_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 1D riemann structured coreflows" )
+#CreateTestExecAndInstallIsothermalTwoFluid/(IsothermalTwoFluid_1DSedimentation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 1D gravity sedimentation structured coreflows" )
+CreateTestExecAndInstall(IsothermalTwoFluid/IsothermalTwoFluid_2DInclinedSedimentation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity sedimentation structured inclined coreflows" )
+CreateTestExecAndInstall(IsothermalTwoFluid/IsothermalTwoFluid_2DVidangeReservoir.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity drainage structured coreflows" )
 
 ################# Wave system tests
 
-add_executable(WaveSystem_FV_SphericalExplosion_CDMATH.exe WaveSystem_FV_SphericalExplosion_CDMATH.cxx)
+add_executable(WaveSystem_FV_SphericalExplosion_CDMATH.exe WaveSystem/WaveSystem_FV_SphericalExplosion_CDMATH.cxx)
 target_link_libraries(WaveSystem_FV_SphericalExplosion_CDMATH.exe CoreFlowsLibs )
 install(TARGETS WaveSystem_FV_SphericalExplosion_CDMATH.exe DESTINATION share/examples)
 
@@ -158,28 +158,28 @@ if( SOLVERLAB_WITH_MPI )#Tests parallèles
   add_test(NAME MEDCouplingSendRecvFieldDifferentMeshes_MPI_4Procs.exe                      COMMAND "${MPIEXEC}" "-n" "4" "./MEDCouplingSendRecvFieldDifferentMeshes_MPI.exe" ) 
   set_property (TEST MEDCouplingSendRecvFieldDifferentMeshes_MPI_4Procs.exe PROPERTY LABELS "C++ medcoupling mpi 4procs cdmath")     
 
-  add_executable(DiffusionEquation_1DHeatedRod_FE_MPI.exe DiffusionEquation_1DHeatedRod_FE_MPI.cxx)                    # compilation of the testxxx.exe 
+  add_executable(DiffusionEquation_1DHeatedRod_FE_MPI.exe DiffusionEquation/DiffusionEquation_1DHeatedRod_FE_MPI.cxx)                    # compilation of the testxxx.exe 
   target_link_libraries(DiffusionEquation_1DHeatedRod_FE_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
   install(TARGETS DiffusionEquation_1DHeatedRod_FE_MPI.exe DESTINATION share/examples)
 
   add_test(NAME DiffusionEquation_1DHeatedRod_FE_MPI_2Procs.exe         COMMAND "${MPIEXEC}" "-n" "2" "./DiffusionEquation_1DHeatedRod_FE_MPI.exe")     
   set_property (TEST MEDCouplingSendRecvFieldDifferentMeshes_MPI_4Procs.exe PROPERTY LABELS "C++ medcoupling mpi 2procs cdmath")     
 
-  add_executable(DiffusionEquation_1DHeatedRod_FV_MPI.exe DiffusionEquation_1DHeatedRod_FV_MPI.cxx)                    # compilation of the testxxx.exe 
+  add_executable(DiffusionEquation_1DHeatedRod_FV_MPI.exe DiffusionEquation/DiffusionEquation_1DHeatedRod_FV_MPI.cxx)                    # compilation of the testxxx.exe 
   target_link_libraries(DiffusionEquation_1DHeatedRod_FV_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
   install(TARGETS DiffusionEquation_1DHeatedRod_FV_MPI.exe DESTINATION share/examples)
 
   add_test(NAME DiffusionEquation_1DHeatedRod_FV_MPI_2Procs.exe         COMMAND "${MPIEXEC}" "-n" "2" "./DiffusionEquation_1DHeatedRod_FV_MPI.exe")     
   set_property (TEST DiffusionEquation_1DHeatedRod_FV_MPI_2Procs.exe PROPERTY LABELS "C++ fv diffusion 1D heating structured mpi 2procs coreflows")     
 
-  add_executable(TransportEquation_1DHeatedChannel_MPI.exe TransportEquation_1DHeatedChannel_MPI.cxx)                    # compilation of the testxxx.exe 
+  add_executable(TransportEquation_1DHeatedChannel_MPI.exe TransportEquation/TransportEquation_1DHeatedChannel_MPI.cxx)                    # compilation of the testxxx.exe 
   target_link_libraries(TransportEquation_1DHeatedChannel_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
   install(TARGETS TransportEquation_1DHeatedChannel_MPI.exe DESTINATION share/examples)
 
   add_test(NAME TransportEquation_1DHeatedChannel_MPI_2Procs.exe         COMMAND "${MPIEXEC}" "-n" "2" "./TransportEquation_1DHeatedChannel_MPI.exe")     
   set_property (TEST TransportEquation_1DHeatedChannel_MPI_2Procs.exe PROPERTY LABELS "C++ fv transport 1D heating structured mpi 2procs coreflows")     
 
-  add_executable(WaveSystem_FV_SphericalExplosion_MPI.exe WaveSystem_FV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
+  add_executable(WaveSystem_FV_SphericalExplosion_MPI.exe WaveSystem/WaveSystem_FV_SphericalExplosion_MPI.cxx)                    # compilation of the testxxx.exe 
   target_link_libraries(WaveSystem_FV_SphericalExplosion_MPI.exe CoreFlowsLibs ${MPI_LIBRARY})              # provide required lib for testxxx.exe 
   install(TARGETS WaveSystem_FV_SphericalExplosion_MPI.exe DESTINATION share/examples)
 

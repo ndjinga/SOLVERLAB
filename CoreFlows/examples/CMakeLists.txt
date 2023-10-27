@@ -21,17 +21,23 @@ add_custom_target (CoreFlows COMMAND ctest -O testsCoreFlows.log)
 add_custom_target (eos COMMAND ctest -R EOS)# may be replace ctest -R with ctest -L
 add_custom_target (coupled COMMAND ctest -R Coupled)# may be replace ctest -R with ctest -L
 
+#Fluid models
 add_custom_target (SinglePhase COMMAND ctest -R SinglePhase)# may be replace ctest -R with ctest -L
 add_custom_target (DriftModel  COMMAND ctest -R DriftModel) # may be replace ctest -R with ctest -L
 add_custom_target (IsothermalTwoFluid COMMAND ctest -R IsothermalTwoFluid)# may be replace ctest -R with ctest -L
 add_custom_target (   FiveEqsTwoFluid COMMAND ctest -R    FiveEqsTwoFluid)# may be replace ctest -R with ctest -L
+add_custom_target (   WaveSystem COMMAND ctest -R    WaveSystem)# may be replace ctest -R with ctest -L
 
-add_custom_target (DiffusionEquation COMMAND ctest -R DiffusionEquation -E StationaryDiffusionEquation)# may be replace ctest -R with ctest -L
-add_custom_target (diffusion_tests         COMMAND ctest -R DiffusionEquation)# may be replace ctest -R with ctest -L
-add_custom_target (TransportEquation COMMAND ctest -R TransportEquation)# may be replace ctest -R with ctest -L
-add_custom_target (transport_tests         COMMAND ctest -R TransportEquation)# may be replace ctest -R with ctest -L
-add_custom_target (StationaryDiffusionEquation COMMAND ctest -R StationaryDiffusionEquation)# may be replace ctest -R with ctest -L
+#Scalar models
+add_custom_target (DiffusionEquation COMMAND ctest -R DiffusionEquation -E StationaryDiffusionEquation -E convergence)# may be replace ctest -R with ctest -L
+add_custom_target (Diffusion COMMAND ctest -R Diffusion -E convergence)# may be replace ctest -R with ctest -L
+add_custom_target (diffusion_tests         COMMAND ctest -R DiffusionEquation -E convergence)# may be replace ctest -R with ctest -L
+add_custom_target (TransportEquation COMMAND ctest -R TransportEquation -E convergence)# may be replace ctest -R with ctest -L
+add_custom_target (transport_tests         COMMAND ctest -R TransportEquation -E convergence)# may be replace ctest -R with ctest -L
+add_custom_target (StationaryDiffusion COMMAND ctest -R StationaryDiffusion -E convergence)# may be replace ctest -R with ctest -L
+add_custom_target (StationaryDiffusionEquation COMMAND ctest -R StationaryDiffusion -E convergence)# may be replace ctest -R with ctest -L
 
+#Convergence tests
 add_custom_target (convergence COMMAND ctest -R convergence)# may be replace ctest -R with ctest -L
 
 add_custom_target (fv_tests         COMMAND ctest -R FV)# may be replace ctest -R with ctest -L
