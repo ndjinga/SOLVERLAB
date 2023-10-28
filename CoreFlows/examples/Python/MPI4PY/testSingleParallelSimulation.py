@@ -2,7 +2,7 @@
 # -*-coding:utf-8 -*
 
 #===============================================================================================================================
-# Name        : Test launching one simulation on several proc
+# Name        : Test launching one simulation on several procs
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2023
 # Description : 

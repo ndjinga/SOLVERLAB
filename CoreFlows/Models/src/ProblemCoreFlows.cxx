@@ -60,7 +60,7 @@ ProblemCoreFlows::ProblemCoreFlows(MPI_Comm comm)
 	_stationaryMode=false;
 	_timeScheme=Explicit;
 	_wellBalancedCorrection=false;
-    _FECalculation=false;
+	_FECalculation=false;
 	_nonLinearSolver = Newton_SOLVERLAB;
 	_conditionNumber=false;
 	_maxvp=0;
@@ -153,7 +153,7 @@ void ProblemCoreFlows::setInitialField(const MEDCoupling::MCAuto<MEDCoupling::ME
 
 void ProblemCoreFlows::setInitialField( MEDCoupling::MEDCouplingFieldDouble* myMEDCouplingField )
 {
-	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMCAutoMEDCouplingField(myMEDCouplingField);
+    MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> myMCAutoMEDCouplingField(myMEDCouplingField);
     Field VV(myMCAutoMEDCouplingField);
     return ProblemCoreFlows::setInitialField( VV );
 }
@@ -229,9 +229,7 @@ void ProblemCoreFlows::setInitialField(const Field &VV)
     if(VV.getTypeOfField()==NODES)
         _neibMaxNbNodes=_mesh.getMaxNbNeighbours(NODES);
     else
-    {
         _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
-	}
 	
 	/*** MPI distribution of parameters ***/
 	MPI_Allreduce(&_initialDataSet, &_initialDataSet, 1, MPIU_BOOL, MPI_LOR, PETSC_COMM_WORLD);
