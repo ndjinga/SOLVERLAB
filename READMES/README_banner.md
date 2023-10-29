@@ -1,4 +1,4 @@
-## SOLVERLAB ASCI banner
+## SOLVERLABGUI ASCII banner
 
 From http://patorjk.com/software/taag/#p=display&v=1&c=c&f=Big&t=SolverlabGUI%0A%0A%0A%0A
 

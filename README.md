@@ -97,28 +97,16 @@ The easiest way to run SOLVERLAB is to launch the SOLVERLAB module of the SALOME
     - click on the SOLVERLAB icon ![logo](./images/logoSOLVERLABsmall.png) to launch SOLVERLAB module window
     - or use the SALOME python shell to run SOLVERLAB python scripts.
 
+A new GUI based on the library PACKAGESPY is being developped for SOLVERLAB.
 
-### Standalone compilation from sources
-
-However the SALOME binary file can be very large (up to 5GB).
-Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
-
-In order to build SOLVERLAB on your system you will need
-- the package [CMAKE](https://cmake.org/),
-- a C++  compiler such as  [g++](https://gcc.gnu.org/)
-- optionally [Python3](https://www.python.org/downloads/) to run python language scripts
-- optionally [ParaView](https://www.paraview.org/) for data visualisation.  
-
-Detailed instructions for compilation and use of standalone SOLVERLAB can be found in the page
-[Standalone compilation from sources](CoreFlows/Documentation/install.md).
-
+- See [README_solverlabGUI.md](./READMES/README_solverlabGUI.md)
 
 ### Use of SOLVERLAB in a terminal/console
 
 
 #### Running Python scripts
 
-If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
+If you are not in the SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
  * `source /path/to/SOLVERLAB_install/env_SOLVERLAB.sh`  
 
 Then to run SOLVERLAB with your Python code `main.py `, simply type in your terminal or your SALOME console
@@ -153,9 +141,19 @@ The SOLVERLAB environment variables consist in :
  * MED library path: `${MEDFILE_ROOT_DIR}/lib`
  * MEDCOUPLING library path: `${MEDCOUPLING_ROOT_DIR}/lib`
 
+### Standalone compilation from sources
 
-## SOLVERLAB GUI
+However the SALOME binary file can be very large (up to 5GB).
+Compilation of SOLVERLAB from source files can provide a faster alternative using less disk and memory space.
 
-A new GUI based on the library PACKAGESPY is being developped for SOLVERLAB.
+In order to build SOLVERLAB on your system you will need
+- the package [CMAKE](https://cmake.org/),
+- a C++  compiler such as  [g++](https://gcc.gnu.org/)
+- optionally [Python3](https://www.python.org/downloads/) to run python language scripts
+- optionally [ParaView](https://www.paraview.org/) for data visualisation.  
 
-- See [README_solverlabGUI.md](./READMES/README_solverlabGUI.md)
+Detailed instructions for compilation and use of standalone SOLVERLAB can be found in the page
+[Standalone compilation from sources](CoreFlows/Documentation/install.md).
+
+
+
