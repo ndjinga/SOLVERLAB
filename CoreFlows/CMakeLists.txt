@@ -10,7 +10,6 @@ set (COREFLOWS_VERSION_MINOR 9)
 # Coreflows project options (deprecated, see SOLVERLAB options)
 set (COREFLOWS_WITH_DOCUMENTATION ${SOLVERLAB_WITH_DOCUMENTATION} CACHE STRING "Generate documentation for CoreFlows use")
 set (COREFLOWS_WITH_PYTHON ${SOLVERLAB_WITH_PYTHON} CACHE STRING "Compile Python interface for COREFLOWS")
-set (COREFLOWS_WITH_GUI ${SOLVERLAB_WITH_GUI} CACHE STRING "Compile Graphic user Interface for COREFLOWS")
 set (COREFLOWS_WITH_PACKAGE ${SOLVERLAB_WITH_PACKAGE} CACHE STRING "Generate RPM, Debian and tarball packages")
 set (COREFLOWS_WITH_TESTS ${SOLVERLAB_WITH_TESTS} CACHE STRING "Compile with testing and examples")
 
@@ -72,25 +71,6 @@ if   (COREFLOWS_WITH_DOCUMENTATION)                                             
   INSTALL(FILES ${CoreFlows_SOURCE_DIR}/Documentation/CoreFlows.pdf DESTINATION share/doc OPTIONAL)	    #
 endif(COREFLOWS_WITH_DOCUMENTATION)                                                                                                    #
                                                                                                             #
-# ------------- --------------------------------------------------------------------------------------------#
-
-# Standalone graphic interface-----------------------------------------------------------------------------------------#
-     													    #
-if   (COREFLOWS_WITH_GUI) 
-  if   ( NOT PACKAGESPY_ROOT_DIR AND NOT SOLVERLAB_WITH_PACKAGESPY)													    #
-    set (CoreFlows_GUI_DIR ${CoreFlows_SOURCE_DIR}/gui)                                                        #
-  else ( NOT PACKAGESPY_ROOT_DIR AND NOT SOLVERLAB_WITH_PACKAGESPY)													    #
-    set (CoreFlows_GUI_DIR ${CoreFlows_SOURCE_DIR}/gui_new)      
-    if   ( NOT PACKAGESPY_ROOT_DIR )                                                  #
-      FILE(DOWNLOAD ${DOWNLOAD_PACKAGESPY} packagespy.zip )
-      FILE(ARCHIVE_EXTRACT INPUT packagespy.zip DESTINATION ${CoreFlows_GUI_DIR} )
-      INSTALL(DIRECTORY ${CoreFlows_GUI_DIR}/PACKAGESPYGUI DESTINATION bin/salome )
-      set (PACKAGESPY_ROOT_DIR ${PROJECT_INSTALL_DIR}/bin/salome/PACKAGESPYGUI)   
-    endif( NOT PACKAGESPY_ROOT_DIR )                                                  #
-  endif( NOT PACKAGESPY_ROOT_DIR AND NOT SOLVERLAB_WITH_PACKAGESPY)													    #
-  add_subdirectory(${CoreFlows_GUI_DIR})
-endif(COREFLOWS_WITH_GUI)                                                                                                    #
-													    #
 # ------------- --------------------------------------------------------------------------------------------#
 
 #--------------------- COMPILATION MAIN --------------------------------------------------------------------#

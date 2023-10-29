@@ -615,13 +615,29 @@ IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
     set(MATPLOTLIB_ROOT_DIR $ENV{MATPLOTLIB_ROOT_DIR} )
 ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
 
-#For GUI : PyQt5 root dir
+# Standalone graphic interface-----------------------------------------------------------------------------------------#
+     													    #
 if   ( SOLVERLAB_WITH_GUI )
+  #For GUI : PyQt5 root dir
   IF   ( NOT DEFINED PYQT5_ROOT_DIR )
     set(PYQT5_ROOT_DIR $ENV{PYQT5_ROOT_DIR} )
   ENDIF( NOT DEFINED PYQT5_ROOT_DIR )
   find_package(PyQt5)
+
+  set (SOLVERLAB_GUI_DIR ${SOLVERLAB_SOURCE_DIR}/solverlabGUI)                                                        #
+
+  #For PACKAGESPY
+  if   ( NOT PACKAGESPY_ROOT_DIR )                                                  #
+    FILE(DOWNLOAD ${DOWNLOAD_PACKAGESPY} packagespy.zip )
+    FILE(ARCHIVE_EXTRACT INPUT packagespy.zip DESTINATION ${SOLVERLAB_GUI_DIR} )
+    INSTALL(DIRECTORY ${SOLVERLAB_GUI_DIR}/PACKAGESPYGUI DESTINATION bin/salome )
+    set (PACKAGESPY_ROOT_DIR ${PROJECT_INSTALL_DIR}/bin/salome/PACKAGESPYGUI)   
+  endif( NOT PACKAGESPY_ROOT_DIR )                                                  #
+  add_subdirectory(solverlabGUI)
 endif   ( SOLVERLAB_WITH_GUI )
+													    #
+# ------------- --------------------------------------------------------------------------------------------#
+
 
 #Paraview library paths
 set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
@@ -702,8 +718,8 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   add_custom_target (doc-sphinx COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/Documentation"  "${PROJECT_BINARY_DIR}/doc/sphinx-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/Documentation)                                            #
 
   if   ( SOLVERLAB_WITH_GUI )
-    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc"  "${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/gui-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/gui/doc)                                            #
-    install (DIRECTORY ${PROJECT_BINARY_DIR}/CoreFlows/gui/doc/gui-doc/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
+    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/solverlabGUI/doc/src"  "${PROJECT_BINARY_DIR}/solverlabGUI/doc/build" SOURCES ${PROJECT_SOURCE_DIR}/solverlabGUI/doc/src)                                            #
+    install (DIRECTORY ${PROJECT_BINARY_DIR}/solverlabGUI/doc/build/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
   endif( SOLVERLAB_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)
 

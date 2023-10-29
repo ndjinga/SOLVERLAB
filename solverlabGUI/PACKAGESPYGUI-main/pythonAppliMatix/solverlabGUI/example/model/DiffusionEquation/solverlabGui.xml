@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solverlab typeClass="ModelSvl" treePyName="" icon="solverlabpy.resources.solverlabgui">
+  <GeometryMed typeClass="DataFromFileMedXyz" treePyName=".GeometryMed" icon="datafromfilemed">
+    <fileMed typeClass="FileOnlyBrowseXyz" treePyName=".GeometryMed.fileMed"> {SOLVERLAB_SRC}/CoreFlows/examples/resources/meshSquare.med</fileMed>
+    <contents typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents">
+      <Header typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.Header">             </Header>
+      <fields typeClass="ListOfBaseXyz" treePyName=".GeometryMed.contents.fields" size="10">
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[0]" index="0">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[0].fieldName"> Bottom temperature</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[0].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[0].meshName">       Bottom</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[0].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[1]" index="1">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[1].fieldName"> Fluid enthalpy</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[1].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[1].meshName">       Mesh_1</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[1].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[2]" index="2">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[2].fieldName"> Fluid temperature</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[2].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[2].meshName">       Mesh_1</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[2].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[3]" index="3">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[3].fieldName">   Heat power</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[3].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[3].meshName">       Mesh_1</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[3].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[4]" index="4">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[4].fieldName"> Left temperature</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[4].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[4].meshName">         Left</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[4].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[5]" index="5">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[5].fieldName">     Pressure</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[5].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[5].meshName">       Mesh_1</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[5].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[6]" index="6">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[6].fieldName"> Right temperature</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[6].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[6].meshName">        Right</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[6].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[7]" index="7">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[7].fieldName"> Solid temperature</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[7].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[7].meshName">       Mesh_1</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[7].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[8]" index="8">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[8].fieldName"> Top temperature</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[8].info">             </info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[8].meshName">          Top</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[8].numberOfComponents">            1</numberOfComponents>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.fields[9]" index="9">
+          <fieldName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[9].fieldName">     Velocity</fieldName>
+          <info typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[9].info">          , ,</info>
+          <meshName typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[9].meshName">       Mesh_1</meshName>
+          <numberOfComponents typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.fields[9].numberOfComponents">            3</numberOfComponents>
+        </BaseFreeXyz>
+      </fields>
+      <meshes typeClass="ListOfBaseXyz" treePyName=".GeometryMed.contents.meshes" size="5">
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.meshes[0]" index="0">
+          <groupsNames typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[0].groupsNames">             </groupsNames>
+          <meshDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[0].meshDim">            1</meshDim>
+          <name typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[0].name">       Bottom</name>
+          <spaceDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[0].spaceDim">            2</spaceDim>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.meshes[1]" index="1">
+          <groupsNames typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[1].groupsNames">             </groupsNames>
+          <meshDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[1].meshDim">            1</meshDim>
+          <name typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[1].name">         Left</name>
+          <spaceDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[1].spaceDim">            2</spaceDim>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.meshes[2]" index="2">
+          <groupsNames typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[2].groupsNames"> Bottom, Left, Right, Top</groupsNames>
+          <meshDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[2].meshDim">            2</meshDim>
+          <name typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[2].name">       Mesh_1</name>
+          <spaceDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[2].spaceDim">            2</spaceDim>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.meshes[3]" index="3">
+          <groupsNames typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[3].groupsNames">             </groupsNames>
+          <meshDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[3].meshDim">            1</meshDim>
+          <name typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[3].name">        Right</name>
+          <spaceDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[3].spaceDim">            2</spaceDim>
+        </BaseFreeXyz>
+        <BaseFreeXyz typeClass="BaseFreeXyz" treePyName=".GeometryMed.contents.meshes[4]" index="4">
+          <groupsNames typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[4].groupsNames">             </groupsNames>
+          <meshDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[4].meshDim">            1</meshDim>
+          <name typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[4].name">          Top</name>
+          <spaceDim typeClass="StrNoEditionXyz" treePyName=".GeometryMed.contents.meshes[4].spaceDim">            2</spaceDim>
+        </BaseFreeXyz>
+      </meshes>
+    </contents>
+  </GeometryMed>
+  <Model typeClass="ListOfEquation" treePyName=".Model" size="1">
+    <DiffusionEq typeClass="DiffusionEq" treePyName=".Model[0]" index="0">
+      <field_name typeClass="SelectField" treePyName=".Model[0].field_name"> Solid temperature</field_name>
+      <field_option typeClass="FieldOptionSvl" treePyName=".Model[0].field_option">
+        <time_iteration typeClass="IntPosXyz" treePyName=".Model[0].field_option.time_iteration">            0</time_iteration>
+        <time_sub_iteration typeClass="IntPosXyz" treePyName=".Model[0].field_option.time_sub_iteration">            0</time_sub_iteration>
+        <meshLevel typeClass="Int20Xyz" treePyName=".Model[0].field_option.meshLevel">            0</meshLevel>
+      </field_option>
+      <space_dim typeClass="Int13Xyz" treePyName=".Model[0].space_dim">            2</space_dim>
+      <time_iteration typeClass="IntXyz" treePyName=".Model[0].time_iteration">            0</time_iteration>
+      <finite_method typeClass="CalculationMethod" treePyName=".Model[0].finite_method">      Element</finite_method>
+      <mandatory_values typeClass="MandatoryDiffusionEq" treePyName=".Model[0].mandatory_values">
+        <specific_heat typeClass="FloatXyz" treePyName=".Model[0].mandatory_values.specific_heat">  3.00000e+02</specific_heat>
+        <solid_density typeClass="FloatXyz" treePyName=".Model[0].mandatory_values.solid_density">  1.00000e+04</solid_density>
+        <thermal_conductivity typeClass="FloatXyz" treePyName=".Model[0].mandatory_values.thermal_conductivity">  5.00000e+00</thermal_conductivity>
+      </mandatory_values>
+      <optional_values typeClass="OptionalDiffusionEq" treePyName=".Model[0].optional_values">
+        <mode_fluid_temp typeClass="ModeFieldSvl" treePyName=".Model[0].optional_values.mode_fluid_temp">        Field</mode_fluid_temp>
+        <fluid_temp_scalar hidden="True" typeClass="FloatXyz" treePyName=".Model[0].optional_values.fluid_temp_scalar">  0.00000e+00</fluid_temp_scalar>
+        <fluid_temp_field typeClass="FieldOptionSvl" treePyName=".Model[0].optional_values.fluid_temp_field">
+          <field_name typeClass="SelectField" treePyName=".Model[0].optional_values.fluid_temp_field.field_name"> Fluid temperature</field_name>
+          <time_iteration typeClass="IntPosXyz" treePyName=".Model[0].optional_values.fluid_temp_field.time_iteration">            0</time_iteration>
+          <time_sub_iteration typeClass="IntPosXyz" treePyName=".Model[0].optional_values.fluid_temp_field.time_sub_iteration">            0</time_sub_iteration>
+          <meshLevel typeClass="Int20Xyz" treePyName=".Model[0].optional_values.fluid_temp_field.meshLevel">            0</meshLevel>
+        </fluid_temp_field>
+        <heat_transfer_coeff typeClass="FloatXyz" treePyName=".Model[0].optional_values.heat_transfer_coeff">  1.00000e+03</heat_transfer_coeff>
+        <mode_heat_power typeClass="ModeFieldSvl" treePyName=".Model[0].optional_values.mode_heat_power">        Field</mode_heat_power>
+        <heat_power_scalar hidden="True" typeClass="FloatXyz" treePyName=".Model[0].optional_values.heat_power_scalar">  0.00000e+00</heat_power_scalar>
+        <heat_power_field typeClass="FieldOptionSvl" treePyName=".Model[0].optional_values.heat_power_field">
+          <field_name typeClass="SelectField" treePyName=".Model[0].optional_values.heat_power_field.field_name">   Heat power</field_name>
+          <time_iteration typeClass="IntPosXyz" treePyName=".Model[0].optional_values.heat_power_field.time_iteration">            0</time_iteration>
+          <time_sub_iteration typeClass="IntPosXyz" treePyName=".Model[0].optional_values.heat_power_field.time_sub_iteration">            0</time_sub_iteration>
+          <meshLevel typeClass="Int20Xyz" treePyName=".Model[0].optional_values.heat_power_field.meshLevel">            0</meshLevel>
+        </heat_power_field>
+      </optional_values>
+      <boundary_condition typeClass="SelectBondary" treePyName=".Model[0].boundary_condition">      Neumann</boundary_condition>
+      <numerical_parameters typeClass="NumericalSvl" treePyName=".Model[0].numerical_parameters">
+        <method typeClass="MethodList" treePyName=".Model[0].numerical_parameters.method">     Explicit</method>
+        <linear_solver typeClass="LinearSolverList" treePyName=".Model[0].numerical_parameters.linear_solver">        GMRES</linear_solver>
+        <preconditioner typeClass="PreconditionerList" treePyName=".Model[0].numerical_parameters.preconditioner">          ILU</preconditioner>
+        <max_iteration typeClass="IntSupEq1Xyz" treePyName=".Model[0].numerical_parameters.max_iteration">           50</max_iteration>
+      </numerical_parameters>
+      <computation_parameters typeClass="ComputationSvl" treePyName=".Model[0].computation_parameters">
+        <max_time_step typeClass="IntXyz" treePyName=".Model[0].computation_parameters.max_time_step">            3</max_time_step>
+        <save_frequency typeClass="IntXyz" treePyName=".Model[0].computation_parameters.save_frequency">            1</save_frequency>
+        <max_time typeClass="IntXyz" treePyName=".Model[0].computation_parameters.max_time">   1000000000</max_time>
+        <cfl typeClass="FloatXyz" treePyName=".Model[0].computation_parameters.cfl">  9.50000e-01</cfl>
+        <precision typeClass="FloatXyz" treePyName=".Model[0].computation_parameters.precision">  1.00000e-06</precision>
+        <file_name typeClass="StrXyz" treePyName=".Model[0].computation_parameters.file_name">       result</file_name>
+        <file_format typeClass="FormatList" treePyName=".Model[0].computation_parameters.file_format">          VTK</file_format>
+      </computation_parameters>
+    </DiffusionEq>
+  </Model>
+  <Analysis typeClass="AnalysisSvl" treePyName=".Analysis" icon="run">
+    <dataInformations typeClass="DataInformationsSvl" treePyName=".Analysis.dataInformations" icon="datainformation">
+      <name typeClass="StrXyz" treePyName=".Analysis.dataInformations.name"> DiffusionEquation</name>
+      <directory typeClass="DirectoryXyz" treePyName=".Analysis.dataInformations.directory"> ${SOLVERLABGUI_ROOT_DIR}/example/model</directory>
+      <release hidden="True" typeClass="ReleaseXyz" treePyName=".Analysis.dataInformations.release">        1.0.0</release>
+    </dataInformations>
+    <caseSolverlab typeClass="CaseSvl" treePyName=".Analysis.caseSolverlab" icon="casesvl">
+      <launchInBackground typeClass="BoolXyz" treePyName=".Analysis.caseSolverlab.launchInBackground">         True</launchInBackground>
+      <Equation typeClass="SelectEquation" treePyName=".Analysis.caseSolverlab.Equation">            0</Equation>
+      <NumberOfProcessors typeClass="IntPosXyz" treePyName=".Analysis.caseSolverlab.NumberOfProcessors">            0</NumberOfProcessors>
+    </caseSolverlab>
+  </Analysis>
+</Solverlab>

@@ -1,0 +1,213 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Solverlab GUI main widget &#8212; solverlabGUI 0.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Usage" href="generaluse.html" />
+    <link rel="prev" title="Installation" href="svlinstallation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="solverlab-gui-main-widget">
+<span id="iramainwidget"></span><h1>Solverlab GUI main widget<a class="headerlink" href="#solverlab-gui-main-widget" title="Permalink to this headline">¶</a></h1>
+<p>This is the main window of the Solverlab GUI. It’s composed of three parts:</p>
+<ol class="arabic simple">
+<li>The <strong>TOOLBAR</strong> is at the top and is used to realise quick action</li>
+<li>The <strong>TREE VIEW</strong> is at the left and is used to import and modifie all data needed by Solverlab.</li>
+<li>The <strong>CONTENT TAB</strong> is at the center/right and has diverse utility</li>
+</ol>
+<a class="reference internal image-reference" href="_images/solverlabMainWidget1.png"><img alt="_images/solverlabMainWidget1.png" class="align-center" src="_images/solverlabMainWidget1.png" style="width: 780.0px; height: 470.25px;" /></a>
+<div class="section" id="toolbar">
+<h2>Toolbar<a class="headerlink" href="#toolbar" title="Permalink to this headline">¶</a></h2>
+<img alt="_images/solverlabMainWidgetToolbar1n.png" class="align-center" src="_images/solverlabMainWidgetToolbar1n.png" />
+<p>This toolbar contains icons related to actions, from left to right:</p>
+<ol class="arabic simple">
+<li>New Solverlab data. Create solverlab case from scratch</li>
+<li>Load Solverlab data. Load case from previously saved case in a file Xml.</li>
+<li>Save Solverlab data. Save current solverlab case in a file Xml.</li>
+<li>Launch Solverlab calculus. Launch Solverlab code on current solverlab case.</li>
+<li>Refresh SolverlabObjects tree view.</li>
+<li>Clear Solverlab data model, remove Solverlab data tree (in SolverlabObject widget).</li>
+<li>Solverlab GUI help. Display this current documentation in a browser (html mode).</li>
+<li>Solverlab code help. Display Solverlab code manual in a browser (pdf mode).</li>
+<li>Solverlab Example. Show directory with example of implemented model.</li>
+</ol>
+</div>
+<div class="section" id="solverlab-tree-view-widget">
+<h2>Solverlab tree view widget<a class="headerlink" href="#solverlab-tree-view-widget" title="Permalink to this headline">¶</a></h2>
+<p>From this tree view widget named <em>SolverlabObjects</em> users can prepare Solverlab code data.</p>
+<a class="reference internal image-reference" href="_images/solverlabTreeViewWidget1.png"><img alt="_images/solverlabTreeViewWidget1.png" class="align-center" src="_images/solverlabTreeViewWidget1.png" style="width: 292.59999999999997px; height: 377.29999999999995px;" /></a>
+<div class="section" id="modify-tree-view-widget-items-values">
+<h3>Modify tree view widget items values<a class="headerlink" href="#modify-tree-view-widget-items-values" title="Permalink to this headline">¶</a></h3>
+<p>There are some values as leaves of tree. Names and tooltips are <em>almost</em> as Solverlab code naming usage.</p>
+<ol class="arabic simple">
+<li><strong>Simple scalar values</strong>.
+User can modify value on <em>mouse-left-double-click</em>, selecting tree item nodes <strong>hovering column value</strong>.</li>
+<li><strong>Other specific values</strong>.
+User can modify value on <em>mouse-right-click</em>, to get a contextual menu for modification,
+selecting tree item nodes <strong>hovering columns name and value</strong>.</li>
+</ol>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Some values are context specific and can be displayed only when they are needed.</p>
+</div>
+</div>
+<div class="section" id="tree-view-widget-menus">
+<h3>Tree view widget menus<a class="headerlink" href="#tree-view-widget-menus" title="Permalink to this headline">¶</a></h3>
+<p>There are some menus, as <em>contextual menu</em> on <em>mouse-right-click</em> when selected tree item nodes.
+Some menu are generic, and other are specific to node, as contextual actions.
+This is a <strong>NOT exhaustive</strong> list of menus:</p>
+</div>
+<div class="section" id="expand-collapse-menu">
+<h3>Expand/collapse menu<a class="headerlink" href="#expand-collapse-menu" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/solverlabExpandMenu1.png"><img alt="_images/solverlabExpandMenu1.png" class="align-center" src="_images/solverlabExpandMenu1.png" style="width: 223.20000000000002px; height: 223.20000000000002px;" /></a>
+<p>This menu contains some actions to expand or collapse all or selected part of
+data tree.
+To activate this menu users have to <em>mouse-right-click</em> on <strong>head of arrow</strong>
+of tree item nodes (at <strong>left</strong> of item icon).</p>
+</div>
+<div class="section" id="delete-insert-menu">
+<h3>Delete/Insert menu<a class="headerlink" href="#delete-insert-menu" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/solverlabDeleteMenu1.png"><img alt="_images/solverlabDeleteMenu1.png" class="align-center" src="_images/solverlabDeleteMenu1.png" style="width: 324.8px; height: 324.8px;" /></a>
+<p>This menu contains some actions to insert, delete and reset all or selected part of
+data tree.
+To activate this menu users have to <em>mouse-right-click</em> on ‘name’ of tree item nodes
+(at right of item icon).
+The concerned items are usually not leaves (are items without a value).</p>
+</div>
+</div>
+<div class="section" id="log-run-code-widget">
+<h2>Log Run Code widget<a class="headerlink" href="#log-run-code-widget" title="Permalink to this headline">¶</a></h2>
+<p>This widget displays log trace of Solverlab code execution.</p>
+<p>Solverlab code is executed when users activate <em>Launch Solverlab calculus</em> button
+in the <strong>TOOLBAR</strong>.</p>
+<a class="reference internal image-reference" href="_images/solverlabLogRunCodeWidget1.png"><img alt="_images/solverlabLogRunCodeWidget1.png" class="align-center" src="_images/solverlabLogRunCodeWidget1.png" style="width: 541.6px; height: 437.6px;" /></a>
+<div class="section" id="log-run-code-widget-menu">
+<h3>Log Run Code widget menu<a class="headerlink" href="#log-run-code-widget-menu" title="Permalink to this headline">¶</a></h3>
+<a class="reference internal image-reference" href="_images/solverlabLogWidgetMenu1.png"><img alt="_images/solverlabLogWidgetMenu1.png" class="align-center" src="_images/solverlabLogWidgetMenu1.png" style="width: 326.40000000000003px; height: 307.20000000000005px;" /></a>
+<p>This menu contains some actions to display, but <strong>also</strong> edit all or selected part of
+current log trace, considering log trace as an ascii file.
+To activate this menu users have to <em>mouse-right-click</em> <strong>somewhere in</strong> Log Run Code widget.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Using <em>Open</em> and <em>Save</em> actions in this menu, users can use this widget as
+an elementary text file viewer/editor.</p>
+</div>
+</div>
+</div>
+<div class="section" id="other-file-widget">
+<h2>Other File widget<a class="headerlink" href="#other-file-widget" title="Permalink to this headline">¶</a></h2>
+<p>This widget displays the content of the selected med file.
+It use the MEDCoupling API to do so.</p>
+<img alt="_images/solverlabOtherTab.png" class="align-center" src="_images/solverlabOtherTab.png" />
+<p>The user can <em>mouse-right-click</em> on the fileMed field in the <strong>TREE VIEW</strong> and select the “Dump ascii content” context menu.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/icon_applogo_SolverlabGUI.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="index.html">solverlabGUI</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="svlinstallation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Solverlab GUI main widget</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#toolbar">Toolbar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#solverlab-tree-view-widget">Solverlab tree view widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#log-run-code-widget">Log Run Code widget</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#other-file-widget">Other File widget</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="generaluse.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modelusage.html">Model</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="packagespy.html">Packagespy</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="release_notes/release_notes_1.0.0.html">Release Notes 1.0.0</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="svlinstallation.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="generaluse.html" title="next chapter">Usage</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018-2020, CEA.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="_sources/iramainwidget.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

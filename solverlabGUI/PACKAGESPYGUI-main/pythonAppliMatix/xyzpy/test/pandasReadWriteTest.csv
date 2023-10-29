@@ -1,0 +1,7 @@
+ age "first name" last_name postTestScore preTestScore
+0 42 Jason Miller 25.0 4
+1 52 Molly Jacobson 94.0 24
+2 36 Tina ? 57.0 31
+3 24 Jake Milner 62.0 <
+4 73 Amy Cooze 71.5 >
+

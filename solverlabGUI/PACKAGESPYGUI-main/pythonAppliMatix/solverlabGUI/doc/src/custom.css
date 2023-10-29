@@ -1,0 +1,25 @@
+/* This file is for theme alabaster custom. */
+
+/* 
+http://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
+set backquotes: ``text`` for code samples more color red
+*/
+tt, code {
+    background-color: #ecf0f3;
+    color: #842;
+    /* padding: 1px 2px; */
+}
+
+/*
+set 'Note:' etc size less than titles
+*/
+div.admonition p.admonition-title {
+    font-family: {{ theme_head_font_family }};
+    font-weight: normal;
+    font-size: 16px;
+    margin: 0 0 10px 0;
+    padding: 0;
+    line-height: 1;
+}
+
+

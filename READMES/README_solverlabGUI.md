@@ -10,9 +10,9 @@
 - This GUI uses the library [PACKAGESPY](https://codev-tuleap.intra.cea.fr/plugins/git/matix/packagespy.git)
   contained in the platform SALOME (variable `PACKAGESPY_ROOT_DIR`).  
 
-- To compile the GUI, use the cmake option `-DSOLVERLAB_WITH_PACKAGESPY=ON`, 
-  and provide the location of PACKAGESPY with the cmake option
-  `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`.  
+- To compile the GUI, use the cmake option `-DSOLVERLAB_WITH_GUI=ON`, 
+  and provide the location of PACKAGESPY (cmake option
+  `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`) and SALOME configuration files (cmake option `-DCONFIGURATION_ROOT_DIR=${-DCONFIGURATION_ROOT_DIR}$`).  
 
 - Finally, to launch the Graphical User Interface of SOLVERLAB,
   you have to load the SOLVERLAB environment.  

@@ -44,10 +44,6 @@ def GetDocOptions(options):
     res=" -DCOREFLOWS_WITH_DOCUMENTATION="+TrueFalseStr[options.doc]
     return res
 
-def GetGuiOptions(options):
-    res=" -DCOREFLOWS_WITH_GUI="+TrueFalseStr[options.gui]
-    return res
-
 def GetEclipseOptions(options):
 	res=" -G\"Eclipse CDT4 - Unix Makefiles\""*(options.create_eclipse_project)
 	return res

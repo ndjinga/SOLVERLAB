@@ -1,0 +1,201 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+#  Copyright (C) 2010-2018  CEA/DEN
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+
+"""\
+This file is the main entry file to use solverlabGui,
+in mode Command Line Argument(s) (CLI)
+
+| Usage (as linux example):
+| >> export HOMESVL=$HOME        # or else /volatile/wambeke
+| >> export SOLVERLABGUI_ROOT_DIR=$HOMESVL/solverlabGUI/solverlabCode
+| >> export SOLVERLABGUI_WORKDIR=$HOMESVL/SOLVERLABGUI_WORKDIR
+| >> export SOLVERLABGUI_LOGDIR=$HOMESVL/SOLVERLABGUI_WORKDIR/LOGS
+| >> $SOLVERLABGUI_ROOT_DIR/solverlabGUI -h
+| >> $SOLVERLABGUI_ROOT_DIR/solverlabGUI -g
+|
+| Usage (as windows example):
+| >> set HOMESVL=%userprofile%
+| >> set SOLVERLABGUI_ROOT_DIR=%HOMESVL%/solverlabGUI/solverlabCode
+| >> set SOLVERLABGUI_WORKDIR=%HOMESVL%/SOLVERLABGUI_WORKDIR
+| >> set SOLVERLABGUI_LOGDIR=%HOMESVL%/SOLVERLABGUI_WORKDIR/LOGS
+| >> %SOLVERLABGUI_ROOT_DIR%/solverlabGUI -h
+| >> %SOLVERLABGUI_ROOT_DIR%/solverlabGUI -g
+"""
+
+"""
+linux initialisations: example on is231761
+needs python3 with matplotlib pyqt5 numpy pandas...
+
+export PATH=/volatile/common/miniconda3/bin:$PATH
+conda activate pySolverlabGUI3.7
+which python
+solverlabGUI -h
+"""
+
+import os
+import sys
+import platform
+
+
+try:
+  import numpy as np
+  import pandas as pd
+except:
+  np = None
+  pd = None
+
+
+# exit OKSYS and KOSYS seems equal on linux or windows
+OKSYS = 0  # OK 
+KOSYS = 1  # KO
+
+
+# get path to solverlabGui sources
+solverlabdir = os.path.dirname(os.path.realpath(__file__))
+
+if os.getenv("USER") == "ym268439":
+  os.environ["PACKAGESPY_ROOT_DIR"] = "/volatile/catB/ym268439/packagespyGUI"  # for yacine temporary TODO remove that line
+
+packagespydir = os.getenv("PACKAGESPY_ROOT_DIR", None)
+if packagespydir is None: # supposed salome mode in directory INSTALL
+    packagespydir = os.path.realpath(os.path.join(solverlabdir, '..', 'PACKAGESPY'))
+
+# Make the useful package(s) accessible from all code
+sys.path.insert(0, os.path.join(packagespydir, "pythonAppliMatix"))
+sys.path.insert(0, solverlabdir)
+
+# to set before all os.environ["PAGER"] as 'cat'
+import helppy.helpPager as HP  # to set before all os.environ["PAGER"] as cat
+# HP.helpToFile(np, "/tmp/${USER}/helpPager.tmp")
+
+from solverlabpy.testPrerequisitesSvl import TestImports
+if TestImports() != "OK":
+  print("PACKAGESPY_ROOT_DIR %s" % packagespydir)
+  print("SOLVERLABGUI_ROOT_DIR %s" % solverlabdir)
+  sys.exit(KOSYS) # stop there is problem
+
+import xyzpy.loggingXyz as LOG
+import debogpy.debug as DBG # Easy print stderr (for DEBUG only)
+
+logger = LOG.getLogger()
+logger.setLevel("INFO")
+logtrace = logger.info # easy for future set it as logger.debug or logger.trace
+# logger.info = logger.critical # TODO go back to info
+logtrace("python version %s" % platform.python_version())
+logtrace("current operating system %s" % platform.system())
+
+# platform problems
+if platform.system() == "Windows":
+  # in windows some env var are not present, set them.
+  os.environ["LANG"] = "fr_FR.UTF-8"
+  # os.environ["USER_WEBBROWSER"] = "chrome"
+  # os.environ["USER_EDITOR"] = "notepad"  # or r"c:\Windows\System32\notepad.exe"
+  homeDir = os.environ["USERPROFILE"]
+  os.environ["HOME"] = homeDir
+else:
+  # os.environ["USER_WEBBROWSER"] = "firefox"
+  # os.environ["USER_EDITOR"] = "pluma"
+  homeDir = os.environ["HOME"]
+  os.environ["USERPROFILE"] = homeDir # linux not present
+
+
+#################################
+# MAIN
+#################################
+if __name__ == "__main__":
+
+    os.environ["SOLVERLABGUI_ROOT_DIR"] = solverlabdir
+    logtrace("SOLVERLABGUI file is %s" % os.path.realpath(__file__))
+    logtrace("SOLVERLABGUI_ROOT_DIR is %s" % solverlabdir)
+    logtrace("PACKAGESPY_ROOT_DIR is %s" % packagespydir)
+
+    solverlabgui_workdir = os.getenv("SOLVERLABGUI_WORKDIR")
+    if solverlabgui_workdir == None:
+      if "INSTALL/SOLVERLABGUI" in solverlabdir: # as linux salome installation, go to user workdir
+        # set as $SOLVERLABGUI_ROOT_DIR/../SOLVERLABGUI_WORKDIR
+        solverlabgui_workdir = os.path.realpath(os.path.expandvars(os.path.join("${HOME}",
+                                                                                "../../SOLVERLABGUI_WORKDIR")))
+      else: # as windows/linux standalone package installation, go to parent workdir
+        # set as $SOLVERLABGUI_ROOT_DIR/../SOLVERLABGUI_WORKDIR
+        solverlabgui_workdir = os.path.realpath(os.path.join(solverlabdir, "..",
+                                                             "../../SOLVERLABGUI_WORKDIR"))
+      logtrace("set environ variable SOLVERLABGUI_WORKDIR by default:\n%s" % solverlabgui_workdir)
+    else:
+      # resolve '/../..'  and etc for windows raccourcis and .bat, for example
+      solverlabgui_workdir = os.path.realpath(solverlabgui_workdir)
+    os.environ["SOLVERLABGUI_WORKDIR"] = solverlabgui_workdir
+
+    # set log files directory same as SOLVERLABGUI_WORKDIR/logs if not set
+    workdir4log = os.getenv("WORKDIR4LOG")
+    if workdir4log is None:
+      workdir4log = os.path.realpath(os.path.join(solverlabgui_workdir, "logs"))
+      logtrace("logs directory by default:\n%s" % workdir4log)
+      os.environ["WORKDIR4LOG"] = workdir4log
+
+    if np is None:
+      logger.critical("no import numpy available")
+    else:
+      logtrace("import numpy available\n%s" % os.path.dirname(np.__file__))
+
+    if pd is None:
+      logger.critical("no import pandas available")
+    else:
+      logtrace("import pandas available\n%s" % os.path.dirname(pd.__file__))
+
+    if np is None or pd is None:
+      sys.exit(KOSYS)
+
+    _debug = False # Have to be False in production (for programmers DEBUG only)
+    DBG.push_debug(_debug) # as __main__ with sys.exit so no need pop_debug
+
+    from solverlabpy.solverlabGui import Svl # it is time to do complex import
+
+    ira = Svl(logger) # instantiate the solverlabGui class
+    args = sys.argv[1:] # skip useless "solverlabGUI"
+
+    try:
+      returnCode = ira.execute_cli(args)
+    except Exception as e:
+      # error as may be unknown problem
+      # verbose debug message with traceback if developers
+      msg = "Exception raised for execute_cli (%s):\n" % " ".join(args)
+      logger.critical(DBG.format_color_exception(msg)) 
+      logger.close() # important to close logger
+      sys.exit(KOSYS)
+
+    # no Exception but may be known problem     
+    DBG.write("execute_cli return code", returnCode)
+    if returnCode.isOk():
+      # OK no trace
+      logger.debug("solverlabGUI exit code: %s" % returnCode)
+    else:
+      # KO warning as known problem have to say why
+      logger.warning("<red>return code: %s<reset>" % returnCode)
+    logger.close() # important to close logger
+    sys.exit(returnCode.toSys())
+
+
+else:
+    logger.critical("forbidden or unexpected mode for __name__ '%s'" % __name__)
+    logger.close() # important to close logger files (if present)
+    sys.exit(KOSYS)
+            
+
+
+ 
