@@ -11,8 +11,10 @@
   contained in the platform SALOME (variable `PACKAGESPY_ROOT_DIR`).  
 
 - To compile the GUI, use the cmake option `-DSOLVERLAB_WITH_GUI=ON`, 
-  and provide the location of PACKAGESPY (cmake option
-  `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`) and SALOME configuration files (cmake option `-DCONFIGURATION_ROOT_DIR=${-DCONFIGURATION_ROOT_DIR}$`).  
+  and provide the location of the following libraries :  
+  - PACKAGESPY (cmake option  `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`)  
+  - SALOME configuration (cmake option `-DCONFIGURATION_ROOT_DIR=${-DCONFIGURATION_ROOT_DIR}$`)  
+  - SALOME KERNEL (cmake option `-DKERNEL_ROOT_DIR=${-DKERNEL_ROOT_DIR}$`).  
 
 - Finally, to launch the Graphical User Interface of SOLVERLAB,
   you have to load the SOLVERLAB environment.  
