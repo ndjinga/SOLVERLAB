@@ -5,7 +5,7 @@
 
 ### Introduction
 
-- Is a new Graphical User Interface (GUI-IHM) developped for SOLVERLAB.  
+- Is a new Graphical User Interface (GUI/IHM) developped for SOLVERLAB.  
 
 - This GUI uses the library [PACKAGESPY](https://codev-tuleap.intra.cea.fr/plugins/git/matix/packagespy.git)
   contained in the platform SALOME (variable `PACKAGESPY_ROOT_DIR`).  
@@ -20,8 +20,8 @@
 
   ```bash
   source .../SOLVERLAB_install/env_SOLVERLAB.sh
-  $SOLVERLABGUI -h  # help CLI
-  $SOLVERLABGUI -g  # lanch GUI
+  ${SOLVERLAB_ROOT_DIR}/solverlabGUI --help # help CLI
+  ${SOLVERLAB_ROOT_DIR}/solverlabGUI --gui  # lanch GUI
   ```
 
 
