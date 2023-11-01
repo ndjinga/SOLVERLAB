@@ -1,4 +1,15 @@
-project(testSaddlePointPreconditionerC)
+project(SaddlePointPreconditioner)
+cmake_minimum_required(VERSION 3.1)
+
+#Case where the tests are run out of SOLVERLAB
+if( NOT DEFINED PETSC_FOUND )
+  message ( STATUS "Trying to find PETSc at PETSC_DIR = ${PETSC_DIR}" )
+  list (APPEND CMAKE_MODULE_PATH "${CMAKE_FILES}")
+  find_package (PETSc 3.4 REQUIRED)
+  message ( STATUS "PETSc found. Version is ${PETSC_VERSION_MAJOR}.${PETSC_VERSION_MINOR}.${PETSC_VERSION_SUBMINOR}" )
+  INCLUDE_DIRECTORIES( ${PETSC_INCLUDES} )
+  enable_testing ()
+endif( NOT DEFINED PETSC_FOUND )
 
 # copy tests matrices into the build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Matrices DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
