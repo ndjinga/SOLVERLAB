@@ -10,8 +10,7 @@
 - This GUI uses the library [PACKAGESPY](https://codev-tuleap.intra.cea.fr/plugins/git/matix/packagespy.git)
   contained in the platform SALOME (variable `PACKAGESPY_ROOT_DIR`).  
 
-- To compile the GUI, use the cmake option `-DSOLVERLAB_WITH_GUI=ON`, 
-  and provide the location of the following libraries :  
+- To compile the GUI, provide the location of the following libraries :  
   - PACKAGESPY (cmake option  `-DPACKAGESPY_ROOT_DIR=${PACKAGESPY_ROOT_DIR}`)  
   - SALOME configuration (cmake option `-DCONFIGURATION_ROOT_DIR=${-DCONFIGURATION_ROOT_DIR}$`)  
   - SALOME KERNEL (cmake option `-DKERNEL_ROOT_DIR=${-DKERNEL_ROOT_DIR}$`).  
@@ -21,9 +20,8 @@
   *In your terminal*, type:
 
   ```bash
-  source .../SOLVERLAB_install/env_SOLVERLAB.sh
-  ${SOLVERLAB_ROOT_DIR}/solverlabGUI --help # help CLI
-  ${SOLVERLAB_ROOT_DIR}/solverlabGUI --gui  # lanch GUI
+  source .../path/to/SALOME/env_launch.sh
+  python3 $SOLVERLABGUI -g
   ```
 
 

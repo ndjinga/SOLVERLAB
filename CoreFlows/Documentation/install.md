@@ -11,7 +11,6 @@ The following package list is sufficient on Ubuntu 20.04 :
  - `pyqt5-dev-tools` to generate the Graphical User Interface (optional)
  - `python3-matplotlib`, `paraview-dev`, `libnetcdf-dev` (on Ubuntu 20.04) and `python3-paraview` for postprocessing tools such as plotting curves (matplotlib) or generating 3D view images (paraview) (optional)
  - `ffmpeg` and `ffmpeg-devel` to generate an animation from a set of curves (optional)
- - `python3-sphinx` for the GUI documentation, and `doxygen`, `graphviz` and `mscgen` to generate a developper documentation. Use the compilation option `-DSOLVERLAB_WITH_DOCUMENTATION=ON` (optional).
  - `libmpich-dev` or  `libopenmpi-dev` for mpi parallelisation (optional)
  - `libcppunit-dev`, if you want to generate unit tests. Use the compilation option `-DSOLVERLAB_WITH_TESTS=ON` (optional).
  - `rpm`, if you want to generate RPM installation packages. Use the compilation option `-DSOLVERLAB_WITH_PACKAGE=ON` (optional).
@@ -31,7 +30,7 @@ First create a directory named 'build' where the compilation will take place and
 
 **Simple configuration for a minimum version:**  
 Type the following cmake instruction in a terminal for a minimal version
-* `cmake /path/to/SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON -DSOLVERLAB_WITH_GUI=ON `  
+* `cmake /path/to/SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON `  
 > This will download and build the following dependencies
 > - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
 > - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
@@ -42,7 +41,7 @@ Type the following cmake instruction in a terminal for a minimal version
 
 **Advanced configuration for a complete version:**  
 If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by typing the following cmake instruction in a terminal :
-* `cmake /path/to/SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}  -DSOLVERLAB_WITH_GUI=ON`  
+* `cmake /path/to/SOLVERLAB-master -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DSOLVERLAB_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DPETSC_ARCH=${PETSC_ARCH} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR} `  
 > This assumes that you have an existing 
 > - installation of PETSc (with submodule SLEPC) at the location given by the environment variable PETSC_DIR and the architecture variable PETSC_ARCH  
 > See the instructions given in [the official documentation](https://petsc.org/release/install/)

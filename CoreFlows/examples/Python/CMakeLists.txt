@@ -1,54 +1,10 @@
-# Graphic interface---------------------------------------------------------------------------------------------#
-														#
-if  ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )
-
-	# Common CMake macros
-	# ===================
-	SET(CONFIGURATION_ROOT_DIR $ENV{CONFIGURATION_ROOT_DIR} CACHE PATH "Path to the Salome CMake configuration files")
-	IF(EXISTS ${CONFIGURATION_ROOT_DIR})
-	  LIST(APPEND CMAKE_MODULE_PATH "${CONFIGURATION_ROOT_DIR}/cmake")
-	  INCLUDE(SalomeMacros NO_POLICY_SCOPE)
-	ELSE()
-	  MESSAGE(FATAL_ERROR "We absolutely need the Salome CMake configuration files, please define CONFIGURATION_ROOT_DIR !")
-	ENDIF()
-						    								#
-	# Find Salome KERNEL 
-	# ==================
-	SET(KERNEL_ROOT_DIR $ENV{KERNEL_ROOT_DIR} CACHE PATH "Path to the Salome KERNEL")
-	IF( EXISTS ${KERNEL_ROOT_DIR} )
-	  FIND_PACKAGE(SalomeKERNEL REQUIRED)
-	ELSE( EXISTS ${KERNEL_ROOT_DIR} )
-	  MESSAGE(FATAL_ERROR "We absolutely need a Salome KERNEL, please define KERNEL_ROOT_DIR!")
-	ENDIF( EXISTS ${KERNEL_ROOT_DIR} )
-	    
-	MESSAGE(STATUS "SalomeKERNEL_VERSION is ${SalomeKERNEL_VERSION}")
-
-	SET(_all_SCRIPTS
-	    SinglePhase/SOLVERLAB_2DSphericalExplosion_HEXAGON.py
-	    )
-	
-	SALOME_INSTALL_SCRIPTS("${_all_SCRIPTS}" ${SALOME_INSTALL_SCRIPT_PYTHON}/tests)
-	
-	SALOME_ACCUMULATE_ENVIRONMENT(PYTHONPATH ${PROJECT_BINARY_DIR}/src) 
-	SALOME_GENERATE_TESTS_ENVIRONMENT(tests_env)
-	
-	ADD_TEST(PythonTests ${PYTHON_EXECUTABLE} ${SALOME_INSTALL_SCRIPT_PYTHON}/tests/SOLVERLAB_2DSphericalExplosion_HEXAGON.py ${CMAKE_INSTALL_PREFIX}/share/meshes/2DHexagonWithTriangles/meshHexagonWithTriangles200.med)
-	SET_TESTS_PROPERTIES(PythonTests PROPERTIES ENVIRONMENT "${tests_env}")
-						    								#
-endif( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) )   #
-#---------------------------------------------------------------------------------------------------------------#
-
-
-#SET(TESTS_LIBRARY_PATH ${CMAKE_BINARY_DIR}/Models/src:${CDMATH_DIR}/lib:${MEDCOUPLING_LIBRARIES}:${MEDFILE_C_LIBRARIES}:${PETSC_DIR}/${PETSC_ARCH}/lib:${PV_LIB_DIR} )
-#SET(TESTS_PYTHON_PATH  ${CMAKE_BINARY_DIR}/Models/src:${CMAKE_BINARY_DIR}/swig:${CDMATH_DIR}/lib:${CDMATH_DIR}/lib/cdmath:${CDMATH_DIR}/bin/cdmath:${CDMATH_DIR}/bin/cdmath/postprocessing:${MEDCOUPLING_LIBRARIES}:${MEDFILE_C_LIBRARIES}:${PETSC_DIR}/${PETSC_ARCH}/lib:${PV_PYTHON_DIR} )
-
 ############# python example tests
 
 function(CreatePythonTest pythonFile testLabels)
     add_test(NAME ${pythonFile} COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${pythonFile})
-    if(    ${PRELOAD_NETCDF_ON_UBUNTU20} AND NOT ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) ) )
+    if(    ${PRELOAD_NETCDF_ON_UBUNTU20}  )
       SET_PROPERTY(TEST ${pythonFile}        PROPERTY ENVIRONMENT LD_PRELOAD=${NETCDF_LIBRARY_ON_UBUNTU20} )
-    endif( ${PRELOAD_NETCDF_ON_UBUNTU20} AND NOT ( (EXISTS $ENV{CONFIGURATION_ROOT_DIR}) AND (EXISTS $ENV{KERNEL_ROOT_DIR}) AND (EXISTS $ENV{GUI_ROOT_DIR}) ) )
+    endif( ${PRELOAD_NETCDF_ON_UBUNTU20}  )
 #    SET_PROPERTY(TEST ${pythonFile}        PROPERTY ENVIRONMENT LD_LIBRARY_PATH=${TESTS_LIBRARY_PATH} )
 #    SET_PROPERTY(TEST ${pythonFile} APPEND PROPERTY ENVIRONMENT      PYTHONPATH=${TESTS_PYTHON_PATH}  )
     set_property(TEST ${pythonFile} PROPERTY LABELS ${testLabels})     

@@ -103,33 +103,4 @@ export SOLVERLAB_ROOT_DIR=${SOLVERLAB_INSTALL}
 
 f_info SOLVERLAB_ROOT_DIR=${SOLVERLAB_INSTALL}
 
-# TODO 230308 Have to be tested because needs a preexisting python3 context with PyQt5/numpy/matplotlib/paraview etc. compatible!
-# this is PROTOTYPING of dir PACKAGESPY to get solverlabGUI (standalone installation, not in salome context)
-
-# PACKAGESPY in salome usage with PACKAGESPY_ROOT_DIR set
-if [ @SOLVERLAB_WITH_GUI@ = ON ]; then
-  if [ -z ${PACKAGESPY_ROOT_DIR} ]; then # test existing PACKAGESPY_ROOT_DIR to get solverlabGUI
-    f_error "solverlabGUI installation needs env var PACKAGESPY_ROOT_DIR set"
-  else
-    if [ ! -d ${PACKAGESPY_ROOT_DIR} ]; then # test existing dir PACKAGESPY to get solverlabGUI standalone 
-      f_error "solverlabGUI installation needs ${PACKAGESPY_ROOT_DIR} directory existing"
-    fi
-  fi
-  if [ -z ${SOLVERLABGUI_ROOT_DIR} ]; then # test existing solverlabGUI
-    f_error "solverlabGUI installation needs env var SOLVERLABGUI_ROOT_DIR set"
-  else
-    if [ ! -d ${SOLVERLABGUI_ROOT_DIR} ]; then # test existing SOLVERLABGUI_ROOT_DIR to get solverlabGUI
-      f_error "solverlabGUI installation needs ${SOLVERLABGUI_ROOT_DIR} directory existing"
-    fi 
-  fi
-  f_info SOLVERLABGUI_ROOT_DIR=${SOLVERLABGUI_ROOT_DIR}
-fi
-
-
-# solverlabGUI needs something like that
-# export PYTHONPATH=${PACKAGESPY_ROOT_DIR}/packagespy:${PYTHONPATH}
-# export PATH=${SOLVERLAB_ROOT_DIR}/solverlabGUI:${PATH}
-# echo solverlabGUI installation Wambeke seem ok"
-# main initial python script to get standalone GUI
-# echo "To launch solverlabGUI type '\${SOLVERLAB_ROOT_DIR}/solverlabGUI --gui'"
 

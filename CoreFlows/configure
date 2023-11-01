@@ -69,7 +69,6 @@ def ForgeCMakeCommand(options):
     CDMATHOptions=GetCDMATHOptions(options)
     PETSC_DIROptions=GetPETSC_DIROptions(options)
     PETSC_ARCHOptions=GetPETSC_ARCHOptions(options)
-    guiOptions=GetGuiOptions(options)
     docOptions=GetDocOptions(options)
     packagesOptions=GetPackagesOptions(options)
     debugOptions=GetDebugOptions(options)
@@ -80,7 +79,6 @@ def ForgeCMakeCommand(options):
     cmake_options=(
             installPrefix+" "
             +debugOptions
-            +guiOptions+" "
             +pythonOptions+" "
             +CDMATHOptions+" "
             +PETSC_DIROptions+" "
@@ -140,12 +138,6 @@ def main():
                  default=False,
                  dest="packages",
                  help="generate CoreFlows packages"
-                 )
-    p.add_option('--with-gui',
-    			 action="store_true",
-                 default=False,
-                 dest="gui",
-                 help="compile CoreFlows GUI"
                  )
     p.add_option('--with-doc',
     			 action="store_true",
