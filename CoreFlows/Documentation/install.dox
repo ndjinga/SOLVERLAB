@@ -31,12 +31,13 @@ First create a directory named 'build' where the compilation will take place and
 <b> Simpler configuration for a minimum version:</b>
 - \verbatim cmake /path/to/SOLVERLAB-master/ -DCMAKE_INSTALL_PREFIX=../SOLVERLAB_install -DCMAKE_BUILD_TYPE=Release -DSOLVERLAB_WITH_DOCUMENTATION=ON \endverbatim   
 > This will download and build the following dependencies
-> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
-> - F2CBLASLAPACK from https://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
-> - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
-> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
-> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
+> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.6.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.19.2.tar.gz
+> - F2CBLASLAPACK from https://ftp.mcs.anl.gov/pub/petsc/externalpackages/f2cblaslapack-3.8.0.q2.tar.gz
+> - HDF5 from https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
+> - MEDFILE from http://git.salome-platform.org/gitpub/modules/med.git
+> - MEDCOUPLING from http://git.salome-platform.org/gitpub/tools/medcoupling.git
+> - CONFIGURATION from http://git.salome-platform.org/gitpub/tools/configuration.git
 
 <b>Advanced configuration for a complete version:</b>
 If you already have an installation of PETSC, MED and MEDCoupling, you may save computational time and memory by using the following cmake instruction:

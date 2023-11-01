@@ -38,7 +38,7 @@ Download from GitHub
 
 Set environment for the compilation of CDMATH
 ---------------------------------------------
-Dependencies. The following package list is sufficient on Ubuntu 14.04, Ubuntu 16.04, Ubuntu 18.04 :
+Dependencies. The following package list is sufficient on Ubuntu 18.04, 20.04 and 22.04 :
 
  - `cmake3` (mandatory)
  - `g++` or another C++ compiler (mandatory)
@@ -61,11 +61,12 @@ Compile and install CDMATH
 Simpler build for a minimum version:
 * `cmake ../cdmath-master/ -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -DCDMATH_WITH_PETSC=ON -DCDMATH_WITH_PYTHON=ON `  
 > This will download and build the following dependencies
-> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
-> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
-> - HDF5 https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
-> - MEDFILE from http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
-> - MEDCOUPLING from http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
+> - PETSc from https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.6.tar.gz
+> - SLEPc from https://slepc.upv.es/download/distrib/slepc-3.19.2.tar.gz
+> - HDF5 from https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
+> - MEDFILE from http://git.salome-platform.org/gitpub/modules/med.git
+> - MEDCOUPLING from http://git.salome-platform.org/gitpub/tools/medcoupling.git
+> - CONFIGURATION from http://git.salome-platform.org/gitpub/tools/configuration.git
 
 Advanced build for an all-options version:
 * `cmake ../cdmath-master -DCMAKE_INSTALL_PREFIX=../cdmath_install -DCMAKE_BUILD_TYPE=Release -G"Eclipse CDT4 - Unix Makefiles" -D_ECLIPSE_VERSION=4.3 -DCDMATH_WITH_PETSC=ON -DCDMATH_WITH_PYTHON=ON  -DCDMATH_WITH_POSTPRO=ON -DCDMATH_WITH_TESTS=ON -DCDMATH_WITH_DOCUMENTATION=ON -DPETSC_DIR=${PETSC_DIR} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ROOT_DIR=${MEDCOUPLING_ROOT_DIR}`  
