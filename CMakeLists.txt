@@ -17,7 +17,6 @@ set (SOLVERLAB_VERSION ${SOLVERLAB_VERSION_MAJOR}.${SOLVERLAB_VERSION_MINOR}.${S
 
 option (SOLVERLAB_WITH_DOCUMENTATION "Generate SOLVERLAB documentation" ON)
 option (SOLVERLAB_WITH_PYTHON        "Generate Python interface of SOLVERLAB using SWIG" ON)
-option (SOLVERLAB_WITH_GUI           "Compile a Graphic user Interface for SOLVERLAB" OFF)
 option (SOLVERLAB_WITH_PACKAGE       "Generate RPM, Debian and tarball packages" OFF)
 option (SOLVERLAB_WITH_COREFLOWS     "Generate COREFLOWS module" ON)
 option (SOLVERLAB_WITH_PETSC         "Link with PETSc for linear systems" ON)
@@ -615,30 +614,6 @@ IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
     set(MATPLOTLIB_ROOT_DIR $ENV{MATPLOTLIB_ROOT_DIR} )
 ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
 
-# Standalone graphic interface-----------------------------------------------------------------------------------------#
-     													    #
-if   ( SOLVERLAB_WITH_GUI )
-  #For GUI : PyQt5 root dir
-  IF   ( NOT DEFINED PYQT5_ROOT_DIR )
-    set(PYQT5_ROOT_DIR $ENV{PYQT5_ROOT_DIR} )
-  ENDIF( NOT DEFINED PYQT5_ROOT_DIR )
-  find_package(PyQt5)
-
-  set (SOLVERLAB_GUI_DIR ${SOLVERLAB_SOURCE_DIR}/solverlabGUI)                                                        #
-
-  #For PACKAGESPY
-  if   ( NOT PACKAGESPY_ROOT_DIR )                                                  #
-    FILE(DOWNLOAD ${DOWNLOAD_PACKAGESPY} packagespy.zip )
-    FILE(ARCHIVE_EXTRACT INPUT packagespy.zip DESTINATION ${SOLVERLAB_GUI_DIR} )
-    INSTALL(DIRECTORY ${SOLVERLAB_GUI_DIR}/PACKAGESPYGUI DESTINATION bin/salome )
-    set (PACKAGESPY_ROOT_DIR ${PROJECT_INSTALL_DIR}/bin/salome/PACKAGESPYGUI)   
-  endif( NOT PACKAGESPY_ROOT_DIR )                                                  #
-  add_subdirectory(solverlabGUI)
-endif   ( SOLVERLAB_WITH_GUI )
-													    #
-# ------------- --------------------------------------------------------------------------------------------#
-
-
 #Paraview library paths
 set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
 set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}/dist-packages/:/usr/lib/python${Python_VERSION_MAJOR}/dist-packages/paraview/:/usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/:${MATPLOTLIB_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages:${PYQT5_ROOT_DIR}:${PYQT5_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
@@ -717,10 +692,6 @@ if (SOLVERLAB_WITH_DOCUMENTATION)                                               
   find_package(Sphinx)
   add_custom_target (doc-sphinx COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/CoreFlows/Documentation"  "${PROJECT_BINARY_DIR}/doc/sphinx-doc" SOURCES ${PROJECT_SOURCE_DIR}/CoreFlows/Documentation)                                            #
 
-  if   ( SOLVERLAB_WITH_GUI )
-    add_custom_target (docGUI COMMAND ${SPHINX_EXECUTABLE} -M html "${PROJECT_SOURCE_DIR}/solverlabGUI/doc/src"  "${PROJECT_BINARY_DIR}/solverlabGUI/doc/build" SOURCES ${PROJECT_SOURCE_DIR}/solverlabGUI/doc/src)                                            #
-    install (DIRECTORY ${PROJECT_BINARY_DIR}/solverlabGUI/doc/build/html DESTINATION share/doc/solverlab-gui-doc OPTIONAL)                  #
-  endif( SOLVERLAB_WITH_GUI )
 endif(SOLVERLAB_WITH_DOCUMENTATION)
 
 if (SOLVERLAB_WITH_TESTS)                                                                                  #
