@@ -97,9 +97,7 @@ The easiest way to run SOLVERLAB is to launch the SOLVERLAB module of the SALOME
     - click on the SOLVERLAB icon ![logo](./images/logoSOLVERLABsmall.png) to launch SOLVERLAB module window
     - or use the SALOME python shell to run SOLVERLAB python scripts.
 
-A new GUI based on the library PACKAGESPY is being developped for SOLVERLAB.
-
-- See [README_solverlabGUI.md](./READMES/README_solverlabGUI.md)
+The new GUI of SOLVERLAB is based on the library PACKAGESPY developped in the framework of SALOME.  
 
 ### Use of SOLVERLAB in a terminal/console
 
@@ -115,8 +113,8 @@ Then to run SOLVERLAB with your Python code `main.py `, simply type in your term
 
 #### Launching SOLVERLAB graphic interface from a terminal
 
-If you are not in a SALOME console you first need to load the SOLVERLAB environment in your terminal using the command
- * `source /path/to/SOLVERLAB_install/env_SOLVERLAB.sh`
+If you are not in a SALOME console you first need to load the SALOME environment in your terminal using the command
+ * `source /path/to/SALOME/env_launch.sh`
 
 Then to use the Graphical User Interface of SOLVERLAB, simply type in your terminal
 - `python3 $SOLVERLABGUI -g`

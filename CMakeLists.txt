@@ -34,7 +34,6 @@ set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
 set (PYTHON_ROOT_DIR      OFF CACHE STRING "Python library path" )
 set (PARAVIEW_ROOT_DIR    OFF CACHE STRING "PARAVIEW library path" )
 set (MPI4PY_ROOT_DIR      OFF CACHE STRING "MPI4PY library path" )
-set (PACKAGESPY_ROOT_DIR  OFF CACHE STRING "PACKAGESPY library path" )
 
 #url of tarball librairies
 set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
@@ -55,8 +54,6 @@ set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.25.0
      CACHE STRING           "HYPRE tarball path/url" )
 set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.3.tar.gz
      CACHE STRING           "MPY4PY tarball path/url" )
-set (DOWNLOAD_PACKAGESPY    https://github.com/ndjinga/PACKAGESPYGUI/archive/refs/heads/main.zip
-     CACHE STRING           "PACKAGESPY zip file path/url" )
 
 
 include(ExternalProject)#For PETSc, MED and MEDCoupling
