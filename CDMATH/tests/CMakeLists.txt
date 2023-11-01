@@ -67,7 +67,7 @@ if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC AND CDMATH_WITH_POSTPRO)
   add_custom_target (CDMATH COMMAND ctest -O testsCDMATH.log)
 
   add_custom_target (cdmath COMMAND ctest -R TestsCDMATH)
-  add_custom_target (MEDCoupling COMMAND ctest -R MEDCoupling)
+  add_custom_target (medcouplingtests COMMAND ctest -R MEDCoupling)
   add_custom_target (check COMMAND ctest -E 'validation|Example')# may be replace ctest -E with ctest -LE
   add_custom_target (vtk COMMAND ctest -R VTK)
   add_custom_target (pv COMMAND ctest -R PV)

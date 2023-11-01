@@ -36,23 +36,25 @@ set (PARAVIEW_ROOT_DIR    OFF CACHE STRING "PARAVIEW library path" )
 set (MPI4PY_ROOT_DIR      OFF CACHE STRING "MPI4PY library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.0.tar.gz
+set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.6.tar.gz
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.17.0.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.19.2.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
-set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.4.2.q4.tar.gz
+set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.8.0.q2.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
 set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
      CACHE STRING           "HDF5 tarball path/url" )
-set (DOWNLOAD_MED           http://files.salome-platform.org/Salome/other/med-4.1.1.tar.gz
-     CACHE STRING           "MED tarball path/url")
-set (DOWNLOAD_MEDCOUPLING   http://files.salome-platform.org/Salome/other/medCoupling-9.8.0.tar.gz
-     CACHE STRING           "MEDCoupling tarball path/url" )
+set (GIT_MED                http://git.salome-platform.org/gitpub/modules/med.git
+     CACHE STRING           "MED git repository")
+set (GIT_MEDCOUPLING        http://git.salome-platform.org/gitpub/tools/medcoupling.git
+     CACHE STRING           "MEDCoupling git repository" )
+set (GIT_CONFIGURATION        http://git.salome-platform.org/gitpub/tools/configuration.git
+     CACHE STRING           "CONFIGURATION git repository" )
 set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
      CACHE STRING           "OPENMPI tarball path/url" )
 set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.25.0.zip
      CACHE STRING           "HYPRE tarball path/url" )
-set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.3.tar.gz
+set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.4.tar.gz
      CACHE STRING           "MPY4PY tarball path/url" )
 
 
@@ -402,35 +404,57 @@ if( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
 
 else( MEDFILE_ROOT_DIR OR DEFINED ENV{MEDFILE_ROOT_DIR})
 
-  message(STATUS "MED will be downloaded and installed from ${DOWNLOAD_MED}")
   set(MACHINE PCLINUX)
   set(MEDFILE_DEFINITIONS "-D${MACHINE} -DMEDFILE_INSTALL_DOC=OFF")#Comment ne pas compiler la doc ?
   set(MEDFILE_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/lib/med) # Location of the final install
 
-  #extraction of the tarball archive name
-  string(LENGTH "${DOWNLOAD_MED}" tarball_url_length)#length of the name of the tarball
-  string(FIND "${DOWNLOAD_MED}" "/" start_tarball_name REVERSE )# last occurence of "/"
-  MATH(EXPR start_tarball_name "${start_tarball_name}+1")#start after the occurence of "/"
-  MATH(EXPR tarball_name_length "${tarball_url_length}-${start_tarball_name}-7")#name ends before .tar.gz that counts for 7 characters
-  string(SUBSTRING ${DOWNLOAD_MED} ${start_tarball_name} ${tarball_name_length} MED_TARBALL_NAME)
+  if( DEFINED DOWNLOAD_MED )
+    message(STATUS "MED tarball will be downloaded and installed from ${DOWNLOAD_MED}")
+  
+    #extraction of the tarball archive name
+    string(LENGTH "${DOWNLOAD_MED}" tarball_url_length)#length of the name of the tarball
+    string(FIND "${DOWNLOAD_MED}" "/" start_tarball_name REVERSE )# last occurence of "/"
+    MATH(EXPR start_tarball_name "${start_tarball_name}+1")#start after the occurence of "/"
+    MATH(EXPR tarball_name_length "${tarball_url_length}-${start_tarball_name}-7")#name ends before .tar.gz that counts for 7 characters
+    string(SUBSTRING ${DOWNLOAD_MED} ${start_tarball_name} ${tarball_name_length} MED_TARBALL_NAME)
 
-  ExternalProject_Add (MED
-        URL               ${DOWNLOAD_MED}  #location of med tarball
-        SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${MED_TARBALL_NAME}
-        BUILD_IN_SOURCE   TRUE
-        CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${MEDFILE_ROOT_DIR}  --with-hdf5=${HDF5_ROOT} --with-hdf5-include=${HDF5_ROOT}/include --with-hdf5-lib=${HDF5_LIBRARY_DIR} --with-hdf5-bin=${HDF5_ROOT}/bin  --with-swig=yes --disable-fortran #CC=${PETSC_INSTALL}/bin/mpicc
-        BUILD_COMMAND     make
-        INSTALL_COMMAND   make install
-        INSTALL_DIR       ${MEDFILE_ROOT_DIR}
-        STAMP_DIR         ${CMAKE_CURRENT_BINARY_DIR}/pre_requis
-        LOG_DOWNLOAD      TRUE           # Wrap download in script to log output
-        LOG_UPDATE        TRUE           # Wrap update in script to log output
-        LOG_CONFIGURE     TRUE           # Wrap configure in script to log output
-        LOG_BUILD         TRUE           # Wrap build in script to log output
-        LOG_TEST          TRUE           # Wrap test in script to log output
-        LOG_INSTALL       TRUE           # Wrap install in script to log output
-  )
-
+    ExternalProject_Add (MED
+          URL               ${DOWNLOAD_MED}  #location of med tarball
+          SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${MED_TARBALL_NAME}
+          BUILD_IN_SOURCE   TRUE
+          CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${MEDFILE_ROOT_DIR}  --with-hdf5=${HDF5_ROOT} --with-hdf5-include=${HDF5_ROOT}/include --with-hdf5-lib=${HDF5_LIBRARY_DIR} --with-hdf5-bin=${HDF5_ROOT}/bin  --with-swig=yes --disable-fortran #CC=${PETSC_INSTALL}/bin/mpicc
+          BUILD_COMMAND     make
+          INSTALL_COMMAND   make install
+          INSTALL_DIR       ${MEDFILE_ROOT_DIR}
+          STAMP_DIR         ${CMAKE_CURRENT_BINARY_DIR}/pre_requis
+          LOG_DOWNLOAD      TRUE           # Wrap download in script to log output
+          LOG_UPDATE        TRUE           # Wrap update in script to log output
+          LOG_CONFIGURE     TRUE           # Wrap configure in script to log output
+          LOG_BUILD         TRUE           # Wrap build in script to log output
+          LOG_TEST          TRUE           # Wrap test in script to log output
+          LOG_INSTALL       TRUE           # Wrap install in script to log output
+    )
+  else( DEFINED DOWNLOAD_MED )
+    ExternalProject_Add (MED
+          GIT_REPOSITORY    ${GIT_MED}  #location of med source repository
+          GIT_TAG           V9_10_0
+          SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/med
+          BUILD_IN_SOURCE   TRUE
+          CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=${MEDFILE_ROOT_DIR}  --with-hdf5=${HDF5_ROOT} --with-hdf5-include=${HDF5_ROOT}/include --with-hdf5-lib=${HDF5_LIBRARY_DIR} --with-hdf5-bin=${HDF5_ROOT}/bin  --with-swig=yes --disable-fortran #CC=${PETSC_INSTALL}/bin/mpicc
+          BUILD_COMMAND     make
+          INSTALL_COMMAND   make install
+          INSTALL_DIR       ${MEDFILE_ROOT_DIR}
+          STAMP_DIR         ${CMAKE_CURRENT_BINARY_DIR}/pre_requis
+          LOG_DOWNLOAD      TRUE           # Wrap download in script to log output
+          LOG_UPDATE        TRUE           # Wrap update in script to log output
+          LOG_CONFIGURE     TRUE           # Wrap configure in script to log output
+          LOG_BUILD         TRUE           # Wrap build in script to log output
+          LOG_TEST          TRUE           # Wrap test in script to log output
+          LOG_INSTALL       TRUE           # Wrap install in script to log output
+    )
+  
+  endif( DEFINED DOWNLOAD_MED )
+  
   set(MEDFILE_INCLUDE_DIRS ${MEDFILE_ROOT_DIR}/include)# Nécessaire pour le medloader et les sous-dossiers mesh, et IJKMesh
   set(MEDFILE_LIBRARIES    ${MEDFILE_ROOT_DIR}/lib)# Nécessaire pour le env_SOLVERLAB.sh
   set(MEDFILE_C_LIBRARIES med medC)# Nécessaire pour le medloader
@@ -460,36 +484,64 @@ if( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
   message( STATUS "MEDCoupling found. Version is ${MEDCoupling_VERSION}")
 
 else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
-  message(STATUS "MEDCoupling will be downloaded and installed from ${DOWNLOAD_MEDCOUPLING}")
   set(MEDCOUPLING_ROOT_DIR ${CMAKE_INSTALL_PREFIX}/lib/medcoupling) # Location of the final install
   SET(ENV{HDF5_ROOT} ${HDF5_ROOT})#MEDCoupling install process seems to require an environment variable
 
-  #extraction of the tarball archive name
-  string(LENGTH "${DOWNLOAD_MEDCOUPLING}" tarball_url_length)#length of the tarball
-  string(FIND   "${DOWNLOAD_MEDCOUPLING}" "/" start_tarball_name REVERSE )# last occurence of "/"
-  MATH(EXPR start_tarball_name "${start_tarball_name}+1")#start after the occurence of "/"
-  MATH(EXPR tarball_name_length "${tarball_url_length}-${start_tarball_name}-7")#name ends before .tar.gz that counts for 7 characters
-  string(SUBSTRING ${DOWNLOAD_MEDCOUPLING} ${start_tarball_name} ${tarball_name_length} MEDCOUPLING_TARBALL_NAME)
-  string(SUBSTRING ${MEDCOUPLING_TARBALL_NAME} 12 ${tarball_name_length} MEDCoupling_VERSION)
+  if( DEFINED DOWNLOAD_MEDCOUPLING )
+    message(STATUS "MEDCoupling tarball will be downloaded and installed from ${DOWNLOAD_MEDCOUPLING}")
 
-  message(STATUS "MEDCoupling will be installed at ${MEDCOUPLING_ROOT_DIR}")
+    #extraction of the tarball archive name
+    string(LENGTH "${DOWNLOAD_MEDCOUPLING}" tarball_url_length)#length of the tarball
+    string(FIND   "${DOWNLOAD_MEDCOUPLING}" "/" start_tarball_name REVERSE )# last occurence of "/"
+    MATH(EXPR start_tarball_name "${start_tarball_name}+1")#start after the occurence of "/"
+    MATH(EXPR tarball_name_length "${tarball_url_length}-${start_tarball_name}-7")#name ends before .tar.gz that counts for 7 characters
+    string(SUBSTRING ${DOWNLOAD_MEDCOUPLING} ${start_tarball_name} ${tarball_name_length} MEDCOUPLING_TARBALL_NAME)
+    string(SUBSTRING ${MEDCOUPLING_TARBALL_NAME} 12 ${tarball_name_length} MEDCoupling_VERSION)
 
-  ExternalProject_Add (MEDCoupling
-        URL               ${DOWNLOAD_MEDCOUPLING}  #location of medcoupling tarball
-        SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${MEDCOUPLING_TARBALL_NAME}
-        BUILD_IN_SOURCE   TRUE
-        CONFIGURE_COMMAND cmake <SOURCE_DIR>/${MEDCOUPLING_TARBALL_NAME} -DCMAKE_INSTALL_PREFIX=${MEDCOUPLING_ROOT_DIR} -DCONFIGURATION_ROOT_DIR=<SOURCE_DIR>/configuration-${MEDCoupling_VERSION} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ENABLE_PARTITIONER=OFF -DMEDCOUPLING_PARTITIONER_METIS=OFF -DMEDCOUPLING_PARTITIONER_SCOTCH=OFF -DMEDCOUPLING_ENABLE_RENUMBER=OFF -DMEDCOUPLING_BUILD_DOC=OFF -DHDF5_ROOT_DIR=${HDF5_ROOT} -DMEDCOUPLING_USE_64BIT_IDS=ON #-DSALOME_USE_MPI=ON
-        BUILD_COMMAND     make
-        INSTALL_COMMAND   make install
-        INSTALL_DIR       ${MEDCOUPLING_ROOT_DIR}
-        STAMP_DIR         ${CMAKE_CURRENT_BINARY_DIR}/pre_requis
-        LOG_DOWNLOAD      TRUE           # Wrap download in script to log output
-        LOG_UPDATE        TRUE           # Wrap update in script to log output
-        LOG_CONFIGURE     TRUE           # Wrap configure in script to log output
-        LOG_BUILD         TRUE           # Wrap build in script to log output
-        LOG_TEST          TRUE           # Wrap test in script to log output
-        LOG_INSTALL       TRUE           # Wrap install in script to log output
-  )
+    message(STATUS "MEDCoupling will be installed at ${MEDCOUPLING_ROOT_DIR}")
+
+    ExternalProject_Add (MEDCoupling
+          URL               ${DOWNLOAD_MEDCOUPLING}  #location of medcoupling tarball
+          SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/${MEDCOUPLING_TARBALL_NAME}
+          BUILD_IN_SOURCE   TRUE
+          CONFIGURE_COMMAND cmake <SOURCE_DIR>/${MEDCOUPLING_TARBALL_NAME} -DCMAKE_INSTALL_PREFIX=${MEDCOUPLING_ROOT_DIR} -DCONFIGURATION_ROOT_DIR=<SOURCE_DIR>/configuration-${MEDCoupling_VERSION} -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ENABLE_PARTITIONER=OFF -DMEDCOUPLING_PARTITIONER_METIS=OFF -DMEDCOUPLING_PARTITIONER_SCOTCH=OFF -DMEDCOUPLING_ENABLE_RENUMBER=OFF -DMEDCOUPLING_BUILD_DOC=OFF -DHDF5_ROOT_DIR=${HDF5_ROOT} -DMEDCOUPLING_USE_64BIT_IDS=ON #-DSALOME_USE_MPI=ON
+          BUILD_COMMAND     make
+          INSTALL_COMMAND   make install
+          INSTALL_DIR       ${MEDCOUPLING_ROOT_DIR}
+          STAMP_DIR         ${CMAKE_CURRENT_BINARY_DIR}/pre_requis
+          LOG_DOWNLOAD      TRUE           # Wrap download in script to log output
+          LOG_UPDATE        TRUE           # Wrap update in script to log output
+          LOG_CONFIGURE     TRUE           # Wrap configure in script to log output
+          LOG_BUILD         TRUE           # Wrap build in script to log output
+          LOG_TEST          TRUE           # Wrap test in script to log output
+          LOG_INSTALL       TRUE           # Wrap install in script to log output
+    )
+  else( DEFINED DOWNLOAD_MEDCOUPLING )
+    ExternalProject_Add (CONFIGURATION
+          GIT_REPOSITORY    ${GIT_CONFIGURATION}  #location of medcoupling source repository
+          GIT_TAG           V9_10_0
+          SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/configuration
+    )
+    ExternalProject_Add (MEDCoupling
+          GIT_REPOSITORY    ${GIT_MEDCOUPLING}  #location of medcoupling source repository
+          GIT_TAG           V9_10_0
+          SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/medcoupling
+          BUILD_IN_SOURCE   TRUE
+          CONFIGURE_COMMAND cmake <SOURCE_DIR> -DCMAKE_INSTALL_PREFIX=${MEDCOUPLING_ROOT_DIR} -DCONFIGURATION_ROOT_DIR=<SOURCE_DIR>/../configuration -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ENABLE_PARTITIONER=OFF -DMEDCOUPLING_PARTITIONER_METIS=OFF -DMEDCOUPLING_PARTITIONER_SCOTCH=OFF -DMEDCOUPLING_ENABLE_RENUMBER=OFF -DMEDCOUPLING_BUILD_DOC=OFF -DHDF5_ROOT_DIR=${HDF5_ROOT} -DMEDCOUPLING_USE_64BIT_IDS=ON #-DSALOME_USE_MPI=ON
+          BUILD_COMMAND     make
+          INSTALL_COMMAND   make install
+          INSTALL_DIR       ${MEDCOUPLING_ROOT_DIR}
+          STAMP_DIR         ${CMAKE_CURRENT_BINARY_DIR}/pre_requis
+          LOG_DOWNLOAD      TRUE           # Wrap download in script to log output
+          LOG_UPDATE        TRUE           # Wrap update in script to log output
+          LOG_CONFIGURE     TRUE           # Wrap configure in script to log output
+          LOG_BUILD         TRUE           # Wrap build in script to log output
+          LOG_TEST          TRUE           # Wrap test in script to log output
+          LOG_INSTALL       TRUE           # Wrap install in script to log output
+    )  
+    
+    set(MEDCoupling_VERSION 9.10.0)
+  endif( DEFINED DOWNLOAD_MEDCOUPLING )
 
   add_library(medloader   SHARED IMPORTED )
   set_property(TARGET medloader   PROPERTY IMPORTED_LOCATION ${MEDCOUPLING_ROOT_DIR}/lib/libmedloader.so)
@@ -709,8 +761,6 @@ endif(SOLVERLAB_WITH_TESTS)
 
 # Enter subdirectories
 add_subdirectory (images)
-add_subdirectory (scripts)
-add_subdirectory (READMES)
 
 add_subdirectory (CDMATH)
 if(SOLVERLAB_WITH_COREFLOWS)
