@@ -521,6 +521,10 @@ else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
           GIT_REPOSITORY    ${GIT_CONFIGURATION}  #location of medcoupling source repository
           GIT_TAG           V9_10_0
           SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/configuration
+          CONFIGURE_COMMAND ""
+          BUILD_COMMAND ""
+          INSTALL_COMMAND ""
+          LOG_DOWNLOAD ON
     )
     ExternalProject_Add (MEDCoupling
           GIT_REPOSITORY    ${GIT_MEDCOUPLING}  #location of medcoupling source repository
