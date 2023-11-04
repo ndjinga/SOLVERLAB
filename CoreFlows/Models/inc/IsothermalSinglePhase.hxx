@@ -9,7 +9,7 @@
 
 /*! \class IsothermalSinglePhase IsothermalSinglePhase.hxx "IsothermalSinglePhase.hxx"
  *  \brief Isothermal single phase model
- *  \details The model consists in two phasic mass equations, two phasic momentum equations, see \ref IsothermalPage for more details
+ *  \details The model consists in a mass equation and a momentum equations
  */
 #ifndef IsothermalSinglePhase_HXX_
 #define IsothermalSinglePhase_HXX_
