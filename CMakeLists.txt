@@ -44,6 +44,8 @@ set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackage
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
 set (DOWNLOAD_HDF5          https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.3/src/hdf5-1.10.3.tar.gz
      CACHE STRING           "HDF5 tarball path/url" )
+set (DOWNLOAD_MED           ftp://ftp.cea.fr/pub/salome/prerequisites/med-4.1.1.tar.gz
+     CACHE STRING           "MED tarball url")
 set (GIT_MED                http://git.salome-platform.org/gitpub/modules/med.git
      CACHE STRING           "MED git repository")
 set (GIT_MEDCOUPLING        http://git.salome-platform.org/gitpub/tools/medcoupling.git
