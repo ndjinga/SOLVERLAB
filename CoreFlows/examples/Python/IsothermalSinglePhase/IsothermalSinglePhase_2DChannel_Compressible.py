@@ -7,7 +7,7 @@ import solverlab as svl
 def IsothermalSinglePhase_2DChannel(my_mesh, mesh_name, scheme, isCompressible ):
     spaceDim = 2;
 
-    myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim,True);
+    myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim,isCompressible);
     nVar =myProblem.getNumberOfVariables();
 
     # physical constants
