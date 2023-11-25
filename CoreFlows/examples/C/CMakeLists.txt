@@ -202,5 +202,6 @@ if( SOLVERLAB_WITH_MPI )#Tests parallèles
 
 endif( SOLVERLAB_WITH_MPI )
 
-add_subdirectory (SaddlePointPreconditioner)
-
+if( PETSc_VERSION VERSION_GREATER "3.18" )
+  add_subdirectory (SaddlePointPreconditioner)
+endif( PETSc_VERSION VERSION_GREATER "3.18" )
