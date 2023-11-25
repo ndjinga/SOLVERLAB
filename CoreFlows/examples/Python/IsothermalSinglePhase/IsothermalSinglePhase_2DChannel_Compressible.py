@@ -4,7 +4,7 @@
 import sys
 import solverlab as svl
 
-def IsothermalSinglePhase_2DChannel(my_mesh, mesh_name, scheme ):
+def IsothermalSinglePhase_2DChannel(my_mesh, mesh_name, scheme, isCompressible ):
     spaceDim = 2;
 
     myProblem = svl.IsothermalSinglePhase(svl.Liquid,svl.around155bars600K,spaceDim,True);
@@ -37,8 +37,11 @@ def IsothermalSinglePhase_2DChannel(my_mesh, mesh_name, scheme ):
     myProblem.setLinearSolver(svl.GMRES,svl.ILU);
     
     # name file save
-    fileName = "2D"+mesh_name+"_Compressible_"+scheme+"_CFL1";
-
+    if( isCompressible ) :
+        fileName = "2D"+mesh_name+"_Compressible_"+scheme+"_CFL1";
+    else:
+        fileName = "2D"+mesh_name+"_Incompressible_"+scheme+"_CFL1";
+        
     # parameters calculation
     MaxNbOfTimeStep = 3 ;
     freqSave = 1;
@@ -136,13 +139,14 @@ def IsothermalSinglePhase_2DChannel(my_mesh, mesh_name, scheme ):
     return ok
 
 if __name__ == """__main__""":
-    if len(sys.argv) >3:
+    if len(sys.argv) >4:
         # Load the mesh
         print( "Loading mesh file " +  sys.argv[1]);
         my_mesh = svl.Mesh(sys.argv[1])
         mesh_name = sys.argv[2]
         scheme = sys.argv[3]
-        IsothermalSinglePhase_2DChannel(my_mesh, mesh_name, scheme)
+        isCompressible = bool(sys.argv[4])
+        IsothermalSinglePhase_2DChannel(my_mesh, mesh_name, scheme, isCompressible)
     else :   
-        raise ValueError("Provide mesh file name !!!")
+        raise ValueError("Provide mesh file name + mesh name + scheme + is compressible !!!")
 
