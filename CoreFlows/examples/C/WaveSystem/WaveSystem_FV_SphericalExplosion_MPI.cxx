@@ -334,7 +334,7 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
 int main(int argc, char *argv[])
 {
 	/* PETSc initialisation */
-	PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+	PetscInitialize(&argc, &argv, NULL, NULL);
 	PetscMPIInt    size;        /* size of communicator */
 	PetscMPIInt    rank;        /* processor rank */
 	MPI_Comm_rank(PETSC_COMM_WORLD,&rank);

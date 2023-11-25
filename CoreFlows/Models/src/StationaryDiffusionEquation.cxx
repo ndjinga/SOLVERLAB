@@ -214,7 +214,7 @@ void StationaryDiffusionEquation::initialize()
     VecDuplicate(_Tk, &_b);//RHS of the linear system: _b=Tn/dt + _b0 + puisance volumique + couplage thermique avec le fluide
 
     /* Parallel matrix creation (all procs) */
-       MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
+       MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, NULL, _o_nnz, NULL, &_A);
     
     /* Local sequential vector creation (all procs) */
     if(_mpi_size>1 && _mpi_rank == 0)
@@ -285,7 +285,7 @@ void StationaryDiffusionEquation::initialize()
             *_runLogFile<<"### Check the compatibility condition between the right hand side and the boundary data. For homogeneous Neumann BCs, the right hand side must have integral equal to zero."<<std::endl;
         }
         MatNullSpace nullsp;
-        MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, PETSC_NULL, &nullsp);
+        MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, NULL, &nullsp);
         MatSetNullSpace(_A, nullsp);
         MatSetTransposeNullSpace(_A, nullsp);
         MatNullSpaceDestroy(&nullsp);
@@ -829,7 +829,7 @@ bool StationaryDiffusionEquation::solveStationaryProblem()
     bool stop=false; // Does the Problem want to stop (error) ?
     bool converged=false; // has the newton scheme converged (end) ?
 
-    PetscPrintf(PETSC_COMM_WORLD,"!!! Running test case %s using ",_fileName);
+    PetscPrintf(PETSC_COMM_WORLD,"!!! Running test case %s using ",_fileName.c_str());
     if(_mpi_rank==0)//Avoid redundant printing
         *_runLogFile<< "!!! Running test case "<< _fileName<< " using ";
 
@@ -1114,7 +1114,7 @@ StationaryDiffusionEquation::getOutputField(const string& nameField )
         return getRodTemperatureField();
     else
     {
-        PetscPrintf(PETSC_COMM_WORLD,"\n Error : Field name %s is not an input field name, call getOutputFieldsNames first\n", nameField);
+        PetscPrintf(PETSC_COMM_WORLD,"\n Error : Field name %s is not an input field name, call getOutputFieldsNames first\n", nameField.c_str());
         if(_mpi_rank==0)//Avoid redundant printing
         {
             *_runLogFile<< "Error : Field name "<< nameField << " does not exist, call getOutputFieldsNames first"<< endl;
@@ -1136,7 +1136,7 @@ StationaryDiffusionEquation::setInputField(const string& nameField, Field& input
         return setHeatPowerField( inputField );
     else
     {
-        PetscPrintf(PETSC_COMM_WORLD,"\n Error : Field name %s is not an input field name, call getInputFieldsNames first\n", nameField);
+        PetscPrintf(PETSC_COMM_WORLD,"\n Error : Field name %s is not an input field name, call getInputFieldsNames first\n", nameField.c_str());
         if(_mpi_rank==0)//Avoid redundant printing
         {
             *_runLogFile<< "Error : Field name "<< nameField << " is not an input field name, call getInputFieldsNames first"<< endl;

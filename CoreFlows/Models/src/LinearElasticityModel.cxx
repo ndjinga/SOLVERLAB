@@ -177,9 +177,9 @@ void LinearElasticityModel::initialize()
 
 	//creation de la matrice
     if(!_FECalculation)
-        MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles*_nVar, _Nmailles*_nVar, (1+_neibMaxNbCells), PETSC_NULL, &_A);
+        MatCreateSeqAIJ(PETSC_COMM_SELF, _Nmailles*_nVar, _Nmailles*_nVar, (1+_neibMaxNbCells), NULL, &_A);
     else
-        MatCreateSeqAIJ(PETSC_COMM_SELF, _NunknownNodes*_nVar, _NunknownNodes*_nVar, (1+_neibMaxNbNodes), PETSC_NULL, &_A);
+        MatCreateSeqAIJ(PETSC_COMM_SELF, _NunknownNodes*_nVar, _NunknownNodes*_nVar, (1+_neibMaxNbNodes), NULL, &_A);
 
 	VecCreate(PETSC_COMM_SELF, &_displacements);
 
@@ -224,7 +224,7 @@ void LinearElasticityModel::initialize()
 				throw CdmathException("Singular matrix should be symmetric with kernel composed of constant vectors");
 			}
 		MatNullSpace nullsp;
-		MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, PETSC_NULL, &nullsp);
+		MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, NULL, &nullsp);
 		MatSetNullSpace(_A, nullsp);
 		MatSetTransposeNullSpace(_A, nullsp);
 		MatNullSpaceDestroy(&nullsp);

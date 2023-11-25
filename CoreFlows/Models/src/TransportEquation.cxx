@@ -132,7 +132,7 @@ void TransportEquation::initialize()
 	VecAssemblyEnd(_Hn);
 
 	//creation de la matrice
-   	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
+   	MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, NULL, _o_nnz, NULL, &_A);
 
 	/* Local sequential vector creation */
 	if(_mpi_size>1 && _mpi_rank == 0)

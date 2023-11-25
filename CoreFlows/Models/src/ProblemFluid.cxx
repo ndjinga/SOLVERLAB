@@ -146,7 +146,7 @@ void ProblemFluid::initialize()
 
 	//creation de la matrice
 	if(_timeScheme == Implicit)
-		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
+		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), NULL, &_A);
 
 	//creation des vecteurs
 	VecCreateSeq(PETSC_COMM_SELF, _nVar, &_Uext);
@@ -220,7 +220,7 @@ void ProblemFluid::initialize()
 			throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
 		}
 
-		PetscPrintf(PETSC_COMM_WORLD,"PETSc Newton solver ", snestype);
+		PetscPrintf(PETSC_COMM_WORLD,"PETSc Newton solver ");
 		*_runLogFile << "PETSc Newton solver " << snestype << endl;
 		_runLogFile->close();
 
@@ -297,7 +297,7 @@ bool ProblemFluid::solveNewtonPETSc()
 			cout<<"Reached the maximum number of iterations"<<endl;
 
 	    SNESGetIterationNumber(_snes, &_NEWTON_its);
-	    PetscPrintf(PETSC_COMM_WORLD,"Number of SNES iterations = %D\n\n", _NEWTON_its);
+	    PetscPrintf(PETSC_COMM_WORLD,"Number of SNES iterations = %d \n\n", _NEWTON_its);
 		*_runLogFile <<endl;
 		*_runLogFile << "Nombre d'iterations de Newton "<< _NEWTON_its <<endl;
 	}
@@ -424,7 +424,7 @@ double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not
 	if(_restartWithNewTimeScheme)//This is a change of time scheme during a simulation
 	{
 		if(_timeScheme == Implicit)
-			MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);			
+			MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), NULL, &_A);			
 		else
 			MatDestroy(&_A);
 		_restartWithNewTimeScheme=false;

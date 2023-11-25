@@ -82,7 +82,7 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
     }
     if(dim<=0)
     {
-        PetscPrintf(PETSC_COMM_WORLD,"Space dimension = %.2f\n",dim);
+        PetscPrintf(PETSC_COMM_WORLD,"Space dimension = %d\n",dim);
         throw CdmathException("Error : parameter dim cannot  be negative");
     }
 
@@ -187,7 +187,7 @@ void DiffusionEquation::initialize()
                     PetscPrintf(PETSC_COMM_SELF,"1D Finite element method on a 2D network : space dimension is %d, mesh dimension is %d\n",_Ndim,_mesh.getMeshDimension());            
                 else
                 {
-                    PetscPrintf(PETSC_COMM_SELF,"Error Finite element with space dimension %, and mesh dimension  %d, mesh should be either triangular either 1D network\n",_Ndim,_mesh.getMeshDimension());
+                    PetscPrintf(PETSC_COMM_SELF,"Error Finite element with space dimension %d, and mesh dimension  %d, mesh should be either triangular either 1D network\n",_Ndim,_mesh.getMeshDimension());
                     *_runLogFile<<"DiffusionEquation::initialize mesh has incorrect dimension"<<endl;
                     _runLogFile->close();
                     throw CdmathException("DiffusionEquation::initialize: mesh has incorrect cell types");
@@ -259,7 +259,7 @@ void DiffusionEquation::initialize()
     VecAssemblyEnd(_Tn);
         
     /* Matrix creation */
-       MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, PETSC_NULL, _o_nnz, PETSC_NULL, &_A);
+       MatCreateAIJ(PETSC_COMM_WORLD, _localNbUnknowns, _localNbUnknowns, _globalNbUnknowns, _globalNbUnknowns, _d_nnz, NULL, _o_nnz, NULL, &_A);
 
     /* Local sequential vector creation */
     if(_mpi_size>1 && _mpi_rank == 0)

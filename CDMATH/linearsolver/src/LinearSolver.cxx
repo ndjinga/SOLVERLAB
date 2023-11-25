@@ -259,7 +259,7 @@ LinearSolver::setLinearSolver(const GenericMatrix& matrix, const Vector& secondM
 		throw CdmathException(msg);
 	}
 
-	PetscInitialize(0, (char ***)"", PETSC_NULL, PETSC_NULL);//All constructors lead here so we initialize petsc here
+	PetscInitialize(0, (char ***)"", NULL, NULL);//All constructors lead here so we initialize petsc here
 	setMatrix(matrix);
 	setSndMember(secondMember);
 	VecDuplicate(_smb,&_solution);
@@ -275,7 +275,7 @@ LinearSolver::setLinearSolver(const std::string filename, bool hdf5BinaryMode)
 		throw CdmathException(msg);
 	}
 
-	PetscInitialize(0, (char ***)"", PETSC_NULL, PETSC_NULL);//All constructors lead here so we initialize petsc here
+	PetscInitialize(0, (char ***)"", NULL, NULL);//All constructors lead here so we initialize petsc here
 	setMatrixAndSndMember( filename, hdf5BinaryMode);
 	VecDuplicate(_smb,&_solution);
 }
@@ -768,7 +768,7 @@ LinearSolver::solve( Vector X0 )
 		{
 			MatSetOption(_mat,MAT_HERMITIAN, PETSC_TRUE);
 			MatNullSpace nullsp;
-			MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, PETSC_NULL, &nullsp);//Declaration of a kernel containing exclusively constant vectors
+			MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, NULL, &nullsp);//Declaration of a kernel containing exclusively constant vectors
 			MatSetTransposeNullSpace(_mat, nullsp);//Transpose matrix has the same kernel since the matrix is symmetric
 			MatSetNullSpace(_mat, nullsp);
 			MatNullSpaceDestroy(&nullsp);
