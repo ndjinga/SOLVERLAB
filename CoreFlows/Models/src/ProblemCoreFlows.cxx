@@ -478,11 +478,29 @@ void ProblemCoreFlows::setLinearSolver(linearSolver kspType, preconditioner pcTy
 	else if (pcType ==LU)
 		_pctype = (char*)&PCLU;
 	else if (pcType == ILU)
+	{
 		_pctype = (char*)&PCILU;
+		_ksptype = (char*)&KSPPREONLY;
+	}
 	else if (pcType ==CHOLESKY)
+	{
 		_pctype = (char*)&PCCHOLESKY;
+		_ksptype = (char*)&KSPPREONLY;
+	}
 	else if (pcType == ICC)
 		_pctype = (char*)&PCICC;
+	else if (pcType == GAMG)
+		_pctype = (char*)&PCGAMG;
+	else if (pcType == Svd)
+	{
+		_pctype = (char*)&PCSVD;
+		PetscOptionsSetValue(NULL, "-pc_svd_zero_sing", to_string(_precision).c_str());
+	}
+	else if (pcType == QR)
+	{
+		_pctype = (char*)&PCQR;
+		_ksptype = (char*)&KSPPREONLY;
+	}
 	else {
 		PetscPrintf(PETSC_COMM_WORLD,"!!! Error : only 'NOPC', 'LU', 'ILU', 'CHOLESKY' or 'ICC' preconditioners are acceptable !!!\n");
 		*_runLogFile << "!!! Error : only 'NOPC' or 'LU' or 'ILU' preconditioners are acceptable !!!" << endl;
@@ -787,10 +805,12 @@ ProblemCoreFlows::createKSP()
 {
 	//PETSc Linear solver
 	KSPCreate(PETSC_COMM_WORLD, &_ksp);
+	KSPSetErrorIfNotConverged(_ksp, PETSC_TRUE);
 	KSPSetType(_ksp, _ksptype);
 	KSPSetTolerances(_ksp,_precision,_precision,PETSC_DEFAULT,_maxPetscIts);
 	KSPGetPC(_ksp, &_pc);
 	//PETSc preconditioner
+	PCFactorSetZeroPivot(_pc, _precision);
 	if(_mpi_size==1 )
 		PCSetType(_pc, _pctype);
 	else

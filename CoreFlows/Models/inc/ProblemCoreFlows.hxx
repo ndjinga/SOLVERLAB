@@ -43,7 +43,8 @@ enum linearSolver
 	GMRES,/**< linearSolver is GMRES */
 	BCGS,/**< linearSolver is BiCGSstab */
 	CG,/**< linearSolver is Conjugate Gradient */
-	CGNE/**< linearSolver is Conjugate Gradient for Normal Equations */
+	CGNE,/**< linearSolver is Conjugate Gradient for Normal Equations */
+	FGMRES/**< linearSolver is GMRES */
 };
 
 //! enumeration preconditioner
@@ -54,7 +55,10 @@ enum preconditioner
 	LU,/**< preconditioner is actually a direct solver (LU factorisation)*/
 	NOPC,/**< no preconditioner used */
 	ICC,/**< preconditioner is ICC(0) */
-	CHOLESKY/**< preconditioner is actually a direct solver for symmetric matrices (CHOLESKY factorisation)*/
+	CHOLESKY,/**< preconditioner is actually a direct solver for symmetric matrices (CHOLESKY factorisation)*/
+	GAMG,/**< multigrid preconditioner */
+	QR,/**< preconditioner is actually a direct solver (QR factorisation)*/
+	Svd/**< preconditioner is actually a direct solver (SVD decomposition)*/
 };
 
 //! enumeration nonLinearSolver
