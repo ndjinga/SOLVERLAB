@@ -105,7 +105,7 @@ public :
      *  \return  double dt the proposed time step
      *  \return  bool stop, true if the calculation should not be continued (stationary state, maximum time or time step numer reached)
      *  */
-    double computeTimeStep(bool & stop);
+    virtual double computeTimeStep(bool & stop);
 
     /** \fn abortTimeStep
      * \brief Reset the time step dt to 0
@@ -545,7 +545,7 @@ protected :
      * \brief Builds and solves the linear system to obtain the variation Ukp1-Uk (or Vkp1-Vk for primitive variables) in the Newton scheme
      * @param void
      * */
-    void computeNewtonVariation();
+    virtual void computeNewtonVariation();
 
     /** \fn computeNewtonRHS
      * \brief Builds the right hand side F_X(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
@@ -563,7 +563,7 @@ protected :
      * \brief Static function calling computeNewtonJacobian to match PETSc nonlinear solver (SNES) structure
      * @param void
      * */
-    void computeNewtonJacobian( Vec X, Mat A);
+    virtual void computeNewtonJacobian( Vec X, Mat A);
 
     /** \fn computeSnesJacobian
      * \brief Builds the matrix A(X) of the linear system in the Newton method to obtain the variation Ukp1-Uk
@@ -752,13 +752,13 @@ protected :
      * \brief updates the global primitive vector from the global conservative vector
      * @param void
      * */
-    void updatePrimitives();
+    virtual void updatePrimitives();
 
     /** \fn updateConservatives
      * \brief updates the global conservative vector from the global primitive vector
      * @param void
      * */
-    void updateConservatives();
+    virtual void updateConservatives();
 
     /** \fn AbsMatriceRoe
      * \brief Computes the absolute value of the Roe matrix
