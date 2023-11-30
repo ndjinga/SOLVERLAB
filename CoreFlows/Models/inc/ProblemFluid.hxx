@@ -98,14 +98,14 @@ public :
      *  @param  dt is  the value of the time step
      *  \return false if dt <0 et True otherwise
      *                 */
-    bool initTimeStep(double dt);
+    virtual bool initTimeStep(double dt);
 
     /** \fn computeTimeStep
      * \brief Proposes a value for the next time step to be solved using mesh data and cfl coefficient
      *  \return  double dt the proposed time step
      *  \return  bool stop, true if the calculation should not be continued (stationary state, maximum time or time step numer reached)
      *  */
-    double computeTimeStep(bool & stop);
+    virtual double computeTimeStep(bool & stop);
 
     /** \fn abortTimeStep
      * \brief Reset the time step dt to 0

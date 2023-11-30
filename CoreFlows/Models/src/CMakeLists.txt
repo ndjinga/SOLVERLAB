@@ -12,6 +12,7 @@ SET(src_models_CXX
     IsothermalTwoFluid.cxx
     IsothermalSinglePhase.cxx
     SinglePhase.cxx
+    WaveStaggered.cxx
     FiveEqsTwoFluid.cxx
     ProblemCoreFlows.cxx
     TransportEquation.cxx

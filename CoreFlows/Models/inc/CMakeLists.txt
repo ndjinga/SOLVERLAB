@@ -7,6 +7,7 @@ SET(include_models_HXX
     ProblemCoreFlows.hxx
     TransportEquation.hxx
     DiffusionEquation.hxx
+    WaveStaggered.hxx
     StationaryDiffusionEquation.hxx
     LinearElasticityModel.hxx
     ProblemFluid.hxx
