@@ -791,7 +791,7 @@ protected :
 	int _NEWTON_its;
 	Mat _A;//Linear system matrix
 	Vec _b;//Linear system right hand side
-	double _MaxIterLinearSolver;//nombre maximum d'iteration gmres obtenu au cours par les resolution de systemes lineaires au cours d'un pas de tmeps
+	int _MaxIterLinearSolver;//nombre maximum d'iteration gmres obtenu au cours par les resolution de systemes lineaires au cours d'un pas de tmeps
 	bool _conditionNumber;//computes an estimate of the condition number
 	/** \fn createKSP
 	 * \brief Create PETSc solver and preconditioner structures
