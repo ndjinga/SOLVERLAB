@@ -663,6 +663,9 @@ protected :
 
     /** \fn jacobianDiff
      * \brief Calcule la jacobienne de la CL de diffusion
+	//!calcule l'etat de Roe de deux etats
+	void convectionState( const long &i, const long &j, const bool &IsBord);
+	//!calcule la matrice de c
      * \Details est une fonction virtuelle pure, qu'on surcharge dans chacun des modèles
      * @param j entier , l'indice de la cellule sur le bord
      * @param nameOfGroup  : chaine de caractères, correspond au type de la condition limite
