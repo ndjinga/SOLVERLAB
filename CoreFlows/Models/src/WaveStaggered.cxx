@@ -67,14 +67,14 @@ void WaveStaggered::initialize(){
 
 	if(!_initialDataSet)
 	{
-		*_runLogFile<<"!!!!!!!!ProblemFluid::initialize() set initial data first"<<endl;
+		*_runLogFile<<"!!!!!!!!WaveStaggered::initialize() set initial data first"<<endl;
 		_runLogFile->close();
-		throw CdmathException("!!!!!!!!ProblemFluid::initialize() set initial data first");
+		throw CdmathException("!!!!!!!!WaveStaggered::initialize() set initial data first");
 	}
 	cout << "Number of Phases = " << _nbPhases << " mesh dimension = "<<_Ndim<<" number of variables = "<<_nVar<<endl;
 	*_runLogFile << "Number of Phases = " << _nbPhases << " spaceDim= "<<_Ndim<<" number of variables= "<<_nVar<<endl;
 
-	/********* local arrays ****************/
+	
 	_pressure = new double[_Nmailles];
 	_velocity= new double[_Nfaces];
 	_vec_normal = new double[_Ndim];
@@ -84,8 +84,8 @@ void WaveStaggered::initialize(){
 		_idn[k] = k;
 	}
 
-	//conservative field used only for saving results
-	_VV=Field ("Conservative vec", CELLS, _mesh, _nVar);
+	//primitive field used only for saving results
+	_VV=Field ("Primitive vec", FACES + CEllS, _mesh, 1); //TOdo comment fonctionnent Field ?
 
 	//Construction des champs primitifs et conservatifs initiaux comme avant dans ParaFlow
 	double * initialFieldPrim = new double[_nVar*_Nmailles];
@@ -102,8 +102,8 @@ void WaveStaggered::initialize(){
 
 	//creation des vecteurs
 	VecCreate(PETSC_COMM_SELF, &_conservativeVars);//Current conservative variables at Newton iteration k between time steps n and n+1
-	VecSetSizes(_conservativeVars,PETSC_DECIDE,_nVar*_Nmailles);
-	VecSetBlockSize(_conservativeVars,_nVar);
+	VecSetSizes(_conservativeVars, PETSC_DECIDE, _globalNbUnknowns);
+	// VecSetBlockSize(_conservativeVars,_nVar);
 	VecSetFromOptions(_conservativeVars);
 	VecDuplicate(_conservativeVars, &_old);//Old conservative variables at time step n
 	VecDuplicate(_conservativeVars, &_newtonVariation);//Newton variation Uk+1-Uk to be computed between time steps n and n+1
@@ -136,60 +136,10 @@ void WaveStaggered::initialize(){
 	delete[] indices;
 
 	createKSP();
+	PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
+	*_runLogFile << "SOLVERLAB Newton solver" << endl;
+	_runLogFile->close();
 
-	// Creation du solveur de Newton de PETSc
-	if( _timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
-	{
-		SNESType snestype;
-	
-		// set nonlinear solver
-		if (_nonLinearSolver == Newton_PETSC_LINESEARCH || _nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC || _nonLinearSolver == Newton_PETSC_LINESEARCH_BT || _nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT || _nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
-			snestype = (char*)&SNESNEWTONLS;
-		else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
-			snestype = (char*)&SNESNEWTONTR;
-		else if (_nonLinearSolver == Newton_PETSC_NGMRES)
-			snestype = (char*)&SNESNGMRES;
-		else if (_nonLinearSolver ==Newton_PETSC_ASPIN)
-			snestype = (char*)&SNESASPIN;
-		else if(_nonLinearSolver != Newton_SOLVERLAB)
-		{
-			cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
-			*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
-			_runLogFile->close();
-			throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
-		}
-
-		PetscPrintf(PETSC_COMM_WORLD,"PETSc Newton solver ", snestype);
-		*_runLogFile << "PETSc Newton solver " << snestype << endl;
-		_runLogFile->close();
-
-		SNESCreate(PETSC_COMM_WORLD, &_snes);
-		SNESSetType( _snes, snestype);
-		SNESGetLineSearch( _snes, &_linesearch);
-		if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC)
-			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHBASIC );
-		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BT)
-			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHBT );
-		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT)
-			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHL2 );
-		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
-			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHNLEQERR );
-
-		PetscViewerCreate(PETSC_COMM_WORLD,&_monitorLineSearch);
-		PetscViewerSetType(_monitorLineSearch, PETSCVIEWERASCII);		
-
-		SNESSetTolerances(_snes,_precision_Newton,_precision_Newton,_precision_Newton,_maxNewtonIts,-1);
-
-		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
-		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
-	}
-	else
-	{
-		PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
-		*_runLogFile << "SOLVERLAB Newton solver" << endl;
-		_runLogFile->close();
-	}
-	
 	_initializedMemory=true;
 	save();//save initial data
 }

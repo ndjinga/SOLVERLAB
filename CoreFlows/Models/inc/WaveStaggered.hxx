@@ -119,7 +119,7 @@ public :
 protected :
 	Field _Vitesse, _Pression ;
 	double* _pressure, _velocity;
-
+	Mat _B, _Dc, _Df; // Divergence, discrete pressure laplacian, discrete grad div velocity
 
 
 
