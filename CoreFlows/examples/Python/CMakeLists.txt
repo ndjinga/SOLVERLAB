@@ -49,6 +49,7 @@ CreatePythonTest(TransportEquation/TransportEquation_1DHeatedChannel.py "Python 
 add_test(TransportEquation/TransportEquation_2DSpherical ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/TransportEquation/TransportEquation_2DSpherical.py "Python fv transport 2D riemann structured coreflows" )
 
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem.py "Python fv isothermalsinglephase 1D riemann explicit upwind structured coreflows")
+CreatePythonTest(IsothermalSinglePhase/Dispersion.py "Dispersion")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_Implicit.py "Python fv isothermalsinglephase 1D riemann implicit upwind structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_Centered.py "Python fv isothermalsinglephase 1D riemann implicit centered structured coreflows")
 CreatePythonTest(IsothermalSinglePhase/IsothermalSinglePhase_1DRiemannProblem_PStaggered.py "Python fv isothermalsinglephase 1D riemann implicit pstaggered structured coreflows")
