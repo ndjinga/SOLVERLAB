@@ -94,6 +94,13 @@ public :
 		_limitField[groupName]=LimitField(Wall,-1,vector<double>(1,v_x),vector<double>(1,v_y),vector<double>(1,v_z),Temperature,-1,-1,-1);
 	};
 
+	/** \fn computeTimeStep
+     * \brief Proposes a value for the next time step to be solved using mesh data and cfl coefficient
+     *  \return  double dt the proposed time step
+     *  \return  bool stop, true if the calculation should not be continued (stationary state, maximum time or time step numer reached)
+     *  */
+    double computeTimeStep(bool & stop);
+
 	/** \fn computeNewtonVariation
 	 * \brief Builds and solves the linear system to obtain the variation Vkp1-Vk in a Newton scheme using primitive variables
 	 * @param
@@ -111,7 +118,12 @@ public :
                       Field& velocityMCells)
 protected :
 	Field _Vitesse, _Pression ;
+	double* _pressure, _velocity;
 
+
+
+
+//  Not used in this class
 	//!calcule l'etat de Roe de deux etats
 	void convectionState( const long &i, const long &j, const bool &IsBord);
 	//!calcule la matrice de convection de l'etat interfacial entre deux cellules voisinnes
@@ -130,12 +142,7 @@ protected :
 	void setBoundaryState(string nameOfGroup, const int &j,double *normale);// delete &nf Kieu
 	//!Adds the contribution of diffusion to the RHS
 	void convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector velocity);
-	/** \fn getDensityDerivatives
-	 * \brief Computes the partial derivatives of rho, and rho E with regard to the primitive variables  p and  T
-	 * @param pressure
-	 * @param temperature
-	 * @param square of the velocity vector
-	*/
+	//! Computes the partial derivatives of rho, and rho E with regard to the primitive variables  p and  T
 	void getDensityDerivatives( double pressure, double temperature, double v2);
 
 };

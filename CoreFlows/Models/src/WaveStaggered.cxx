@@ -57,29 +57,150 @@ WaveStaggered::WaveStaggered(phaseType fluid, pressureEstimate pEstimate, int di
 		}
 	}
 }
+
+
 void WaveStaggered::initialize(){
 	cout<<"\n Initialising the Wave System model\n"<<endl;
 	*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
 
 	_globalNbUnknowns = (_nVar-1)*_Nmailles + _Nfaces;//Staggered discretisation : velocity is on faces
 
-	ProblemFluid::initialize();
+	if(!_initialDataSet)
+	{
+		*_runLogFile<<"!!!!!!!!ProblemFluid::initialize() set initial data first"<<endl;
+		_runLogFile->close();
+		throw CdmathException("!!!!!!!!ProblemFluid::initialize() set initial data first");
+	}
+	cout << "Number of Phases = " << _nbPhases << " mesh dimension = "<<_Ndim<<" number of variables = "<<_nVar<<endl;
+	*_runLogFile << "Number of Phases = " << _nbPhases << " spaceDim= "<<_Ndim<<" number of variables= "<<_nVar<<endl;
+
+	/********* local arrays ****************/
+	_pressure = new double[_Nmailles];
+	_velocity= new double[_Nfaces];
+	_vec_normal = new double[_Ndim];
+	
+	for(int k=0; k<_nVar; k++){
+		_idm[k] = k;
+		_idn[k] = k;
+	}
+
+	//conservative field used only for saving results
+	_VV=Field ("Conservative vec", CELLS, _mesh, _nVar);
+
+	//Construction des champs primitifs et conservatifs initiaux comme avant dans ParaFlow
+	double * initialFieldPrim = new double[_nVar*_Nmailles];
+	for(int i =0; i<_Nmailles;i++)
+		for(int j =0; j<_nVar;j++)
+			initialFieldPrim[i*_nVar+j]=_VV(i,j);
+
+
+	/**********Petsc structures:  ****************/
+
+	//creation de la matrice
+	if(_timeScheme == Implicit)
+		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
+
+	//creation des vecteurs
+	VecCreate(PETSC_COMM_SELF, &_conservativeVars);//Current conservative variables at Newton iteration k between time steps n and n+1
+	VecSetSizes(_conservativeVars,PETSC_DECIDE,_nVar*_Nmailles);
+	VecSetBlockSize(_conservativeVars,_nVar);
+	VecSetFromOptions(_conservativeVars);
+	VecDuplicate(_conservativeVars, &_old);//Old conservative variables at time step n
+	VecDuplicate(_conservativeVars, &_newtonVariation);//Newton variation Uk+1-Uk to be computed between time steps n and n+1
+	VecDuplicate(_conservativeVars, &_b);//Right hand side of Newton method at iteration k between time steps n and n+1
+	VecDuplicate(_conservativeVars, &_primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
+
+
+	int *indices = new int[_Nmailles];
+	std::iota(indices, indices +_Nmailles, 0);
+	VecSetValuesBlocked(_conservativeVars, _Nmailles, indices, initialFieldCons, INSERT_VALUES);
+	VecAssemblyBegin(_conservativeVars);
+	VecAssemblyEnd(_conservativeVars);
+	VecCopy(_conservativeVars, _old);
+	VecAssemblyBegin(_old);
+	VecAssemblyEnd(_old);
+	VecSetValuesBlocked(_primitiveVars, _Nmailles, indices, initialFieldPrim, INSERT_VALUES);
+	VecAssemblyBegin(_primitiveVars);
+	VecAssemblyEnd(_primitiveVars);
+	if(_system)
+	{
+		cout << "Variables primitives initiales : " << endl;
+		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
+		cout << endl;
+		cout<<"Variables conservatives initiales : "<<endl;
+		VecView(_conservativeVars,  PETSC_VIEWER_STDOUT_SELF);
+	}
+
+	delete[] initialFieldPrim;
+	delete[] initialFieldCons;
+	delete[] indices;
+
+	createKSP();
+
+	// Creation du solveur de Newton de PETSc
+	if( _timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
+	{
+		SNESType snestype;
+	
+		// set nonlinear solver
+		if (_nonLinearSolver == Newton_PETSC_LINESEARCH || _nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC || _nonLinearSolver == Newton_PETSC_LINESEARCH_BT || _nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT || _nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
+			snestype = (char*)&SNESNEWTONLS;
+		else if (_nonLinearSolver == Newton_PETSC_TRUSTREGION)
+			snestype = (char*)&SNESNEWTONTR;
+		else if (_nonLinearSolver == Newton_PETSC_NGMRES)
+			snestype = (char*)&SNESNGMRES;
+		else if (_nonLinearSolver ==Newton_PETSC_ASPIN)
+			snestype = (char*)&SNESASPIN;
+		else if(_nonLinearSolver != Newton_SOLVERLAB)
+		{
+			cout << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+			*_runLogFile << "!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" << endl;
+			_runLogFile->close();
+			throw CdmathException("!!! Error : only 'Newton_PETSC_LINESEARCH', 'Newton_PETSC_TRUSTREGION', 'Newton_PETSC_NGMRES', 'Newton_PETSC_ASPIN' or 'Newton_SOLVERLAB' nonlinear solvers are acceptable !!!" );
+		}
+
+		PetscPrintf(PETSC_COMM_WORLD,"PETSc Newton solver ", snestype);
+		*_runLogFile << "PETSc Newton solver " << snestype << endl;
+		_runLogFile->close();
+
+		SNESCreate(PETSC_COMM_WORLD, &_snes);
+		SNESSetType( _snes, snestype);
+		SNESGetLineSearch( _snes, &_linesearch);
+		if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BASIC)
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHBASIC );
+		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_BT)
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHBT );
+		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_SECANT)
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHL2 );
+		else if(_nonLinearSolver == Newton_PETSC_LINESEARCH_NLEQERR)
+			SNESLineSearchSetType( _linesearch, 	SNESLINESEARCHNLEQERR );
+
+		PetscViewerCreate(PETSC_COMM_WORLD,&_monitorLineSearch);
+		PetscViewerSetType(_monitorLineSearch, PETSCVIEWERASCII);		
+
+		SNESSetTolerances(_snes,_precision_Newton,_precision_Newton,_precision_Newton,_maxNewtonIts,-1);
+
+		SNESSetFunction(_snes,_newtonVariation,computeSnesRHS,this);
+		SNESSetJacobian(_snes,_A,_A,computeSnesJacobian,this);	
+	}
+	else
+	{
+		PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
+		*_runLogFile << "SOLVERLAB Newton solver" << endl;
+		_runLogFile->close();
+	}
+	
+	_initializedMemory=true;
+	save();//save initial data
 }
+
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
-		cout << "ProblemFluid::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
 		cout << endl;
-	}
-	if(_restartWithNewTimeScheme)//This is a change of time scheme during a simulation
-	{
-		if(_timeScheme == Implicit)
-			MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);			
-		else
-			MatDestroy(&_A);
-		_restartWithNewTimeScheme=false;
 	}
 	if(_timeScheme == Implicit)
 		MatZeroEntries(_A);
@@ -100,112 +221,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		_isBoundary=Fj.isBorder();
 		idCells = Fj.getCellsId();
 
-		// If Fj is on the boundary
-		if (_isBoundary)
-		{
-			for(int k=0;k<Fj.getNumberOfCells();k++)//there will be at most two neighours in the case of an inner wall
-			{
-				// compute the normal vector corresponding to face j : from Ctemp1 outward
-				Ctemp1 = _mesh.getCell(idCells[k]);//origin of the normal vector
-				if (_Ndim >1){
-					for(int l=0; l<Ctemp1.getNumberOfFaces(); l++)
-					{//we look for l the index of the face Fj for the cell Ctemp1
-						if (j == Ctemp1.getFacesId()[l])
-						{
-							for (int idim = 0; idim < _Ndim; ++idim)
-								_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-							break;
-						}
-					}
-				}else{ // _Ndim = 1, build normal vector (bug cdmath)
-					if(!_sectionFieldSet)
-					{
-						if (Fj.x()<Ctemp1.x())
-							_vec_normal[0] = -1;
-						else
-							_vec_normal[0] = 1;
-					}
-					else
-					{
-						if(idCells[0]==0)
-							_vec_normal[0] = -1;
-						else//idCells[0]==31
-							_vec_normal[0] = 1;
-					}
-				}
-				if(_verbose && _nbTimeStep%_freqSave ==0)
-				{
-					cout << "face numero " << j << " cellule frontiere " << idCells[k] << " ; vecteur normal=(";
-					for(int p=0; p<_Ndim; p++)
-						cout << _vec_normal[p] << ",";
-					cout << "). "<<endl;
-				}
-				nameOfGroup = Fj.getGroupName();
-				_porosityi=_porosityField(idCells[k]);
-				_porosityj=_porosityi;
-				setBoundaryState(nameOfGroup,idCells[k],_vec_normal);
-				convectionState(idCells[k],0,true);
-				convectionMatrices();
-				diffusionStateAndMatrices(idCells[k], 0, true);
-				// compute 1/dxi
-				if (_Ndim > 1)
-					_inv_dxi = Fj.getMeasure()/Ctemp1.getMeasure();
-				else
-					_inv_dxi = 1/Ctemp1.getMeasure();
-
-				addConvectionToSecondMember(idCells[k],-1,true,nameOfGroup);
-				addDiffusionToSecondMember(idCells[k],-1,true);
-				addSourceTermToSecondMember(idCells[k],(_mesh.getCell(idCells[k])).getNumberOfFaces(),-1, -1,true,j,_inv_dxi*Ctemp1.getMeasure());
-
-				if(_timeScheme == Implicit){
-					for(int l=0; l<_nVar*_nVar;l++){
-						_AroeMinusImplicit[l] *= _inv_dxi;
-						_Diffusion[l] *=_inv_dxi*_inv_dxi;
-					}
-
-					jacobian(idCells[k],nameOfGroup,_vec_normal);
-					jacobianDiff(idCells[k],nameOfGroup);
-					if(_verbose && _nbTimeStep%_freqSave ==0){
-						cout << "Matrice Jacobienne CL convection:" << endl;
-						for(int p=0; p<_nVar; p++){
-							for(int q=0; q<_nVar; q++)
-								cout << _Jcb[p*_nVar+q] << "\t";
-							cout << endl;
-						}
-						cout << endl;
-						cout << "Matrice Jacobienne CL diffusion:" << endl;
-						for(int p=0; p<_nVar; p++){
-							for(int q=0; q<_nVar; q++)
-								cout << _JcbDiff[p*_nVar+q] << "\t";
-							cout << endl;
-						}
-						cout << endl;
-					}
-					idm = idCells[k];
-					//calcul et insertion de A^-*Jcb
-					Polynoms::matrixProduct(_AroeMinusImplicit, _nVar, _nVar, _Jcb, _nVar, _nVar, _a);
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _a, ADD_VALUES);
-
-					if(_verbose)
-						displayMatrix(_a, _nVar, "produit A^-*Jcb pour CL");
-
-					//insertion de -A^-
-					for(int k=0; k<_nVar*_nVar;k++){
-						_AroeMinusImplicit[k] *= -1;
-					}
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
-					if(_verbose)
-						displayMatrix(_AroeMinusImplicit, _nVar,"-_AroeMinusImplicit: ");
-
-					//calcul et insertion de D*JcbDiff
-					Polynoms::matrixProduct(_Diffusion, _nVar, _nVar, _JcbDiff, _nVar, _nVar, _a);
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _a, ADD_VALUES);
-					for(int k=0; k<_nVar*_nVar;k++)
-						_Diffusion[k] *= -1;
-					MatSetValuesBlocked(_A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
-				}
-			}
-		} else 	if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
+		if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 			// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
 			Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 			Ctemp2 = _mesh.getCell(idCells[1]);
@@ -241,12 +257,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					cout<<_vec_normal[idim]<<", ";
 				cout<<endl;
 			}
-			_porosityi=_porosityField(idCells[0]);
-			_porosityj=_porosityField(idCells[1]);
-			convectionState(idCells[0],idCells[1],false);
-			convectionMatrices();
-			diffusionStateAndMatrices(idCells[0], idCells[1], false);
-
 			// compute 1/dxi and 1/dxj
 			if (_Ndim > 1)
 			{
@@ -259,9 +269,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				_inv_dxj = 1/Ctemp2.getMeasure();
 			}
 
-			addConvectionToSecondMember(idCells[0],idCells[1], false);
-			addDiffusionToSecondMember( idCells[0],idCells[1], false);
-			addSourceTermToSecondMember(idCells[0], Ctemp1.getNumberOfFaces(),idCells[1], _mesh.getCell(idCells[1]).getNumberOfFaces(),false,j,_inv_dxi*Ctemp1.getMeasure());
+			addConvectionToSecondMember(idCells[0],idCells[1], false); //TODO à modifier 
 
 			if(_timeScheme == Implicit){
 				for(int k=0; k<_nVar*_nVar;k++)
@@ -271,7 +279,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				}
 				idm = idCells[0];
 				idn = idCells[1];
-				//cout<<"idm= "<<idm<<"idn= "<<idn<<"nbvoismax= "<<_neibMaxNbCells<<endl;
+				
 				MatSetValuesBlocked(_A, size, &idm, size, &idn, _AroeMinusImplicit, ADD_VALUES);
 				MatSetValuesBlocked(_A, size, &idm, size, &idn, _Diffusion, ADD_VALUES);
 
@@ -310,104 +318,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					displayMatrix(_AroePlusImplicit, _nVar, "-_AroePlusImplicit: ");
 			}
 		}
-		else if( Fj.getNumberOfCells()>2 && _Ndim==1 ){//inner face with more than two neighbours
-			if(_verbose && _nbTimeStep%_freqSave ==0)
-				cout<<"lattice mesh junction at face "<<j<<" nbvoismax= "<<_neibMaxNbCells<<endl;
-			*_runLogFile<<"Warning: treatment of a junction node"<<endl;
-
-			if(!_sectionFieldSet)
-			{
-				_runLogFile->close();
-				throw CdmathException("ProblemFluid::ComputeTimeStep(): pipe network requires section field");
-			}
-			int largestSectionCellIndex=0;
-			for(int i=1;i<Fj.getNumberOfCells();i++){
-				if(_sectionField(idCells[i])>_sectionField(idCells[largestSectionCellIndex]))
-					largestSectionCellIndex=i;
-			}
-			idm = idCells[largestSectionCellIndex];
-			Ctemp1 = _mesh.getCell(idm);//origin of the normal vector
-			_porosityi=_porosityField(idm);
-
-			if (j==15)// bug cdmath (Fj.x() > _mesh.getCell(idm).x())
-				_vec_normal[0] = 1;
-			else//j==16
-				_vec_normal[0] = -1;
-			if(_verbose && _nbTimeStep%_freqSave ==0)
-			{
-				cout<<"Cell with largest section has index "<< largestSectionCellIndex <<" and number "<<idm<<endl;
-				cout << " ; vecteur normal=(";
-				for(int p=0; p<_Ndim; p++)
-					cout << _vec_normal[p] << ",";
-				cout << "). "<<endl;
-			}
-			for(int i=0;i<Fj.getNumberOfCells();i++){
-				if(i != largestSectionCellIndex){
-					idn = idCells[i];
-					Ctemp2 = _mesh.getCell(idn);
-					_porosityj=_porosityField(idn);
-					convectionState(idm,idn,false);
-					convectionMatrices();
-					diffusionStateAndMatrices(idm, idn,false);
-
-					if(_verbose && _nbTimeStep%_freqSave ==0)
-						cout<<"Neighbour index "<<i<<" cell number "<< idn<<endl;
-
-					_inv_dxi = _sectionField(idn)/_sectionField(idm)/Ctemp1.getMeasure();
-					_inv_dxj = 1/Ctemp2.getMeasure();
-
-					addConvectionToSecondMember(idm,idn, false);
-					_inv_dxi = sqrt(_sectionField(idn)/_sectionField(idm))/Ctemp1.getMeasure();
-					addDiffusionToSecondMember(idm,idn, false);
-					_inv_dxi = _sectionField(idn)/_sectionField(idm)/Ctemp1.getMeasure();
-					addSourceTermToSecondMember(idm, Ctemp1.getNumberOfFaces()*(Fj.getNumberOfCells()-1),idn, Ctemp2.getNumberOfFaces(),false,j,_inv_dxi*Ctemp1.getMeasure());
-
-					if(_timeScheme == Implicit){
-						for(int k=0; k<_nVar*_nVar;k++)
-						{
-							_AroeMinusImplicit[k] *= _inv_dxi;
-							_Diffusion[k] *=_inv_dxi*2/(1/_inv_dxi+1/_inv_dxj);//use sqrt as above
-						}
-						MatSetValuesBlocked(_A, size, &idm, size, &idn, _AroeMinusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idm, size, &idn, _Diffusion, ADD_VALUES);
-
-						if(_verbose){
-							displayMatrix(_AroeMinusImplicit, _nVar, "+_AroeMinusImplicit: ");
-							displayMatrix(_Diffusion, _nVar, "+_Diffusion: ");
-						}
-						for(int k=0;k<_nVar*_nVar;k++){
-							_AroeMinusImplicit[k] *= -1;
-							_Diffusion[k] *= -1;
-						}
-						MatSetValuesBlocked(_A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
-						if(_verbose){
-							displayMatrix(_AroeMinusImplicit, _nVar, "-_AroeMinusImplicit: ");
-							displayMatrix(_Diffusion, _nVar, "-_Diffusion: ");
-						}
-						for(int k=0; k<_nVar*_nVar;k++)
-						{
-							_AroePlusImplicit[k] *= _inv_dxj;
-							_Diffusion[k] *=_inv_dxj/_inv_dxi;//use sqrt as above
-						}
-						MatSetValuesBlocked(_A, size, &idn, size, &idn, _AroePlusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idn, size, &idn, _Diffusion, ADD_VALUES);
-						if(_verbose)
-							displayMatrix(_AroePlusImplicit, _nVar, "+_AroePlusImplicit: ");
-
-						for(int k=0;k<_nVar*_nVar;k++){
-							_AroePlusImplicit[k] *= -1;
-							_Diffusion[k] *= -1;
-						}
-						MatSetValuesBlocked(_A, size, &idn, size, &idm, _AroePlusImplicit, ADD_VALUES);
-						MatSetValuesBlocked(_A, size, &idn, size, &idm, _Diffusion, ADD_VALUES);
-
-						if(_verbose)
-							displayMatrix(_AroePlusImplicit, _nVar, "-_AroePlusImplicit: ");
-					}
-				}
-			}
-		}
+		
 		else
 		{
 			cout<< "Face j="<<j<< " is not a boundary face and has "<<Fj.getNumberOfCells()<< " neighbour cells"<<endl;
@@ -439,90 +350,111 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 	stop=false;
 
-	/*
-	if(_nbTimeStep+1<_cfl)
-		return (_nbTimeStep+1)*_minl/_maxvp;
-	else
-	 */
 	if(_maxvp>0)
 		return _cfl*_minl/_maxvp;
 	else//case of incompressible fluid at rest. Use a velocity of 1
 		return _cfl*_minl;
 }
+
+
+
 bool WaveStaggered::iterateTimeStep(bool &converged)
 {
-	if(_timeScheme == Explicit || !_usePrimitiveVarsInNewton)
-		ProblemFluid::iterateTimeStep(converged);
-	else
-	{
-		bool stop=false;
+	bool stop=false;
 
-		if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
-			_maxvp=0;
-			computeTimeStep(stop);
-		}
-		if(stop){//Le compute time step ne s'est pas bien passé
-			cout<<"ComputeTimeStep failed"<<endl;
+	if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
+		_maxvp=0.;
+		computeTimeStep(stop);//This compute timestep is just to update the linear system. The time step was imposed before starting the Newton iterations
+	}
+	if(stop){//Le compute time step ne s'est pas bien passé
+		cout<<"ComputeTimeStep failed"<<endl;
+		converged=false;
+		return false;
+	}
+
+	computeNewtonVariation();
+
+	//converged=convergence des iterations
+	if(_timeScheme == Explicit)
+		converged=true;
+	else{//Implicit scheme
+
+		KSPGetIterationNumber(_ksp, &_PetscIts);
+		if( _MaxIterLinearSolver < _PetscIts)//save the maximum number of iterations needed during the newton scheme
+			_MaxIterLinearSolver = _PetscIts;
+
+		KSPConvergedReason reason;
+		KSPGetConvergedReason(_ksp,&reason);
+
+		if(reason<0)//solving the linear system failed
+		{
+			if( reason == -3)
+			    cout<<"Maximum number of iterations "<<_maxPetscIts<<" reached"<<endl;
+			else if( reason == -11)
+			    cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
+			else if( reason == -5)
+				cout<<"!!!!!!! Generic breakdown of the linear solver (Could be due to a singular matrix or preconditioner) !!!!!!"<<endl;
+			else
+			{
+			    cout<<"PETSc divergence reason  "<< reason <<endl;
+				cout<<"Nombre d'itérations effectuées "<< _PetscIts<<" nombre maximal Itérations autorisées "<<_maxPetscIts<<endl;
+			}
+			*_runLogFile<<"Systeme lineaire : pas de convergence de Petsc. Raison PETSC numéro "<<reason<<endl;
+			*_runLogFile<<"Nombre d'itérations effectuées "<< _PetscIts<<" nombre maximal Itérations autorisées "<<_maxPetscIts<<endl;
 			converged=false;
 			return false;
 		}
-
-		computeNewtonVariation();
-
-		//converged=convergence des iterations
-		if(_timeScheme == Explicit)
-			converged=true;
-		else{//Implicit scheme
-
-			KSPGetIterationNumber(_ksp, &_PetscIts);
-			if( _MaxIterLinearSolver < _PetscIts)//save the maximum number of iterations needed during the newton scheme
-				_MaxIterLinearSolver = _PetscIts;
-			if(_PetscIts>=_maxPetscIts)//solving the linear system failed
+		else{//solving the linear system succeeded
+			//Calcul de la variation relative Uk+1-Uk ou Vkp1-Vk
+			_erreur_rel = 0.;
+			double x, dx;
+			int I;
+			for(int j=1; j<=_Nmailles; j++)
 			{
-				cout<<"Systeme lineaire : pas de convergence de Petsc. Itérations maximales "<<_maxPetscIts<<" atteintes"<<endl;
-				*_runLogFile<<"Systeme lineaire : pas de convergence de Petsc. Itérations maximales "<<_maxPetscIts<<" atteintes"<<endl;
-				converged=false;
-				return false;
-			}
-			else{//solving the linear system succeeded
-				//Calcul de la variation relative Uk+1-Uk
-				_erreur_rel = 0.;
-				double x, dx;
-				int I;
-				for(int j=1; j<=_Nmailles; j++)
+				for(int k=0; k<_nVar; k++)
 				{
-					for(int k=0; k<_nVar; k++)
-					{
-						I = (j-1)*_nVar + k;
-						VecGetValues(_newtonVariation, 1, &I, &dx);
+					I = (j-1)*_nVar + k;
+					VecGetValues(_newtonVariation, 1, &I, &dx);
+					if( !_usePrimitiveVarsInNewton)
+						VecGetValues(_conservativeVars, 1, &I, &x);
+					else
 						VecGetValues(_primitiveVars, 1, &I, &x);
-						if (fabs(x)*fabs(x)< _precision)
-						{
-							if(_erreur_rel < fabs(dx))
-								_erreur_rel = fabs(dx);
-						}
-						else if(_erreur_rel < fabs(dx/x))
-							_erreur_rel = fabs(dx/x);
+					if (fabs(x)*fabs(x)< _precision)
+					{
+						if(_erreur_rel < fabs(dx))
+							_erreur_rel = fabs(dx);
 					}
+					else if(_erreur_rel < fabs(dx/x))
+						_erreur_rel = fabs(dx/x);
 				}
 			}
-			converged = _erreur_rel <= _precision_Newton;
 		}
+		converged = _erreur_rel <= _precision_Newton;
+	}
 
-		double relaxation=1;//Vk+1=Vk+relaxation*deltaV
+	//Change the relaxation coefficient to ease convergence
+	double relaxation=1;
 
-		VecAXPY(_primitiveVars,  relaxation, _newtonVariation);
-
+	if( _timeScheme == Explicit or !_usePrimitiveVarsInNewton)
+	{
+		VecAXPY(_conservativeVars,  relaxation, _newtonVariation);//Uk+1=Uk+relaxation*deltaU
 		//mise a jour du champ primitif
+		updatePrimitives();
+	
+		if(_system)
+		{
+			cout<<"Vecteur Ukp1-Uk "<<endl;
+			VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
+			cout << "Nouvel etat courant Uk de l'iteration Newton: " << endl;
+			VecView(_conservativeVars,  PETSC_VIEWER_STDOUT_SELF);
+		}
+	}
+	else
+	{
+		VecAXPY(_primitiveVars,     relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+		//mise a jour du champ conservatif
 		updateConservatives();
 
-		if(_nbPhases==2 && fabs(_err_press_max) > _precision)//la pression n'a pu être calculée en diphasique à partir des variables conservatives
-		{
-			cout<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-			*_runLogFile<<"Warning consToPrim: nbiter max atteint, erreur relative pression= "<<_err_press_max<<" precision= " <<_precision<<endl;
-			converged=false;
-			return false;
-		}
 		if(_system)
 		{
 			cout<<"Vecteur Vkp1-Vk "<<endl;
@@ -530,28 +462,60 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 			cout << "Nouvel etat courant Vk de l'iteration Newton: " << endl;
 			VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
 		}
-
-		if(_nbPhases==2 && (_nbTimeStep-1)%_freqSave ==0){
-			if(_minm1<-_precision || _minm2<-_precision)
-			{
-				cout<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
-				*_runLogFile<<"!!!!!!!!! WARNING masse partielle negative sur " << _nbMaillesNeg << " faces, min m1= "<< _minm1 << " , minm2= "<< _minm2<< " precision "<<_precision<<endl;
-			}
-
-			if (_nbVpCplx>0){
-				cout << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
-				*_runLogFile << "!!!!!!!!!!!!!!!!!!!!!!!! Complex eigenvalues on " << _nbVpCplx << " cells, max imag= " << _part_imag_max << endl;
-			}
-		}
-		_minm1=1e30;
-		_minm2=1e30;
-		_nbMaillesNeg=0;
-		_nbVpCplx =0;
-		_part_imag_max=0;
-
-		return true;
 	}
+
+	return true;
 }
+
+void WaveStaggered:validateTimeStep()
+{
+	if(_system)
+	{
+		cout<<" Vecteur Un"<<endl;
+		VecView(_old,  PETSC_VIEWER_STDOUT_WORLD);
+		cout<<" Vecteur Un+1"<<endl;
+		VecView(_conservativeVars,  PETSC_VIEWER_STDOUT_WORLD);
+	}
+	VecAXPY(_old,  -1, _conservativeVars);//old contient old-courant
+
+	//Calcul de la variation Un+1-Un
+	_erreur_rel= 0;
+	double x, dx;
+	int I;
+
+	for(int j=1; j<=_Nmailles; j++)
+	{
+		for(int k=0; k<_nVar; k++)
+		{
+			I = (j-1)*_nVar + k;
+			VecGetValues(_old, 1, &I, &dx);
+			VecGetValues(_conservativeVars, 1, &I, &x);
+			if (fabs(x)< _precision)
+			{
+				if(_erreur_rel < fabs(dx))
+					_erreur_rel = fabs(dx);
+			}
+			else if(_erreur_rel < fabs(dx/x))
+				_erreur_rel = fabs(dx/x);
+		}
+	}
+
+	_isStationary =_erreur_rel <_precision;
+
+	VecCopy(_conservativeVars, _old);
+
+	if(_verbose && _nbTimeStep%_freqSave ==0){
+		if(!_usePrimitiveVarsInNewton)
+			testConservation();
+		cout <<"Valeur propre maximum: " << _maxvp << endl;
+	}
+
+	_time+=_dt;
+	_nbTimeStep++;
+	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
+		save();
+}
+
 void WaveStaggered::computeNewtonVariation()
 {
 	if(!_usePrimitiveVarsInNewton)
@@ -883,189 +847,10 @@ void WaveStaggered::setBoundaryState(string nameOfGroup, const int &j,double *no
 }
 
 void WaveStaggered::convectionMatrices()
-{
-	//entree: URoe = rho, u, H
-	//sortie: matrices Roe+  et Roe-
+{}
 
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		cout<<"WaveStaggered::convectionMatrices()"<<endl;
-
-	double u_n=0, u_2=0;//vitesse normale et carré du module
-
-	for(int i=0;i<_Ndim;i++)
-	{
-		u_2 += _Uroe[1+i]*_Uroe[1+i];
-		u_n += _Uroe[1+i]*_vec_normal[i];
-	}
-
-	vector<complex<double> > vp_dist(3,0);
-
-	if(_spaceScheme==staggered && _nonLinearFormulation==VFFC)//special case
-	{
-		staggeredVFFCMatricesConservativeVariables(u_n);//Computation of classical upwinding matrices
-		if(_timeScheme==Implicit && _usePrimitiveVarsInNewton)//For use in implicit matrix
-			staggeredVFFCMatricesPrimitiveVariables(u_n);
-	}
-	else
-	{
-		Vector vitesse(_Ndim);
-		for(int idim=0;idim<_Ndim;idim++)
-			vitesse[idim]=_Uroe[1+idim];
-
-		double  c, H, K, k;
-		/***********Calcul des valeurs propres ********/
-		H = _Uroe[_nVar-1];
-		c = _fluides[0]->vitesseSonEnthalpie(H-u_2/2);//vitesse du son a l'interface
-		k = _fluides[0]->constante("gamma") - 1;//A generaliser pour porosite et stephane gas law
-		K = u_2*k/2; //g-1/2 *|u|²
-
-		vp_dist[0]=u_n-c;vp_dist[1]=u_n;vp_dist[2]=u_n+c;
-
-		_maxvploc=fabs(u_n)+c;
-		if(_maxvploc>_maxvp)
-			_maxvp=_maxvploc;
-
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-			cout<<"WaveStaggered::convectionMatrices Eigenvalues "<<u_n-c<<" , "<<u_n<<" , "<<u_n+c<<endl;
-
-		RoeMatrixConservativeVariables( u_n, H,vitesse,k,K);
-
-		/******** Construction des matrices de decentrement ********/
-		if( _spaceScheme ==centered){
-			if(_entropicCorrection)
-			{
-				*_runLogFile<<"WaveStaggered::convectionMatrices: entropy scheme not available for centered scheme"<<endl;
-				_runLogFile->close();
-				throw CdmathException("WaveStaggered::convectionMatrices: entropy scheme not available for centered scheme");
-			}
-
-			for(int i=0; i<_nVar*_nVar;i++)
-				_absAroe[i] = 0;
-		}
-		else if(_spaceScheme == upwind || _spaceScheme ==pressureCorrection || _spaceScheme ==lowMach){
-			if(_entropicCorrection)
-				entropicShift(_vec_normal);
-			else
-				_entropicShift=vector<double>(3,0);//at most 3 distinct eigenvalues
-
-			vector< complex< double > > y (3,0);
-			for( int i=0 ; i<3 ; i++)
-				y[i] = Polynoms::abs_generalise(vp_dist[i])+_entropicShift[i];
-			Polynoms::abs_par_interp_directe(3,vp_dist, _Aroe, _nVar,_precision, _absAroe,y);
-
-			if( _spaceScheme ==pressureCorrection)
-				for( int i=0 ; i<_Ndim ; i++)
-					for( int j=0 ; j<_Ndim ; j++)
-						_absAroe[(1+i)*_nVar+1+j]-=(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
-			else if( _spaceScheme ==lowMach){
-				double M=sqrt(u_2)/c;
-				for( int i=0 ; i<_Ndim ; i++)
-					for( int j=0 ; j<_Ndim ; j++)
-						_absAroe[(1+i)*_nVar+1+j]-=(1-M)*(vp_dist[2].real()-vp_dist[0].real())/2*_vec_normal[i]*_vec_normal[j];
-			}
-		}
-		else if( _spaceScheme ==staggered ){
-			if(_entropicCorrection)//To do: study entropic correction for staggered
-			{
-				*_runLogFile<<"WaveStaggered::convectionMatrices: entropy scheme not available for staggered scheme"<<endl;
-				_runLogFile->close();
-				throw CdmathException("WaveStaggered::convectionMatrices: entropy scheme not available for staggered scheme");
-			}
-
-			staggeredRoeUpwindingMatrixConservativeVariables( u_n, H, vitesse, k, K);
-		}
-		else
-		{
-			*_runLogFile<<"WaveStaggered::convectionMatrices: scheme not treated"<<endl;
-			_runLogFile->close();
-			throw CdmathException("WaveStaggered::convectionMatrices: scheme not treated");
-		}
-
-		for(int i=0; i<_nVar*_nVar;i++)
-		{
-			_AroeMinus[i] = (_Aroe[i]-_absAroe[i])/2;
-			_AroePlus[i]  = (_Aroe[i]+_absAroe[i])/2;
-		}
-		if(_timeScheme==Implicit)
-		{
-			if(_usePrimitiveVarsInNewton)//Implicitation using primitive variables
-			{
-				_Vij[0]=_fluides[0]->getPressureFromEnthalpy(_Uroe[_nVar-1]-u_2/2, _Uroe[0]);//pressure
-				_Vij[_nVar-1]=_fluides[0]->getTemperatureFromPressure( _Vij[0], _Uroe[0]);//Temperature
-				for(int idim=0;idim<_Ndim; idim++)
-					_Vij[1+idim]=_Uroe[1+idim];
-				primToConsJacobianMatrix(_Vij);
-				Polynoms::matrixProduct(_AroeMinus, _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroeMinusImplicit);
-				Polynoms::matrixProduct(_AroePlus,  _nVar, _nVar, _primToConsJacoMat, _nVar, _nVar, _AroePlusImplicit);
-			}
-			else
-				for(int i=0; i<_nVar*_nVar;i++)
-				{
-					_AroeMinusImplicit[i] = _AroeMinus[i];
-					_AroePlusImplicit[i]  = _AroePlus[i];
-				}
-		}
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		{
-			displayMatrix(_Aroe, _nVar,"Matrice de Roe");
-			displayMatrix(_absAroe, _nVar,"Valeur absolue matrice de Roe");
-			displayMatrix(_AroeMinus, _nVar,"Matrice _AroeMinus");
-			displayMatrix(_AroePlus, _nVar,"Matrice _AroePlus");
-		}
-	}
-
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0 && _timeScheme==Implicit)
-	{
-		displayMatrix(_AroeMinusImplicit, _nVar,"Matrice _AroeMinusImplicit");
-		displayMatrix(_AroePlusImplicit,  _nVar,"Matrice _AroePlusImplicit");
-	}
-
-	/*********Calcul de la matrice signe pour VFFC, VFRoe et décentrement des termes source*****/
-	if(_entropicCorrection)
-	{
-		InvMatriceRoe( vp_dist);
-		Polynoms::matrixProduct(_absAroe, _nVar, _nVar, _invAroe, _nVar, _nVar, _signAroe);
-	}
-	else if (_spaceScheme==upwind || (_spaceScheme ==pressureCorrection ) || (_spaceScheme ==lowMach ))//upwind sans entropic
-		SigneMatriceRoe( vp_dist);
-	else if (_spaceScheme==centered)//centre  sans entropic
-		for(int i=0; i<_nVar*_nVar;i++)
-			_signAroe[i] = 0;
-	else if( _spaceScheme ==staggered )//à tester
-	{
-		double signu;
-		if(u_n>0)
-			signu=1;
-		else if (u_n<0)
-			signu=-1;
-		else
-			signu=0;
-		for(int i=0; i<_nVar*_nVar;i++)
-			_signAroe[i] = 0;
-		_signAroe[0] = signu;
-		for(int i=1; i<_nVar-1;i++)
-			_signAroe[i*_nVar+i] = -signu;
-		_signAroe[_nVar*(_nVar-1)+_nVar-1] = signu;
-	}
-	else
-	{
-		*_runLogFile<<"WaveStaggered::convectionMatrices: well balanced option not treated"<<endl;
-		_runLogFile->close();
-		throw CdmathException("WaveStaggered::convectionMatrices: well balanced option not treated");
-	}
-}
 void WaveStaggered::computeScaling(double maxvp)
-{
-	_blockDiag[0]=1;
-	_invBlockDiag[0]=1;
-	for(int q=1; q<_nVar-1; q++)
-	{
-		_blockDiag[q]=1./maxvp;//
-		_invBlockDiag[q]= maxvp;//1.;//
-	}
-	_blockDiag[_nVar - 1]=(_fluides[0]->constante("gamma")-1)/(maxvp*maxvp);//1
-	_invBlockDiag[_nVar - 1]=  1./_blockDiag[_nVar - 1] ;// 1.;//
-}
+{}
 
 
 void WaveStaggered::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar * Vi, int i)
