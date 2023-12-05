@@ -27,12 +27,15 @@ public :
 	 * \param [in] bool : There are two possible equations of state for the fluid
 	 *  */
 	WaveStaggered(phaseType fluid,int dim);
+
 	//! system initialisation
 	void initialize();
 
-	//fonctions d'echange de flux
-	//	void getOutputField(const Vec &Flux, const string Champ, const int numBord)=0;//, PetscInt *indices_Flux, PetscInt *indices_Bord, const long range)=0;
-	//	double trace(const int &numBord, Vec &out)=0;
+	/** \fn terminate
+     * \brief empties the memory
+     * @param void
+     *  */
+    void terminate();
 
 	void save();
 

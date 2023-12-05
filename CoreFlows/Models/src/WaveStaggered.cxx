@@ -495,23 +495,12 @@ void WaveStaggered::computeNewtonVariation()
 				cout << endl;
 			}
 		}
-		else
+		else if (_timeScheme ==  Implicit)
 		{
 			MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
 
 			VecAXPY(_b, 1/_dt, _old);
 			VecAXPY(_b, -1/_dt, _conservativeVars);
-
-			for(int imaille = 0; imaille<_Nmailles; imaille++){
-				_idm[0] = _nVar*imaille;
-				for(int k=1; k<_nVar; k++)
-					_idm[k] = _idm[k-1] + 1;
-				VecGetValues(_primitiveVars, _nVar, _idm, _Vi);
-				primToConsJacobianMatrix(_Vi);
-				for(int k=0; k<_nVar*_nVar; k++)
-					_primToConsJacoMat[k]*=1/_dt;
-				MatSetValuesBlocked(_A, 1, &imaille, 1, &imaille, _primToConsJacoMat, ADD_VALUES);
-			}
 			MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 
 #if PETSC_VERSION_GREATER_3_5
@@ -546,7 +535,7 @@ void WaveStaggered::computeNewtonVariation()
 				{
 					indice = imaille;
 					VecSetValuesBlocked(_vecScaling,1 , &indice, _blockDiag, INSERT_VALUES);
-					VecSetValuesBlocked(_invVecScaling,1,&indice,_invBlockDiag, INSERT_VALUES);
+					VecSetValuesBlocked(_invVecScaling,1,&indice,_invBlockDiag, INSERT_VALUES); //Todo à modifier en décalé
 				}
 				VecAssemblyEnd(_vecScaling);
 				VecAssemblyEnd(_invVecScaling);
@@ -862,6 +851,75 @@ void WaveStaggered::convectionMatrixPrimitiveVariables( double rho, double u_n, 
 
 void WaveStaggered::getDensityDerivatives( double pressure, double temperature, double v2)
 {}
+
+void WaveStaggered::terminate(){ //TOdo : à adapter en décalé
+
+	delete[] _AroePlus;
+	delete[] _Diffusion;
+	delete[] _GravityImplicitationMatrix;
+	delete[] _AroeMinus;
+	delete[] _Aroe;
+	delete[] _absAroe;
+	delete[] _signAroe;
+	delete[] _invAroe;
+	delete[] _AroeImplicit;
+	delete[] _AroeMinusImplicit;
+	delete[] _AroePlusImplicit;
+	delete[] _absAroeImplicit;
+	delete[] _phi;
+	delete[] _Jcb;
+	delete[] _JcbDiff;
+	delete[] _a;
+	delete[] _primToConsJacoMat;
+
+	delete[] _l;
+	delete[] _r;
+	delete[] _Uroe;
+	delete[] _Udiff;
+	delete[] _temp;
+	delete[] _externalStates;
+	delete[] _idm;
+	delete[] _idn;
+	delete[] _vec_normal;
+	delete[] _Ui;
+	delete[] _Uj;
+	delete[] _Vi;
+	delete[] _Vj;
+	if(_nonLinearFormulation==VFRoe){
+		delete[] _Uij;
+		delete[] _Vij;
+	}
+	delete[] _Si;
+	delete[] _Sj;
+	delete[] _pressureLossVector;
+	delete[] _porosityGradientSourceVector;
+	if(_isScaling)
+	{
+		delete[] _blockDiag;
+		delete[] _invBlockDiag;
+
+		VecDestroy(&_vecScaling);
+		VecDestroy(&_invVecScaling);
+		VecDestroy(&_bScaling);
+	}
+
+	VecDestroy(&_conservativeVars);
+	VecDestroy(&_newtonVariation);
+	VecDestroy(&_b);
+	VecDestroy(&_primitiveVars);
+	VecDestroy(&_Uext);
+	VecDestroy(&_Uextdiff);
+
+	// 	PCDestroy(_pc);
+	KSPDestroy(&_ksp);
+	for(int i=0;i<_nbPhases;i++)
+		delete _fluides[i];
+
+	// Destruction du solveur de Newton de PETSc
+	if(_timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
+		SNESDestroy(&_snes);
+}
+
 void WaveStaggered::save(){
     PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
     *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
