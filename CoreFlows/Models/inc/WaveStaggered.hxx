@@ -117,12 +117,12 @@ public :
 	 * */
 	bool iterateTimeStep(bool &ok);
 
-	void computeVelocityMCells(const Field& velocity,
-                      Field& velocityMCells)
 protected :
 	Field _Vitesse, _Pression ;
-	double* _pressure, _velocity;
-	Mat _B, _Dc, _Df; // Divergence, discrete pressure laplacian, discrete grad div velocity
+	Mat _B, _Btopo ; // (Bu)_K := \sum_{\sigma \subset K} orientation_{K,\sigma}  |\sigma| u_\sigma,
+					 // B_topo = B without metrics, defined for pressure Laplacian := B_topo (-B)^t p
+	Mat _Vol, _Surface;
+					
 
 
 
