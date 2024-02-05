@@ -122,6 +122,7 @@ protected :
 	Mat _B, _Btopo ; // (Bu)_K := \sum_{\sigma \subset K} orientation_{K,\sigma}  |\sigma| u_\sigma,
 					 // B_topo = B without metrics, defined for pressure Laplacian := B_topo (-B)^t p
 	Mat _Vol, _Surface;
+	double* _normal_sigma;
 					
 
 

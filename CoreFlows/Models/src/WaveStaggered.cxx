@@ -61,6 +61,7 @@ void WaveStaggered::initialize(){
 	*_runLogFile << "Number of Phases = " << _nbPhases << " spaceDim= "<<_Ndim<<" number of variables= "<<_nVar<<endl;
 
 	_vec_normal = new double[_Ndim];
+	_normal_sigma = new double[_Ndim];
 	
 
 
@@ -105,7 +106,13 @@ void WaveStaggered::initialize(){
 			// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
 			Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 			Ctemp2 = _mesh.getCell(idCells[1]);
+			double Perimeter1 = 0;
+			double Perimeter2 = 0;
 			for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+				sigma1 = _mesh.getFace( Ctemp1.getFacesId()[l] );
+				Perimeter1 += sigma1.getMeasure();
+				sigma2 = _mesh.getFace( Ctemp1.getFacesId()[l] );
+				Perimeter2 += sigma1.getMeasure();
 					if (j == Ctemp1.getFacesId()[l]){
 						for (int idim = 0; idim < _Ndim; ++idim)
 							_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
@@ -113,11 +120,17 @@ void WaveStaggered::initialize(){
 					}
 				}
 			// orientation = dot(_vec_normal, normal_sigma)
+			_normal_sigma = Fj.x() - Ctemp1.x();
+			orientation = 0
+			for (int i=0; i <_Ndim; i++)
+				orientation += _normal_sigma[i]* _normal_vector[i];
 			_B.setValue( idCells[0], j, Fj.getMeasure() * orientation); // TODO : définir orientation
-			_Btopo.setValue(idCells[0], j, _B.getValues(idCells[0], j)/Fj.getMeasure() )
+			_Btopo.setValue(idCells[0], j, _B.getValues(idCells[0], j)/Fj.getMeasure() );
+			_Surfaces.setValue(idCells[0],idCells[0], Perimeter1/ Ctemps1.getNumberOfFaces());
+			_Surfaces.setValue(idCells[1],idCells[1], Perimeter1/ Ctemps2.getNumberOfFaces());
 		}
-
-	// TODO : penser à détruire ces matrices ?
+	
+	// TODO : penser à détruire ces matrices 
 	// TODO : remplir les matrices dès l'initialisation car elles ne dépendent pas du temps 
 
 	//creation des vecteurs
@@ -890,6 +903,7 @@ void WaveStaggered::terminate(){ //TODO : à adapter en décalé
 	delete[] _idm;
 	delete[] _idn;
 	delete[] _vec_normal;
+	delete[] _normal_sigma;
 	delete[] _Ui;
 	delete[] _Uj;
 	delete[] _Vi;
