@@ -61,9 +61,10 @@ void WaveStaggered::initialize(){
 	*_runLogFile << "Number of Phases = " << _nbPhases << " spaceDim= "<<_Ndim<<" number of variables= "<<_nVar<<endl;
 
 	_vec_normal = new double[_Ndim];
-	_normal_sigma = new double[_Ndim];
 	double kappa = 3;
 	double rho0 = 2; //  TODO : à définir dans le cas général
+	double c = 4;
+	double d = 1/2.
 
 
 	//primitive field used only for saving results
@@ -78,99 +79,115 @@ void WaveStaggered::initialize(){
 
 	/**********Petsc structures:  ****************/
 
-	//creation des matrices
-	if(_timeScheme == Implicit)
-		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
-	
+	// creation des matrices en explicite et en implicite : 
+	Mat B, Btopo, InVol; 
 	// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
 	MatCreate(PETSC_COMM_SELF, & _Q); 
 	MatSetSize(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	// matrice des volumes
-	MatCreate(PETSC_COMM_SELF, & _Volumes); 
-	MatSetSize(_Volumes, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	// matrice des surfaces (pour opérateur) div tilde
-	MatCreate(PETSC_COMM_SELF, & _Surfaces); 
-	MatSetSize(_Surfaces, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	// matrice |K|div(u)
-	MatCreate(PETSC_COMM_SELF, & _B); 
-	MatSetSize(_B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-	// matrice |K|div(u) sans |sigma| dans div(u)
-	MatCreate(PETSC_COMM_SELF, & _Btopo); 
-	MatSetSize(_Btopo, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces ); 
-
 	MatZeroEntries(_Q);
-	MatZeroEntries(_Volumes);
-	MatZeroEntries(_Surfaces);
-	MatZeroEntries(_B);
-	MatZeroEntries(_Btopo);
+	// matrice des Inverses Volumes
+	MatCreate(PETSC_COMM_SELF, & InVol); 
+	MatSetSize(InVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+	MatZeroEntries(InVol);
+	// matrice |K|div(u)
+	MatCreate(PETSC_COMM_SELF, & B); 
+	MatSetSize(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+	MatZeroEntries(B);
 
-	// Remplissage des matrices car indépendantes du temps
-	for (int j=0; j<nbFaces;j++){
-		Fj = _mesh.getFace(j);
-		_isBoundary=Fj.isBorder();
-		idCells = Fj.getCellsId();
+	
+	
+	
+	
+	if(_timeScheme == Implicit)
+		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
+	if(_timeScheme == Explicit){
+		Mat InvSurface, Laplacian, DivTilde, GraDivTilde;
 
-		if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
-			// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
-			Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
-			Ctemp2 = _mesh.getCell(idCells[1]);
-			double Perimeter1 = 0;
-			double Perimeter2 = 0;
-			for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-				sigma1 = _mesh.getFace( Ctemp1.getFacesId()[l] );
-				Perimeter1 += sigma1.getMeasure();
-				sigma2 = _mesh.getFace( Ctemp1.getFacesId()[l] );
-				Perimeter2 += sigma1.getMeasure();
-					if (j == Ctemp1.getFacesId()[l]){
-						for (int idim = 0; idim < _Ndim; ++idim)
-							_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-						break;
+		// matrice inverse des surfaces du bord des cellules (pour opérateur) div tilde
+		MatCreate(PETSC_COMM_SELF, & _InvSurface); 
+		MatSetSize(InvSurface, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+		// matrice |K|div(u) sans |sigma| dans div(u) -> pour définir facilement le laplacien à partir de l'opérateur divergence
+		MatCreate(PETSC_COMM_SELF, & Btopo); 
+		MatSetSize(Btopo, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces ); 
+		// Matrice laplacien de pression :
+		MatCreate(PETSC_COMM_SELF, & Laplacian); 
+		MatSetSize(Laplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles );
+		// Matrice DivTilde :=  |K|/|dK|div()_h
+		MatCreate(PETSC_COMM_SELF, & DivTilde); 
+		MatSetSize(DivTilde, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+		// Matrice GradDivTil := [| divTild |]_\sigma
+		MatCreate(PETSC_COMM_SELF, & DivTilde); 
+		MatSetSize(DivTilde, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+
+		// TODO : penser à détruire ces matrices 
+
+	
+		MatZeroEntries(InvSurface);
+		MatZeroEntries(Btopo);
+
+		// Remplissage des matrices car indépendantes du temps
+		for (int j=0; j<nbFaces;j++){
+			Fj = _mesh.getFace(j);
+			_isBoundary=Fj.isBorder();
+			idCells = Fj.getCellsId();
+
+			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
+				// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
+				Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
+				Ctemp2 = _mesh.getCell(idCells[1]);
+				double Perimeter1 = 0;
+				double Perimeter2 = 0;
+				for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+					sigma1 = _mesh.getFace( Ctemp1.getFacesId()[l] );
+					Perimeter1 += sigma1.getMeasure();
+					sigma2 = _mesh.getFace( Ctemp1.getFacesId()[l] );
+					Perimeter2 += sigma1.getMeasure();
+						if (j == Ctemp1.getFacesId()[l]){
+							for (int idim = 0; idim < _Ndim; ++idim)
+								_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
+							break;
+						}
 					}
-				}
-			// orientation = dot(_vec_normal, normal_sigma)
-			_normal_sigma = Fj.x() - Ctemp1.x(); // TODO : .x() est-il le point milieu ?
-			int orientation;
-			double dotprod =0; 
-			for (int i=0; i <_Ndim; i++)
-				dotprod += _normal_sigma[i]* _normal_vector[i];
-			if (dotprod > 0)
-				orientation =  1
-			else 
-				orientation = -1
-			_B.setValue( idCells[0], j, Fj.getMeasure() * orientation); 
-			_B.setValue( idCells[1], j, -Fj.getMeasure() * orientation); //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1'one
-		
-			_Btopo.setValue(idCells[0], j, orientation );
-			_Btopo.setValue(idCells[1], j, -orientation );
+				B.setValue( idCells[0], j, Fj.getMeasure() ); 
+				B.setValue( idCells[1], j, -Fj.getMeasure() ); //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
+				Btopo.setValue(idCells[0], j, 1 );
+				Btopo.setValue(idCells[1], j, -1 );
 
-			_Surfaces.setValue(idCells[0],idCells[0], Perimeter1/ Ctemps1.getNumberOfFaces());
-			_Surfaces.setValue(idCells[1],idCells[1], Perimeter1/ Ctemps2.getNumberOfFaces());
+				InvSurface.setValue(idCells[0],idCells[0], 1/(Ctemp1.getNumberOfFaces()*Perimeter1) );
+				InvSurface.setValue(idCells[1],idCells[1], 1/(Ctemp1.getNumberOfFaces()*Perimeter2) );
 
-			_Volumes.setValue(idCells[0],idCells[0],  Ctemps1.getMeasure()/ Ctemps1.getNumberOfFaces());
-			_Volumes.setValue(idCells[1],idCells[1],  Ctemps12.getMeasure()/ Ctemps2.getNumberOfFaces());
-			_Volumes.setValue(_Nmailles + j,_Nmailles + j,  D_sigma); //TODO : définir D_sigma comme le déterminant des vecteurs formant le losange D_sigma
-			
+				InVol.setValue(idCells[0],idCells[0], 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces()) );
+				InVol.setValue(idCells[1],idCells[1], 1/(Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces()) );
+				//TODO : en 2D définir D_sigma comme le déterminant des vecteurs formant le losange D_sigma
+				//       en 3D : différent 
+				
+				InVol.setValue(_Nmailles + j,_Nmailles + j,  D_sigma); 
+				
+			}
+			else
+			{
+				// TODO : s'occuper des conditions aux limites 
+			}
 		}
-		else
-		{
-			// TODO : s'occuper des conditions aux limites 
-		}
+		int *indices1 = new int[_Nmailles];
+		std::iota(indices1, indices1 +_Nmailles, 0);
+		int *indices2 = new int[_nFaces];
+		std::iota(indices2, indices2 +_nFaces, _Nmailles);
+
+		MatTranspose(B, MAT_INITIAL_MATRIX, &Bt); // TODO : MAT_INITIAL_MATRIX ?
+		MatMatMult(Btopo,Bt, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian); 
+		MatMatMult(InvSurface, B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &DivTilde); 
+		MatMatMult(Bt, DivTilde, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GraDivTilde); 
+
+		MatSetValuesBlocked(_Q, _nMailles, indices1, _Nmailles, indices1, -d*c* Laplacian , INSERT_VALUES);  
+		MatSetValuesBlocked(_Q, _nMailles, indices1, _nFaces, indices2, B/rho0 , INSERT_VALUES);
+		MatSetValuesBlocked(_Q, _nFaces, indices2, _Nmailles, indices1, -kappa * Bt, INSERT_VALUES);
+		MatSetValuesBlocked(_Q, _nFaces, indices2, _nFaces, indices2, -d*c * GradDivTilde , INSERT_VALUES);
+
+		MatMatMult(InVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
+		delete[] indices1, indices2;
 	}
-	int *indices1 = new int[_nFaces];
-	std::iota(indices1, indices1 +_nFaces, _nMailles  );
-
-	Mat _Bt =  _B.copy(); // TODO vérifier si bonne implémentation
-	_Bt.transpose();
-	Mat Laplacian = _Btopo.MatMult(_Bt); /// TODO : compatiblité produit dans l'autre sens ?
-	Mat InvPerim = _Surfaces.Inv();
-	Mat DivTilde = InvPerim.MatMult(_B);
-	Mat GraDivTilde =  _Bt.MatmUlt(divTilde);
-	MatSetValuesBlocked(_Q, _nMailles, indices, _Nmailles, indices, -d*c* Laplacian , INSERT_VALUES);
-	MatSetValuesBlocked(_Q, _nMailles, indices, _nFaces, indices1, _B/rho0 , INSERT_VALUES);
-	MatSetValuesBlocked(_Q, _nMailles, indices1, _nFaces, indices, -kappa * _Bt, INSERT_VALUES);
-	MatSetValuesBlocked(_Q, _nFaces, indices1, _nFaces, indices1, -d*c * GradDivTilde , INSERT_VALUES);
-
-	// TODO : penser à détruire ces matrices 
 
 	//creation des vecteurs
 	VecCreate(PETSC_COMM_SELF, & _primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
@@ -196,9 +213,7 @@ void WaveStaggered::initialize(){
 		cout << endl;
 	}
 
-	delete[] initialFieldPrim;
-	delete[] indices;
-	delete[] indices1;
+	delete[] initialFieldPrim, indices, indices1, indices2;
 
 	createKSP();
 	PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
@@ -284,7 +299,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				_inv_dxj = 1/Ctemp2.getMeasure();
 			}
 
-			// addConvectionToSecondMember(idCells[0],idCells[1], false); //TODO à modifier 
+			addConvectionToSecondMember(idCells[0],idCells[1], false); //TODO à modifier 
 
 			if(_timeScheme == Implicit){
 				for(int k=0; k<_nVar*_nVar;k++)
@@ -449,81 +464,48 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 
 	//Change the relaxation coefficient to ease convergence
 	double relaxation=1;
-
-	if( _timeScheme == Explicit or !_usePrimitiveVarsInNewton)
+	VecAXPY(_primitiveVars,     relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+	if(_system)
 	{
-		VecAXPY(_conservativeVars,  relaxation, _newtonVariation);//Uk+1=Uk+relaxation*deltaU
-		//mise a jour du champ primitif
-		updatePrimitives();
-	
-		if(_system)
-		{
-			cout<<"Vecteur Ukp1-Uk "<<endl;
-			VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
-			cout << "Nouvel etat courant Uk de l'iteration Newton: " << endl;
-			VecView(_conservativeVars,  PETSC_VIEWER_STDOUT_SELF);
-		}
+		cout<<"Vecteur Vkp1-Vk "<<endl;
+		VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
+		cout << "Nouvel etat courant Vk de l'iteration Newton: " << endl;
+		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
 	}
-	else
-	{
-		VecAXPY(_primitiveVars,     relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
-		//mise a jour du champ conservatif
-		updateConservatives();
 
-		if(_system)
-		{
-			cout<<"Vecteur Vkp1-Vk "<<endl;
-			VecView(_newtonVariation,  PETSC_VIEWER_STDOUT_SELF);
-			cout << "Nouvel etat courant Vk de l'iteration Newton: " << endl;
-			VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
-		}
-	}
 
 	return true;
 }
 
-void WaveStaggered:validateTimeStep()
+void WaveStaggered::validateTimeStep()
 {
 	if(_system)
 	{
 		cout<<" Vecteur Un"<<endl;
 		VecView(_old,  PETSC_VIEWER_STDOUT_WORLD);
 		cout<<" Vecteur Un+1"<<endl;
-		VecView(_conservativeVars,  PETSC_VIEWER_STDOUT_WORLD);
+		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
 	}
-	VecAXPY(_old,  -1, _conservativeVars);//old contient old-courant
+	VecAXPY(_old,  -1, _primitiveVars);//old contient old-courant
 
 	//Calcul de la variation Un+1-Un
 	_erreur_rel= 0;
 	double x, dx;
-	int I;
 
-	for(int j=1; j<=_Nmailles; j++)
-	{
-		for(int k=0; k<_nVar; k++)
+	for(int j=1; j<=_globalNbUnknowns; j++){
+		VecGetValues(_old, 1, &j, &dx);
+		VecGetValues(_conservativeVars, 1, &j, &x);
+		if (fabs(x)< _precision)
 		{
-			I = (j-1)*_nVar + k;
-			VecGetValues(_old, 1, &I, &dx);
-			VecGetValues(_conservativeVars, 1, &I, &x);
-			if (fabs(x)< _precision)
-			{
-				if(_erreur_rel < fabs(dx))
-					_erreur_rel = fabs(dx);
-			}
-			else if(_erreur_rel < fabs(dx/x))
-				_erreur_rel = fabs(dx/x);
+			if(_erreur_rel < fabs(dx))
+				_erreur_rel = fabs(dx);
 		}
+		else if(_erreur_rel < fabs(dx/x))
+			_erreur_rel = fabs(dx/x);
 	}
 
 	_isStationary =_erreur_rel <_precision;
-
-	VecCopy(_conservativeVars, _old);
-
-	if(_verbose && _nbTimeStep%_freqSave ==0){
-		if(!_usePrimitiveVarsInNewton)
-			testConservation();
-		cout <<"Valeur propre maximum: " << _maxvp << endl;
-	}
+	VecCopy(_primitiveVars, _old);
 
 	_time+=_dt;
 	_nbTimeStep++;
@@ -557,90 +539,10 @@ void WaveStaggered::computeNewtonVariation()
 			cout << endl;
 		}
 	}
-	else if (_timeScheme ==  Implicit)
-	{
-		MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-
-		VecAXPY(_b, 1/_dt, _old);
-		VecAXPY(_b, -1/_dt, _conservativeVars);
-		MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-
-#if PETSC_VERSION_GREATER_3_5
-		KSPSetOperators(_ksp, _A, _A);
-#else
-		KSPSetOperators(_ksp, _A, _A,SAME_NONZERO_PATTERN);
-#endif
-
-		if(_verbose)
-		{
-			cout << "Matrice du système linéaire" << endl;
-			MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-			cout << "Second membre du système linéaire" << endl;
-			VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-		}
-
-		if(_conditionNumber)
-			KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
-		if(!_isScaling)
-		{
-			KSPSolve(_ksp, _b, _newtonVariation);
-		}
-		else
-		{
-			computeScaling(_maxvp);
-			int indice;
-			VecAssemblyBegin(_vecScaling);
-			VecAssemblyBegin(_invVecScaling);
-			for(int imaille = 0; imaille<_Nmailles; imaille++)
-			{
-				indice = imaille;
-				VecSetValuesBlocked(_vecScaling,1 , &indice, _blockDiag, INSERT_VALUES);
-				VecSetValuesBlocked(_invVecScaling,1,&indice,_invBlockDiag, INSERT_VALUES); //Todo à modifier en décalé
-			}
-			VecAssemblyEnd(_vecScaling);
-			VecAssemblyEnd(_invVecScaling);
-
-			if(_system)
-			{
-				cout << "Matrice avant le preconditionneur des vecteurs propres " << endl;
-				MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-				cout << "Second membre avant le preconditionneur des vecteurs propres " << endl;
-				VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-			MatDiagonalScale(_A,_vecScaling,_invVecScaling);
-			if(_system)
-			{
-				cout << "Matrice apres le preconditionneur des vecteurs propres " << endl;
-				MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-			VecCopy(_b,_bScaling);
-			VecPointwiseMult(_b,_vecScaling,_bScaling);
-			if(_system)
-			{
-				cout << "Produit du second membre par le preconditionneur bloc diagonal  a gauche" << endl;
-				VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-				cout << endl;
-			}
-
-			KSPSolve(_ksp,_b, _bScaling);
-			VecPointwiseMult(_newtonVariation,_invVecScaling,_bScaling);
-		}
-		if(_system)
-		{
-			cout << "solution du systeme lineaire local:" << endl;
-			VecView(_newtonVariation, PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-		}
-	}
 }
 
-void WaveStaggered::convectionState( const long &i, const long &j, const bool &IsBord){
-}
+void WaveStaggered::convectionState( const long &i, const long &j, const bool &IsBord)
+{}
 
 void WaveStaggered::setBoundaryState(string nameOfGroup, const int &j,double *normale){
 	int k;
@@ -865,47 +767,8 @@ void WaveStaggered::porosityGradientSourceVector()
 void WaveStaggered::jacobian(const int &j, string nameOfGroup,double * normale)
 {}
 
-
-Vector WaveStaggered::convectionFlux(Vector U,Vector V, Vector normale, double porosity){
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-	{
-		cout<<"WaveStaggered::convectionFlux start"<<endl;
-		cout<<"Ucons"<<endl;
-		cout<<U<<endl;
-		cout<<"Vprim"<<endl;
-		cout<<V<<endl;
-	}
-
-	double phirho=U(0);//phi rho
-	Vector phiq(_Ndim);//phi rho u
-	for(int i=0;i<_Ndim;i++)
-		phiq(i)=U(1+i);
-
-	double pression=V(0);
-	Vector vitesse(_Ndim);
-	for(int i=0;i<_Ndim;i++)
-		vitesse(i)=V(1+i);
-	double Temperature= V(1+_Ndim);
-
-	double vitessen=vitesse*normale;
-	double rho=phirho/porosity;
-	double e_int=_fluides[0]->getInternalEnergy(Temperature,rho);
-
-	Vector F(_nVar);
-	F(0)=phirho*vitessen;
-	for(int i=0;i<_Ndim;i++)
-		F(1+i)=phirho*vitessen*vitesse(i)+pression*normale(i)*porosity;
-	F(1+_Ndim)=phirho*(e_int+0.5*vitesse*vitesse+pression/rho)*vitessen;
-
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-	{
-		cout<<"WaveStaggered::convectionFlux end"<<endl;
-		cout<<"Flux F(U,V)"<<endl;
-		cout<<F<<endl;
-	}
-
-	return F;
-}
+Vector WaveStaggered::convectionFlux(Vector U,Vector V, Vector normale, double porosity)
+{}
 
 void WaveStaggered::convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector vitesse)
 {}
@@ -913,58 +776,7 @@ void WaveStaggered::convectionMatrixPrimitiveVariables( double rho, double u_n, 
 void WaveStaggered::getDensityDerivatives( double pressure, double temperature, double v2)
 {}
 
-void WaveStaggered::terminate(){ //TODO : à adapter en décalé
-
-	delete[] _AroePlus;
-	delete[] _Diffusion;
-	delete[] _GravityImplicitationMatrix;
-	delete[] _AroeMinus;
-	delete[] _Aroe;
-	delete[] _absAroe;
-	delete[] _signAroe;
-	delete[] _invAroe;
-	delete[] _AroeImplicit;
-	delete[] _AroeMinusImplicit;
-	delete[] _AroePlusImplicit;
-	delete[] _absAroeImplicit;
-	delete[] _phi;
-	delete[] _Jcb;
-	delete[] _JcbDiff;
-	delete[] _a;
-	delete[] _primToConsJacoMat;
-
-	delete[] _l;
-	delete[] _r;
-	delete[] _Uroe;
-	delete[] _Udiff;
-	delete[] _temp;
-	delete[] _externalStates;
-	delete[] _idm;
-	delete[] _idn;
-	delete[] _vec_normal;
-	delete[] _normal_sigma;
-	delete[] _Ui;
-	delete[] _Uj;
-	delete[] _Vi;
-	delete[] _Vj;
-	if(_nonLinearFormulation==VFRoe){
-		delete[] _Uij;
-		delete[] _Vij;
-	}
-	delete[] _Si;
-	delete[] _Sj;
-	delete[] _pressureLossVector;
-	delete[] _porosityGradientSourceVector;
-	if(_isScaling)
-	{
-		delete[] _blockDiag;
-		delete[] _invBlockDiag;
-
-		VecDestroy(&_vecScaling);
-		VecDestroy(&_invVecScaling);
-		VecDestroy(&_bScaling);
-	}
-
+void WaveStaggered::terminate(){ 
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
