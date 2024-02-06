@@ -62,11 +62,12 @@ void WaveStaggered::initialize(){
 
 	_vec_normal = new double[_Ndim];
 	_normal_sigma = new double[_Ndim];
-	
+	double kappa = 3;
+	double rho0 = 2; //  TODO : à définir dans le cas général
 
 
 	//primitive field used only for saving results
-	_VV=Field ("Primitive vec", FACES + CEllS, _mesh, 1); //TODO comment fonctionnent Field ?
+	_VV=Field ("Primitive vec", FACES, _mesh, 1); //TODO comment fonctionnent Field ?
 
 	//Construction des champs primitifs et conservatifs initiaux comme avant dans ParaFlow
 	double * initialFieldPrim = new double[_globalNbUnknowns];
@@ -81,22 +82,29 @@ void WaveStaggered::initialize(){
 	if(_timeScheme == Implicit)
 		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
 	
-	// matrice tq U^n+1 = (Id + dt V^-1 Q)U^n
+	// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
 	MatCreate(PETSC_COMM_SELF, & _Q); 
 	MatSetSize(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 	// matrice des volumes
 	MatCreate(PETSC_COMM_SELF, & _Volumes); 
 	MatSetSize(_Volumes, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	// matrice des volumes
+	// matrice des surfaces (pour opérateur) div tilde
 	MatCreate(PETSC_COMM_SELF, & _Surfaces); 
 	MatSetSize(_Surfaces, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	// matrice |dK|/|K|div(u)
+	// matrice |K|div(u)
 	MatCreate(PETSC_COMM_SELF, & _B); 
 	MatSetSize(_B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-	// matrice |dK|/|K|div(u) sans |sigma| dans div(u)
+	// matrice |K|div(u) sans |sigma| dans div(u)
 	MatCreate(PETSC_COMM_SELF, & _Btopo); 
 	MatSetSize(_Btopo, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces ); 
 
+	MatZeroEntries(_Q);
+	MatZeroEntries(_Volumes);
+	MatZeroEntries(_Surfaces);
+	MatZeroEntries(_B);
+	MatZeroEntries(_Btopo);
+
+	// Remplissage des matrices car indépendantes du temps
 	for (int j=0; j<nbFaces;j++){
 		Fj = _mesh.getFace(j);
 		_isBoundary=Fj.isBorder();
@@ -120,18 +128,49 @@ void WaveStaggered::initialize(){
 					}
 				}
 			// orientation = dot(_vec_normal, normal_sigma)
-			_normal_sigma = Fj.x() - Ctemp1.x();
-			orientation = 0
+			_normal_sigma = Fj.x() - Ctemp1.x(); // TODO : .x() est-il le point milieu ?
+			int orientation;
+			double dotprod =0; 
 			for (int i=0; i <_Ndim; i++)
-				orientation += _normal_sigma[i]* _normal_vector[i];
-			_B.setValue( idCells[0], j, Fj.getMeasure() * orientation); // TODO : définir orientation
-			_Btopo.setValue(idCells[0], j, _B.getValues(idCells[0], j)/Fj.getMeasure() );
+				dotprod += _normal_sigma[i]* _normal_vector[i];
+			if (dotprod > 0)
+				orientation =  1
+			else 
+				orientation = -1
+			_B.setValue( idCells[0], j, Fj.getMeasure() * orientation); 
+			_B.setValue( idCells[1], j, -Fj.getMeasure() * orientation); //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1'one
+		
+			_Btopo.setValue(idCells[0], j, orientation );
+			_Btopo.setValue(idCells[1], j, -orientation );
+
 			_Surfaces.setValue(idCells[0],idCells[0], Perimeter1/ Ctemps1.getNumberOfFaces());
 			_Surfaces.setValue(idCells[1],idCells[1], Perimeter1/ Ctemps2.getNumberOfFaces());
+
+			_Volumes.setValue(idCells[0],idCells[0],  Ctemps1.getMeasure()/ Ctemps1.getNumberOfFaces());
+			_Volumes.setValue(idCells[1],idCells[1],  Ctemps12.getMeasure()/ Ctemps2.getNumberOfFaces());
+			_Volumes.setValue(_Nmailles + j,_Nmailles + j,  D_sigma); //TODO : définir D_sigma comme le déterminant des vecteurs formant le losange D_sigma
+			
 		}
-	
+		else
+		{
+			// TODO : s'occuper des conditions aux limites 
+		}
+	}
+	int *indices1 = new int[_nFaces];
+	std::iota(indices1, indices1 +_nFaces, _nMailles  );
+
+	Mat _Bt =  _B.copy(); // TODO vérifier si bonne implémentation
+	_Bt.transpose();
+	Mat Laplacian = _Btopo.MatMult(_Bt); /// TODO : compatiblité produit dans l'autre sens ?
+	Mat InvPerim = _Surfaces.Inv();
+	Mat DivTilde = InvPerim.MatMult(_B);
+	Mat GraDivTilde =  _Bt.MatmUlt(divTilde);
+	MatSetValuesBlocked(_Q, _nMailles, indices, _Nmailles, indices, -d*c* Laplacian , INSERT_VALUES);
+	MatSetValuesBlocked(_Q, _nMailles, indices, _nFaces, indices1, _B/rho0 , INSERT_VALUES);
+	MatSetValuesBlocked(_Q, _nMailles, indices1, _nFaces, indices, -kappa * _Bt, INSERT_VALUES);
+	MatSetValuesBlocked(_Q, _nFaces, indices1, _nFaces, indices1, -d*c * GradDivTilde , INSERT_VALUES);
+
 	// TODO : penser à détruire ces matrices 
-	// TODO : remplir les matrices dès l'initialisation car elles ne dépendent pas du temps 
 
 	//creation des vecteurs
 	VecCreate(PETSC_COMM_SELF, & _primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
@@ -159,6 +198,7 @@ void WaveStaggered::initialize(){
 
 	delete[] initialFieldPrim;
 	delete[] indices;
+	delete[] indices1;
 
 	createKSP();
 	PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
@@ -813,7 +853,6 @@ void WaveStaggered::convectionMatrices()
 void WaveStaggered::computeScaling(double maxvp)
 {}
 
-
 void WaveStaggered::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar * Vi, int i)
 {}
 
@@ -924,6 +963,7 @@ void WaveStaggered::terminate(){ //TODO : à adapter en décalé
 		VecDestroy(&_vecScaling);
 		VecDestroy(&_invVecScaling);
 		VecDestroy(&_bScaling);
+	}
 
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_b);
