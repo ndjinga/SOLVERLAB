@@ -130,44 +130,64 @@ void WaveStaggered::initialize(){
 			Fj = _mesh.getFace(j);
 			_isBoundary=Fj.isBorder();
 			idCells = Fj.getCellsId();
+			
 
 			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 				// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
 				Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 				Ctemp2 = _mesh.getCell(idCells[1]);
-				double Perimeter1 = 0;
-				double Perimeter2 = 0;
-				for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-					sigma1 = _mesh.getFace( Ctemp1.getFacesId()[l] );
-					Perimeter1 += sigma1.getMeasure();
-					sigma2 = _mesh.getFace( Ctemp1.getFacesId()[l] );
-					Perimeter2 += sigma1.getMeasure();
-						if (j == Ctemp1.getFacesId()[l]){
-							for (int idim = 0; idim < _Ndim; ++idim)
-								_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-							break;
-						}
+				if (_Ndim = 1){
+					if(!_sectionFieldSet)
+					{
+						if (Fj.x()<Ctemp1.x())
+							_vec_normal[0] = -1;
+						else
+							_vec_normal[0] = 1;
 					}
-				B.setValue( idCells[0], j, Fj.getMeasure() ); 
-				B.setValue( idCells[1], j, -Fj.getMeasure() ); //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
-				Btopo.setValue(idCells[0], j, 1 );
-				Btopo.setValue(idCells[1], j, -1 );
+					else
+					{
+						if(idCells[0]>idCells[1])
+							_vec_normal[0] = -1;
+						else
+							_vec_normal[0] = 1;
+					}
+				} 
+				else{
+					
+					double Perimeter1 = 0;
+					double Perimeter2 = 0;
+					for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+						sigma1 = _mesh.getFace( Ctemp1.getFacesId()[l] );
+						Perimeter1 += sigma1.getMeasure();
+						sigma2 = _mesh.getFace( Ctemp1.getFacesId()[l] );
+						Perimeter2 += sigma1.getMeasure();
+							if (j == Ctemp1.getFacesId()[l]){
+								for (int idim = 0; idim < _Ndim; ++idim)
+									_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
+								break;
+							}
+						}
+					B.setValue( idCells[0], j, Fj.getMeasure() ); 
+					B.setValue( idCells[1], j, -Fj.getMeasure() ); //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
+					Btopo.setValue(idCells[0], j, 1 );
+					Btopo.setValue(idCells[1], j, -1 );
 
-				InvSurface.setValue(idCells[0],idCells[0], 1/(Ctemp1.getNumberOfFaces()*Perimeter1) );
-				InvSurface.setValue(idCells[1],idCells[1], 1/(Ctemp1.getNumberOfFaces()*Perimeter2) );
+					InvSurface.setValue(idCells[0],idCells[0], 1/(Ctemp1.getNumberOfFaces()*Perimeter1) );
+					InvSurface.setValue(idCells[1],idCells[1], 1/(Ctemp1.getNumberOfFaces()*Perimeter2) );
 
-				InVol.setValue(idCells[0],idCells[0], 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces()) );
-				InVol.setValue(idCells[1],idCells[1], 1/(Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces()) );
-				//TODO : en 2D définir D_sigma comme le déterminant des vecteurs formant le losange D_sigma
-				//       en 3D : différent 
-				
-				InVol.setValue(_Nmailles + j,_Nmailles + j,  D_sigma); 
-				
+					InVol.setValue(idCells[0],idCells[0], 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces()) );
+					InVol.setValue(idCells[1],idCells[1], 1/(Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces()) );
+					//TODO : en 2D définir D_sigma comme le déterminant des vecteurs formant le losange D_sigma
+					//       en 3D : différent 
+					
+					InVol.setValue(_Nmailles + j,_Nmailles + j,  D_sigma); 
+					
+				}
 			}
 			else
 			{
 				// TODO : s'occuper des conditions aux limites 
-			}
+			}	
 		}
 		int *indices1 = new int[_Nmailles];
 		std::iota(indices1, indices1 +_Nmailles, 0);
@@ -236,154 +256,13 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatZeroEntries(_A);
 
 	VecAssemblyBegin(_b);
-	VecZeroEntries(_b);
-
-	std::vector< int > idCells(2);
-	PetscInt idm, idn, size = 1;
-
-	long nbFaces = _mesh.getNumberOfFaces();
-	Face Fj;
-	Cell Ctemp1,Ctemp2;
-	string nameOfGroup;
-
-	for (int j=0; j<nbFaces;j++){
-		Fj = _mesh.getFace(j);
-		_isBoundary=Fj.isBorder();
-		idCells = Fj.getCellsId();
-
-		if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
-			// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
-			Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
-			Ctemp2 = _mesh.getCell(idCells[1]);
-			if (_Ndim >1){
-				for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-					if (j == Ctemp1.getFacesId()[l]){
-						for (int idim = 0; idim < _Ndim; ++idim)
-							_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-						break;
-					}
-				}
-			}else{ // _Ndim = 1, build normal vector (bug cdmath)
-				if(!_sectionFieldSet)
-				{
-					if (Fj.x()<Ctemp1.x())
-						_vec_normal[0] = -1;
-					else
-						_vec_normal[0] = 1;
-				}
-				else
-				{
-					if(idCells[0]>idCells[1])
-						_vec_normal[0] = -1;
-					else
-						_vec_normal[0] = 1;
-				}
-			}
-			if(_verbose && _nbTimeStep%_freqSave ==0)
-			{
-				cout << "face numero " << j << " cellule gauche " << idCells[0] << " cellule droite " << idCells[1];
-				cout<<" Normal vector= ";
-				for (int idim = 0; idim < _Ndim; ++idim)
-					cout<<_vec_normal[idim]<<", ";
-				cout<<endl;
-			}
-			// compute 1/dxi and 1/dxj
-			if (_Ndim > 1)
-			{
-				_inv_dxi = Fj.getMeasure()/Ctemp1.getMeasure();
-				_inv_dxj = Fj.getMeasure()/Ctemp2.getMeasure();
-			}
-			else
-			{
-				_inv_dxi = 1/Ctemp1.getMeasure();
-				_inv_dxj = 1/Ctemp2.getMeasure();
-			}
-
-			addConvectionToSecondMember(idCells[0],idCells[1], false); //TODO à modifier 
-
-			if(_timeScheme == Implicit){
-				for(int k=0; k<_nVar*_nVar;k++)
-				{
-					_AroeMinusImplicit[k] *= _inv_dxi;
-					_Diffusion[k] *=_inv_dxi*2/(1/_inv_dxi+1/_inv_dxj);
-				}
-				idm = idCells[0];
-				idn = idCells[1];
-				
-				MatSetValuesBlocked(_A, size, &idm, size, &idn, _AroeMinusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idm, size, &idn, _Diffusion, ADD_VALUES);
-
-				if(_verbose){
-					displayMatrix(_AroeMinusImplicit, _nVar, "+_AroeMinusImplicit: ");
-					displayMatrix(_Diffusion, _nVar, "+_Diffusion: ");
-				}
-				for(int k=0;k<_nVar*_nVar;k++){
-					_AroeMinusImplicit[k] *= -1;
-					_Diffusion[k] *= -1;
-				}
-				MatSetValuesBlocked(_A, size, &idm, size, &idm, _AroeMinusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idm, size, &idm, _Diffusion, ADD_VALUES);
-				if(_verbose){
-					displayMatrix(_AroeMinusImplicit, _nVar, "-_AroeMinusImplicit: ");
-					displayMatrix(_Diffusion, _nVar, "-_Diffusion: ");
-				}
-				for(int k=0; k<_nVar*_nVar;k++)
-				{
-					_AroePlusImplicit[k]  *= _inv_dxj;
-					_Diffusion[k] *=_inv_dxj/_inv_dxi;
-				}
-				MatSetValuesBlocked(_A, size, &idn, size, &idn, _AroePlusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idn, size, &idn, _Diffusion, ADD_VALUES);
-				if(_verbose)
-					displayMatrix(_AroePlusImplicit, _nVar, "+_AroePlusImplicit: ");
-
-				for(int k=0;k<_nVar*_nVar;k++){
-					_AroePlusImplicit[k] *= -1;
-					_Diffusion[k] *= -1;
-				}
-				MatSetValuesBlocked(_A, size, &idn, size, &idm, _AroePlusImplicit, ADD_VALUES);
-				MatSetValuesBlocked(_A, size, &idn, size, &idm, _Diffusion, ADD_VALUES);
-
-				if(_verbose)
-					displayMatrix(_AroePlusImplicit, _nVar, "-_AroePlusImplicit: ");
-			}
-		}
-		
-		else
-		{
-			cout<< "Face j="<<j<< " is not a boundary face and has "<<Fj.getNumberOfCells()<< " neighbour cells"<<endl;
-			_runLogFile->close();
-			throw CdmathException("ProblemFluid::ComputeTimeStep(): incompatible number of cells around a face");
-		}
-
-	}
-	VecAssemblyEnd(_b);
-
-	if(_timeScheme == Implicit){
-		for(int imaille = 0; imaille<_Nmailles; imaille++)
-			MatSetValuesBlocked(_A, size, &imaille, size, &imaille, _GravityImplicitationMatrix, ADD_VALUES);
-
-		if(_verbose && _nbTimeStep%_freqSave ==0)
-			displayMatrix(_GravityImplicitationMatrix,_nVar,"Gravity matrix:");
-
-		MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-		if(_verbose && _nbTimeStep%_freqSave ==0){
-			cout << "ProblemFluid::computeTimeStep : Fin calcul matrice implicite et second membre"<<endl;
-			cout << "ProblemFluid::computeTimeStep : Matrice implicite :"<<endl;
-			MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-			cout << "ProblemFluid::computeTimeStep : Second membre :"<<endl;
-			VecView(_b,  PETSC_VIEWER_STDOUT_WORLD);
-			cout << endl;
-		}
-	}
+	MatMult(_Q,_old, _b); //TODO : _old = U^n ?
+	VecAssemblyEnd(_b); //TODO : à quoi sert VecAssembly ?
 
 	stop=false;
 
-	if(_maxvp>0)
-		return _cfl*_minl/_maxvp;
-	else//case of incompressible fluid at rest. Use a velocity of 1
-		return _cfl*_minl;
+	return _cfl  //TODO calculer vp de Vol et Invsurf
+
 }
 
 
