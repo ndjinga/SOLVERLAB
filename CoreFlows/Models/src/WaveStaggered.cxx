@@ -173,8 +173,8 @@ void WaveStaggered::initialize(){
 					for(int l=0; l<Ctemp2.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 						sigma2 = _mesh.getFace( Ctemp2.getFacesId()[l] );
 						Perimeter2 += sigma2.getMeasure();
-							}
 						}
+						
 					FaceArea = Fj.getMeasure();
 
 					if (_Ndim = 2){
@@ -184,27 +184,26 @@ void WaveStaggered::initialize(){
 						// determinant of the vectors forming the diamond cell around the face sigma
 					}
 					//  TODO : 3D case
-				}
-				D_sigma = PetscAbsReal(det);
-				MatSetValues(B, 1, idCells[0], 1, j, FaceArea, ADD_VALUES ); 
-				MatSetValues(B, 1, idCells[1], 1, j, -FaceArea, ADD_VALUES );  //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
+					D_sigma = PetscAbsReal(det);
+					MatSetValues(B, 1, idCells[0], 1, j, FaceArea, ADD_VALUES ); 
+					MatSetValues(B, 1, idCells[1], 1, j, -FaceArea, ADD_VALUES );  //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
 
-				MatSetValues(Btpressure, 1, j 1, idCells[0], FaceArea, ADD_VALUES ); 
-				MatSetValues(Btpressure, 1, j 1, idCells[1], -FaceArea, ADD_VALUES ); 
+					MatSetValues(Btpressure, 1, j 1, idCells[0], FaceArea, ADD_VALUES ); 
+					MatSetValues(Btpressure, 1, j 1, idCells[1], -FaceArea, ADD_VALUES ); 
 
-				MatSetValues(Btdiv, 1, j 1, idCells[0], FaceArea, ADD_VALUES ); 
-				MatSetValues(Btdiv, 1, j 1, idCells[1], -FaceArea, ADD_VALUES );
+					MatSetValues(Btdiv, 1, j 1, idCells[0], FaceArea, ADD_VALUES ); 
+					MatSetValues(Btdiv, 1, j 1, idCells[1], -FaceArea, ADD_VALUES );
 
-				MatSetValues(Btopo,1, idCells[0], 1, j, 1, ADD_VALUES); 
-				MatSetValues(Btopo,1, idCells[0], 1, j, -1, ADD_VALUES ); 
+					MatSetValues(Btopo,1, idCells[0], 1, j, 1, ADD_VALUES); 
+					MatSetValues(Btopo,1, idCells[0], 1, j, -1, ADD_VALUES ); 
 
-				MatSetValues(_InvSurface,1, idCells[0],1, idCells[0], 1/(Perimeter1*Ctemp1.getNumberOfFaces()), ADD_VALUES );
-				MatSetValues(_InvSurface,1, idCells[1],1, idCells[1], 1/(Perimeter2*Ctemp2.getNumberOfFaces()), ADD_VALUES );
+					MatSetValues(_InvSurface,1, idCells[0],1, idCells[0], 1/(Perimeter1*Ctemp1.getNumberOfFaces()), ADD_VALUES );
+					MatSetValues(_InvSurface,1, idCells[1],1, idCells[1], 1/(Perimeter2*Ctemp2.getNumberOfFaces()), ADD_VALUES );
 
-				MatSetValues(_InvVol, 1, idCells[0],1 ,idCells[0], 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces()), ADD_VALUES );
-				MatSetValues(_InvVol, 1, idCells[1],1 ,idCells[1], 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces()), ADD_VALUES );
-				MatSetValues(_InvVol, 1, _Nmailles + j, 1, _Nmailles + j,  1.0/D_sigma, ADD_VALUES); 	
-				
+					MatSetValues(_InvVol, 1, idCells[0],1 ,idCells[0], 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces()), ADD_VALUES );
+					MatSetValues(_InvVol, 1, idCells[1],1 ,idCells[1], 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces()), ADD_VALUES );
+					MatSetValues(_InvVol, 1, _Nmailles + j, 1, _Nmailles + j,  1.0/D_sigma, ADD_VALUES); 	
+				}		
 			}
 			else
 			{
@@ -243,12 +242,10 @@ void WaveStaggered::initialize(){
 				MatSetValues(_InvSurface,1, idCells[0],1, idCells[0], 1/(Perimeter1*Cint.getNumberOfFaces()), ADD_VALUES ),
 				MatSetValues(_InvVol, 1, idCells[0],1 ,idCells[0], 1/( Cint.getMeasure()* Cint.getNumberOfFaces()), ADD_VALUES );
 				MatSetValues(_InvVol, 1, _Nmailles + j, 1, _Nmailles + j,  1.0/D_sigma, ADD_VALUES); 	
-
-				double divInt = ;
-				double divExt = ;
-				MatSetValues(Btdiv, 1, j, 1, idCells[0], 0, INSERT_VALUES ); 
+	
 				double pInt = primitiveVars[idCells[0]];
-				double pExt = _VV(idCells[0]); // TODO : à modifer pour pouvoir imposer conditions aux limites
+				double pExt = _VV(idCells[0]); // TODO : à modifirer pour pouvoir imposer conditions aux limites
+				MatSetValues(Btdiv, 1, j, 1, idCells[0], 0, INSERT_VALUES );  // TODO à vérifier 
 				MatSetValues(Btpressure, 1, j, 1, idCells[0], -FaceArea * Pext/Pint , ADD_VALUES );  // TODO : orientation ok ?
 			 
 			}	
@@ -317,14 +314,33 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	}
 	if(_timeScheme == Implicit)
 		MatZeroEntries(_A);
-
-	VecAssemblyBegin(_b);
-	MatMult(_Q,_old, _b); //TODO : _old = U^n ?
-	VecAssemblyEnd(_b); //TODO : à quoi sert VecAssembly ?
-
+	if (_timeScheme == Explicit){
+		VecAssemblyBegin(_b);
+		MatMult(_Q,_old, _b); //TODO : _old = U^n ?
+		VecAssemblyEnd(_b); //TODO : à quoi sert VecAssembly ?
+		double maxSigma =0; 
+		double minCell = 0;
+		for (int j=0; j < _globalNbUnknowns; j++){
+			if (j < _Nmailles){
+				if (minCell > 1.0/_InvVol[j,j]){ // Primal cells
+					minCell = 1.0/_InvVol[j,j];
+				}
+				if  (maxSigma < 1.0/_InvSurface[j,j] ){ // Perimeters
+					maxSigma = 1.0/_InvSurface[j,j];
+				}
+			}
+			else{
+				if (minCell > 1.0/_InvVol[j,j]){ //Dual Cells 
+					minCell = 1.0/_InvVol[j,j];
+				}
+			}
+		}
+		
+	}
+	
 	stop=false;
 
-	return _cfl  //TODO calculer vp de _InvVol et _InvSurf
+	return _cfl * minCell * / (maxSigma * _c)  //TODO calculer vp de _InvVol et _InvSurf
 
 }
 
