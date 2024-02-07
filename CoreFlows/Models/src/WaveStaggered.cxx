@@ -97,7 +97,7 @@ void WaveStaggered::initialize(){
 	if(_timeScheme == Implicit)
 		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
 	if(_timeScheme == Explicit){
-		Mat _InvSurface, Laplacian, DivTilde, GraDivTilde;
+		Mat Laplacian, DivTilde, GraDivTilde;
 
 		// matrice inverse des surfaces du bord des cellules (pour opérateur) div tilde
 		MatCreate(PETSC_COMM_SELF, & _InvSurface); 
@@ -183,7 +183,10 @@ void WaveStaggered::initialize(){
 						PetscReal det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
 						// determinant of the vectors forming the diamond cell around the face sigma
 					}
-					//  TODO : 3D case
+					if (_Ndim = 3){	
+						//  TODO : 3D case				
+					}
+					
 					D_sigma = PetscAbsReal(det);
 					MatSetValues(B, 1, idCells[0], 1, j, FaceArea, ADD_VALUES ); 
 					MatSetValues(B, 1, idCells[1], 1, j, -FaceArea, ADD_VALUES );  //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
