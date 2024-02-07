@@ -120,6 +120,7 @@ public :
 protected :
 	Field _Vitesse, _Pression ;
 	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
+	Mat _InvSurf, _InvVol; // à stocker car nécessaire dans calcul cfl 
 					
 
 

@@ -70,7 +70,7 @@ void WaveStaggered::initialize(){
 	//primitive field used only for saving results
 	_VV=Field ("Primitive vec", FACES, _mesh, 1); //TODO comment fonctionnent Field ?
 
-	//Construction des champs primitifs et conservatifs initiaux comme avant dans ParaFlow
+	//Construction des champs primitifs initiaux comme avant dans ParaFlow
 	double * initialFieldPrim = new double[_globalNbUnknowns];
 	for(int i =0; i<_Nmailles;i++)
 		for(int j =0; j<_nVar;j++)
@@ -80,35 +80,37 @@ void WaveStaggered::initialize(){
 	/**********Petsc structures:  ****************/
 
 	// creation des matrices en explicite et en implicite : 
-	Mat B, Btopo, InVol; 
+	Mat B, Btopo; 
 	// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
 	MatCreate(PETSC_COMM_SELF, & _Q); 
 	MatSetSize(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 	MatZeroEntries(_Q);
 	// matrice des Inverses Volumes
-	MatCreate(PETSC_COMM_SELF, & InVol); 
-	MatSetSize(InVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	MatZeroEntries(InVol);
+	MatCreate(PETSC_COMM_SELF, & _InvVol); 
+	MatSetSize(_InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+	MatZeroEntries(_InvVol);
 	// matrice |K|div(u)
 	MatCreate(PETSC_COMM_SELF, & B); 
 	MatSetSize(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
 	MatZeroEntries(B);
-
-	
-	
-	
 	
 	if(_timeScheme == Implicit)
 		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
 	if(_timeScheme == Explicit){
-		Mat InvSurface, Laplacian, DivTilde, GraDivTilde;
+		Mat _InvSurface, Laplacian, DivTilde, GraDivTilde;
 
 		// matrice inverse des surfaces du bord des cellules (pour opérateur) div tilde
 		MatCreate(PETSC_COMM_SELF, & _InvSurface); 
-		MatSetSize(InvSurface, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+		MatSetSize(_InvSurface, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 		// matrice |K|div(u) sans |sigma| dans div(u) -> pour définir facilement le laplacien à partir de l'opérateur divergence
 		MatCreate(PETSC_COMM_SELF, & Btopo); 
 		MatSetSize(Btopo, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces ); 
+		//  matrice gradient de pression, qui contiendra les conditions aux limites de presion
+		MatCreate(PETSC_COMM_SELF, & Btpressure); 
+		MatSetSize(Btpressure, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles ); 
+		//  matrice gradient de div tilde, qui contiendra les conditions aux limites div tilde
+		MatCreate(PETSC_COMM_SELF, & Btdiv); 
+		MatSetSize(Btdiv, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles ); 
 		// Matrice laplacien de pression :
 		MatCreate(PETSC_COMM_SELF, & Laplacian); 
 		MatSetSize(Laplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles );
@@ -120,9 +122,7 @@ void WaveStaggered::initialize(){
 		MatSetSize(DivTilde, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
 
 		// TODO : penser à détruire ces matrices 
-
-	
-		MatZeroEntries(InvSurface);
+		MatZeroEntries(_InvSurface);
 		MatZeroEntries(Btopo);
 
 		// Remplissage des matrices car indépendantes du temps
@@ -130,8 +130,11 @@ void WaveStaggered::initialize(){
 			Fj = _mesh.getFace(j);
 			_isBoundary=Fj.isBorder();
 			idCells = Fj.getCellsId();
-			
-
+			double D_sigma;
+			double Perimeter1 = 0;
+			double Perimeter2 = 0;
+			double FaceArea;
+		
 			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 				// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
 				Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
@@ -151,42 +154,103 @@ void WaveStaggered::initialize(){
 						else
 							_vec_normal[0] = 1;
 					}
+					PetscReal det = Ctemp2.x() - Ctemp1.x();
+					D_sigma = PetscAbsReal(det);
+					Perimeter1 = 1;
+					Perimeter2 = 1;
+					FaceArea = 1;
 				} 
 				else{
-					
-					double Perimeter1 = 0;
-					double Perimeter2 = 0;
 					for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 						sigma1 = _mesh.getFace( Ctemp1.getFacesId()[l] );
 						Perimeter1 += sigma1.getMeasure();
-						sigma2 = _mesh.getFace( Ctemp1.getFacesId()[l] );
-						Perimeter2 += sigma1.getMeasure();
 							if (j == Ctemp1.getFacesId()[l]){
 								for (int idim = 0; idim < _Ndim; ++idim)
 									_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
 								break;
 							}
 						}
-					B.setValue( idCells[0], j, Fj.getMeasure() ); 
-					B.setValue( idCells[1], j, -Fj.getMeasure() ); //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
-					Btopo.setValue(idCells[0], j, 1 );
-					Btopo.setValue(idCells[1], j, -1 );
+					for(int l=0; l<Ctemp2.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+						sigma2 = _mesh.getFace( Ctemp2.getFacesId()[l] );
+						Perimeter2 += sigma2.getMeasure();
+							}
+						}
+					FaceArea = Fj.getMeasure();
 
-					InvSurface.setValue(idCells[0],idCells[0], 1/(Ctemp1.getNumberOfFaces()*Perimeter1) );
-					InvSurface.setValue(idCells[1],idCells[1], 1/(Ctemp1.getNumberOfFaces()*Perimeter2) );
-
-					InVol.setValue(idCells[0],idCells[0], 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces()) );
-					InVol.setValue(idCells[1],idCells[1], 1/(Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces()) );
-					//TODO : en 2D définir D_sigma comme le déterminant des vecteurs formant le losange D_sigma
-					//       en 3D : différent 
-					
-					InVol.setValue(_Nmailles + j,_Nmailles + j,  D_sigma); 
-					
+					if (_Ndim = 2){
+						std::vector< int > nodes =  Fj.getNodesId();
+						vertex = _mesh.getNode( nodes[0] );
+						PetscReal det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
+						// determinant of the vectors forming the diamond cell around the face sigma
+					}
+					//  TODO : 3D case
 				}
+				D_sigma = PetscAbsReal(det);
+				MatSetValues(B, 1, idCells[0], 1, j, FaceArea, ADD_VALUES ); 
+				MatSetValues(B, 1, idCells[1], 1, j, -FaceArea, ADD_VALUES );  //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
+
+				MatSetValues(Btpressure, 1, j 1, idCells[0], FaceArea, ADD_VALUES ); 
+				MatSetValues(Btpressure, 1, j 1, idCells[1], -FaceArea, ADD_VALUES ); 
+
+				MatSetValues(Btdiv, 1, j 1, idCells[0], FaceArea, ADD_VALUES ); 
+				MatSetValues(Btdiv, 1, j 1, idCells[1], -FaceArea, ADD_VALUES );
+
+				MatSetValues(Btopo,1, idCells[0], 1, j, 1, ADD_VALUES); 
+				MatSetValues(Btopo,1, idCells[0], 1, j, -1, ADD_VALUES ); 
+
+				MatSetValues(_InvSurface,1, idCells[0],1, idCells[0], 1/(Perimeter1*Ctemp1.getNumberOfFaces()), ADD_VALUES );
+				MatSetValues(_InvSurface,1, idCells[1],1, idCells[1], 1/(Perimeter2*Ctemp2.getNumberOfFaces()), ADD_VALUES );
+
+				MatSetValues(_InvVol, 1, idCells[0],1 ,idCells[0], 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces()), ADD_VALUES );
+				MatSetValues(_InvVol, 1, idCells[1],1 ,idCells[1], 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces()), ADD_VALUES );
+				MatSetValues(_InvVol, 1, _Nmailles + j, 1, _Nmailles + j,  1.0/D_sigma, ADD_VALUES); 	
+				
 			}
 			else
 			{
-				// TODO : s'occuper des conditions aux limites 
+				Cint = _mesh.getCell(idCells[0]);// TODO : vérifier que l'on obtient la cellule intérieure
+				if (_Ndim = 1){
+					_vec_normal[0] = 1;
+					PetscReal det = Fj.x() - Cint.x();
+					D_sigma = PetscAbsReal(det);
+					Perimeter1 = 1;
+					FaceArea = 1;
+				} 
+				else{
+					for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+						sigma1 = _mesh.getFace( Cint.getFacesId()[l] );
+						Perimeter1 += sigma1.getMeasure();
+							if (j == Cint.getFacesId()[l]){
+								for (int idim = 0; idim < _Ndim; ++idim)
+									_vec_normal[idim] = Cint.getNormalVector(l,idim);
+								break;
+							}
+						}
+					FaceArea = Fj.getMeasure();
+
+					if (_Ndim = 2){
+						std::vector< int > nodes =  Fj.getNodesId();
+						vertex1 = _mesh.getNode( nodes[0] );
+						vertex2 = _mesh.getNode( nodes[1] );
+						PetscReal det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (vertex2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+						// determinant of the vectors forming the interior half diamond cell around the face sigma
+					}
+					//  TODO : 3D case
+				}
+				D_sigma = PetscAbsReal(det);	
+				MatSetValues(B, 1, idCells[0], 1, j, FaceArea, ADD_VALUES ); //TODO : vérifier l'orientation
+				MatSetValues(Btopo,1, idCells[0], 1, j, 1, ADD_VALUES); 
+				MatSetValues(_InvSurface,1, idCells[0],1, idCells[0], 1/(Perimeter1*Cint.getNumberOfFaces()), ADD_VALUES ),
+				MatSetValues(_InvVol, 1, idCells[0],1 ,idCells[0], 1/( Cint.getMeasure()* Cint.getNumberOfFaces()), ADD_VALUES );
+				MatSetValues(_InvVol, 1, _Nmailles + j, 1, _Nmailles + j,  1.0/D_sigma, ADD_VALUES); 	
+
+				double divInt = ;
+				double divExt = ;
+				MatSetValues(Btdiv, 1, j, 1, idCells[0], 0, INSERT_VALUES ); 
+				double pInt = primitiveVars[idCells[0]];
+				double pExt = _VV(idCells[0]); // TODO : à modifer pour pouvoir imposer conditions aux limites
+				MatSetValues(Btpressure, 1, j, 1, idCells[0], -FaceArea * Pext/Pint , ADD_VALUES );  // TODO : orientation ok ?
+			 
 			}	
 		}
 		int *indices1 = new int[_Nmailles];
@@ -194,17 +258,16 @@ void WaveStaggered::initialize(){
 		int *indices2 = new int[_nFaces];
 		std::iota(indices2, indices2 +_nFaces, _Nmailles);
 
-		MatTranspose(B, MAT_INITIAL_MATRIX, &Bt); // TODO : MAT_INITIAL_MATRIX ?
-		MatMatMult(Btopo,Bt, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian); 
-		MatMatMult(InvSurface, B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &DivTilde); 
-		MatMatMult(Bt, DivTilde, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GraDivTilde); 
+		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian); 
+		MatMatMult(_InvSurface, B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &DivTilde); 
+		MatMatMult(Btdiv, DivTilde, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GraDivTilde); 
 
 		MatSetValuesBlocked(_Q, _nMailles, indices1, _Nmailles, indices1, -d*c* Laplacian , INSERT_VALUES);  
 		MatSetValuesBlocked(_Q, _nMailles, indices1, _nFaces, indices2, B/rho0 , INSERT_VALUES);
 		MatSetValuesBlocked(_Q, _nFaces, indices2, _Nmailles, indices1, -kappa * Bt, INSERT_VALUES);
 		MatSetValuesBlocked(_Q, _nFaces, indices2, _nFaces, indices2, -d*c * GradDivTilde , INSERT_VALUES);
 
-		MatMatMult(InVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); // Faut-il créer la matrice Prod ?
 		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
 		delete[] indices1, indices2;
 	}
@@ -220,7 +283,7 @@ void WaveStaggered::initialize(){
 	// transfer information de condition initial vers primitiveVars
 	int *indices = new int[_globalNbUnknowns];
 	std::iota(indices, indices + _globalNbUnknowns, 0);
-	VecSetValues(_primitiveVars, _globalNbUnknowns, indices, initialFieldCons, INSERT_VALUES);
+	VecSetValues(_primitiveVars, _globalNbUnknowns, indices, initialFieldPrim, INSERT_VALUES); 
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
 	VecCopy(_primitiveVars, _old);
@@ -261,11 +324,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 	stop=false;
 
-	return _cfl  //TODO calculer vp de Vol et Invsurf
+	return _cfl  //TODO calculer vp de _InvVol et _InvSurf
 
 }
-
-
 
 bool WaveStaggered::iterateTimeStep(bool &converged)
 {
