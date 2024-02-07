@@ -8,12 +8,15 @@
 using namespace std;
 
 
-WaveStaggered::WaveStaggered(phaseType fluid, int dim){
+WaveStaggered::WaveStaggered(phaseType fluid, int dim, double kappa, double rho){
 	_Ndim=dim;
 	_nVar=_Ndim+2;
 	_nbPhases  = 1
 	_fluides.resize(1);
-
+	_kappa = kappa;
+	_rho = rho;
+	_c = sqrt(kappa/rho);
+	// TODO : appeler constructeur pb fluid ?
 	// To do : delete EOS ?
 	if(pEstimate==around1bar300K){//EOS at 1 bar and 300K
 		if(fluid==Gas){
@@ -49,7 +52,7 @@ void WaveStaggered::initialize(){
 	cout<<"\n Initialising the Wave System model\n"<<endl;
 	*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
 
-	_globalNbUnknowns = (_nVar-1)*_Nmailles + _Nfaces;//Staggered discretisation : velocity is on faces
+	_globalNbUnknowns = _Nmailles + _Nfaces;//Staggered discretisation : velocity is on faces
 
 	if(!_initialDataSet)
 	{
@@ -61,10 +64,7 @@ void WaveStaggered::initialize(){
 	*_runLogFile << "Number of Phases = " << _nbPhases << " spaceDim= "<<_Ndim<<" number of variables= "<<_nVar<<endl;
 
 	_vec_normal = new double[_Ndim];
-	double kappa = 3;
-	double rho0 = 2; //  TODO : à définir dans le cas général
-	double c = 4;
-	double d = 1/2.
+	_d = 1/(2* sqrt(_neibMaxNbCells) ).
 
 
 	//primitive field used only for saving results
@@ -318,18 +318,22 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	if(_timeScheme == Implicit)
 		MatZeroEntries(_A);
 	if (_timeScheme == Explicit){
+		if (_cfl > _d/2.0){
+			cout << "cfl =", _cfl,"is to high, cfl is updated to 0.9*_d/2" << endl;
+			_cfl =  0.9 * _d/2.0;
+		}
 		VecAssemblyBegin(_b);
 		MatMult(_Q,_old, _b); //TODO : _old = U^n ?
 		VecAssemblyEnd(_b); //TODO : à quoi sert VecAssembly ?
-		double maxSigma =0; 
+		double maxPerim = 0; 
 		double minCell = 0;
 		for (int j=0; j < _globalNbUnknowns; j++){
 			if (j < _Nmailles){
 				if (minCell > 1.0/_InvVol[j,j]){ // Primal cells
 					minCell = 1.0/_InvVol[j,j];
 				}
-				if  (maxSigma < 1.0/_InvSurface[j,j] ){ // Perimeters
-					maxSigma = 1.0/_InvSurface[j,j];
+				if  (maxPerim < 1.0/_InvSurface[j,j] ){ // Perimeters
+					maxPerim = 1.0/_InvSurface[j,j];
 				}
 			}
 			else{
@@ -338,12 +342,11 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				}
 			}
 		}
-		
 	}
 	
 	stop=false;
 
-	return _cfl * minCell * / (maxSigma * _c)  //TODO calculer vp de _InvVol et _InvSurf
+	return _cfl * minCell * / (maxPerim * _c)  //TODO calculer vp de _InvVol et _InvSurf
 
 }
 
