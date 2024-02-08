@@ -26,7 +26,7 @@ public :
 	 * \param [in] int : mesh dimension
 	 * \param [in] bool : There are two possible equations of state for the fluid
 	 *  */
-	WaveStaggered(phaseType fluid,int dim,, double kappa, double rho);
+	WaveStaggered(phaseType fluid,int dim, double kappa, double rho);
 
 	//! system initialisation
 	void initialize();
@@ -116,6 +116,14 @@ public :
 	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
 	 * */
 	bool iterateTimeStep(bool &ok);
+
+	 /** \fn validateTimeStep
+     * \brief Validates the solution computed y solveTimeStep
+     * \details updates the currens time t=t+dt, save unknown fields, resets the time step dt to 0, tests the stationnarity.
+     * c It is a pure virtual function overloaded in each model
+     * @param  void
+     *  */
+    void validateTimeStep();
 
 protected :
 	Field _Vitesse, _Pression ;
