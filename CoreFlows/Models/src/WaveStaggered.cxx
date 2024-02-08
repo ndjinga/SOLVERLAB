@@ -40,7 +40,8 @@ void WaveStaggered::initialize(){
 
 
 	//primitive field used only for saving results
-	_VV=Field ("Primitive vec", FACES, _mesh, 1); //TODO comment fonctionnent Field ?
+	_Vitesse=Field ("Primitive vec", FACES, _mesh, 1); //TODO comment fonctionnent Field ?
+	_Pression=Field ("Primitive vec", CELLS, _mesh, 1); //TODO comment fonctionnent Field ?
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
 	double * initialFieldPrim = new double[_globalNbUnknowns];
@@ -50,55 +51,38 @@ void WaveStaggered::initialize(){
 
 	/**********Petsc structures:  ****************/
 
-	// creation des matrices en explicite et en implicite : 
-	Mat B, Btopo, Btpressure, Btdiv, Bt; 
+	// creation des matrices communes à explicite et implicite : 
+	Mat B, Btopo, Btpressure, Bt; 
 	// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
 	MatCreate(PETSC_COMM_SELF, & _Q); 
-	MatSetSize(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+	MatSetSizes(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 	MatZeroEntries(_Q);
 	// matrice des Inverses Volumes
 	MatCreate(PETSC_COMM_SELF, & _InvVol); 
-	MatSetSize(_InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+	MatSetSizes(_InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 	MatZeroEntries(_InvVol);
-	// matrice |K|div(u)
+	// matrice DIVERGENCE (|K|div(u))
 	MatCreate(PETSC_COMM_SELF, & B); 
-	MatSetSize(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+	MatSetSizes(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
 	MatZeroEntries(B);
-	// its transpose (gradient)
+	// matrix GRADIENT (we will impose to be 0 on boundary faces so that u^n+1 = u^n at the boundary)
 	MatCreate(PETSC_COMM_SELF, & Bt); 
-	MatSetSize(B, PETSC_DECIDE, PETSC_DECIDE, _Nfaces,_Nmailles );
+	MatSetSizes(Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
 	MatZeroEntries(Bt);
 	
 	if(_timeScheme == Implicit)
 		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
 	if(_timeScheme == Explicit){
-		Mat Laplacian, DivTilde, GradDivTilde;
 
-		// matrice inverse des surfaces du bord des cellules (pour opérateur) div tilde
-		MatCreate(PETSC_COMM_SELF, & _InvSurface); 
-		MatSetSize(_InvSurface, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-		MatZeroEntries(_InvSurface);
-		// matrice |K|div(u) sans |sigma| dans div(u) -> pour définir facilement le laplacien à partir de l'opérateur divergence
+		// matrice Btopo = {|K|div(u) sans |sigma| dans div(u)}-> pour définir facilement le laplacien à partir de l'opérateur divergence
 		MatCreate(PETSC_COMM_SELF, & Btopo); 
-		MatSetSize(Btopo, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces ); 
+		MatSetSizes(Btopo, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces ); 
 		MatZeroEntries(Btopo);
-		//  matrice gradient de pression, qui contiendra les conditions aux limites de presion
+
+		// matrice gradient de pression, qui contiendra les conditions aux limites de pression
 		MatCreate(PETSC_COMM_SELF, & Btpressure); 
-		MatSetSize(Btpressure, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles ); 
+		MatSetSizes(Btpressure, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles ); 
 		MatZeroEntries(Btpressure);
-		//  matrice gradient de div tilde, qui contiendra les conditions aux limites div tilde
-		MatCreate(PETSC_COMM_SELF, & Btdiv); 
-		MatSetSize(Btdiv, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles ); 
-		MatZeroEntries(Btdiv);
-		// Matrice laplacien de pression :
-		MatCreate(PETSC_COMM_SELF, & Laplacian); 
-		MatSetSize(Laplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles );
-		// Matrice DivTilde :=  |K|/|dK|div()_h
-		MatCreate(PETSC_COMM_SELF, & DivTilde); 
-		MatSetSize(DivTilde, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-		// Matrice GradDivTil := [| divTild |]_\sigma
-		MatCreate(PETSC_COMM_SELF, & DivTilde); 
-		MatSetSize(DivTilde, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
 
 		// TODO : penser à détruire ces matrices 
 		
@@ -108,6 +92,7 @@ void WaveStaggered::initialize(){
 			bool _isBoundary=Fj.isBorder();
 			std::vector< int > idCells = Fj.getCellsId();
 			PetscScalar det, FaceArea;
+			PetscInt IndexFace = _Nmailles + j;
 		
 			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 				// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
@@ -156,31 +141,33 @@ void WaveStaggered::initialize(){
 					
 					//  TODO : vérifier orientation, ne vaut-il pas définir un vecteur n_sigma pour chaque face ?
 					FaceArea = Fj.getMeasure();
-					MinusFaceArea = -FaceArea;
+					PetscScalar MinusFaceArea = -FaceArea;
 					PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
 					PetscScalar InvVol1 = 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces());
 					PetscScalar InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
 					PetscScalar InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
 					PetscScalar InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
+					PetscScalar One=1;
+					PetscScalar MinusOne=-1;
+
 
 					MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
-					MatSetValues(B, 1, &idCells[1], 1, &j, &MinusFaceArea, ADD_VALUES );  //sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
+					MatSetValues(B, 1, &idCells[1], 1, &j, &MinusFaceArea, ADD_VALUES );  
+					MatSetValues(Btopo,1, &idCells[0], 1, &j, &One, ADD_VALUES); 
+					MatSetValues(Btopo,1, &idCells[0], 1, &j, &MinusOne, ADD_VALUES ); 
+					//sign minus because the exterior normal to Ctemp2 is the opposite of the Ctemp1's one
 
 					MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &FaceArea, ADD_VALUES ); 
-					MatSetValues(Btpressure, 1, &j, 1, &idCells[1], -&FaceArea, ADD_VALUES ); 
-
-					MatSetValues(Btdiv, 1, &j, 1, &idCells[0], &FaceArea, ADD_VALUES ); 
-					MatSetValues(Btdiv, 1, &j, 1, &idCells[1], -&FaceArea, ADD_VALUES );
-
-					MatSetValues(Btopo,1, &idCells[0], 1, &j, &1, ADD_VALUES); 
-					MatSetValues(Btopo,1, &idCells[0], 1, &j, -1, ADD_VALUES ); 
+					MatSetValues(Btpressure, 1, &j, 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
+					MatSetValues(Bt, 1, &j, 1, &idCells[0], &FaceArea, ADD_VALUES ); 
+					MatSetValues(Bt, 1, &j, 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
 
 					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
 					MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
 
 					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
 					MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-					MatSetValues(_InvVol, 1, &_Nmailles + &j, 1, &_Nmailles + &j,  InvD_sigma, ADD_VALUES); 	
+					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 				}		
 			}
 			else // boundary faces
@@ -205,37 +192,55 @@ void WaveStaggered::initialize(){
 					Node vertex2 = _mesh.getNode( nodes[1] );
 					PetscScalar det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (vertex2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
-					
 					//  TODO : 3D case
 				}
+				PetscScalar One=1;
 				PetscScalar FaceArea = Fj.getMeasure();
 				PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
 				PetscScalar InvVol1 = 1/( Cint.getMeasure()* Cint.getNumberOfFaces());
 				PetscScalar InvPerimeter1 = 1/( _perimeters(idCells[0])*Cint.getNumberOfFaces()  );
 	
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); //TODO : vérifier l'orientation
-				MatSetValues(Btopo,1, &idCells[0], 1, &j, &1, ADD_VALUES); 
+				MatSetValues(Btopo,1, &idCells[0], 1, &j, &One, ADD_VALUES); 
 				MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
-				MatSetValues(_InvVol, 1, &_Nmailles + &j, 1, &_Nmailles + &j,  &InvD_sigma, ADD_VALUES); 	
+				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 
 				PetscScalar pInt;
 				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
-				double pExt = _VV(idCells[0],j); // TODO : à modifirer pour pouvoir imposer conditions aux limites
-				MatSetValues(Btdiv, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  // TODO à vérifier 
+				double pExt = _VV(idCells[0],j); // TODO : à modifier pour pouvoir imposer conditions aux limites
+				MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  // TODO à vérifier 
 				PetscScalar pressureGrad =  1 -FaceArea * pExt/pInt;
 				MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &pressureGrad, ADD_VALUES );  // TODO : orientation ok ?
 			 
 			}	
 		}
+		MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(Btopo,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(Btopo, MAT_FINAL_ASSEMBLY);
+
+		MatAssemblyBegin(Bt, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(Bt, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(Btpressure, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(Btpressure, MAT_FINAL_ASSEMBLY);
+
+		MatAssemblyBegin(_InvSurface, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
+		
+
+		
 		int *indices1 = new int[_Nmailles];
 		std::iota(indices1, indices1 +_Nmailles, 0);
 		int *indices2 = new int[_Nfaces];
 		std::iota(indices2, indices2 +_Nfaces, _Nmailles);
 
+		Mat Laplacian, DivTilde, GradDivTilde;
 		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian); 
 		MatMatMult(_InvSurface, B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &DivTilde); 
-		MatMatMult(Btdiv, DivTilde, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
+		MatMatMult(Bt, DivTilde, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
 
 		MatSetValuesBlocked(_Q, _Nmailles, indices1, _Nmailles, indices1, -_d*_c* Laplacian , INSERT_VALUES);  
 		MatSetValuesBlocked(_Q, _Nmailles, indices1, _Nfaces, indices2, B/_rho , INSERT_VALUES);
@@ -243,9 +248,14 @@ void WaveStaggered::initialize(){
 		MatSetValuesBlocked(_Q, _Nfaces, indices2, _Nfaces, indices2, -_d*_c * GradDivTilde , INSERT_VALUES);
 
 		Mat Prod;
-		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); // TODO : Faut-il créer la matrice Prod ?
+		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
+
 		delete[] indices1, indices2;
+		MatDestroy(& B); 
+		MatDestroy(& Btopo); 
+		MatDestroy(& Btpressure); 
+		MatDestroy(& Bt); 
 	}
 
 	//creation des vecteurs
@@ -722,6 +732,11 @@ void WaveStaggered::terminate(){
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
+	MatDestroy(& _Q); 
+	MatDestroy(& _InvVol); 
+	MatDestroy(& _InvSurface); 
+ 
+		
 
 
 	// 	PCDestroy(_pc);
