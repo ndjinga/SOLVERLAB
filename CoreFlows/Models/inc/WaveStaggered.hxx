@@ -28,6 +28,8 @@ public :
 	 *  */
 	WaveStaggered(phaseType fluid,int dim, double kappa, double rho);
 
+	void setInitialField(const Field &field);
+
 	//! system initialisation
 	void initialize();
 
@@ -126,9 +128,8 @@ public :
     void validateTimeStep();
 
 protected :
-	Field _Vitesse, _Pression ;
+	Field _Velocity, _Pressure ;
 	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
-	Mat _InvSurface, _InvVol; // à stocker car nécessaire dans calcul cfl 
 	double _kappa, _rho,  _c, _d;
 					
 

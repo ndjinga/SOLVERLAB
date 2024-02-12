@@ -19,6 +19,71 @@ WaveStaggered::WaveStaggered(phaseType fluid, int dim, double kappa, double rho)
 	// TODO : appeler constructeur pb fluid ?
 }
 
+void WaveStaggered::setInitialField(const Field &field)
+{
+	if(_Ndim != field.getSpaceDimension()){
+		*_runLogFile<<"WaveStaggered::setInitialField: mesh has incorrect space dimension"<<endl;
+		_runLogFile->close();
+		throw CdmathException("WaveStaggered::setInitialField: mesh has incorrect space dimension");
+	}
+	if  (field.getName() == "pressure"){ //TODO : field->getName() ? , penser à donner un nom à l'initialisation dans cas test 
+		_Pressure = field;
+		_Pressure.setName("Pressure results");
+		_time=_Pressure.getTime();
+		_mesh=_Pressure.getMesh();
+	}
+	else {
+		_Velocity = field;
+		_Velocity.setName("Velocity results");
+		_time=_Velocity.getTime();
+		_mesh=_Velocity.getMesh();
+
+	}
+
+	_initialDataSet=true;
+
+	//Mesh data
+	_Nmailles = _mesh.getNumberOfCells();
+	_Nnodes =   _mesh.getNumberOfNodes();
+	_Nfaces =   _mesh.getNumberOfFaces();
+	_perimeters=Field("Perimeters", CELLS, _mesh,1);
+
+	// find _minl (delta x) and maximum nb of neibourghs
+	_minl  = INFINITY;
+	int nbNeib,indexFace;
+	Cell Ci;
+	Face Fk;
+        
+	//Compute Delta x and the cell perimeters
+	for (int i=0; i<_mesh.getNumberOfCells(); i++){
+		Ci = _mesh.getCell(i);
+		if (_Ndim > 1){
+			_perimeters(i)=0;
+			for (int k=0 ; k<Ci.getNumberOfFaces() ; k++){
+				indexFace=Ci.getFacesId()[k];
+				Fk = _mesh.getFace(indexFace);
+				_minl = min(_minl,Ci.getMeasure()/Fk.getMeasure());
+				_perimeters(i)+=Fk.getMeasure();
+			}
+		}else{
+			_minl = min(_minl,Ci.getMeasure());
+			_perimeters(i)=Ci.getNumberOfFaces();
+		}
+	}
+	
+    _neibMaxNbCells=_mesh.getMaxNbNeighbours(CELLS);
+	
+	/*** MPI distribution of parameters ***/
+	MPI_Allreduce(&_initialDataSet, &_initialDataSet, 1, MPIU_BOOL, MPI_LOR, PETSC_COMM_WORLD);
+	
+	int nbVoisinsMax;
+	MPI_Bcast(&_Nmailles      , 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	MPI_Bcast(&_neibMaxNbCells, 1, MPI_INT, 0, PETSC_COMM_WORLD);
+	nbVoisinsMax = _neibMaxNbCells;
+	
+    _d_nnz = (nbVoisinsMax+1)*_nVar;
+    _o_nnz =  nbVoisinsMax   *_nVar;
+}
 
 void WaveStaggered::initialize(){
 	cout<<"\n Initialising the Wave System model\n"<<endl;
@@ -40,39 +105,87 @@ void WaveStaggered::initialize(){
 
 
 	//primitive field used only for saving results
-	_Vitesse=Field ("Primitive vec", FACES, _mesh, 1); //TODO comment fonctionnent Field ?
-	_Pression=Field ("Primitive vec", CELLS, _mesh, 1); //TODO comment fonctionnent Field ?
+	_Velocity=Field ("Primitive vec", FACES, _mesh, 1); //TODO comment fonctionnent Field ?
+	_Pressure=Field ("Primitive vec", CELLS, _mesh, 1); //TODO comment fonctionnent Field ?
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
 	double * initialFieldPrim = new double[_globalNbUnknowns];
 	for(int i =0; i<_globalNbUnknowns; i++)
 		initialFieldPrim[i]=_VV(i); //  TODO : à corriger _VV doit être un field de size glbal unkonw et non nVar*nmailles
 
-
 	/**********Petsc structures:  ****************/
 
-	// creation des matrices communes à explicite et implicite : 
-	Mat B, Btopo, Btpressure, Bt; 
-	// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
-	MatCreate(PETSC_COMM_SELF, & _Q); 
-	MatSetSizes(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	MatZeroEntries(_Q);
-	// matrice des Inverses Volumes
-	MatCreate(PETSC_COMM_SELF, & _InvVol); 
-	MatSetSizes(_InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	MatZeroEntries(_InvVol);
-	// matrice DIVERGENCE (|K|div(u))
-	MatCreate(PETSC_COMM_SELF, & B); 
-	MatSetSizes(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-	MatZeroEntries(B);
-	// matrix GRADIENT (we will impose to be 0 on boundary faces so that u^n+1 = u^n at the boundary)
-	MatCreate(PETSC_COMM_SELF, & Bt); 
-	MatSetSizes(Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
-	MatZeroEntries(Bt);
+	//creation des vecteurs
+	VecCreate(PETSC_COMM_SELF, & _primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
+	VecSetSizes(_primitiveVars, PETSC_DECIDE, _globalNbUnknowns);
+	VecSetFromOptions(_primitiveVars);
+	VecDuplicate(_primitiveVars, &_old);//Old primitive variables at time step n
+	VecDuplicate(_primitiveVars, &_newtonVariation);//Newton variation Uk+1-Uk 
+	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
+
+	// transfer information de condition initial vers primitiveVars
+	int *indices = new int[_globalNbUnknowns];
+	std::iota(indices, indices + _globalNbUnknowns, 0);
+	VecSetValues(_primitiveVars, _globalNbUnknowns, indices, initialFieldPrim, INSERT_VALUES); 
+	VecAssemblyBegin(_primitiveVars);
+	VecAssemblyEnd(_primitiveVars);
+	VecCopy(_primitiveVars, _old);
+	VecAssemblyBegin(_old);
+	VecAssemblyEnd(_old);
+	if(_system)
+	{
+		cout << "Variables primitives initiales : " << endl;
+		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
+		cout << endl;
+	}
+
+	delete[] initialFieldPrim, indices;
+
+	createKSP();
+	PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
+	*_runLogFile << "SOLVERLAB Newton solver" << endl;
+	_runLogFile->close();
+
+	_initializedMemory=true;
+	save();//save initial data
+}
+
+
+
+double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
+
+	if(_verbose && _nbTimeStep%_freqSave ==0)
+	{
+		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+		cout << endl;
+	}
+	double maxPerim = 0; 
+	double minCell = 0;
 	
-	if(_timeScheme == Implicit)
-		MatCreateSeqBAIJ(PETSC_COMM_SELF, _nVar, _nVar*_Nmailles, _nVar*_Nmailles, (1+_neibMaxNbCells), PETSC_NULL, &_A);
-	if(_timeScheme == Explicit){
+	if (_timeScheme == Explicit && _dt == 0){ // The matrices are assembled only in the first time step since linear problem
+		Mat B, Btopo, Btpressure, Bt, InvSurface, InvVol;; 
+		// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
+		MatCreate(PETSC_COMM_SELF, & _Q); 
+		MatSetSizes(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+		MatZeroEntries(_Q);
+
+		// matrice des Inverses Volumes
+		MatCreate(PETSC_COMM_SELF, & InvVol); 
+		MatSetSizes(InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+		MatZeroEntries(InvVol);
+		// matrice des Inverses de Surfaces
+		MatCreate(PETSC_COMM_SELF, & InvSurface); 
+		MatSetSizes(InvSurface, PETSC_DECIDE, PETSC_DECIDE, _Nmailles , _Nmailles );
+		MatZeroEntries(InvSurface);
+
+		// matrice DIVERGENCE (|K|div(u))
+		MatCreate(PETSC_COMM_SELF, & B); 
+		MatSetSizes(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+		MatZeroEntries(B);
+		// matrix GRADIENT (we will impose to be 0 on boundary faces so that u^n+1 = u^n at the boundary)
+		MatCreate(PETSC_COMM_SELF, & Bt); 
+		MatSetSizes(Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
+		MatZeroEntries(Bt);
 
 		// matrice Btopo = {|K|div(u) sans |sigma| dans div(u)}-> pour définir facilement le laplacien à partir de l'opérateur divergence
 		MatCreate(PETSC_COMM_SELF, & Btopo); 
@@ -83,10 +196,8 @@ void WaveStaggered::initialize(){
 		MatCreate(PETSC_COMM_SELF, & Btpressure); 
 		MatSetSizes(Btpressure, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles ); 
 		MatZeroEntries(Btpressure);
-
-		// TODO : penser à détruire ces matrices 
 		
-		// Assembly of matrices since independant of time
+		// Assembly of matrices 
 		for (int j=0; j<_Nfaces;j++){
 			Face Fj = _mesh.getFace(j);
 			bool _isBoundary=Fj.isBorder();
@@ -162,12 +273,12 @@ void WaveStaggered::initialize(){
 					MatSetValues(Bt, 1, &j, 1, &idCells[0], &FaceArea, ADD_VALUES ); 
 					MatSetValues(Bt, 1, &j, 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
 
-					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-					MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
+					MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+					MatSetValues(InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
 
-					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
-					MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
+					MatSetValues(InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
+					MatSetValues(InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
+					MatSetValues(InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 				}		
 			}
 			else // boundary faces
@@ -202,9 +313,9 @@ void WaveStaggered::initialize(){
 	
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); //TODO : vérifier l'orientation
 				MatSetValues(Btopo,1, &idCells[0], 1, &j, &One, ADD_VALUES); 
-				MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
-				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
-				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
+				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
+				MatSetValues(InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
+				MatSetValues(InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 
 				PetscScalar pInt;
 				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
@@ -225,112 +336,73 @@ void WaveStaggered::initialize(){
 		MatAssemblyBegin(Btpressure, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(Btpressure, MAT_FINAL_ASSEMBLY);
 
-		MatAssemblyBegin(_InvSurface, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
-		MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
-		
-
+		MatAssemblyBegin(InvSurface, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(InvSurface, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(InvVol,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(InvVol, MAT_FINAL_ASSEMBLY);
 		
 		int *indices1 = new int[_Nmailles];
 		std::iota(indices1, indices1 +_Nmailles, 0);
 		int *indices2 = new int[_Nfaces];
 		std::iota(indices2, indices2 +_Nfaces, _Nmailles);
 
-		Mat Laplacian, DivTilde, GradDivTilde;
-		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian); 
-		MatMatMult(_InvSurface, B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &DivTilde); 
-		MatMatMult(Bt, DivTilde, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
+		Mat Laplacian, GradDivTilde;
+		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian);  
+		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
 
-		MatSetValuesBlocked(_Q, _Nmailles, indices1, _Nmailles, indices1, -_d*_c* Laplacian , INSERT_VALUES);  
-		MatSetValuesBlocked(_Q, _Nmailles, indices1, _Nfaces, indices2, B/_rho , INSERT_VALUES);
-		MatSetValuesBlocked(_Q, _Nfaces, indices2, _Nmailles, indices1, -_kappa * Bt, INSERT_VALUES);
-		MatSetValuesBlocked(_Q, _Nfaces, indices2, _Nfaces, indices2, -_d*_c * GradDivTilde , INSERT_VALUES);
+		PetscScalar minusdc = -_d*_c;
+		PetscScalar minuskappa = -_kappa;
+		PetscScalar invrho = 1.0/_rho;
+		MatScale(Laplacian, minusdc );
+		MatScale(B, invrho);
+		MatScale(Bt, minuskappa);
+		MatScale(GradDivTilde, minusdc );
+
+		MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nmailles, indices1, Laplacian , INSERT_VALUES);  
+		MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nfaces, indices2, B , INSERT_VALUES);
+		MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nmailles, indices1, Bt, INSERT_VALUES);
+		MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nfaces, indices2, GradDivTilde , INSERT_VALUES); // TODO : MATAssmebly for _Q ?
 
 		Mat Prod;
-		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatMatMult(InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
 
-		delete[] indices1, indices2;
-		MatDestroy(& B); 
-		MatDestroy(& Btopo); 
-		MatDestroy(& Btpressure); 
-		MatDestroy(& Bt); 
-	}
-
-	//creation des vecteurs
-	VecCreate(PETSC_COMM_SELF, & _primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
-	VecSetSizes(_primitiveVars, PETSC_DECIDE, _globalNbUnknowns);
-	VecSetFromOptions(_primitiveVars);
-	VecDuplicate(_primitiveVars, &_old);//Old primitive variables at time step n
-	VecDuplicate(_primitiveVars, &_newtonVariation);//Newton variation Uk+1-Uk 
-	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
-
-	// transfer information de condition initial vers primitiveVars
-	int *indices = new int[_globalNbUnknowns];
-	std::iota(indices, indices + _globalNbUnknowns, 0);
-	VecSetValues(_primitiveVars, _globalNbUnknowns, indices, initialFieldPrim, INSERT_VALUES); 
-	VecAssemblyBegin(_primitiveVars);
-	VecAssemblyEnd(_primitiveVars);
-	VecCopy(_primitiveVars, _old);
-	VecAssemblyBegin(_old);
-	VecAssemblyEnd(_old);
-	if(_system)
-	{
-		cout << "Variables primitives initiales : " << endl;
-		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
-		cout << endl;
-	}
-
-	delete[] initialFieldPrim, indices;
-
-	createKSP();
-	PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
-	*_runLogFile << "SOLVERLAB Newton solver" << endl;
-	_runLogFile->close();
-
-	_initializedMemory=true;
-	save();//save initial data
-}
-
-
-double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
-
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
-		cout << endl;
-	}
-	double maxPerim = 0; 
-	double minCell = 0;
-	if(_timeScheme == Implicit)
-		MatZeroEntries(_A);
-	if (_timeScheme == Explicit){
 		if (_cfl > _d/2.0){
 			cout << "cfl ="<< _cfl <<"is to high, cfl is updated to 0.9*_d/2" << endl;
 			_cfl =  0.9 * _d/2.0;
 		}
 		VecAssemblyBegin(_b);
 		MatMult(_Q,_old, _b); //TODO : _old = U^n ?
-		VecAssemblyEnd(_b); //TODO : à quoi sert VecAssembly ?
-		
-		for (int j=0; j < _globalNbUnknowns; j++){
-			PetscScalar value;
-			MatGetValues(_InvVol,1, &j, 1, &j, &value);
-			if (j < _Nmailles){
-				if (minCell > 1.0/value){ // Primal cells
-					minCell = 1.0/value;
-				if  (maxPerim < _perimeters(j) ){ // Perimeters
-					maxPerim = _perimeters(j);
-				}
-			}
-			else{
-				if (minCell > 1.0/value){ //Dual Cells 
-					minCell = 1.0/value;
-				}
-			}
-			}
-		}
+		VecAssemblyEnd(_b); 
+
+		Vec V, W;
+		MatGetDiagonal(InvVol,V);
+		MatGetDiagonal(InvSurface, W);
+		int *indices3 = new int[_Nmailles + _Nfaces];
+		std::iota(indices3, indices3 +_Nmailles + _Nfaces, 0);
+		int *indices4 = new int[_Nmailles];
+		std::iota(indices4, indices4 +_Nmailles, 0);
+		PetscScalar minInvSurf, maxInvVol;
+		VecMax(W, indices3, &maxInvVol);
+		VecMin(V, indices4, &minInvSurf);
+		maxPerim = 1.0/minInvSurf;
+		minCell = 1.0/maxInvVol;
+
+		delete[] indices1, indices2, indices3, indices4;
+		MatDestroy(& B); 
+		MatDestroy(& Btopo); 
+		MatDestroy(& Btpressure); 
+		MatDestroy(& Bt); 
+		MatDestroy(& InvVol); 
+		MatDestroy(& InvSurface);
+		MatDestroy(& Laplacian);
+		MatDestroy(& GradDivTilde); 
+	}
+	if (_timeScheme == Explicit){
+		VecAssemblyBegin(_b);
+		MatMult(_Q,_old, _b); //TODO : _old = U^n ?
+		VecAssemblyEnd(_b); 
+
 	}
 	stop=false;
 
@@ -733,12 +805,7 @@ void WaveStaggered::terminate(){
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
 	MatDestroy(& _Q); 
-	MatDestroy(& _InvVol); 
-	MatDestroy(& _InvSurface); 
  
-		
-
-
 	// 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
 	for(int i=0;i<_nbPhases;i++)
@@ -749,207 +816,165 @@ void WaveStaggered::terminate(){
 		SNESDestroy(&_snes);
 }
 
-void WaveStaggered::save(){
-    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
-    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
+// void WaveStaggered::save(){
+//     PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
+//     *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
 
-	string prim(_path+"/WaveStaggeredPrim_");///Results
-	string cons(_path+"/WaveStaggeredCons_");
-	prim+=_fileName;
-	cons+=_fileName;
+// 	string prim(_path+"/WaveStaggeredPrim_");///Results
+// 	prim+=_fileName;
 
-	PetscInt Ii;
-	for (long i = 0; i < _Nmailles; i++){
-		// j = 0 : pressure; j = _nVar - 1: temperature; j = 1,..,_nVar-2: velocity
-		for (int j = 0; j < _nVar; j++){
-			Ii = i*_nVar +j;
-			VecGetValues(_primitiveVars,1,&Ii,&_VV(i,j));
-		}
-	}
-	if(_saveConservativeField){
-		for (long i = 0; i < _Nmailles; i++){
-			// j = 0 : density; j = _nVar - 1 : energy j = 1,..,_nVar-2: momentum
-			for (int j = 0; j < _nVar; j++){
-				Ii = i*_nVar +j;
-				VecGetValues(_conservativeVars,1,&Ii,&_UU(i,j));
-			}
-		}
-		_UU.setTime(_time,_nbTimeStep);
-	}
-	_VV.setTime(_time,_nbTimeStep);
+// 	PetscInt Ii;
+// 	for (long i = 0; i < ; i++){
+// 			VecGetValues(_primitiveVars,1,&Ii,&_VV(i,j));
+// 		}
+// 	}
+// 	_Pressure.setTime(_time,_nbTimeStep);
+// 	_Velocity.setTime(_time,_nbTimeStep);
 
-	// create mesh and component info
-	if (_nbTimeStep ==0){
-		string prim_suppress ="rm -rf "+prim+"_*";
-		string cons_suppress ="rm -rf "+cons+"_*";
+// 	// create mesh and component info
+// 	if (_nbTimeStep ==0){
+// 		string prim_suppress ="rm -rf "+prim+"_*";
+// 		string cons_suppress ="rm -rf "+cons+"_*";
 
-		system(prim_suppress.c_str());//Nettoyage des précédents calculs identiques
-		system(cons_suppress.c_str());//Nettoyage des précédents calculs identiques
+// 		system(prim_suppress.c_str());//Nettoyage des précédents calculs identiques
+// 		system(cons_suppress.c_str());//Nettoyage des précédents calculs identiques
 
-		if(_saveConservativeField){
-			_UU.setInfoOnComponent(0,"Density_(kg/m^3)");
-			_UU.setInfoOnComponent(1,"Momentum_x");// (kg/m^2/s)
-			if (_Ndim>1)
-				_UU.setInfoOnComponent(2,"Momentum_y");// (kg/m^2/s)
-			if (_Ndim>2)
-				_UU.setInfoOnComponent(3,"Momentum_z");// (kg/m^2/s)
 
-			_UU.setInfoOnComponent(_nVar-1,"Energy_(J/m^3)");
+// 		_VV.setInfoOnComponent(0,"Pressure_(Pa)");
+// 		_VV.setInfoOnComponent(1,"Velocity_x_(m/s)");
+// 		if (_Ndim>1)
+// 			_VV.setInfoOnComponent(2,"Velocity_y_(m/s)");
+// 		if (_Ndim>2)
+// 			_VV.setInfoOnComponent(3,"Velocity_z_(m/s)");
+// 		_VV.setInfoOnComponent(_nVar-1,"Temperature_(K)");
 
-			switch(_saveFormat)
-			{
-			case VTK :
-				_UU.writeVTK(cons);
-				break;
-			case MED :
-				_UU.writeMED(cons);
-				break;
-			case CSV :
-				_UU.writeCSV(cons);
-				break;
-			}
-		}
-		_VV.setInfoOnComponent(0,"Pressure_(Pa)");
-		_VV.setInfoOnComponent(1,"Velocity_x_(m/s)");
-		if (_Ndim>1)
-			_VV.setInfoOnComponent(2,"Velocity_y_(m/s)");
-		if (_Ndim>2)
-			_VV.setInfoOnComponent(3,"Velocity_z_(m/s)");
-		_VV.setInfoOnComponent(_nVar-1,"Temperature_(K)");
+// 		switch(_saveFormat)
+// 		{
+// 		case VTK :
+// 			_VV.writeVTK(prim);
+// 			break;
+// 		case MED :
+// 			_VV.writeMED(prim);
+// 			break;
+// 		case CSV :
+// 			_VV.writeCSV(prim);
+// 			break;
+// 		}
+// 	}
+// 	// do not create mesh
+// 	else{
+// 		switch(_saveFormat)
+// 		{
+// 		case VTK :
+// 			_VV.writeVTK(prim,false);
+// 			break;
+// 		case MED :
+// 			_VV.writeMED(prim,false);
+// 			break;
+// 		case CSV :
+// 			_VV.writeCSV(prim);
+// 			break;
+// 		}
+// 		if(_saveConservativeField){
+// 			switch(_saveFormat)
+// 			{
+// 			case VTK :
+// 				_UU.writeVTK(cons,false);
+// 				break;
+// 			case MED :
+// 				_UU.writeMED(cons,false);
+// 				break;
+// 			case CSV :
+// 				_UU.writeCSV(cons);
+// 				break;
+// 			}
+// 		}
+// 	}
+// 	if(_saveVelocity){
+// 		for (long i = 0; i < _Nmailles; i++){
+// 				VecGetValues(_primitiveVars,1,&i,&_Vitesse(i));
+// 			}
+// 		}
+// 		_Vitesse.setTime(_time,_nbTimeStep);
+// 		if (_nbTimeStep ==0){
+// 			_Vitesse.setInfoOnComponent(0,"Velocity_x_(m/s)");
+// 			_Vitesse.setInfoOnComponent(1,"Velocity_y_(m/s)");
+// 			_Vitesse.setInfoOnComponent(2,"Velocity_z_(m/s)");
 
-		switch(_saveFormat)
-		{
-		case VTK :
-			_VV.writeVTK(prim);
-			break;
-		case MED :
-			_VV.writeMED(prim);
-			break;
-		case CSV :
-			_VV.writeCSV(prim);
-			break;
-		}
-	}
-	// do not create mesh
-	else{
-		switch(_saveFormat)
-		{
-		case VTK :
-			_VV.writeVTK(prim,false);
-			break;
-		case MED :
-			_VV.writeMED(prim,false);
-			break;
-		case CSV :
-			_VV.writeCSV(prim);
-			break;
-		}
-		if(_saveConservativeField){
-			switch(_saveFormat)
-			{
-			case VTK :
-				_UU.writeVTK(cons,false);
-				break;
-			case MED :
-				_UU.writeMED(cons,false);
-				break;
-			case CSV :
-				_UU.writeCSV(cons);
-				break;
-			}
-		}
-	}
-	if(_saveVelocity){
-		for (long i = 0; i < _Nmailles; i++){
-			// j = 0 : pressure; j = _nVar - 1: temperature; j = 1,..,_nVar-2: velocity
-			for (int j = 0; j < _Ndim; j++)//On récupère les composantes de vitesse
-			{
-				int Ii = i*_nVar +1+j;
-				VecGetValues(_primitiveVars,1,&Ii,&_Vitesse(i,j));
-			}
-			for (int j = _Ndim; j < 3; j++)//On met à zero les composantes de vitesse si la dimension est <3
-				_Vitesse(i,j)=0;
-		}
-		_Vitesse.setTime(_time,_nbTimeStep);
-		if (_nbTimeStep ==0){
-			_Vitesse.setInfoOnComponent(0,"Velocity_x_(m/s)");
-			_Vitesse.setInfoOnComponent(1,"Velocity_y_(m/s)");
-			_Vitesse.setInfoOnComponent(2,"Velocity_z_(m/s)");
+// 			switch(_saveFormat)
+// 			{
+// 			case VTK :
+// 				_Vitesse.writeVTK(prim+"_Velocity");
+// 				break;
+// 			case MED :
+// 				_Vitesse.writeMED(prim+"_Velocity");
+// 				break;
+// 			case CSV :
+// 				_Vitesse.writeCSV(prim+"_Velocity");
+// 				break;
+// 			}
+// 		}
+// 		else{
+// 			switch(_saveFormat)
+// 			{
+// 			case VTK :
+// 				_Vitesse.writeVTK(prim+"_Velocity",false);
+// 				break;
+// 			case MED :
+// 				_Vitesse.writeMED(prim+"_Velocity",false);
+// 				break;
+// 			case CSV :
+// 				_Vitesse.writeCSV(prim+"_Velocity");
+// 				break;
+// 			}
+// 		}
+// 	}
+// 	if(_isStationary)
+// 	{
+// 		prim+="_Stat";
+// 		cons+="_Stat";
 
-			switch(_saveFormat)
-			{
-			case VTK :
-				_Vitesse.writeVTK(prim+"_Velocity");
-				break;
-			case MED :
-				_Vitesse.writeMED(prim+"_Velocity");
-				break;
-			case CSV :
-				_Vitesse.writeCSV(prim+"_Velocity");
-				break;
-			}
-		}
-		else{
-			switch(_saveFormat)
-			{
-			case VTK :
-				_Vitesse.writeVTK(prim+"_Velocity",false);
-				break;
-			case MED :
-				_Vitesse.writeMED(prim+"_Velocity",false);
-				break;
-			case CSV :
-				_Vitesse.writeCSV(prim+"_Velocity");
-				break;
-			}
-		}
-	}
-	if(_isStationary)
-	{
-		prim+="_Stat";
-		cons+="_Stat";
+// 		switch(_saveFormat)
+// 		{
+// 		case VTK :
+// 			_VV.writeVTK(prim);
+// 			break;
+// 		case MED :
+// 			_VV.writeMED(prim);
+// 			break;
+// 		case CSV :
+// 			_VV.writeCSV(prim);
+// 			break;
+// 		}
 
-		switch(_saveFormat)
-		{
-		case VTK :
-			_VV.writeVTK(prim);
-			break;
-		case MED :
-			_VV.writeMED(prim);
-			break;
-		case CSV :
-			_VV.writeCSV(prim);
-			break;
-		}
+// 		if(_saveConservativeField){
+// 			switch(_saveFormat)
+// 			{
+// 			case VTK :
+// 				_UU.writeVTK(cons);
+// 				break;
+// 			case MED :
+// 				_UU.writeMED(cons);
+// 				break;
+// 			case CSV :
+// 				_UU.writeCSV(cons);
+// 				break;
+// 			}
+// 		}
 
-		if(_saveConservativeField){
-			switch(_saveFormat)
-			{
-			case VTK :
-				_UU.writeVTK(cons);
-				break;
-			case MED :
-				_UU.writeMED(cons);
-				break;
-			case CSV :
-				_UU.writeCSV(cons);
-				break;
-			}
-		}
-
-		if(_saveVelocity){
-			switch(_saveFormat)
-			{
-			case VTK :
-				_Vitesse.writeVTK(prim+"_Velocity");
-				break;
-			case MED :
-				_Vitesse.writeMED(prim+"_Velocity");
-				break;
-			case CSV :
-				_Vitesse.writeCSV(prim+"_Velocity");
-				break;
-			}
-		}
-	}
-}
+// 		if(_saveVelocity){
+// 			switch(_saveFormat)
+// 			{
+// 			case VTK :
+// 				_Vitesse.writeVTK(prim+"_Velocity");
+// 				break;
+// 			case MED :
+// 				_Vitesse.writeMED(prim+"_Velocity");
+// 				break;
+// 			case CSV :
+// 				_Vitesse.writeCSV(prim+"_Velocity");
+// 				break;
+// 			}
+// 		}
+// 	}
+// }
