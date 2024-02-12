@@ -1,21 +1,22 @@
 //============================================================================
 /**
- * \file DriftModel.hxx
- * \author Michael NDJINGA
+ * \file WaveStaggered.hxx
+ * \author Esteban COIFFIER
  * \version 1.0
  * \date 01 janv. 2018
- * \brief The compressible Navier-Stokes equations with an ICE scheme on staggered meshes
+ * \briefThe Wave system
  * */
 //============================================================================
 
-/*! \class WaveStaggered Wavetaggered.hxx "WaveStaggered.hxx"
- *  \brief The compressible Navier-Stokes equations
- *  \details The model consists in one mass, one momentum and one energy equation, see \ref NSModelsPage for more details
+/*! \class WaveStaggered WaveStaggered.hxx "WaveStaggered.hxx"
+ *  \brief The Wave system
+ *  \details Wave system
  */
 #ifndef WAVESTAGGERED_HXX_
 #define WAVESTAGGERED_HXX_
 
 #include "ProblemFluid.hxx"
+#include "Node.hxx"
 
 class WaveStaggered : public ProblemFluid{
 public :
@@ -40,64 +41,6 @@ public :
     void terminate();
 
 	void save();
-
-	/** \fn setIntletBoundaryCondition
-	 * \brief adds a new boundary condition of type Inlet
-	 * \details
-	 * \param [in] string : the name of the boundary
-	 * \param [in] double : the value of the temperature at the boundary
-	 * \param [in] double : the value of the x component of the velocity at the boundary
-	 * \param [in] double : the value of the y component of the velocity at the boundary
-	 * \param [in] double : the value of the z component of the velocity at the boundary
-	 * \param [out] void
-	 *  */
-	void setInletBoundaryCondition(string groupName,double Temperature,double v_x=0, double v_y=0, double v_z=0){
-		_limitField[groupName]=LimitField(Inlet,-1,vector<double>(1,v_x),vector<double>(1,v_y),vector<double>(1,v_z),Temperature,-1,-1,-1);
-	};
-	/** \fn setIntletPressureBoundaryCondition
-	 * \brief adds a new boundary condition of type InletPressure
-	 * \details
-	 * \param [in] string : the name of the boundary
-	 * \param [in] double : the value of the pressure at the boundary
-	 * \param [in] double : the value of the temperature at the boundary
-	 * \param [out] void
-	 *  */
-	void setInletPressureBoundaryCondition(string groupName, double pressure,double Temperature){
-		_limitField[groupName]=LimitField(InletPressure,pressure,vector<double>(0,0),vector<double>(0,0),vector<double>(0,0),Temperature,-1,-1,-1);
-	};
-	/** \fn setIntletPressureBoundaryCondition
-	 * \brief adds a new boundary condition of type InletPressure taking into account the hydrostatic pressure variations
-	 * \details The pressure is not constant on the boundary but varies linearly with a slope given by the gravity vector
-	 * \param [in] string : the name of the boundary
-	 * \param [in] double : the value of the pressure at the boundary
-	 * \param [in] double : the value of the temperature at the boundary
-	 * \param [in] vector<double> : reference_point position on the boundary where the value Pressure will be imposed
-	 * \param [out] void
-	 *  */
-	void setInletPressureBoundaryCondition(string groupName, double pressure,double Temperature, vector<double> reference_point){
-		/* On the boundary we have P-Pref=rho g\cdot(x-xref) hence P=Pref-g\cdot xref + g\cdot x */
-		pressure-=reference_point[0]*_GravityField3d[0];
-		if(_Ndim>1){
-			pressure-=reference_point[1]*_GravityField3d[1];
-			if(_Ndim>2)
-				pressure-=reference_point[2]*_GravityField3d[2];
-		}
-
-		_limitField[groupName]=LimitField(InletPressure,pressure,vector<double>(0,0),vector<double>(0,0),vector<double>(0,0),Temperature,-1,-1,-1);
-	};
-	/** \fn setWallBoundaryCondition
-	 * \brief adds a new boundary condition of type Wall
-	 * \details
-	 * \param [in] string : the name of the boundary
-	 * \param [in] double : the value of the temperature at the boundary
-	 * \param [in] double : the value of the x component of the velocity at the boundary
-	 * \param [in] double : the value of the y component of the velocity at the boundary
-	 * \param [in] double : the value of the z component of the velocity at the boundary
-	 * \param [out] void
-	 *  */
-	void setWallBoundaryCondition(string groupName,double Temperature,double v_x, double v_y=0, double v_z=0){
-		_limitField[groupName]=LimitField(Wall,-1,vector<double>(1,v_x),vector<double>(1,v_y),vector<double>(1,v_z),Temperature,-1,-1,-1);
-	};
 
 	/** \fn computeTimeStep
      * \brief Proposes a value for the next time step to be solved using mesh data and cfl coefficient
@@ -127,35 +70,20 @@ public :
      *  */
     void validateTimeStep();
 
+	 /** \fn savePressure
+     * \brief saves the Pressure field in a separate file 
+     * @param bool
+     * */
+    void savePressure(bool save_p=true){
+        _savePressure=save_p;
+    }
+
 protected :
 	Field _Velocity, _Pressure ;
 	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d;
-					
-
-
-
-//  Not used in this class
-	//!calcule l'etat de Roe de deux etats
-	void convectionState( const long &i, const long &j, const bool &IsBord);
-	//!calcule la matrice de convection de l'etat interfacial entre deux cellules voisinnes
-	void convectionMatrices();
-	//!Calcule le flux pour un état et une porosité et une normale donnés
-	Vector convectionFlux(Vector U,Vector V, Vector normale, double porosity);
-	//!Computes the source vector associated to the cell i
-	void sourceVector(PetscScalar * Si,PetscScalar * Ui,PetscScalar * Vi, int i);
-	//!Computes the pressure loss associated to the face ij
-	void pressureLossVector(PetscScalar * pressureLoss, double K, PetscScalar * Ui, PetscScalar * Vi, PetscScalar * Uj, PetscScalar * Vj);
-	//!Computes the contribution of the porosity gradient associated to the face ij to the source term
-	void porosityGradientSourceVector();
-	//!Calcule la jacobienne de la CL convection
-	void jacobian(const int &j, string nameOfGroup,double * normale);
-	//!Calcule l'etat fictif a la frontiere
-	void setBoundaryState(string nameOfGroup, const int &j,double *normale);// delete &nf Kieu
-	//!Adds the contribution of diffusion to the RHS
-	void convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector velocity);
-	//! Computes the partial derivatives of rho, and rho E with regard to the primitive variables  p and  T
-	void getDensityDerivatives( double pressure, double temperature, double v2);
+	 bool _savePressure;
+				
 
 };
 #endif /* WAVESTAGGERED_HXX_*/

@@ -4,19 +4,18 @@
 
 #include "../inc/WaveStaggered.hxx"
 #include "StiffenedGas.hxx"
+#include <numeric>
 
 using namespace std;
-
 
 WaveStaggered::WaveStaggered(phaseType fluid, int dim, double kappa, double rho){
 	_Ndim=dim;
 	_nVar=_Ndim+2;
-	_nbPhases  = 1;
-	_fluides.resize(1);
 	_kappa = kappa;
 	_rho = rho;
 	_c = sqrt(kappa/rho);
-	// TODO : appeler constructeur pb fluid ?
+	_saveVelocity=true; // TODO : attention car _saveVelocity est mis à faux dans la calsse d'au dessus, à modifier, appeler constructeur pb fluid ?
+	_savePressure=true; 
 }
 
 void WaveStaggered::setInitialField(const Field &field)
@@ -39,9 +38,7 @@ void WaveStaggered::setInitialField(const Field &field)
 		_mesh=_Velocity.getMesh();
 
 	}
-
 	_initialDataSet=true;
-
 	//Mesh data
 	_Nmailles = _mesh.getNumberOfCells();
 	_Nnodes =   _mesh.getNumberOfNodes();
@@ -105,13 +102,13 @@ void WaveStaggered::initialize(){
 
 
 	//primitive field used only for saving results
-	_Velocity=Field ("Primitive vec", FACES, _mesh, 1); //TODO comment fonctionnent Field ?
-	_Pressure=Field ("Primitive vec", CELLS, _mesh, 1); //TODO comment fonctionnent Field ?
+	_Velocity=Field ("pressure", FACES, _mesh, 1); // TODO : redondance avec fonction SetInitialField ?
+	_Pressure=Field ("velocity", CELLS, _mesh, 1); 
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
 	double * initialFieldPrim = new double[_globalNbUnknowns];
 	for(int i =0; i<_globalNbUnknowns; i++)
-		initialFieldPrim[i]=_VV(i); //  TODO : à corriger _VV doit être un field de size glbal unkonw et non nVar*nmailles
+		initialFieldPrim[i]=_VV(i); 
 
 	/**********Petsc structures:  ****************/
 
@@ -250,7 +247,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						throw CdmathException("WaveStaggered pas dispo en 3D, arret de calcul");				
 					}
 					
-					//  TODO : vérifier orientation, ne vaut-il pas définir un vecteur n_sigma pour chaque face ?
+					//  TODO : vérifier orientation, ne faut-il pas définir un vecteur n_sigma pour chaque face ?
 					FaceArea = Fj.getMeasure();
 					PetscScalar MinusFaceArea = -FaceArea;
 					PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
@@ -303,7 +300,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					Node vertex2 = _mesh.getNode( nodes[1] );
 					PetscScalar det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (vertex2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
-					//  TODO : 3D case
 				}
 				PetscScalar One=1;
 				PetscScalar FaceArea = Fj.getMeasure();
@@ -322,7 +318,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				double pExt = _VV(idCells[0],j); // TODO : à modifier pour pouvoir imposer conditions aux limites
 				MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  // TODO à vérifier 
 				PetscScalar pressureGrad =  1 -FaceArea * pExt/pInt;
-				MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &pressureGrad, ADD_VALUES );  // TODO : orientation ok ?
+				MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &pressureGrad, ADD_VALUES );  
 			 
 			}	
 		}
@@ -357,11 +353,18 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatScale(B, invrho);
 		MatScale(Bt, minuskappa);
 		MatScale(GradDivTilde, minusdc );
+		Mat G[4];
+		G[0] = Laplacian;
+		G[1] = B;
+		G[2] = Bt;
+		G[3] = GradDivTilde;
+		
+		MatCreateNest(PETSC_COMM_WORLD,2, NULL,2, NULL , G, &_Q); // TODO : comment définir les bons indices ?
 
-		MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nmailles, indices1, Laplacian , INSERT_VALUES);  
-		MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nfaces, indices2, B , INSERT_VALUES);
-		MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nmailles, indices1, Bt, INSERT_VALUES);
-		MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nfaces, indices2, GradDivTilde , INSERT_VALUES); // TODO : MATAssmebly for _Q ?
+		// MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nmailles, indices1, Laplacian , INSERT_VALUES);  
+		// MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nfaces, indices2, B , INSERT_VALUES);
+		// MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nmailles, indices1, Bt, INSERT_VALUES);
+		// MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nfaces, indices2, GradDivTilde , INSERT_VALUES); // TODO : MatAssmebly for _Q ?
 
 		Mat Prod;
 		MatMatMult(InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
@@ -371,9 +374,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			cout << "cfl ="<< _cfl <<"is to high, cfl is updated to 0.9*_d/2" << endl;
 			_cfl =  0.9 * _d/2.0;
 		}
-		VecAssemblyBegin(_b);
-		MatMult(_Q,_old, _b); //TODO : _old = U^n ?
-		VecAssemblyEnd(_b); 
 
 		Vec V, W;
 		MatGetDiagonal(InvVol,V);
@@ -563,242 +563,6 @@ void WaveStaggered::computeNewtonVariation()
 	}
 }
 
-void WaveStaggered::convectionState( const long &i, const long &j, const bool &IsBord)
-{}
-
-void WaveStaggered::setBoundaryState(string nameOfGroup, const int &j,double *normale){
-	int k;
-	double v2=0, q_n=0;//q_n=quantité de mouvement normale à la face frontière;
-	_idm[0] = _nVar*j;
-	for(k=1; k<_nVar; k++)
-		_idm[k] = _idm[k-1] + 1;
-
-	VecGetValues(_conservativeVars, _nVar, _idm, _externalStates);//On initialise l'état fantôme avec l'état interne
-	for(k=0; k<_Ndim; k++)
-		q_n+=_externalStates[(k+1)]*normale[k];
-
-	double porosityj=_porosityField(j);
-
-	if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-	{
-		cout << "setBoundaryState for group "<< nameOfGroup << ", inner cell j= "<<j<< " face unit normal vector "<<endl;
-		for(k=0; k<_Ndim; k++){
-			cout<<normale[k]<<", ";
-		}
-		cout<<endl;
-	}
-
-	if (_limitField[nameOfGroup].bcType==Wall){
-		//Pour la convection, inversion du sens de la vitesse normale
-		for(k=0; k<_Ndim; k++)
-			_externalStates[(k+1)]-= 2*q_n*normale[k];
-
-		_idm[0] = 0;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-
-		VecAssemblyBegin(_Uext);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-
-		//Pour la diffusion, paroi à vitesse et temperature imposees
-		_idm[0] = _nVar*j;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-		double pression=_externalStates[0];
-		double T=_limitField[nameOfGroup].T;
-		double rho=_fluides[0]->getDensity(pression,T);
-
-		_externalStates[0]=porosityj*rho;
-		_externalStates[1]=_externalStates[0]*_limitField[nameOfGroup].v_x[0];
-		v2 +=_limitField[nameOfGroup].v_x[0]*_limitField[nameOfGroup].v_x[0];
-		if(_Ndim>1)
-		{
-			v2 +=_limitField[nameOfGroup].v_y[0]*_limitField[nameOfGroup].v_y[0];
-			_externalStates[2]=_externalStates[0]*_limitField[nameOfGroup].v_y[0];
-			if(_Ndim==3)
-			{
-				_externalStates[3]=_externalStates[0]*_limitField[nameOfGroup].v_z[0];
-				v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
-			}
-		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
-		_idm[0] = 0;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uextdiff);
-	}
-	else if (_limitField[nameOfGroup].bcType==Neumann){
-		_idm[0] = 0;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-
-		VecAssemblyBegin(_Uext);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uextdiff);
-	}
-	else if (_limitField[nameOfGroup].bcType==Inlet){
-
-		if(q_n<=0){
-			VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-			double pression=_externalStates[0];
-			double T=_limitField[nameOfGroup].T;
-			double rho=_fluides[0]->getDensity(pression,T);
-
-			_externalStates[0]=porosityj*rho;
-			_externalStates[1]=_externalStates[0]*(_limitField[nameOfGroup].v_x[0]);
-			v2 +=(_limitField[nameOfGroup].v_x[0])*(_limitField[nameOfGroup].v_x[0]);
-			if(_Ndim>1)
-			{
-				v2 +=_limitField[nameOfGroup].v_y[0]*_limitField[nameOfGroup].v_y[0];
-				_externalStates[2]=_externalStates[0]*_limitField[nameOfGroup].v_y[0];
-				if(_Ndim==3)
-				{
-					_externalStates[3]=_externalStates[0]*_limitField[nameOfGroup].v_z[0];
-					v2 +=_limitField[nameOfGroup].v_z[0]*_limitField[nameOfGroup].v_z[0];
-				}
-			}
-			_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy(_limitField[nameOfGroup].T,rho) + v2/2);
-		}
-		else if((_nbTimeStep-1)%_freqSave ==0)
-			cout<< "Warning : fluid going out through inlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition"<<endl;
-
-		_idm[0] = 0;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
-	}
-	else if (_limitField[nameOfGroup].bcType==InletPressure){
-
-		//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
-		Cell Cj=_mesh.getCell(j);
-		double hydroPress=Cj.x()*_GravityField3d[0];
-		if(_Ndim>1){
-			hydroPress+=Cj.y()*_GravityField3d[1];
-			if(_Ndim>2)
-				hydroPress+=Cj.z()*_GravityField3d[2];
-		}
-		hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
-
-		//Building the external state
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-		if(q_n<=0){
-			_externalStates[0]=porosityj*_fluides[0]->getDensity(_limitField[nameOfGroup].p+hydroPress,_limitField[nameOfGroup].T);
-		}
-		else{
-			if((_nbTimeStep-1)%_freqSave ==0)
-				cout<< "Warning : fluid going out through inletPressure boundary "<<nameOfGroup<<". Applying Neumann boundary condition for velocity and temperature"<<endl;
-			_externalStates[0]=porosityj*_fluides[0]->getDensity(_limitField[nameOfGroup].p+hydroPress, _externalStates[_nVar-1]);
-		}
-
-		for(k=0; k<_Ndim; k++)
-		{
-			v2+=_externalStates[(k+1)]*_externalStates[(k+1)];
-			_externalStates[(k+1)]*=_externalStates[0] ;
-		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy( _externalStates[_nVar-1],_externalStates[0]) + v2/2);
-
-
-		_idm[0] = 0;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
-	}
-	else if (_limitField[nameOfGroup].bcType==Outlet){
-		if(q_n<=0 &&  (_nbTimeStep-1)%_freqSave ==0)
-			cout<< "Warning : fluid going in through outlet boundary "<<nameOfGroup<<". Applying Neumann boundary condition for velocity and temperature"<<endl;
-
-		//Computation of the hydrostatic contribution : scalar product between gravity vector and position vector
-		Cell Cj=_mesh.getCell(j);
-		double hydroPress=Cj.x()*_GravityField3d[0];
-		if(_Ndim>1){
-			hydroPress+=Cj.y()*_GravityField3d[1];
-			if(_Ndim>2)
-				hydroPress+=Cj.z()*_GravityField3d[2];
-		}
-		hydroPress*=_externalStates[0]/porosityj;//multiplication by rho the total density
-
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		{
-			cout<<"Cond lim outlet densite= "<<_externalStates[0]<<" gravite= "<<_GravityField3d[0]<<" Cj.x()= "<<Cj.x()<<endl;
-			cout<<"Cond lim outlet pression ref= "<<_limitField[nameOfGroup].p<<" pression hydro= "<<hydroPress<<" total= "<<_limitField[nameOfGroup].p+hydroPress<<endl;
-		}
-		//Building the external state
-		_idm[0] = _nVar*j;// Kieu
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecGetValues(_primitiveVars, _nVar, _idm, _externalStates);
-
-		_externalStates[0]=porosityj*_fluides[0]->getDensity(_limitField[nameOfGroup].p+hydroPress, _externalStates[_nVar-1]);
-		for(k=0; k<_Ndim; k++)
-		{
-			v2+=_externalStates[(k+1)]*_externalStates[(k+1)];
-			_externalStates[(k+1)]*=_externalStates[0] ;
-		}
-		_externalStates[_nVar-1] = _externalStates[0]*(_fluides[0]->getInternalEnergy( _externalStates[_nVar-1],_externalStates[0]) + v2/2);
-		_idm[0] = 0;
-		for(k=1; k<_nVar; k++)
-			_idm[k] = _idm[k-1] + 1;
-		VecAssemblyBegin(_Uext);
-		VecAssemblyBegin(_Uextdiff);
-		VecSetValues(_Uext, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecSetValues(_Uextdiff, _nVar, _idm, _externalStates, INSERT_VALUES);
-		VecAssemblyEnd(_Uext);
-		VecAssemblyEnd(_Uextdiff);
-	}else {
-		cout<<"Boundary condition not set for boundary named "<<nameOfGroup<<endl;
-		cout<<"Accepted boundary condition are Neumann, Wall, Inlet, and Outlet"<<endl;
-		*_runLogFile<<"Boundary condition not set for boundary named. Accepted boundary condition are Neumann, Wall, Inlet, and Outlet"<<endl;
-		_runLogFile->close();
-		throw CdmathException("Unknown boundary condition");
-	}
-}
-
-void WaveStaggered::convectionMatrices()
-{}
-
-// void WaveStaggered::computeScaling(double maxvp)
-// {}
-
-void WaveStaggered::sourceVector(PetscScalar * Si, PetscScalar * Ui, PetscScalar * Vi, int i)
-{}
-
-void WaveStaggered::pressureLossVector(PetscScalar * pressureLoss, double K, PetscScalar * Ui, PetscScalar * Vi, PetscScalar * Uj, PetscScalar * Vj)
-{}
-
-void WaveStaggered::porosityGradientSourceVector()
-{}
-
-void WaveStaggered::jacobian(const int &j, string nameOfGroup,double * normale)
-{}
-
-Vector WaveStaggered::convectionFlux(Vector U,Vector V, Vector normale, double porosity)
-{
-	return U;
-}
-
-void WaveStaggered::convectionMatrixPrimitiveVariables( double rho, double u_n, double H,Vector vitesse)
-{}
-
-void WaveStaggered::getDensityDerivatives( double pressure, double temperature, double v2)
-{}
 
 void WaveStaggered::terminate(){ 
 	VecDestroy(&_newtonVariation);
@@ -816,165 +580,116 @@ void WaveStaggered::terminate(){
 		SNESDestroy(&_snes);
 }
 
-// void WaveStaggered::save(){
-//     PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
-//     *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
+void WaveStaggered::save(){
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
+    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
 
-// 	string prim(_path+"/WaveStaggeredPrim_");///Results
-// 	prim+=_fileName;
+	string prim(_path+"/WaveStaggered_");///Results
+	prim+=_fileName;
 
-// 	PetscInt Ii;
-// 	for (long i = 0; i < ; i++){
-// 			VecGetValues(_primitiveVars,1,&Ii,&_VV(i,j));
-// 		}
-// 	}
-// 	_Pressure.setTime(_time,_nbTimeStep);
-// 	_Velocity.setTime(_time,_nbTimeStep);
+	if(_savePressure){
+		for (int i = 0 ; i < _Nmailles  ; i++){
+				VecGetValues(_primitiveVars,1,&i,&_Pressure(i));
+			}
+			
+		_Pressure.setTime(_time,_nbTimeStep);
+		if (_nbTimeStep ==0){
+			_Pressure.setInfoOnComponent(0,"_Pressure (N/m²)");
+			switch(_saveFormat)
+			{
+			case VTK :
+				_Pressure.writeVTK(prim+"_Pressure");
+				break;
+			case MED :
+				_Pressure.writeMED(prim+"_Pressure");
+				break;
+			case CSV :
+				_Pressure.writeCSV(prim+"_Pressure");
+				break;
+			}
+		}
+		else{
+			switch(_saveFormat)
+			{
+			case VTK :
+				_Pressure.writeVTK(prim+"_Pressure",false);
+				break;
+			case MED :
+				_Pressure.writeMED(prim+"_Pressure",false);
+				break;
+			case CSV :
+				_Pressure.writeCSV(prim+"_Pressure");
+				break;
+			}
+		}
+	}
+	if(_saveVelocity){
+		for (int i = _Nmailles ; i < _Nmailles + _Nfaces ; i++){
+				VecGetValues(_primitiveVars,1,&i,&_Velocity(i));
+			}
+			
+		_Velocity.setTime(_time,_nbTimeStep);
+		if (_nbTimeStep ==0){
+			_Velocity.setInfoOnComponent(0,"Velocity . n_sigma_(m/s)");
+			switch(_saveFormat)
+			{
+			case VTK :
+				_Velocity.writeVTK(prim+"_Velocity");
+				break;
+			case MED :
+				_Velocity.writeMED(prim+"_Velocity");
+				break;
+			case CSV :
+				_Velocity.writeCSV(prim+"_Velocity");
+				break;
+			}
+		}
+		else{
+			switch(_saveFormat)
+			{
+			case VTK :
+				_Velocity.writeVTK(prim+"_Velocity",false);
+				break;
+			case MED :
+				_Velocity.writeMED(prim+"_Velocity",false);
+				break;
+			case CSV :
+				_Velocity.writeCSV(prim+"_Velocity");
+				break;
+			}
+		}
+	}
+	if(_isStationary)
+	{
+		prim+="_Stat";
 
-// 	// create mesh and component info
-// 	if (_nbTimeStep ==0){
-// 		string prim_suppress ="rm -rf "+prim+"_*";
-// 		string cons_suppress ="rm -rf "+cons+"_*";
-
-// 		system(prim_suppress.c_str());//Nettoyage des précédents calculs identiques
-// 		system(cons_suppress.c_str());//Nettoyage des précédents calculs identiques
-
-
-// 		_VV.setInfoOnComponent(0,"Pressure_(Pa)");
-// 		_VV.setInfoOnComponent(1,"Velocity_x_(m/s)");
-// 		if (_Ndim>1)
-// 			_VV.setInfoOnComponent(2,"Velocity_y_(m/s)");
-// 		if (_Ndim>2)
-// 			_VV.setInfoOnComponent(3,"Velocity_z_(m/s)");
-// 		_VV.setInfoOnComponent(_nVar-1,"Temperature_(K)");
-
-// 		switch(_saveFormat)
-// 		{
-// 		case VTK :
-// 			_VV.writeVTK(prim);
-// 			break;
-// 		case MED :
-// 			_VV.writeMED(prim);
-// 			break;
-// 		case CSV :
-// 			_VV.writeCSV(prim);
-// 			break;
-// 		}
-// 	}
-// 	// do not create mesh
-// 	else{
-// 		switch(_saveFormat)
-// 		{
-// 		case VTK :
-// 			_VV.writeVTK(prim,false);
-// 			break;
-// 		case MED :
-// 			_VV.writeMED(prim,false);
-// 			break;
-// 		case CSV :
-// 			_VV.writeCSV(prim);
-// 			break;
-// 		}
-// 		if(_saveConservativeField){
-// 			switch(_saveFormat)
-// 			{
-// 			case VTK :
-// 				_UU.writeVTK(cons,false);
-// 				break;
-// 			case MED :
-// 				_UU.writeMED(cons,false);
-// 				break;
-// 			case CSV :
-// 				_UU.writeCSV(cons);
-// 				break;
-// 			}
-// 		}
-// 	}
-// 	if(_saveVelocity){
-// 		for (long i = 0; i < _Nmailles; i++){
-// 				VecGetValues(_primitiveVars,1,&i,&_Vitesse(i));
-// 			}
-// 		}
-// 		_Vitesse.setTime(_time,_nbTimeStep);
-// 		if (_nbTimeStep ==0){
-// 			_Vitesse.setInfoOnComponent(0,"Velocity_x_(m/s)");
-// 			_Vitesse.setInfoOnComponent(1,"Velocity_y_(m/s)");
-// 			_Vitesse.setInfoOnComponent(2,"Velocity_z_(m/s)");
-
-// 			switch(_saveFormat)
-// 			{
-// 			case VTK :
-// 				_Vitesse.writeVTK(prim+"_Velocity");
-// 				break;
-// 			case MED :
-// 				_Vitesse.writeMED(prim+"_Velocity");
-// 				break;
-// 			case CSV :
-// 				_Vitesse.writeCSV(prim+"_Velocity");
-// 				break;
-// 			}
-// 		}
-// 		else{
-// 			switch(_saveFormat)
-// 			{
-// 			case VTK :
-// 				_Vitesse.writeVTK(prim+"_Velocity",false);
-// 				break;
-// 			case MED :
-// 				_Vitesse.writeMED(prim+"_Velocity",false);
-// 				break;
-// 			case CSV :
-// 				_Vitesse.writeCSV(prim+"_Velocity");
-// 				break;
-// 			}
-// 		}
-// 	}
-// 	if(_isStationary)
-// 	{
-// 		prim+="_Stat";
-// 		cons+="_Stat";
-
-// 		switch(_saveFormat)
-// 		{
-// 		case VTK :
-// 			_VV.writeVTK(prim);
-// 			break;
-// 		case MED :
-// 			_VV.writeMED(prim);
-// 			break;
-// 		case CSV :
-// 			_VV.writeCSV(prim);
-// 			break;
-// 		}
-
-// 		if(_saveConservativeField){
-// 			switch(_saveFormat)
-// 			{
-// 			case VTK :
-// 				_UU.writeVTK(cons);
-// 				break;
-// 			case MED :
-// 				_UU.writeMED(cons);
-// 				break;
-// 			case CSV :
-// 				_UU.writeCSV(cons);
-// 				break;
-// 			}
-// 		}
-
-// 		if(_saveVelocity){
-// 			switch(_saveFormat)
-// 			{
-// 			case VTK :
-// 				_Vitesse.writeVTK(prim+"_Velocity");
-// 				break;
-// 			case MED :
-// 				_Vitesse.writeMED(prim+"_Velocity");
-// 				break;
-// 			case CSV :
-// 				_Vitesse.writeCSV(prim+"_Velocity");
-// 				break;
-// 			}
-// 		}
-// 	}
-// }
+		if(_saveVelocity){
+			switch(_saveFormat)
+			{
+			case VTK :
+				_Velocity.writeVTK(prim+"_Velocity");
+				break;
+			case MED :
+				_Velocity.writeMED(prim+"_Velocity");
+				break;
+			case CSV :
+				_Velocity.writeCSV(prim+"_Velocity");
+				break;
+			}
+		}
+		if(_savePressure){
+			switch(_saveFormat)
+			{
+			case VTK :
+				_Pressure.writeVTK(prim+"_Pressure");
+				break;
+			case MED :
+				_Pressure.writeMED(prim+"_Pressure");
+				break;
+			case CSV :
+				_Pressure.writeCSV(prim+"_Pressure");
+				break;
+			}
+		}
+	}
+}
