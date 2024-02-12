@@ -313,9 +313,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				MatSetValues(InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 				MatSetValues(InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 
-				PetscScalar pInt;
+				PetscScalar pInt, pExt;
 				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
-				double pExt = _VV(idCells[0],j); // TODO : à modifier pour pouvoir imposer conditions aux limites
+				VecGetValues(_boundaryPressure, 1, &j, &pExt); // TODO : à modifier pour pouvoir imposer conditions aux limites
 				MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  // TODO à vérifier 
 				PetscScalar pressureGrad =  1 -FaceArea * pExt/pInt;
 				MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &pressureGrad, ADD_VALUES );  
@@ -337,11 +337,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyBegin(InvVol,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(InvVol, MAT_FINAL_ASSEMBLY);
 		
-		int *indices1 = new int[_Nmailles];
-		std::iota(indices1, indices1 +_Nmailles, 0);
-		int *indices2 = new int[_Nfaces];
-		std::iota(indices2, indices2 +_Nfaces, _Nmailles);
-
 		Mat Laplacian, GradDivTilde;
 		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian);  
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
@@ -359,12 +354,17 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		G[2] = Bt;
 		G[3] = GradDivTilde;
 		
-		MatCreateNest(PETSC_COMM_WORLD,2, NULL,2, NULL , G, &_Q); // TODO : comment définir les bons indices ?
+		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_Q); // TODO : comment définir les bons indices ?
 
+		// int *indices1 = new int[_Nmailles];
+		// std::iota(indices1, indices1 +_Nmailles, 0);
+		// int *indices2 = new int[_Nfaces];
+		// std::iota(indices2, indices2 +_Nfaces, _Nmailles);
 		// MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nmailles, indices1, Laplacian , INSERT_VALUES);  
 		// MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nfaces, indices2, B , INSERT_VALUES);
 		// MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nmailles, indices1, Bt, INSERT_VALUES);
 		// MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nfaces, indices2, GradDivTilde , INSERT_VALUES); // TODO : MatAssmebly for _Q ?
+		// delete[] indices1, indices2;
 
 		Mat Prod;
 		MatMatMult(InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
@@ -388,7 +388,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		maxPerim = 1.0/minInvSurf;
 		minCell = 1.0/maxInvVol;
 
-		delete[] indices1, indices2, indices3, indices4;
+		delete[] indices3, indices4;
 		MatDestroy(& B); 
 		MatDestroy(& Btopo); 
 		MatDestroy(& Btpressure); 
