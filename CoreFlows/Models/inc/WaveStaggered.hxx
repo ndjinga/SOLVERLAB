@@ -83,7 +83,8 @@ protected :
 	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d;
 	bool _savePressure;
-	Vec _boundaryPressure;
+	//Vec _boundaryPressure;
+	std::map<int, double>  _boundaryPressure;
 				
 
 };
