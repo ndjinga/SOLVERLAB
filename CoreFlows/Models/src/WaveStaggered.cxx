@@ -8,14 +8,29 @@
 
 using namespace std;
 
-WaveStaggered::WaveStaggered(phaseType fluid, int dim, double kappa, double rho){
+WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):ProblemCoreFlows(comm){
 	_Ndim=dim;
-	_nVar=_Ndim+2;
+	_nVar = 2; // 2 equations;
 	_kappa = kappa;
 	_rho = rho;
 	_c = sqrt(kappa/rho);
 	_saveVelocity=true; // TODO : attention car _saveVelocity est mis à "false" dans la classe d'au dessus, à modifier, appeler constructeur pb fluid ?
 	_savePressure=true; 
+}
+
+std::map<int,double>  WaveStaggered::getboundaryPressure(){
+		return _boundaryPressure;
+	}
+
+void  WaveStaggered::setboundaryVelocity(map< int, double> BoundaryVelocity){
+	std::map<int,double>::iterator it= BoundaryVelocity.begin();
+    if( it != BoundaryVelocity.end() ){
+        _Velocity[ BoundaryVelocity[it->first] ] = BoundaryVelocity[it->second]; 
+	}
+}
+
+void  WaveStaggered::setboundaryPressure(map< int, double> BoundaryPressure){
+	_boundaryPressure = BoundaryPressure;
 }
 
 void WaveStaggered::setInitialField(const Field &field)
@@ -25,7 +40,7 @@ void WaveStaggered::setInitialField(const Field &field)
 		_runLogFile->close();
 		throw CdmathException("WaveStaggered::setInitialField: mesh has incorrect space dimension");
 	}
-	if  (field.getName() == "pressure"){ //TODO : field->getName() ? , penser à donner un nom à l'initialisation dans cas test 
+	if  (field.getName() == "pressure"){ //TODO : field->getName() ? penser à donner un nom à l'initialisation dans cas test 
 		_Pressure = field;
 		_Pressure.setName("Pressure results");
 		_time=_Pressure.getTime();
@@ -79,14 +94,14 @@ void WaveStaggered::setInitialField(const Field &field)
 	nbVoisinsMax = _neibMaxNbCells;
 	
     _d_nnz = (nbVoisinsMax+1)*_nVar;
-    _o_nnz =  nbVoisinsMax   *_nVar;
+    _o_nnz =  nbVoisinsMax   *_nVar; //TODo: What is it ?
 }
 
 void WaveStaggered::initialize(){
 	cout<<"\n Initialising the Wave System model\n"<<endl;
 	*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
 
-	_globalNbUnknowns = _Nmailles + _Nfaces;//Staggered discretisation : velocity is on faces
+	_globalNbUnknowns = _Nmailles + _Nfaces; //Staggered discretisation : velocity is on faces
 
 	if(!_initialDataSet)
 	{
@@ -94,10 +109,9 @@ void WaveStaggered::initialize(){
 		_runLogFile->close();
 		throw CdmathException("!!!!!!!!WaveStaggered::initialize() set initial data first");
 	}
-	cout << "Number of Phases = " << _nbPhases << " mesh dimension = "<<_Ndim<<" number of variables = "<<_nVar<<endl;
-	*_runLogFile << "Number of Phases = " << _nbPhases << " spaceDim= "<<_Ndim<<" number of variables= "<<_nVar<<endl;
+	cout << "mesh dimension = "<<_Ndim <<endl;
+	*_runLogFile << " spaceDim= "<<_Ndim <<endl;
 
-	_vec_normal = new double[_Ndim];
 	_d = 1/(2* sqrt(_neibMaxNbCells) );
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
@@ -202,21 +216,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
 				if (_Ndim = 1){
-					if(idCells[0]>idCells[1])
-						_vec_normal[0] = -1;
-					else
-						_vec_normal[0] = 1;
 					det = Ctemp2.x() - Ctemp1.x();
 					FaceArea = 1;
 				} 
 				if (_Ndim = 2){
-					for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-						if (j == Ctemp1.getFacesId()[l]){
-							for (int idim = 0; idim < _Ndim; ++idim)
-								_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-							break;
-						}
-					}
 					std::vector< int > nodes =  Fj.getNodesId();
 					Node vertex = _mesh.getNode( nodes[0] );
 					// determinant of the vectors forming the diamond cell around the face sigma
@@ -263,19 +266,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			{
 				Cell Cint = _mesh.getCell(idCells[0]);// TODO : vérifier que l'on obtient la cellule intérieure
 				if (_Ndim = 1){
-					_vec_normal[0] = 1;
 					PetscScalar det = Fj.x() - Cint.x();
 					FaceArea = 1;
 				} 
-				else{
-					for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-							if (j == Cint.getFacesId()[l]){
-								for (int idim = 0; idim < _Ndim; ++idim)
-									_vec_normal[idim] = Cint.getNormalVector(l,idim);
-								break;
-							}
-					}
-
+				if (_Ndim = 2){
 					std::vector< int > nodes =  Fj.getNodesId();
 					Node vertex1 = _mesh.getNode( nodes[0] );
 					Node vertex2 = _mesh.getNode( nodes[1] );
@@ -296,11 +290,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 				PetscScalar pInt, pExt;
 				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
-				std::map<int,double>::iterator it =_boundaryPressure.find(j);
-				pExt = _boundaryPressure[it->second];
+				std::map<int,double> boundaryPressure = getboundaryPressure(); 
+				std::map<int,double>::iterator it = boundaryPressure.find(j);
+				pExt = boundaryPressure[it->second];
 
 				MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  // TODO à vérifier 
-				PetscScalar pressureGrad =  1 -FaceArea * pExt/pInt;
+				PetscScalar pressureGrad =  1 - FaceArea * pExt/pInt;
 				MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &pressureGrad, ADD_VALUES );  
 			 
 			}	
@@ -412,60 +407,6 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	//converged=convergence des iterations
 	if(_timeScheme == Explicit)
 		converged=true;
-	else{//Implicit scheme
-
-		KSPGetIterationNumber(_ksp, &_PetscIts);
-		if( _MaxIterLinearSolver < _PetscIts)//save the maximum number of iterations needed during the newton scheme
-			_MaxIterLinearSolver = _PetscIts;
-
-		KSPConvergedReason reason;
-		KSPGetConvergedReason(_ksp,&reason);
-
-		if(reason<0)//solving the linear system failed
-		{
-			if( reason == -3)
-			    cout<<"Maximum number of iterations "<<_maxPetscIts<<" reached"<<endl;
-			else if( reason == -11)
-			    cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
-			else if( reason == -5)
-				cout<<"!!!!!!! Generic breakdown of the linear solver (Could be due to a singular matrix or preconditioner) !!!!!!"<<endl;
-			else
-			{
-			    cout<<"PETSc divergence reason  "<< reason <<endl;
-				cout<<"Nombre d'itérations effectuées "<< _PetscIts<<" nombre maximal Itérations autorisées "<<_maxPetscIts<<endl;
-			}
-			*_runLogFile<<"Systeme lineaire : pas de convergence de Petsc. Raison PETSC numéro "<<reason<<endl;
-			*_runLogFile<<"Nombre d'itérations effectuées "<< _PetscIts<<" nombre maximal Itérations autorisées "<<_maxPetscIts<<endl;
-			converged=false;
-			return false;
-		}
-		else{//solving the linear system succeeded
-			//Calcul de la variation relative Uk+1-Uk ou Vkp1-Vk
-			_erreur_rel = 0.;
-			double x, dx;
-			int I;
-			for(int j=1; j<=_Nmailles; j++)
-			{
-				for(int k=0; k<_nVar; k++)
-				{
-					I = (j-1)*_nVar + k;
-					VecGetValues(_newtonVariation, 1, &I, &dx);
-					if( !_usePrimitiveVarsInNewton)
-						VecGetValues(_conservativeVars, 1, &I, &x);
-					else
-						VecGetValues(_primitiveVars, 1, &I, &x);
-					if (fabs(x)*fabs(x)< _precision)
-					{
-						if(_erreur_rel < fabs(dx))
-							_erreur_rel = fabs(dx);
-					}
-					else if(_erreur_rel < fabs(dx/x))
-						_erreur_rel = fabs(dx/x);
-				}
-			}
-		}
-		converged = _erreur_rel <= _precision_Newton;
-	}
 
 	//Change the relaxation coefficient to ease convergence
 	double relaxation=1;
@@ -477,7 +418,6 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 		cout << "Nouvel etat courant Vk de l'iteration Newton: " << endl;
 		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_SELF);
 	}
-
 
 	return true;
 }
@@ -499,7 +439,7 @@ void WaveStaggered::validateTimeStep()
 
 	for(int j=1; j<=_globalNbUnknowns; j++){
 		VecGetValues(_old, 1, &j, &dx);
-		VecGetValues(_conservativeVars, 1, &j, &x);
+		VecGetValues(_primitiveVars, 1, &j, &x);
 		if (fabs(x)< _precision)
 		{
 			if(_erreur_rel < fabs(dx))
@@ -520,7 +460,6 @@ void WaveStaggered::validateTimeStep()
 
 void WaveStaggered::computeNewtonVariation()
 {
-	
 	if(_verbose)
 	{
 		cout<<"Vecteur courant Vk "<<endl;
@@ -555,12 +494,6 @@ void WaveStaggered::terminate(){
  
 	// 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
-	for(int i=0;i<_nbPhases;i++)
-		delete _fluides[i];
-
-	// Destruction du solveur de Newton de PETSc
-	if(_timeScheme == Implicit && _nonLinearSolver != Newton_SOLVERLAB)
-		SNESDestroy(&_snes);
 }
 
 void WaveStaggered::save(){

@@ -15,10 +15,10 @@
 #ifndef WAVESTAGGERED_HXX_
 #define WAVESTAGGERED_HXX_
 
-#include "ProblemFluid.hxx"
+#include "ProblemCoreFlows.hxx"
 #include "Node.hxx"
 
-class WaveStaggered : public ProblemFluid{
+class WaveStaggered : public ProblemCoreFlows{
 public :
 	/** \fn WaveStaggered
 	 * \brief Constructor for the Navier-Stokes system
@@ -27,7 +27,7 @@ public :
 	 * \param [in] int : mesh dimension
 	 * \param [in] bool : There are two possible equations of state for the fluid
 	 *  */
-	WaveStaggered(phaseType fluid,int dim, double kappa, double rho);
+	WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm);
 
 	void setInitialField(const Field &field);
 
@@ -78,12 +78,17 @@ public :
         _savePressure=save_p;
     }
 
+	std::map<int,double>  getboundaryPressure();
+	void  setboundaryPressure(map< int, double> BoundaryPressure);
+	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
+
+
 protected :
 	Field _Velocity, _Pressure ;
+	 Vec _newtonVariation, _old, _primitiveVars;
 	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d;
-	bool _savePressure;
-	//Vec _boundaryPressure;
+	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
 				
 
