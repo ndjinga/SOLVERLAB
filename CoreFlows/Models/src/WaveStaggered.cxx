@@ -14,7 +14,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_kappa = kappa;
 	_rho = rho;
 	_c = sqrt(kappa/rho);
-	_saveVelocity=true; // TODO : attention car _saveVelocity est mis à "false" dans la classe d'au dessus, à modifier, appeler constructeur pb fluid ?
+	_saveVelocity=true; 
 	_savePressure=true; 
 }
 
