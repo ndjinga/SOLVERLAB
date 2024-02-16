@@ -143,6 +143,9 @@ set_property (TEST WaveSystem_3DFV_SphericalExplosion_CDMATH_CUBE.exe PROPERTY L
 add_test(NAME WaveSystem_3DFV_SphericalExplosion_CDMATH_TETRAHEDRON.exe    COMMAND "./WaveSystem_FV_SphericalExplosion_CDMATH.exe" resources/meshTetrahedron10.med)     
 set_property (TEST WaveSystem_3DFV_SphericalExplosion_CDMATH_TETRAHEDRON.exe PROPERTY LABELS "C++ wave 3D fv riemann tetrahedra TETRAHEDRON cdmath")     
 
+#################### Wave staggered
+CreateTestExecAndInstall(WaveStaggered/WaveStaggered_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
+
 if( SOLVERLAB_WITH_MPI )#Tests parallèles
   add_executable(MEDCouplingSendRecvFieldSameMesh_MPI.exe MEDCouplingSendRecvFieldSameMesh_MPI.cxx)
   target_link_libraries(MEDCouplingSendRecvFieldSameMesh_MPI.exe ${MPI_LIBRARY} medcoupling medloader paramedmem)

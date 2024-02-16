@@ -48,7 +48,7 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Implicit);
+	myProblem.setTimeScheme(svl.Explicit);
     
     # name of result file
 	fileName = "WaveStaggered_1DRiemannProblem";
@@ -56,7 +56,7 @@ def WaveStaggered_1DRiemannProblem():
     # simulation parameters 
 	MaxNbOfTimeStep = 3 ;
 	freqSave = 1;
-	cfl = 1;
+	cfl = 0.2;
 	maxTime = 500;
 	precision = 1e-6;
 

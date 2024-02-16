@@ -187,7 +187,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	}
 	double maxPerim = 0; 
 	double minCell = 0;
-	
+	_timeScheme = Explicit; //TODO : à corriger
 	if (_timeScheme == Explicit && _dt == 0){ // The matrices are assembled only in the first time step since linear problem
 		Mat B, Btopo, Btpressure, Bt, InvSurface, InvVol;; 
 		// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
@@ -372,7 +372,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			cout << "cfl ="<< _cfl <<"is to high, cfl is updated to 0.9*_d/2" << endl;
 			_cfl =  0.9 * _d/2.0;
 		}
-
+		cout << "je suis là 1 " << endl;
 		Vec V, W;
 		MatGetDiagonal(InvVol,V);
 		MatGetDiagonal(InvSurface, W);
@@ -397,12 +397,14 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& GradDivTilde); 
 	}
 	if (_timeScheme == Explicit){
+		cout << "je suis là 2" << endl;
 		VecAssemblyBegin(_b);
 		MatMult(_Q,_old, _b); //TODO : _old = U^n ?
 		VecAssemblyEnd(_b); 
 
 	}
 	stop=false;
+	cout << "je suis là 3" << endl;
 
 	return _cfl * minCell / (maxPerim * _c) ; 
 
