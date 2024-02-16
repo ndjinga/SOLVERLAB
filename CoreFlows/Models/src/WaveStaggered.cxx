@@ -40,7 +40,7 @@ void WaveStaggered::setInitialField(const Field &field)
 		_runLogFile->close();
 		throw CdmathException("WaveStaggered::setInitialField: mesh has incorrect space dimension");
 	}
-	if  (field.getName() == "pressure"){ //TODO : field->getName() ? penser à donner un nom à l'initialisation dans cas test 
+	if  (field.getTypeOfField() == CELLS ){ //TODO : field->getName() ? penser à donner un nom à l'initialisation dans cas test 
 		_Pressure = field;
 		_Pressure.setName("Pressure results");
 		_time=_Pressure.getTime();

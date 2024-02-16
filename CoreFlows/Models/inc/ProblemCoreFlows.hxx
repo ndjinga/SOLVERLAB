@@ -353,7 +353,7 @@ public :
 	 * \param [in] Field
 	 * \param [out] void
 	 *  */
-	void setInitialField(const Field &VV);
+	virtual void setInitialField(const Field &VV);
 
 	/** \fn setInitialField
 	 * \brief sets the initial field
