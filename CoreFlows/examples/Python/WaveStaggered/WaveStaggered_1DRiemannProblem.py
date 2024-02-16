@@ -25,8 +25,8 @@ def WaveStaggered_1DRiemannProblem():
 
     #Initial field creation
 	print("Building initial data " ); 
-	myProblem.setInitialFieldConstant(M, initialVelocity, svl.FACES);
-	myProblem.setInitialFieldConstant(M, initialPressure, svl.CELLS);
+	myProblem.setInitialFieldConstant(M, [initialVelocity], svl.FACES);
+	myProblem.setInitialFieldConstant(M, [initialPressure], svl.CELLS);
 
     # set the boundary conditions
 	def boundPressure(x):
@@ -35,14 +35,14 @@ def WaveStaggered_1DRiemannProblem():
 	def boundVelocity(x):
 		return math.cos(x)
 
-	wallPressureMap = [];
-	wallVelocityMap = [];
+	wallPressureMap = {};
+	wallVelocityMap = {}; #TODO : transformer en dictionnaire
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		isBoundary = Fj.isBorder;
 		if (isBoundary == True):
-			wallPressureMap.append([j, boundPressure(Fj.x()) ]);
-			wallVelocityMap.append([j, boundVelocity(Fj.x()) ]);
+			wallPressureMap[j] = boundPressure(Fj.x()) ;
+			wallVelocityMap[j] = boundVelocity(Fj.x()) ;
 
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);

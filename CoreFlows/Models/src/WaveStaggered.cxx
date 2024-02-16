@@ -33,6 +33,21 @@ void  WaveStaggered::setboundaryPressure(map< int, double> BoundaryPressure){
 	_boundaryPressure = BoundaryPressure;
 }
 
+bool WaveStaggered::initTimeStep(double dt){
+	_dt = dt;
+	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
+}
+
+vector<string> WaveStaggered::getInputFieldsNames()
+{
+	vector<string> result(1);
+	
+	result[0]="NOT DEFINED";
+	return result;
+}
+void WaveStaggered::setInputField(const string& nameField, Field& inputField )
+{}
+
 void WaveStaggered::setInitialField(const Field &field)
 {
 	if(_Ndim != field.getSpaceDimension()){
@@ -115,10 +130,12 @@ void WaveStaggered::initialize(){
 	_d = 1/(2* sqrt(_neibMaxNbCells) );
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
-	double * initialFieldPrim = new double[_globalNbUnknowns];
-	for(int i =0; i<_globalNbUnknowns; i++)
-		initialFieldPrim[i]=_VV(i);  //TODO : buocle sur les composants ?
-
+	double * initialFieldVelocity = new double[_Nfaces];
+	for(int i =0; i<_Nfaces; i++)
+		initialFieldVelocity[i]=_Velocity(i);  //TODO : buocle sur les composants ?
+	double * initialFieldPressure = new double[_Nmailles];
+	for(int i =0; i<_Nmailles; i++)
+		initialFieldPressure[i]=_Pressure(i);  //TODO : buocle sur les composants ?
 	/**********Petsc structures:  ****************/
 
 	//creation des vecteurs
@@ -130,9 +147,12 @@ void WaveStaggered::initialize(){
 	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
 
 	// transfer information de condition initial vers primitiveVars
-	int *indices = new int[_globalNbUnknowns];
-	std::iota(indices, indices + _globalNbUnknowns, 0);
-	VecSetValues(_primitiveVars, _globalNbUnknowns, indices, initialFieldPrim, INSERT_VALUES); 
+	int *indices1 = new int[_Nmailles];
+	int *indices2 = new int[_Nfaces];
+	std::iota(indices1, indices1 + _Nmailles, 0);
+	std::iota(indices2, indices2 + _Nfaces, _Nmailles);
+	VecSetValues(_primitiveVars, _Nmailles , indices1, initialFieldPressure, INSERT_VALUES); 
+	VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES); 
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
 	VecCopy(_primitiveVars, _old);
@@ -145,7 +165,7 @@ void WaveStaggered::initialize(){
 		cout << endl;
 	}
 
-	delete[] initialFieldPrim, indices;
+	delete[] initialFieldVelocity, initialFieldPressure, indices1, indices2;
 
 	createKSP();
 	PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
@@ -422,6 +442,10 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	return true;
 }
 
+void WaveStaggered::abortTimeStep(){
+	_dt = 0;
+}
+
 void WaveStaggered::validateTimeStep()
 {
 	if(_system)
@@ -540,8 +564,9 @@ void WaveStaggered::save(){
 		}
 	}
 	if(_saveVelocity){
-		for (int i = _Nmailles ; i < _Nmailles + _Nfaces ; i++){
-				VecGetValues(_primitiveVars,1,&i,&_Velocity(i));
+		for (int i = 0 ; i < _Nfaces ; i++){
+				int I= _Nmailles + i;
+				VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
 			}
 			
 		_Velocity.setTime(_time,_nbTimeStep);

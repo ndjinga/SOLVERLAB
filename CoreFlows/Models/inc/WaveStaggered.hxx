@@ -17,6 +17,7 @@
 
 #include "ProblemCoreFlows.hxx"
 #include "Node.hxx"
+#include "utilitaire_algebre.h"
 
 class WaveStaggered : public ProblemCoreFlows{
 public :
@@ -27,7 +28,7 @@ public :
 	 * \param [in] int : mesh dimension
 	 * \param [in] bool : There are two possible equations of state for the fluid
 	 *  */
-	WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm);
+	WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm = MPI_COMM_WORLD);
 
 	void setInitialField(const Field &field);
 
@@ -81,6 +82,10 @@ public :
 	std::map<int,double>  getboundaryPressure();
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
+	void  abortTimeStep();
+	bool  initTimeStep( double dt);
+	vector<string> getInputFieldsNames();
+	void setInputField(const string& nameField, Field& inputField );
 
 
 protected :

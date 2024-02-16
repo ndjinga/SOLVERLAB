@@ -34,6 +34,8 @@ namespace std {
 #include "SinglePhase.hxx"
 #include "Fluide.h"
 #include "StiffenedGas.hxx"
+#include "WaveStaggered.hxx"
+
 
 %}
 
@@ -49,4 +51,5 @@ namespace std {
 %include "SinglePhase.hxx"
 %include "Fluide.h"
 %include "StiffenedGas.hxx"
+%include "WaveStaggered.hxx"
 
