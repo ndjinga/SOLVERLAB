@@ -1,7 +1,18 @@
 #include "WaveStaggered.hxx"
-#include<math.h>
+#include "math.h"
 
 using namespace std;
+
+// set the boundary conditions
+	double boundPressure(double x)
+	{
+	 return sin(x);
+	}
+
+	double boundVelocity(double x)
+	{
+		return cos(x);
+	}
 
 int main(int argc, char** argv)
 {
@@ -28,14 +39,7 @@ int main(int argc, char** argv)
 	myProblem.setInitialFieldConstant(M, initialVelocity, FACES);
 	myProblem.setInitialFieldConstant(M, initialPressure, CELLS);
 
-    // set the boundary conditions
-	double boundPressure(double x){
-		return math.sin(x);
-	}
-
-	double boundVelocity(double x){
-		return math.cos(x);
-	}
+    
 
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;

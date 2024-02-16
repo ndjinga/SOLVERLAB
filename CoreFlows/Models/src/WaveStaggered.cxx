@@ -55,7 +55,7 @@ void WaveStaggered::setInitialField(const Field &field)
 		_runLogFile->close();
 		throw CdmathException("WaveStaggered::setInitialField: mesh has incorrect space dimension");
 	}
-	if  (field.getTypeOfField() == CELLS ){ //TODO : field->getName() ? penser à donner un nom à l'initialisation dans cas test 
+	if  (field.getTypeOfField() == CELLS ){  
 		_Pressure = field;
 		_Pressure.setName("Pressure results");
 		_time=_Pressure.getTime();
@@ -67,7 +67,7 @@ void WaveStaggered::setInitialField(const Field &field)
 		_time=_Velocity.getTime();
 		_mesh=_Velocity.getMesh();
 
-	} // TODO : pb initialise deux fois 
+	} 
 	_initialDataSet=true;
 	//Mesh data
 	_Nmailles = _mesh.getNumberOfCells();
@@ -132,10 +132,10 @@ void WaveStaggered::initialize(){
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
 	double * initialFieldVelocity = new double[_Nfaces];
 	for(int i =0; i<_Nfaces; i++)
-		initialFieldVelocity[i]=_Velocity(i);  //TODO : buocle sur les composants ?
+		initialFieldVelocity[i]=_Velocity(i);  
 	double * initialFieldPressure = new double[_Nmailles];
 	for(int i =0; i<_Nmailles; i++)
-		initialFieldPressure[i]=_Pressure(i);  //TODO : buocle sur les composants ?
+		initialFieldPressure[i]=_Pressure(i); 
 	/**********Petsc structures:  ****************/
 
 	//creation des vecteurs
@@ -187,7 +187,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	}
 	double maxPerim = 0; 
 	double minCell = 0;
-	_timeScheme = Explicit; //TODO : à corriger
+	//_timeScheme = Explicit; //TODO : à corriger
 	if (_timeScheme == Explicit && _dt == 0){ // The matrices are assembled only in the first time step since linear problem
 		Mat B, Btopo, Btpressure, Bt, InvSurface, InvVol;; 
 		// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
