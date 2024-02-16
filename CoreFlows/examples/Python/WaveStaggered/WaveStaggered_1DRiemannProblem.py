@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*
 
-import solverlab as sl
+import solverlab as svl
 import math
 
 def WaveStaggered_1DRiemannProblem():
@@ -25,15 +25,15 @@ def WaveStaggered_1DRiemannProblem():
 
     #Initial field creation
 	print("Building initial data " ); 
-	myProblem.setInitialFieldConstant(M, initialVelocity, FACES);
-	myProblem.setInitialFieldConstant(M, initialPressure, CELLS);
+	myProblem.setInitialFieldConstant(M, initialVelocity, svl.FACES);
+	myProblem.setInitialFieldConstant(M, initialPressure, svl.CELLS);
 
     # set the boundary conditions
 	def boundPressure(x):
-		return sin(x)
+		return math.sin(x)
 
 	def boundVelocity(x):
-		return cos(x)
+		return math.cos(x)
 
 	wallPressureMap = [];
 	wallVelocityMap = [];
@@ -48,7 +48,7 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setNumericalScheme(cf.upwind, cf.Implicit);
+	myProblem.setTimeScheme(svl.Implicit);
     
     # name of result file
 	fileName = "WaveStaggered_1DRiemannProblem";
@@ -66,7 +66,7 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(cf.CSV)
+	myProblem.setSaveFileFormat(svl.CSV)
 
  
     # evolution
