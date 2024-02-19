@@ -45,7 +45,7 @@ set( libs_for_tests CoreFlowsLibs ${CDMATH_LIBRARIES} ${PETSC_LIBRARIES} ${SLEPC
 # copy tests resources (med files etc.) into the build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-set( test_all_C_models ON)
+set( test_all_C_models ON)#Compiling all C tests takes a lot of time so one might want to skip them
 
 if( test_all_C_models )
 
@@ -86,7 +86,7 @@ if( test_all_C_models )
 	#EOS
 	CreateTestExecAndInstall(testEOS.cxx  "${libs_for_tests}" "C++ eos coreflows")
 
-	#EOS
+	#SinglePhase
 	CreateTestExecAndInstall(SinglePhase/SinglePhase_1DDepressurisation.cxx  "${libs_for_tests}" "C++ fv singlephase 1D depressurisation structured coreflows" )
 	CreateTestExecAndInstall(SinglePhase/SinglePhase_1DHeatedChannel.cxx  "${libs_for_tests}" "C++ fv singlephase 1D heating structured coreflows" )
 	CreateTestExecAndInstall(SinglePhase/SinglePhase_1DPorosityJump.cxx  "${libs_for_tests}" "C++ fv singlephase 1D porosity structured coreflows" )
@@ -141,7 +141,7 @@ if( test_all_C_models )
 	CreateTestExecAndInstall(IsothermalTwoFluid/IsothermalTwoFluid_2DInclinedSedimentation.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity sedimentation structured inclined coreflows" )
 	CreateTestExecAndInstall(IsothermalTwoFluid/IsothermalTwoFluid_2DVidangeReservoir.cxx  "${libs_for_tests}" "C++ fv isothermaltwofluid 2D gravity drainage structured coreflows" )
 
-	################# Wave system tests
+	#WaveSystem
 
 	add_executable(WaveSystem_FV_SphericalExplosion_CDMATH.exe WaveSystem/WaveSystem_FV_SphericalExplosion_CDMATH.cxx)
 	target_link_libraries(WaveSystem_FV_SphericalExplosion_CDMATH.exe CoreFlowsLibs )
