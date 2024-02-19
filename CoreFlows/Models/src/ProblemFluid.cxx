@@ -178,8 +178,7 @@ void ProblemFluid::initialize()
 	VecAssemblyBegin(_conservativeVars);
 	VecAssemblyEnd(_conservativeVars);
 	VecCopy(_conservativeVars, _old);
-	VecAssemblyBegin(_old);
-	VecAssemblyEnd(_old);
+
 	VecSetValuesBlocked(_primitiveVars, _Nmailles, indices, initialFieldPrim, INSERT_VALUES);
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
