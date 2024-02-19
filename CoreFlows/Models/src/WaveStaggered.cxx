@@ -348,8 +348,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyEnd(InvVol, MAT_FINAL_ASSEMBLY);
 		
 		Mat Laplacian, GradDivTilde;
-		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian);  
+		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian); 
+		MatAssemblyBegin(Laplacian,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY); 
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
+		MatAssemblyBegin(GradDivTilde,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(GradDivTilde, MAT_FINAL_ASSEMBLY); 
 
 		MatScale(Laplacian, -_d*_c );
 		MatScale(B, 1.0/_rho);
@@ -365,7 +369,11 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 		Mat Prod;
 		MatMatMult(InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatAssemblyBegin(Prod,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(Prod, MAT_FINAL_ASSEMBLY);
 		MatCopy(Prod,_Q, DIFFERENT_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
+		MatAssemblyBegin(_Q,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_Q, MAT_FINAL_ASSEMBLY);
 
 		if (_cfl > _d/2.0){
 			cout << "cfl ="<< _cfl <<"is to high, cfl is updated to 0.9*_d/2 = "<< 0.9*_d/2 << endl;
@@ -479,6 +487,8 @@ void WaveStaggered::validateTimeStep()
 
 	_isStationary =_erreur_rel <_precision;
 	VecCopy(_primitiveVars, _old);
+	VecAssemblyBegin(_old);
+	VecAssemblyEnd(_old);
 
 	_time+=_dt;
 	_nbTimeStep++;
@@ -504,6 +514,8 @@ void WaveStaggered::computeNewtonVariation()
 	{
 		VecCopy(_b,_newtonVariation);
 		VecScale(_newtonVariation, _dt);
+		VecAssemblyBegin(_old);
+		VecAssemblyEnd(_old);
 		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		{
 			cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
