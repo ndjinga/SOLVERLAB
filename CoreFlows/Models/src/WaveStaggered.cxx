@@ -245,7 +245,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-				cout << "idcells int = "<< idCells[0] << endl;
 				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
 					FaceArea = 1;

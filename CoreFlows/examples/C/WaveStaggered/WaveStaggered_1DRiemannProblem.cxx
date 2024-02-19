@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh " << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=2;
+	int nx=5;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1;
+	unsigned MaxNbOfTimeStep = 4;
 	int freqSave = 1;
 	double cfl = 0.2;
 	double maxTime = 5;
