@@ -142,7 +142,6 @@ void WaveStaggered::initialize(){
 	VecCreate(PETSC_COMM_SELF, & _primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
 	VecSetSizes(_primitiveVars, PETSC_DECIDE, _globalNbUnknowns);
 	VecSetFromOptions(_primitiveVars);
-	VecDuplicate(_primitiveVars, &_old);//Old primitive variables at time step n
 	VecDuplicate(_primitiveVars, &_newtonVariation);//Newton variation Uk+1-Uk 
 	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
 
@@ -155,9 +154,8 @@ void WaveStaggered::initialize(){
 	VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES); 
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
-	VecCopy(_primitiveVars, _old);
-	VecAssemblyBegin(_old);
-	VecAssemblyEnd(_old);
+
+
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
@@ -241,11 +239,13 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			std::vector< int > idCells = Fj.getCellsId();
 			PetscScalar det, FaceArea;
 			PetscInt IndexFace = _Nmailles + j;
-		
+
+			//  TODO : vérifier orientation, ne faut-il pas définir un vecteur n_sigma pour chaque face 
 			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 				// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+				cout << "idcells int = "<< idCells[0] << endl;
 				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
 					FaceArea = 1;
@@ -264,7 +264,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					_runLogFile->close();
 					throw CdmathException("WaveStaggered pas dispo en 3D, arret de calcul");				
 				}
-				//  TODO : vérifier orientation, ne faut-il pas définir un vecteur n_sigma pour chaque face 
+				
 				PetscScalar MinusFaceArea = -FaceArea;
 				PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
 				PetscScalar InvVol1 = 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces());
@@ -295,7 +295,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			}
 			else // boundary faces
 			{
-				Cell Cint = _mesh.getCell(idCells[0]);// TODO : vérifier que l'on obtient la cellule intérieure
+				Cell Cint = _mesh.getCell(idCells[0]);
 				if (_Ndim == 1){
 					PetscScalar det = Fj.x() - Cint.x();
 					
@@ -314,7 +314,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscScalar InvVol1 = 1/( Cint.getMeasure()* Cint.getNumberOfFaces());
 				PetscScalar InvPerimeter1 = 1/( _perimeters(idCells[0])*Cint.getNumberOfFaces()  );
 	
-				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); //TODO : vérifier l'orientation
+				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
 				MatSetValues(Btopo,1, &idCells[0], 1, &j, &One, ADD_VALUES); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
@@ -322,12 +322,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 				PetscScalar pInt, pExt;
 				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
-				std::map<int,double> boundaryPressure = getboundaryPressure(); //TODO : mauvaise declaration ?
+				std::map<int,double> boundaryPressure = getboundaryPressure(); 
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
 				pExt = boundaryPressure[it->second];
 
-				MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  
-				PetscScalar pressureGrad =  1 - FaceArea * pExt/pInt;
+				//MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  
+				PetscScalar pressureGrad =  1 - FaceArea * pExt/pInt; 
 				MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &pressureGrad, ADD_VALUES );  
 			 
 			}	
@@ -349,11 +349,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		
 		Mat Laplacian, GradDivTilde;
 		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian); 
-		MatAssemblyBegin(Laplacian,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY); 
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-		MatAssemblyBegin(GradDivTilde,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(GradDivTilde, MAT_FINAL_ASSEMBLY); 
 
 		MatScale(Laplacian, -_d*_c );
 		MatScale(B, 1.0/_rho);
@@ -365,15 +361,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		G[2] = Bt;
 		G[3] = GradDivTilde;
 		
-		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_Q); // TODO : comment définir les bons indices ?
+		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_Q); 
 
 		Mat Prod;
+		MatConvert(_Q, MATAIJ, MAT_INPLACE_MATRIX, & _Q);
 		MatMatMult(InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-		MatAssemblyBegin(Prod,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(Prod, MAT_FINAL_ASSEMBLY);
-		MatCopy(Prod,_Q, DIFFERENT_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
-		MatAssemblyBegin(_Q,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_Q, MAT_FINAL_ASSEMBLY);
+		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); 
 
 		if (_cfl > _d/2.0){
 			cout << "cfl ="<< _cfl <<"is to high, cfl is updated to 0.9*_d/2 = "<< 0.9*_d/2 << endl;
@@ -412,7 +405,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	}
 	if (_timeScheme == Explicit){
 		VecAssemblyBegin(_b);
-		MatMult(_Q,_primitiveVars, _b); //TODO : _old = U^n ou U^n+1 -U^n?
+		MatMult(_Q,_primitiveVars, _b); 
 		VecAssemblyEnd(_b); 
 
 	}
@@ -461,20 +454,11 @@ void WaveStaggered::abortTimeStep(){
 
 void WaveStaggered::validateTimeStep()
 {
-	if(_system)
-	{
-		cout<<" Vecteur Un"<<endl;
-		VecView(_old,  PETSC_VIEWER_STDOUT_WORLD);
-		cout<<" Vecteur Un+1"<<endl;
-		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
-	}
-	VecAXPY(_old,  -1, _primitiveVars);//old contient old-courant
-
 	//Calcul de la variation Un+1-Un
 	_erreur_rel= 0;
 	double x, dx;
-	for(int j=1; j<=_globalNbUnknowns; j++){
-		VecGetValues(_old, 1, &j, &dx);
+	for(int j=1; j<_globalNbUnknowns; j++){
+		VecGetValues(_newtonVariation, 1, &j, &dx);
 		VecGetValues(_primitiveVars, 1, &j, &x);
 		if (fabs(x)< _precision)
 		{
@@ -486,9 +470,6 @@ void WaveStaggered::validateTimeStep()
 	}
 
 	_isStationary =_erreur_rel <_precision;
-	VecCopy(_primitiveVars, _old);
-	VecAssemblyBegin(_old);
-	VecAssemblyEnd(_old);
 
 	_time+=_dt;
 	_nbTimeStep++;
@@ -514,8 +495,6 @@ void WaveStaggered::computeNewtonVariation()
 	{
 		VecCopy(_b,_newtonVariation);
 		VecScale(_newtonVariation, _dt);
-		VecAssemblyBegin(_old);
-		VecAssemblyEnd(_old);
 		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
 		{
 			cout<<"Vecteur _newtonVariation =_b*dt"<<endl;

@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 3;
+	unsigned MaxNbOfTimeStep = 1;
 	int freqSave = 1;
 	double cfl = 0.2;
 	double maxTime = 5;

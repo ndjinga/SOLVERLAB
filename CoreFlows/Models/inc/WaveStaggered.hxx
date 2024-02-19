@@ -90,7 +90,7 @@ public :
 
 protected :
 	Field _Velocity, _Pressure ;
-	 Vec _newtonVariation, _old, _primitiveVars;
+	 Vec _newtonVariation, _primitiveVars;
 	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d;
 	bool _savePressure, _saveVelocity;
