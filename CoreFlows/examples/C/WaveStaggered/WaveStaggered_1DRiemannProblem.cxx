@@ -6,12 +6,12 @@ using namespace std;
 // set the boundary conditions
 	double boundPressure(double x)
 	{
-	 return sin(x);
+	 return 155e7;
 	}
 
 	double boundVelocity(double x)
 	{
-		return cos(x);
+		return 1;
 	}
 
 int main(int argc, char** argv)
@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh " << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=50;
+	int nx=2;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -38,8 +38,6 @@ int main(int argc, char** argv)
 	cout << "Building initial data " << endl; 
 	myProblem.setInitialFieldConstant(M, initialVelocity, FACES);
 	myProblem.setInitialFieldConstant(M, initialPressure, CELLS);
-
-    
 
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
@@ -74,7 +72,7 @@ int main(int argc, char** argv)
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(CSV);
+	myProblem.setSaveFileFormat(VTK);
 	
 	// evolution
 	myProblem.initialize();

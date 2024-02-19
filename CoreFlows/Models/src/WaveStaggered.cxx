@@ -22,14 +22,14 @@ std::map<int,double>  WaveStaggered::getboundaryPressure(){
 		return _boundaryPressure;
 	}
 
-void  WaveStaggered::setboundaryVelocity(map< int, double> BoundaryVelocity){
+void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
 	std::map<int,double>::iterator it= BoundaryVelocity.begin();
     if( it != BoundaryVelocity.end() ){
         _Velocity[ BoundaryVelocity[it->first] ] = BoundaryVelocity[it->second]; 
 	}
 }
 
-void  WaveStaggered::setboundaryPressure(map< int, double> BoundaryPressure){
+void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure){
 	_boundaryPressure = BoundaryPressure;
 }
 
@@ -180,47 +180,58 @@ void WaveStaggered::initialize(){
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 
-	if(_verbose && _nbTimeStep%_freqSave ==0)
-	{
-		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
-		cout << endl;
-	}
-	double maxPerim = 0; 
-	double minCell = 0;
-	//_timeScheme = Explicit; //TODO : à corriger
-	if (_timeScheme == Explicit && _dt == 0){ // The matrices are assembled only in the first time step since linear problem
+	cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+	cout << endl;
+
+	double maxPerim ; 
+	double minCell ;
+	if (_timeScheme == Explicit && _nbTimeStep == 0){ // The matrices are assembled only in the first time step since linear problem
 		Mat B, Btopo, Btpressure, Bt, InvSurface, InvVol;; 
 		// matrice Q tq U^n+1 = (Id + dt V^-1 Q)U^n pour schéma explicite
 		MatCreate(PETSC_COMM_SELF, & _Q); 
 		MatSetSizes(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+		MatSetFromOptions(_Q);
+		MatSetUp(_Q);
 		MatZeroEntries(_Q);
-
+		
 		// matrice des Inverses Volumes
 		MatCreate(PETSC_COMM_SELF, & InvVol); 
 		MatSetSizes(InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+		MatSetFromOptions(InvVol);
+		MatSetUp(InvVol);
 		MatZeroEntries(InvVol);
 		// matrice des Inverses de Surfaces
 		MatCreate(PETSC_COMM_SELF, & InvSurface); 
 		MatSetSizes(InvSurface, PETSC_DECIDE, PETSC_DECIDE, _Nmailles , _Nmailles );
+		MatSetFromOptions(InvSurface);
+		MatSetUp(InvSurface);
 		MatZeroEntries(InvSurface);
 
 		// matrice DIVERGENCE (|K|div(u))
 		MatCreate(PETSC_COMM_SELF, & B); 
 		MatSetSizes(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+		MatSetFromOptions(B);
+		MatSetUp(B);
 		MatZeroEntries(B);
-		// matrix GRADIENT (we will impose to be 0 on u faces so that u^n+1 = u^n at the boundary)
-		MatCreate(PETSC_COMM_SELF, & Bt); 
-		MatSetSizes(Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
-		MatZeroEntries(Bt);
-
+		
 		// matrice Btopo = {|K|div(u) sans |sigma| dans div(u)}-> pour définir facilement le laplacien à partir de l'opérateur divergence
 		MatCreate(PETSC_COMM_SELF, & Btopo); 
 		MatSetSizes(Btopo, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces ); 
+		MatSetFromOptions(Btopo);
+		MatSetUp(Btopo);
 		MatZeroEntries(Btopo);
-
+		
+		// matrix GRADIENT (we will impose to be 0 on u faces so that u^n+1 = u^n at the boundary)
+		MatCreate(PETSC_COMM_SELF, & Bt); 
+		MatSetSizes(Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
+		MatSetFromOptions(Bt);
+		MatSetUp(Bt);
+		MatZeroEntries(Bt);
 		// matrice gradient de pression, qui contiendra les conditions aux limites de pression
 		MatCreate(PETSC_COMM_SELF, & Btpressure); 
 		MatSetSizes(Btpressure, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles ); 
+		MatSetFromOptions(Btpressure);
+		MatSetUp(Btpressure);
 		MatZeroEntries(Btpressure);
 		
 		// Assembly of matrices 
@@ -235,19 +246,19 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				// compute the normal vector corresponding to face j : from Ctemp1 to Ctemp2
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-				if (_Ndim = 1){
+				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
 					FaceArea = 1;
 				} 
-				if (_Ndim = 2){
-					std::vector< int > nodes =  Fj.getNodesId();
+				if (_Ndim ==2){
+					std::vector<int> nodes =  Fj.getNodesId();
 					Node vertex = _mesh.getNode( nodes[0] );
 					// determinant of the vectors forming the diamond cell around the face sigma
 					// TODO : vérifier déterminant
 					det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
 					FaceArea = Fj.getMeasure();
 				}
-				if (_Ndim = 3){	
+				if (_Ndim == 3){	
 					cout<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 					*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 					_runLogFile->close();
@@ -285,11 +296,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			else // boundary faces
 			{
 				Cell Cint = _mesh.getCell(idCells[0]);// TODO : vérifier que l'on obtient la cellule intérieure
-				if (_Ndim = 1){
+				if (_Ndim == 1){
 					PetscScalar det = Fj.x() - Cint.x();
+					
 					FaceArea = 1;
 				} 
-				if (_Ndim = 2){
+				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
 					Node vertex1 = _mesh.getNode( nodes[0] );
 					Node vertex2 = _mesh.getNode( nodes[1] );
@@ -298,7 +310,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar FaceArea = Fj.getMeasure();
 				}
 				PetscScalar One=1;
-				PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
+				PetscScalar InvD_sigma = 2.0/Cint.getMeasure() ;//TOD0 : 1.0/PetscAbsReal(det);
 				PetscScalar InvVol1 = 1/( Cint.getMeasure()* Cint.getNumberOfFaces());
 				PetscScalar InvPerimeter1 = 1/( _perimeters(idCells[0])*Cint.getNumberOfFaces()  );
 	
@@ -310,11 +322,11 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 				PetscScalar pInt, pExt;
 				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
-				std::map<int,double> boundaryPressure = getboundaryPressure(); 
+				std::map<int,double> boundaryPressure = getboundaryPressure(); //TODO : mauvaise declaration ?
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
 				pExt = boundaryPressure[it->second];
 
-				MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  // TODO à vérifier 
+				MatSetValues(Bt, 1, &j, 1, &idCells[0], 0, INSERT_VALUES );  
 				PetscScalar pressureGrad =  1 - FaceArea * pExt/pInt;
 				MatSetValues(Btpressure, 1, &j, 1, &idCells[0], &pressureGrad, ADD_VALUES );  
 			 
@@ -339,13 +351,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatMatMult(Btopo, Btpressure, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Laplacian);  
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
 
-		PetscScalar minusdc = -_d*_c;
-		PetscScalar minuskappa = -_kappa;
-		PetscScalar invrho = 1.0/_rho;
-		MatScale(Laplacian, minusdc );
-		MatScale(B, invrho);
-		MatScale(Bt, minuskappa);
-		MatScale(GradDivTilde, minusdc );
+		MatScale(Laplacian, -_d*_c );
+		MatScale(B, 1.0/_rho);
+		MatScale(Bt, -_kappa);
+		MatScale(GradDivTilde, -_d*_c );
 		Mat G[4];
 		G[0] = Laplacian;
 		G[1] = B;
@@ -354,26 +363,21 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_Q); // TODO : comment définir les bons indices ?
 
-		// int *indices1 = new int[_Nmailles];
-		// std::iota(indices1, indices1 +_Nmailles, 0);
-		// int *indices2 = new int[_Nfaces];
-		// std::iota(indices2, indices2 +_Nfaces, _Nmailles);
-		// MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nmailles, indices1, Laplacian , INSERT_VALUES);  
-		// MatSetValuesBlockedLocal(_Q, _Nmailles, indices1, _Nfaces, indices2, B , INSERT_VALUES);
-		// MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nmailles, indices1, Bt, INSERT_VALUES);
-		// MatSetValuesBlockedLocal(_Q, _Nfaces, indices2, _Nfaces, indices2, GradDivTilde , INSERT_VALUES); // TODO : MatAssmebly for _Q ?
-		// delete[] indices1, indices2;
-
 		Mat Prod;
 		MatMatMult(InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
+		MatCopy(Prod,_Q, DIFFERENT_NONZERO_PATTERN); // TODO : SAME_NONZERO_PATTERN ?
 
 		if (_cfl > _d/2.0){
-			cout << "cfl ="<< _cfl <<"is to high, cfl is updated to 0.9*_d/2" << endl;
+			cout << "cfl ="<< _cfl <<"is to high, cfl is updated to 0.9*_d/2 = "<< 0.9*_d/2 << endl;
 			_cfl =  0.9 * _d/2.0;
 		}
-		cout << "je suis là 1 " << endl;
 		Vec V, W;
+		VecCreate(PETSC_COMM_SELF, & V);
+		VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
+		VecSetFromOptions(V);
+		VecCreate(PETSC_COMM_SELF, & W);
+		VecSetSizes(W, PETSC_DECIDE, _Nmailles);
+		VecSetFromOptions(W);
 		MatGetDiagonal(InvVol,V);
 		MatGetDiagonal(InvSurface, W);
 		int *indices3 = new int[_Nmailles + _Nfaces];
@@ -387,6 +391,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		minCell = 1.0/maxInvVol;
 
 		delete[] indices3, indices4;
+		VecDestroy(& V);
+		VecDestroy(& W); 
 		MatDestroy(& B); 
 		MatDestroy(& Btopo); 
 		MatDestroy(& Btpressure); 
@@ -397,16 +403,13 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& GradDivTilde); 
 	}
 	if (_timeScheme == Explicit){
-		cout << "je suis là 2" << endl;
 		VecAssemblyBegin(_b);
-		MatMult(_Q,_old, _b); //TODO : _old = U^n ?
+		MatMult(_Q,_primitiveVars, _b); //TODO : _old = U^n ou U^n+1 -U^n?
 		VecAssemblyEnd(_b); 
 
 	}
-	stop=false;
-	cout << "je suis là 3" << endl;
-
-	return _cfl * minCell / (maxPerim * _c) ; 
+	
+	return  _cfl * minCell / (maxPerim * _c);
 
 }
 
@@ -462,7 +465,6 @@ void WaveStaggered::validateTimeStep()
 	//Calcul de la variation Un+1-Un
 	_erreur_rel= 0;
 	double x, dx;
-
 	for(int j=1; j<=_globalNbUnknowns; j++){
 		VecGetValues(_old, 1, &j, &dx);
 		VecGetValues(_primitiveVars, 1, &j, &x);
