@@ -23,9 +23,9 @@ std::map<int,double>  WaveStaggered::getboundaryPressure(){
 	}
 
 void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
-	std::map<int,double>::iterator it= BoundaryVelocity.begin();
-    if( it != BoundaryVelocity.end() ){
-        _Velocity[ BoundaryVelocity[it->first] ] = BoundaryVelocity[it->second]; 
+	std::map<int,double>::iterator it;
+    for( it= BoundaryVelocity.begin(); it != BoundaryVelocity.end(); it++){
+        _Velocity( it->first ) = it->second; 
 	}
 }
 
@@ -132,7 +132,8 @@ void WaveStaggered::initialize(){
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
 	double * initialFieldVelocity = new double[_Nfaces];
 	for(int i =0; i<_Nfaces; i++)
-		initialFieldVelocity[i]=_Velocity(i);  
+		initialFieldVelocity[i]=_Velocity(i); 
+		
 	double * initialFieldPressure = new double[_Nmailles];
 	for(int i =0; i<_Nmailles; i++)
 		initialFieldPressure[i]=_Pressure(i); 
@@ -154,6 +155,7 @@ void WaveStaggered::initialize(){
 	VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES); 
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
+	VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
 
 	// Création matrice Q tq U^n+1 - U^n = dt V^{-1} _Q U^n pour schéma explicite
 	MatCreate(PETSC_COMM_SELF, & _Q); 
@@ -332,16 +334,18 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyEnd(InvVol, MAT_FINAL_ASSEMBLY);
 		
 		Mat  GradDivTilde; 
+		MatScale(Bt, -1.0);
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
 		MatScale(Laplacian, _d*_c );
 		MatScale(B, -1.0/_rho);
-		MatScale(Bt, -_kappa);
+		MatScale(Bt, _kappa);
 		MatScale(GradDivTilde, _d*_c );
 		Mat G[4];
 		G[0] = Laplacian;
 		G[1] = B;
 		G[2] = Bt;
 		G[3] = GradDivTilde;
+
 
 		// _Q = (dc Laplacian  ;  -1/rho B         )
 		//      (kappa B^t     ;  dc -B^t(1/|dK|) B )
@@ -418,6 +422,7 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	//Change the relaxation coefficient to ease convergence
 	double relaxation=1;
 	VecAXPY(_primitiveVars,     relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+	VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
 
 	return true;
 }

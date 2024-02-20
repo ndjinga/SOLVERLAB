@@ -6,7 +6,7 @@ using namespace std;
 // set the boundary conditions
 	double boundPressure(double x)
 	{
-	 return 155e7;
+	 return 1;
 	}
 
 	double boundVelocity(double x)
@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh" << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=12;
+	int nx=2;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 	std::vector<double> initialVelocity;
 	initialVelocity.push_back(1);
 	std::vector<double> initialPressure;
-	initialPressure.push_back(155e7);
+	initialPressure.push_back(1);
 
 	//Initial field creation
 	cout << "Building initial data " << endl; 
@@ -50,6 +50,7 @@ int main(int argc, char** argv)
 		}
 	}
 
+	
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
@@ -60,7 +61,7 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 6;
+	unsigned MaxNbOfTimeStep = 1;
 	int freqSave = 1;
 	double cfl = 0.2;
 	double maxTime = 30;
