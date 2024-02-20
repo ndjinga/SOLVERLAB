@@ -92,7 +92,7 @@ protected :
 	Field _Velocity, _Pressure ;
 	 Vec _newtonVariation, _primitiveVars;
 	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
-	double _kappa, _rho,  _c, _d;
+	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
 				

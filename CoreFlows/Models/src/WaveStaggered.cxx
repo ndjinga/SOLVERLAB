@@ -14,8 +14,8 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_kappa = kappa;
 	_rho = rho;
 	_c = sqrt(kappa/rho);
-	_saveVelocity=true; 
-	_savePressure=true; 
+	_saveVelocity=false; 
+	_savePressure=false; 
 }
 
 std::map<int,double>  WaveStaggered::getboundaryPressure(){
@@ -187,8 +187,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
 	cout << endl;
 
-	double maxPerim ; 
-	double minCell ;
 	if (_timeScheme == Explicit && _nbTimeStep == 0){ // The matrices are assembled only in the first time step since linear problem
 		Mat B, Bt, Laplacian, InvSurface, InvVol; 
 		
@@ -289,7 +287,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				if (_Ndim == 1){
 					PetscScalar det = Fj.x() - Cint.x();
 					FaceArea = 1;
-					PetscScalar InvD_sigma = 2.0/Cint.getMeasure() ;
+					InvD_sigma = 2.0/Cint.getMeasure() ;
 				} 
 				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
@@ -297,8 +295,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					Node vertex2 = _mesh.getNode( nodes[1] );
 					PetscScalar det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (vertex2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
-					PetscScalar FaceArea = Fj.getMeasure();
-					PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
+					FaceArea = Fj.getMeasure();
+					InvD_sigma = 1.0/PetscAbsReal(det);
 				}
 				PetscScalar One=1;
 				PetscScalar InvVol1 = 1/ Cint.getMeasure();
@@ -374,8 +372,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		PetscScalar minInvSurf, maxInvVol;
 		VecMax(W, indices3, &maxInvVol);
 		VecMin(V, indices4, &minInvSurf);
-		maxPerim = 1.0/minInvSurf;
-		minCell = 1.0/maxInvVol;
+		_maxPerim = 1.0/minInvSurf;
+		_minCell = 1.0/maxInvVol;
 
 		delete[] indices3, indices4;
 		VecDestroy(& V);
@@ -394,7 +392,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 	}
 	
-	return  _cfl * minCell / (maxPerim * _c);
+	return  _cfl * _minCell / (_maxPerim * _c);
 
 }
 
@@ -528,7 +526,7 @@ void WaveStaggered::save(){
 				_Pressure.writeMED(prim+"_Pressure",false);
 				break;
 			case CSV :
-				_Pressure.writeCSV(prim+"_Pressure");
+				_Pressure.writeCSV(prim+"_Pressure"); //TODO : problem de sauvegarde
 				break;
 			}
 		}
