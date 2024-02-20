@@ -21,6 +21,9 @@ SparseMatrixPetsc::SparseMatrixPetsc()
 	_isSparseMatrix=true;
 	_mat=NULL;
 	PetscInitialize(0, (char ***)"", NULL, NULL);
+#if CMAKE_BUILD_TYPE==DEBUG
+	PetscAttachDebugger();
+#endif
 }
 
 //----------------------------------------------------------------------

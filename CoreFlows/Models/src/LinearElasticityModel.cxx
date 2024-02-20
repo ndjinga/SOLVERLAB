@@ -20,6 +20,9 @@ LinearElasticityModel::LinearElasticityModel(int dim, bool FECalculation,  doubl
 		if(mpiInitialized)
 			PETSC_COMM_WORLD = comm;
 		PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+#if CMAKE_BUILD_TYPE==DEBUG
+		PetscAttachDebugger();
+#endif
 	}
 	MPI_Comm_rank(PETSC_COMM_WORLD,&_rank);
 	MPI_Comm_size(PETSC_COMM_WORLD,&_size);
