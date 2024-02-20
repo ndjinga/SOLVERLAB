@@ -28,6 +28,7 @@ ProblemFluid::ProblemFluid(MPI_Comm comm):ProblemCoreFlows(comm)
 	_nonLinearFormulation=Roe;
 	_maxvploc=0.;
 	_spaceScheme=upwind;
+	_staggeredComponents = vector< int >(0);
 }
 
 SpaceScheme ProblemFluid::getSpaceScheme() const
@@ -415,6 +416,9 @@ bool ProblemFluid::iterateTimeStep(bool &converged)
 
 double ProblemFluid::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 
+	if( _staggeredComponents.size() > 0 )
+		throw CdmathException("Error : ProblemFluid::computeTimeStep was implemented for colocated schemes");
+		
 	if(_verbose && _nbTimeStep%_freqSave ==0)
 	{
 		cout << "ProblemFluid::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;

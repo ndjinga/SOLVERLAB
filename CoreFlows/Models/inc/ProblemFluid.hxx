@@ -484,6 +484,8 @@ protected :
     int _nbPhases;
     /** Field of conservative variables (the primitive variables are defined in the mother class ProblemCoreFlows **/
     Field  _UU;
+    /** List of components located on faces (default location is on cell) **/
+    vector< int > _staggeredComponents;
     /** Field of interfacial states of the VFRoe scheme **/
     Field _UUstar, _VVstar;
 
