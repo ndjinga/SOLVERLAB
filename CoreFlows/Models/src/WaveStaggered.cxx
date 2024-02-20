@@ -155,7 +155,6 @@ void WaveStaggered::initialize(){
 	VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES); 
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
-	VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
 
 	// Création matrice Q tq U^n+1 - U^n = dt V^{-1} _Q U^n pour schéma explicite
 	MatCreate(PETSC_COMM_SELF, & _Q); 
@@ -296,6 +295,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					FaceArea = 1;
 					InvD_sigma = 2.0/Cint.getMeasure() ;
 					InvPerimeter1 = 1 ;
+					if (j == 0)	//TODO will only work in 1D
+					FaceArea = -FaceArea;
 				} 
 				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
@@ -311,7 +312,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscScalar One = 1;
 				PetscScalar InvVol1 = 1/ Cint.getMeasure();
 				PetscScalar Zero = 0;
-	
+				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
 				MatSetValues(Bt, 1, &j, 1, &idCells[0], &Zero, ADD_VALUES ); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
@@ -333,7 +334,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
 		MatAssemblyBegin(Bt, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(Bt, MAT_FINAL_ASSEMBLY);
-		MatView(B,  PETSC_VIEWER_STDOUT_SELF);
 
 		MatAssemblyBegin(Laplacian,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY);
@@ -431,7 +431,6 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	//Change the relaxation coefficient to ease convergence
 	double relaxation=1;
 	VecAXPY(_primitiveVars,     relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
-	VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
 
 	return true;
 }
