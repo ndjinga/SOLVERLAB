@@ -17,14 +17,14 @@ using namespace std;
 int main(int argc, char** argv)
 {
 	//Preprocessing: mesh and group creation
-	cout << "Building Cartesian mesh " << endl;
+	cout << "Building Cartesian mesh" << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=5;
+	int nx=11;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
-	double kappa =2;
+	double kappa = 2;
 	double rho = 5;
 	WaveStaggered myProblem = WaveStaggered(spaceDim, kappa, rho );
 
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 	unsigned MaxNbOfTimeStep = 4;
 	int freqSave = 1;
 	double cfl = 0.2;
-	double maxTime = 5;
+	double maxTime = 25;
 	double precision = 1e-6;
 
 	myProblem.setCFL(cfl);
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(VTK);
+	myProblem.setSaveFileFormat(CSV);
 	
 	// evolution
 	myProblem.initialize();
