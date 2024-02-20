@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh" << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=2;
+	int nx=3;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
