@@ -4,14 +4,14 @@
 import solverlab as svl
 import math
 
-def WaveStaggered_1DRiemannProblem():
+def WaveStaggered_Statio():
 
 	spaceDim = 1;
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
-	xsup=4.2;
-	nx=100;
+	xsup=1.0;
+	nx=5;
 	M=svl.Mesh(xinf,xsup,nx)
 
     # Prepare initial data
@@ -30,10 +30,10 @@ def WaveStaggered_1DRiemannProblem():
 
     # set the boundary conditions
 	def boundPressure(x):
-		return math.sin(x)
+		return 155e7
 
 	def boundVelocity(x):
-		return math.cos(x)
+		return 1
 
 	wallPressureMap = {};
 	wallVelocityMap = {}; #TODO : transformer en dictionnaire
@@ -51,7 +51,7 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setTimeScheme(svl.Explicit);
     
     # name of result file
-	fileName = "WaveStaggered_1DRiemannProblem";
+	fileName = "WaveStaggered_Statio";
 
     # simulation parameters 
 	MaxNbOfTimeStep = 3 ;
@@ -86,4 +86,4 @@ def WaveStaggered_1DRiemannProblem():
 	return ok
 
 if __name__ == """__main__""":
-    WaveStaggered_1DRiemannProblem()
+    WaveStaggered_Statio()

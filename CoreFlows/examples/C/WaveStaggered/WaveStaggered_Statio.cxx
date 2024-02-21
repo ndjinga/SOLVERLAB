@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 	myProblem.setTimeScheme(Explicit);
     
     // name of result file
-	string fileName = "WaveStaggered_1DRiemannProblem";
+	string fileName = "WaveStaggered_Statio";
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 20;
