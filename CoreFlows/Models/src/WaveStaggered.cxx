@@ -339,19 +339,19 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyBegin(InvVol,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(InvVol, MAT_FINAL_ASSEMBLY);
 
-		if (_verbose){
-			MatView(B,  PETSC_VIEWER_STDOUT_SELF);
-			MatView(Bt,  PETSC_VIEWER_STDOUT_SELF);
-			MatView(Laplacian,  PETSC_VIEWER_STDOUT_SELF);
-		}
 		
 		
 
 		Mat  GradDivTilde; 
 		MatScale(Bt, -1.0);
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-		//TODO : vérifier GradDivTilde  -> facteur 2 vient de InvSurf
-		MatView(GradDivTilde,  PETSC_VIEWER_STDOUT_SELF);
+		if (_verbose){
+			MatView(B,  PETSC_VIEWER_STDOUT_SELF);
+			MatView(Bt,  PETSC_VIEWER_STDOUT_SELF);
+			MatView(Laplacian,  PETSC_VIEWER_STDOUT_SELF);		
+			MatView(GradDivTilde,  PETSC_VIEWER_STDOUT_SELF);
+		}
+		// GradDivTilde  -> facteur 2 vient de InvSurf
 		MatScale(Laplacian, _d*_c );
 		MatScale(B, -1.0/_rho);
 		MatScale(Bt, -1.0*_kappa);
