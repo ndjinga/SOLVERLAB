@@ -225,9 +225,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatSetUp(InvSurface);
 		MatZeroEntries(InvSurface);
 
-		MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
-
 		// Assembly of matrices 
 		for (int j=0; j<_Nfaces;j++){
 			Face Fj = _mesh.getFace(j);
@@ -314,7 +311,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscScalar Zero = 0;
 				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
-				MatSetValues(Bt, 1, &j, 1, &idCells[0], &Zero, ADD_VALUES ); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 				MatSetValues(InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
@@ -343,10 +339,15 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyBegin(InvVol,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(InvVol, MAT_FINAL_ASSEMBLY);
 		
+		MatView(B,  PETSC_VIEWER_STDOUT_SELF);
+		MatView(Bt,  PETSC_VIEWER_STDOUT_SELF);
+		MatView(Laplacian,  PETSC_VIEWER_STDOUT_SELF);
+
 		Mat  GradDivTilde; 
 		MatScale(Bt, -1.0);
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-		//TODO : vérifier GradDivTilde
+		//TODO : vérifier GradDivTilde  -> facteur 2 vient de InvSurf
+		MatView(GradDivTilde,  PETSC_VIEWER_STDOUT_SELF);
 		MatScale(Laplacian, _d*_c );
 		MatScale(B, -1.0/_rho);
 		MatScale(Bt, -1.0*_kappa);

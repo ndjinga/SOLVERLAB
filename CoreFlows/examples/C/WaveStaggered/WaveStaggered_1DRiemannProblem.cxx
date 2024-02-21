@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	cout << "Building Cartesian mesh" << endl;
 	double xinf=0.0;
 	double xsup=1.0;
-	int nx=15;
+	int nx=4;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 	std::vector<double> initialVelocity;
 	initialVelocity.push_back(1);
 	std::vector<double> initialPressure;
-	initialPressure.push_back(155e5);
+	initialPressure.push_back(155e7);
 
 	//Initial field creation
 	cout << "Building initial data " << endl; 
