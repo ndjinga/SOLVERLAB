@@ -81,6 +81,7 @@ def WaveStaggered_Statio():
 		pass
 
 	print( "------------ End of calculation !!! -----------" );
+	assert(myProblem.isStationary()==true);
 
 	myProblem.terminate();
 	return ok

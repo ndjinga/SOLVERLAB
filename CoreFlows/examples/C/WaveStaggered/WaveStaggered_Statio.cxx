@@ -87,8 +87,9 @@ int main(int argc, char** argv)
 		cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
 	cout << "------------ End of calculation !!! -----------" << endl;
-	myProblem.terminate();
 	assert(myProblem.isStationary()==true);
+	myProblem.terminate();
+	
 
 	return EXIT_SUCCESS;
 }
