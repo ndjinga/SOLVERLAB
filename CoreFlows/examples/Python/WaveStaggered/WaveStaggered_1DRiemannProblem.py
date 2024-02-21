@@ -44,8 +44,9 @@ def WaveStaggered_1DRiemannProblem():
 
     #Initial field creation
 	print("Building initial data " ); 
-	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, svl.CELLS);
-	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, svl.FACES);
+	direction = 0;
+	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, direction, svl.CELLS);
+	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, svl.FACES);
 
     # set the boundary conditions
 	#TODO : set boundary cond for Riemann problem ?

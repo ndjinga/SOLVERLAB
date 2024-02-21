@@ -25,7 +25,6 @@ int main(int argc, char** argv)
 	double initialVelocity_Right=1;
 	double initialPressure_Right=150e5;
 
-	myProblem = WaveStaggered(spaceDim, rho, kappa);
 
     // Prepare for the initial condition
 	Vector Pressure_Left(1);
@@ -41,8 +40,9 @@ int main(int argc, char** argv)
 
     //Initial field creation
 	cout << "Building initial data " <<endl; 
-	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, CELLS);
-	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, FACES);
+	int direction =0; // TODO : what is it ?
+	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, direction, CELLS);
+	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, FACES);
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 20;
+	unsigned MaxNbOfTimeStep = 4;
 	int freqSave = 1;
 	double cfl = 0.2;
 	double maxTime = 30;
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(CSV);
-	myProblem.setVerbose(true);
+	myProblem.setVerbose(false); //TODO _A n'est pas initalisée or le code demande tout de meme à l'afficher en mode verbose
 	
 	// evolution
 	myProblem.initialize();

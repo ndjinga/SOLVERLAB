@@ -20,7 +20,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 
 std::map<int,double>  WaveStaggered::getboundaryPressure(){
 		return _boundaryPressure;
-	}
+}
 
 void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
 	std::map<int,double>::iterator it;
@@ -163,6 +163,13 @@ void WaveStaggered::initialize(){
 	MatSetUp(_Q);
 	MatZeroEntries(_Q);
 
+	// matrice des Inverses Volumes V^{-1}
+	MatCreate(PETSC_COMM_SELF, &_InvVol); 
+	MatSetSizes(_InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+	MatSetFromOptions(_InvVol);
+	MatSetUp(_InvVol);
+	MatZeroEntries(_InvVol);
+
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
@@ -189,7 +196,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	cout << endl;
 
 	if (_timeScheme == Explicit && _nbTimeStep == 0){ // The matrices are assembled only in the first time step since linear problem
-		Mat B, Bt, Laplacian, InvSurface, InvVol; 
+		Mat B, Bt, Laplacian, InvSurface; 
 		
 		// matrice DIVERGENCE (|K|div(u))
 		MatCreate(PETSC_COMM_SELF, & B); 
@@ -212,12 +219,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatSetUp(Laplacian);
 		MatZeroEntries(Laplacian);
 
-		// matrice des Inverses Volumes
-		MatCreate(PETSC_COMM_SELF, & InvVol); 
-		MatSetSizes(InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-		MatSetFromOptions(InvVol);
-		MatSetUp(InvVol);
-		MatZeroEntries(InvVol);
+		
 		// matrice des Inverses de Surfaces
 		MatCreate(PETSC_COMM_SELF, & InvSurface); 
 		MatSetSizes(InvSurface, PETSC_DECIDE, PETSC_DECIDE, _Nmailles , _Nmailles );
@@ -279,9 +281,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
 				MatSetValues(InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
-				MatSetValues(InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
-				MatSetValues(InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-				MatSetValues(InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
+				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
+				MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
+				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 						
 			}
 			else // boundary faces
@@ -312,8 +314,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
-				MatSetValues(InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
-				MatSetValues(InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
+				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
+				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 
 				PetscScalar pInt, pExt;
 				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
@@ -336,11 +338,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 		MatAssemblyBegin(InvSurface, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(InvSurface, MAT_FINAL_ASSEMBLY);
-		MatAssemblyBegin(InvVol,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(InvVol, MAT_FINAL_ASSEMBLY);
-
-		
-		
+		MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
 		Mat  GradDivTilde; 
 		MatScale(Bt, -1.0);
@@ -368,7 +367,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_Q); 
 		Mat Prod;
 		MatConvert(_Q, MATAIJ, MAT_INPLACE_MATRIX, & _Q);
-		MatMatMult(InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); 
 
 		if (_cfl > _d/2.0){
@@ -382,7 +381,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		VecCreate(PETSC_COMM_SELF, & W);
 		VecSetSizes(W, PETSC_DECIDE, _Nmailles);
 		VecSetFromOptions(W);
-		MatGetDiagonal(InvVol,V);
+		MatGetDiagonal(_InvVol,V);
 		MatGetDiagonal(InvSurface, W);
 		int *indices3 = new int[_Nmailles + _Nfaces];
 		std::iota(indices3, indices3 +_Nmailles + _Nfaces, 0);
@@ -399,7 +398,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		VecDestroy(& W); 
 		MatDestroy(& B); 
 		MatDestroy(& Bt); 
-		MatDestroy(& InvVol); 
 		MatDestroy(& InvSurface);
 		MatDestroy(& Laplacian);
 		MatDestroy(& GradDivTilde); 
@@ -496,11 +494,36 @@ void WaveStaggered::computeNewtonVariation()
 	}
 }
 
+void WaveStaggered::testConservation()
+{
+	double SUM, DELTA, x;
+	double InvcellMeasure;
+	SUM = 0;
+	DELTA = 0;
+	//TODO : seulement si Neumann au bord ?
+	for(int j=0; j<_globalNbUnknowns; j++)
+	{
+		VecGetValues(_primitiveVars, 1, &j, &x);//on recupere la valeur du champ
+		MatGetValues(_InvVol, 1, &j,1, &j, &InvcellMeasure);//on recupere la valeur du champ
+		SUM += x/InvcellMeasure;
+		VecGetValues(_newtonVariation, 1, &j, &x);//on recupere la variation du champ
+		DELTA += x/InvcellMeasure;
+	}
+	if(fabs(SUM)>_precision)
+		cout << SUM << ", variation relative: " << fabs(DELTA /SUM)  << endl;
+	else
+		cout << " a une somme quasi nulle,  variation absolue: " << fabs(DELTA) << endl;
+	
+}
+
 void WaveStaggered::terminate(){ 
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
 	MatDestroy(& _Q); 
+	MatDestroy(&_InvVol); 
+	
+
  
 	// 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);

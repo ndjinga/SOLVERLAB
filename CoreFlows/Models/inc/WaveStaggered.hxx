@@ -79,6 +79,21 @@ public :
         _savePressure=save_p;
     }
 
+    /** \fn saveVelocity
+     * \brief saves the velocity field in a separate 3D file so that paraview can display the streamlines
+     * @param bool
+     * */
+    void saveVelocity(bool save_v=true){
+        _saveVelocity=save_v;
+    }
+
+	 /** \fn testConservation
+     * \brief Teste et affiche la conservation de masse et de la quantité de mouvement
+     * \Details la fonction est virtuelle pure, on la surcharge dans chacun des modèles
+     * @param void
+     * */
+	void testConservation();
+
 	std::map<int,double>  getboundaryPressure();
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
@@ -91,7 +106,7 @@ public :
 protected :
 	Field _Velocity, _Pressure ;
 	Vec _newtonVariation, _primitiveVars;
-	Mat _Q; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
+	Mat _Q, _InvVol; // matrice Q such that U^n+1 = (Id + dt V^-1 Q)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
