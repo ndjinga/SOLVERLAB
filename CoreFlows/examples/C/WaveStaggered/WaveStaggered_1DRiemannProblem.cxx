@@ -1,5 +1,6 @@
 #include "WaveStaggered.hxx"
 #include "math.h"
+#include <cassert>
 
 using namespace std;
 
@@ -74,6 +75,7 @@ int main(int argc, char** argv)
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(CSV);
+	myProblem.setVerbose(true);
 	
 	// evolution
 	myProblem.initialize();
@@ -86,6 +88,7 @@ int main(int argc, char** argv)
 
 	cout << "------------ End of calculation !!! -----------" << endl;
 	myProblem.terminate();
+	assert(myProblem.isStationary()==true);
 
 	return EXIT_SUCCESS;
 }
