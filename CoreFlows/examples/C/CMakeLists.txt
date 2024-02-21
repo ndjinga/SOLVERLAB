@@ -145,6 +145,7 @@ set_property (TEST WaveSystem_3DFV_SphericalExplosion_CDMATH_TETRAHEDRON.exe PRO
 
 #################### Wave staggered
 CreateTestExecAndInstall(WaveStaggered/WaveStaggered_Statio.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
+CreateTestExecAndInstall(WaveStaggered/WaveStaggered_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
 
 if( SOLVERLAB_WITH_MPI )#Tests parallèles
   add_executable(MEDCouplingSendRecvFieldSameMesh_MPI.exe MEDCouplingSendRecvFieldSameMesh_MPI.cxx)

@@ -4,36 +4,63 @@
 import solverlab as svl
 import math
 
-def WaveStaggered_Statio():
+
+def WaveStaggered_1DRiemannProblem():
 
 	spaceDim = 1;
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
-	xsup=1.0;
-	nx=5;
+	xsup=1
+	nx=50;
+	discontinuity=(xinf+xsup)/2
 	M=svl.Mesh(xinf,xsup,nx)
 
-    # Prepare initial data
+
+    # set the limit field for each boundary
 	kappa = 2;
 	rho = 5;
-	myProblem = svl.WaveStaggered(spaceDim, kappa, rho );
 
-    # Prepare for the initial condition
-	initialVelocity=1;
-	initialPressure=155e7;
+	initialVelocity_Left=1;
+	initialPressure_Left=155e5;
+
+	initialVelocity_Right=1;
+	initialPressure_Right=150e5;
+
+	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
+
+        # Prepare for the initial condition
+	Pressure_Left =svl.Vector(1);
+	Pressure_Right =svl.Vector(1);
+	Velocity_Left =svl.Vector(1);
+	Velocity_Right =svl.Vector(1);
+	
+	# left and right constant vectors		
+	Pressure_Left[0] = initialPressure_Left;
+	Pressure_Right[0] = initialPressure_Right;
+	Velocity_Left[0] = initialVelocity_Left;
+	Velocity_Right[0] = initialVelocity_Right;
+
 
     #Initial field creation
 	print("Building initial data " ); 
-	myProblem.setInitialFieldConstant(M, [initialVelocity], svl.FACES);
-	myProblem.setInitialFieldConstant(M, [initialPressure], svl.CELLS);
+	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, svl.CELLS);
+	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, svl.FACES);
 
     # set the boundary conditions
+	#TODO : set boundary cond for Riemann problem ?
+	# set the boundary conditions
 	def boundPressure(x):
-		return 155e7
+		if x < discontinuity:
+			return initialPressure_Left
+		else :
+			return initialPressure_Right
 
 	def boundVelocity(x):
-		return 1
+		if x < discontinuity:
+			return initialVelocity_Left
+		else:
+			return initialVelocity_Right
 
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
@@ -49,9 +76,10 @@ def WaveStaggered_Statio():
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);
+
     
     # name of result file
-	fileName = "WaveStaggered_Statio";
+	fileName = "WaveStaggered_1DRiemannProblem";
 
     # simulation parameters 
 	MaxNbOfTimeStep = 3 ;
@@ -66,8 +94,6 @@ def WaveStaggered_Statio():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(svl.CSV)
-
  
     # evolution
 	myProblem.initialize();
@@ -81,10 +107,9 @@ def WaveStaggered_Statio():
 		pass
 
 	print( "------------ End of calculation !!! -----------" );
-	assert(myProblem.isStationary()==True);
 
 	myProblem.terminate();
 	return ok
 
 if __name__ == """__main__""":
-    WaveStaggered_Statio()
+    WaveStaggered_1DRiemannProblem()

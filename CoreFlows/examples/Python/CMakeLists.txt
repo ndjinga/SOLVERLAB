@@ -159,6 +159,7 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_Ro
 
 
 CreatePythonTest(WaveStaggered/WaveStaggered_Statio.py "Python fv Wave staggered 1D Riemann Problem structured coreflows")
+CreatePythonTest(WaveStaggered/WaveStaggered_1DRiemannProblem.py "Python fv Wave staggered 1D Riemann Problem structured coreflows")
 
 if( SOLVERLAB_WITH_MPI )
   add_test(NAME MPI4PY_2Procs                                        COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testMPI4PY.py")     
