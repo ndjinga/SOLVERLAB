@@ -20,9 +20,15 @@ SparseMatrixPetsc::SparseMatrixPetsc()
 	_numberOfNonZeros=0;
 	_isSparseMatrix=true;
 	_mat=NULL;
-	PetscInitialize(0, (char ***)"", NULL, NULL);
+
 #if CMAKE_BUILD_TYPE==DEBUG
-	PetscAttachDebugger();
+	int argc = 2;
+	char **argv = new char*[argc];
+	argv[0] = (char*)"SparseMatrixPetsc";
+	argv[1] = (char*)"-on_error_attach_debugger";
+	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+#else
+	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
 #endif
 }
 
