@@ -3,6 +3,9 @@
 
 import solverlab as svl
 import math
+from  matplotlib import pyplot as plt
+import pandas as pd
+import os 
 
 
 def WaveStaggered_1DRiemannProblem():
@@ -12,7 +15,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=50;
+	nx=80;
 	discontinuity=(xinf+xsup)/2
 	M=svl.Mesh(xinf,xsup,nx)
 
@@ -24,8 +27,8 @@ def WaveStaggered_1DRiemannProblem():
 	initialVelocity_Left=1;
 	initialPressure_Left=155e5;
 
-	initialVelocity_Right=1;
-	initialPressure_Right=150e5;
+	initialVelocity_Right=0.5;
+	initialPressure_Right=150e7;
 
 	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
 
@@ -48,7 +51,6 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, direction, svl.CELLS);
 	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, svl.FACES);
 
-    # set the boundary conditions
 	#TODO : set boundary cond for Riemann problem ?
 	# set the boundary conditions
 	def boundPressure(x):
@@ -80,10 +82,10 @@ def WaveStaggered_1DRiemannProblem():
 
     
     # name of result file
-	fileName = "WaveStaggered_1DRiemannProblem";
+	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 3 ;
+	MaxNbOfTimeStep = 10 ;
 	freqSave = 1;
 	cfl = 0.2;
 	maxTime = 500;
@@ -95,6 +97,8 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
+	myProblem.setSaveFileFormat(svl.CSV)
+	myProblem.saveVelocity();
  
     # evolution
 	myProblem.initialize();
@@ -110,6 +114,21 @@ def WaveStaggered_1DRiemannProblem():
 	print( "------------ End of calculation !!! -----------" );
 
 	myProblem.terminate();
+	i=0
+	
+	
+	os.mkdir("WaveStaggered_"+fileName)
+	for t in range(MaxNbOfTimeStep):
+		velocitydata = pd.read_csv("WaveStaggered_"+fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
+		velocitydata.columns =['x','velocity', 'index']
+		plt.figure()
+		plt.plot(velocitydata['x'], velocitydata['velocity'], 'k-',  label = "velocity results")
+		plt.legend()
+		plt.title("Velocity data at time step"+str(i))
+		plt.savefig("WaveStaggered_"+fileName + "/Velocity data at time step"+str(i))
+		
+		i+=1
+
 	return ok
 
 if __name__ == """__main__""":

@@ -109,7 +109,7 @@ void WaveStaggered::setInitialField(const Field &field)
 	nbVoisinsMax = _neibMaxNbCells;
 	
     _d_nnz = (nbVoisinsMax+1)*_nVar;
-    _o_nnz =  nbVoisinsMax   *_nVar; //TODo: What is it ?
+    _o_nnz =  nbVoisinsMax   *_nVar; //TODO: What is it ?
 }
 
 void WaveStaggered::initialize(){
@@ -219,7 +219,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatSetUp(Laplacian);
 		MatZeroEntries(Laplacian);
 
-		
 		// matrice des Inverses de Surfaces
 		MatCreate(PETSC_COMM_SELF, & InvSurface); 
 		MatSetSizes(InvSurface, PETSC_DECIDE, PETSC_DECIDE, _Nmailles , _Nmailles );
@@ -294,8 +293,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					FaceArea = 1;
 					InvD_sigma = 2.0/Cint.getMeasure() ;
 					InvPerimeter1 = 1 ;
-					if (j == 0)	//TODO will only work in 1D
-					FaceArea = -FaceArea;
+					if (j == 0)	
+						FaceArea = -FaceArea;
 				} 
 				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
