@@ -11,7 +11,7 @@ def WaveStaggered_Statio():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1.0;
-	nx=5;
+	nx=4;
 	M=svl.Mesh(xinf,xsup,nx)
 
     # Prepare initial data
@@ -67,6 +67,7 @@ def WaveStaggered_Statio():
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(svl.CSV)
+	myProblem.setVerbose(True)
 
  
     # evolution

@@ -474,7 +474,8 @@ void WaveStaggered::computeNewtonVariation()
 		VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
 		cout << endl;
 		cout << "Matrice du système linéaire avant contribution delta t" << endl;
-		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+		//TODO : initialiser matrice sinon seg fault 
+		// MatView(_A,PETSC_VIEWER_STDOUT_SELF);
 		cout << endl;
 		cout << "Second membre du système linéaire avant contribution delta t" << endl;
 		VecView(_b, PETSC_VIEWER_STDOUT_SELF);

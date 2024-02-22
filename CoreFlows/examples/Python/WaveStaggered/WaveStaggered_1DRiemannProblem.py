@@ -27,8 +27,8 @@ def WaveStaggered_1DRiemannProblem():
 	initialVelocity_Left=1;
 	initialPressure_Left=155e5;
 
-	initialVelocity_Right=0.5;
-	initialPressure_Right=150e7;
+	initialVelocity_Right=1;
+	initialPressure_Right=155e5;
 
 	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
 
@@ -115,9 +115,8 @@ def WaveStaggered_1DRiemannProblem():
 
 	myProblem.terminate();
 	i=0
-	
-	
-	os.mkdir("WaveStaggered_"+fileName)
+	if not os.path.exists("WaveStaggered_"+fileName):
+		os.mkdir("WaveStaggered_"+fileName)
 	for t in range(MaxNbOfTimeStep):
 		velocitydata = pd.read_csv("WaveStaggered_"+fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
