@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
 		bool isBoundary = Fj.isBorder();
-		if (isBoundary == true){
+		if (Fj.getNumberOfCells()==1){
 			if (Fj.x() < discontinuity) {
 				wallPressureMap[j] = initialPressure_Left ;
 				wallVelocityMap[j] = initialVelocity_Left ;

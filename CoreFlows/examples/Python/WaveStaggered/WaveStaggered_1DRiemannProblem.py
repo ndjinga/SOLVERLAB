@@ -25,7 +25,7 @@ def WaveStaggered_1DRiemannProblem():
 	rho = 5;
 
 	initialVelocity_Left=1;
-	initialPressure_Left=155e5;
+	initialPressure_Left=157e5;
 
 	initialVelocity_Right=1;
 	initialPressure_Right=155e5;
@@ -51,7 +51,6 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, direction, svl.CELLS);
 	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, svl.FACES);
 
-	#TODO : set boundary cond for Riemann problem ?
 	# set the boundary conditions
 	def boundPressure(x):
 		if x < discontinuity:
@@ -69,8 +68,7 @@ def WaveStaggered_1DRiemannProblem():
 	wallVelocityMap = {}; 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
-		isBoundary = Fj.isBorder;
-		if (isBoundary == True):
+		if (Fj.getNumberOfCells()==1):
 			wallPressureMap[j] = boundPressure(Fj.x()) ;
 			wallVelocityMap[j] = boundVelocity(Fj.x()) ;
 
@@ -99,6 +97,8 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(svl.CSV)
 	myProblem.saveVelocity();
+	myProblem.savePressure();
+ 
  
     # evolution
 	myProblem.initialize();
@@ -120,11 +120,17 @@ def WaveStaggered_1DRiemannProblem():
 	for t in range(MaxNbOfTimeStep):
 		velocitydata = pd.read_csv("WaveStaggered_"+fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
+		pressuredata = pd.read_csv("WaveStaggered_"+fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
+		pressuredata.columns =['x','pressure', 'index']
 		plt.figure()
+		plt.subplot(121)
 		plt.plot(velocitydata['x'], velocitydata['velocity'], 'k-',  label = "velocity results")
 		plt.legend()
-		plt.title("Velocity data at time step"+str(i))
-		plt.savefig("WaveStaggered_"+fileName + "/Velocity data at time step"+str(i))
+		plt.subplot(122)
+		plt.plot(pressuredata['x'], pressuredata['pressure'], 'k-',  label = "pressure results")
+		plt.legend()
+		plt.title("Data at time step"+str(i))
+		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))
 		
 		i+=1
 

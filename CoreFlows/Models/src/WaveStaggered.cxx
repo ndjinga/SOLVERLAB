@@ -16,6 +16,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_c = sqrt(kappa/rho);
 	_saveVelocity=false; 
 	_savePressure=false; 
+	_facesBoundinit = false;
 }
 
 std::map<int,double>  WaveStaggered::getboundaryPressure(){
@@ -23,9 +24,16 @@ std::map<int,double>  WaveStaggered::getboundaryPressure(){
 }
 
 void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
-	std::map<int,double>::iterator it;
-    for( it= BoundaryVelocity.begin(); it != BoundaryVelocity.end(); it++){
-        _Velocity( it->first ) = it->second; 
+	if (_facesBoundinit == true){
+		std::map<int,double>::iterator it;
+		for( it= BoundaryVelocity.begin(); it != BoundaryVelocity.end(); it++){
+			_Velocity( it->first ) = it->second; 
+		}
+	}
+	else{
+		*_runLogFile<<"WaveStaggered::setboundaryVelocity should be called after WaveStaggered::setInitialField(Velocity)"<<endl;
+		_runLogFile->close();
+		throw CdmathException("WaveStaggered::setboundaryVelocity should be called after WaveStaggered::setInitialField(Velocity)");
 	}
 }
 
@@ -66,6 +74,7 @@ void WaveStaggered::setInitialField(const Field &field)
 		_Velocity.setName("Velocity results");
 		_time=_Velocity.getTime();
 		_mesh=_Velocity.getMesh();
+		_facesBoundinit = true;
 
 	} 
 	_initialDataSet=true;

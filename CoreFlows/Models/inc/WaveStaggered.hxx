@@ -97,6 +97,7 @@ public :
 	std::map<int,double>  getboundaryPressure();
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
+
 	void  abortTimeStep();
 	bool  initTimeStep( double dt);
 	vector<string> getInputFieldsNames();
@@ -110,6 +111,7 @@ protected :
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
+	bool _facesBoundinit; // To ensure that the boundary velocity is initialized after the initial velocity 
 				
 
 };

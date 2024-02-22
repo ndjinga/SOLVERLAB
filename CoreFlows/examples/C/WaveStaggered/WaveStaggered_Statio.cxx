@@ -44,8 +44,7 @@ int main(int argc, char** argv)
 	std::map<int ,double> wallVelocityMap ;
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
-		bool isBoundary = Fj.isBorder();
-		if (isBoundary == true){
+		if (Fj.getNumberOfCells()==1 ){
 			wallPressureMap[j] = boundPressure(Fj.x()) ;
 			wallVelocityMap[j] = boundVelocity(Fj.x()) ;
 		}
@@ -75,7 +74,6 @@ int main(int argc, char** argv)
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(CSV);
-	myProblem.setVerbose(true);
 	
 	// evolution
 	myProblem.initialize();
