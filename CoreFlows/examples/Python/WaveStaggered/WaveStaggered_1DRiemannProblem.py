@@ -6,6 +6,7 @@ import math
 from  matplotlib import pyplot as plt
 import pandas as pd
 import os 
+import numpy as np
 
 
 def WaveStaggered_1DRiemannProblem():
@@ -15,7 +16,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=30;
+	nx=100;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -64,7 +65,8 @@ def WaveStaggered_1DRiemannProblem():
 			return initialVelocity_Left
 		else:
 			return initialVelocity_Right
-
+	
+	# Define the exact solution of the 1d Problem 
 	def ExactPressure(x,t):
 		return (initialPressure(x - c * t) + initialPressure(x + c * t))/2.0 + (initialVelocity(x-c*t) -initialVelocity(x+c*t))/(2*rho*c)
 	def ExactVelocity(x,t):
@@ -91,7 +93,7 @@ def WaveStaggered_1DRiemannProblem():
     # simulation parameters 
 	MaxNbOfTimeStep = 100 ;
 	freqSave = 1;
-	cfl = 0.0001;
+	cfl = 0.00001; #TODO : problème 
 	maxTime = 500;
 	precision = 1e-6;
 
@@ -121,7 +123,9 @@ def WaveStaggered_1DRiemannProblem():
 
 	print( "------------ End of calculation !!! -----------" );
 
+	dt = myProblem.getTimeStep()
 	myProblem.terminate();
+	time = 0
 	i=0
 	if not os.path.exists("WaveStaggered_"+fileName):
 		os.mkdir("WaveStaggered_"+fileName)
@@ -130,16 +134,27 @@ def WaveStaggered_1DRiemannProblem():
 		velocitydata.columns =['x','velocity', 'index']
 		pressuredata = pd.read_csv("WaveStaggered_"+fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
 		pressuredata.columns =['x','pressure', 'index']
+		
+		pressure = np.zeros(nx)
+		velocity = np.zeros(nx+1)
+		for j in range(nx):
+			pressure[j] = ExactPressure(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time)
+		for j in range(nx+1):
+			velocity[j] = ExactVelocity(xinf + j*(xsup - xinf)/nx,time)
+			
 		plt.figure()
 		plt.subplot(121)
-		plt.plot(velocitydata['x'], velocitydata['velocity'], 'k-',  label = "velocity results")
+		plt.plot(pressuredata['x'], pressure, 'k-',  label = "exact pressure")
+		plt.plot(pressuredata['x'], pressuredata['pressure'], 'k-',  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		plt.plot(pressuredata['x'], pressuredata['pressure'], 'k-',  label = "pressure results")
+		plt.plot(velocitydata['x'], velocitydata['velocity'], 'k-',  label = "velocity results")
+		plt.plot(velocitydata['x'], velocity, label = "exact velocity")	
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))
 		i+=1
+		time += dt
 
 	return ok
 

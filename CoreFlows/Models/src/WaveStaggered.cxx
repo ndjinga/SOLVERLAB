@@ -523,6 +523,12 @@ void WaveStaggered::testConservation()
 	
 }
 
+double WaveStaggered::getTimeStep()
+{
+	return _dt;
+}
+
+
 void WaveStaggered::terminate(){ 
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_b);

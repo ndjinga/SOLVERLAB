@@ -41,6 +41,8 @@ public :
      *  */
     void terminate();
 
+	double getTimeStep();
+
 	void save();
 
 	/** \fn computeTimeStep
