@@ -15,20 +15,21 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=80;
-	discontinuity=(xinf+xsup)/2
+	nx=30;
 	M=svl.Mesh(xinf,xsup,nx)
+	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
 
     # set the limit field for each boundary
-	kappa = 2;
-	rho = 5;
+	kappa = 1;
+	rho = 1;
+	c = math.sqrt(kappa/rho)
 
 	initialVelocity_Left=1;
-	initialPressure_Left=157e5;
+	initialPressure_Left=1;
 
 	initialVelocity_Right=1;
-	initialPressure_Right=155e5;
+	initialPressure_Right=2;
 
 	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
 
@@ -52,25 +53,30 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, svl.FACES);
 
 	# set the boundary conditions
-	def boundPressure(x):
+	def initialPressure(x):
 		if x < discontinuity:
 			return initialPressure_Left
 		else :
 			return initialPressure_Right
 
-	def boundVelocity(x):
+	def initialVelocity(x):
 		if x < discontinuity:
 			return initialVelocity_Left
 		else:
 			return initialVelocity_Right
+
+	def ExactPressure(x,t):
+		return (initialPressure(x - c * t) + initialPressure(x + c * t))/2.0 + (initialVelocity(x-c*t) -initialVelocity(x+c*t))/(2*rho*c)
+	def ExactVelocity(x,t):
+		return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
 
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		if (Fj.getNumberOfCells()==1):
-			wallPressureMap[j] = boundPressure(Fj.x()) ;
-			wallVelocityMap[j] = boundVelocity(Fj.x()) ;
+			wallPressureMap[j] = initialPressure(Fj.x()) ;
+			wallVelocityMap[j] = initialVelocity(Fj.x()) ;
 
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
@@ -83,9 +89,9 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 10 ;
+	MaxNbOfTimeStep = 100 ;
 	freqSave = 1;
-	cfl = 0.2;
+	cfl = 0.0001;
 	maxTime = 500;
 	precision = 1e-6;
 
@@ -98,6 +104,8 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setSaveFileFormat(svl.CSV)
 	myProblem.saveVelocity();
 	myProblem.savePressure();
+	myProblem.setVerbose(False);
+
  
  
     # evolution
@@ -131,7 +139,6 @@ def WaveStaggered_1DRiemannProblem():
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))
-		
 		i+=1
 
 	return ok

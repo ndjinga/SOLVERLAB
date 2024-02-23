@@ -205,7 +205,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	cout << endl;
 
 	if (_timeScheme == Explicit && _nbTimeStep == 0){ // The matrices are assembled only in the first time step since linear problem
-		Mat B, Bt, Laplacian, InvSurface; 
+		Mat B, Bt, Laplacian, InvSurface;
 		
 		// matrice DIVERGENCE (|K|div(u))
 		MatCreate(PETSC_COMM_SELF, & B); 
@@ -299,9 +299,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				Cell Cint = _mesh.getCell(idCells[0]);
 				if (_Ndim == 1){
 					PetscScalar det = Fj.x() - Cint.x();
-					FaceArea = 1;
+					FaceArea = 1.0;
 					InvD_sigma = 2.0/Cint.getMeasure() ;
-					InvPerimeter1 = 1 ;
+					InvPerimeter1 = 1.0 ;
 					if (j == 0)	
 						FaceArea = -FaceArea;
 				} 
@@ -313,11 +313,11 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
 					FaceArea = Fj.getMeasure();
 					InvD_sigma = 1.0/PetscAbsReal(det);
-					InvPerimeter1 = 1/_perimeters(idCells[0]) ;
+					InvPerimeter1 = 1/Cint.getNumberOfFaces();
 					
 				}
 				PetscScalar One = 1;
-				PetscScalar InvVol1 = 1/ Cint.getMeasure();
+				PetscScalar InvVol1 = 1.0/(Cint.getMeasure()*Cint.getNumberOfFaces());
 				PetscScalar Zero = 0;
 				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
@@ -352,17 +352,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		Mat  GradDivTilde; 
 		MatScale(Bt, -1.0);
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-		if (_verbose){
-			MatView(B,  PETSC_VIEWER_STDOUT_SELF);
-			MatView(Bt,  PETSC_VIEWER_STDOUT_SELF);
-			MatView(Laplacian,  PETSC_VIEWER_STDOUT_SELF);		
-			MatView(GradDivTilde,  PETSC_VIEWER_STDOUT_SELF);
-		}
-		// GradDivTilde  -> facteur 2 vient de InvSurf
+		// TODO : GradDivTilde  -> facteur 2 vient de InvSurf
+		_d = 1; //TODO provisoire
 		MatScale(Laplacian, _d*_c );
 		MatScale(B, -1.0/_rho);
 		MatScale(Bt, -1.0*_kappa);
-		MatScale(GradDivTilde, _d*_c );
+		MatScale(GradDivTilde, _d*_c/2.0);
 		Mat G[4];
 		G[0] = Laplacian;
 		G[1] = B;
@@ -375,13 +370,16 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_Q); 
 		Mat Prod;
 		MatConvert(_Q, MATAIJ, MAT_INPLACE_MATRIX, & _Q);
+
+		MatView(_Q,PETSC_VIEWER_STDOUT_SELF);
+
 		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); 
 
-		if (_cfl > _d/2.0){
-			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl;
-			_cfl =  0.99 * _d/2.0;
-		}
+		// if (_cfl > _d/2.0){
+		// 	cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl;
+		// 	_cfl =  0.99 * _d/2.0;
+		// }
 		Vec V, W;
 		VecCreate(PETSC_COMM_SELF, & V);
 		VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
@@ -411,12 +409,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& GradDivTilde); 
 	}
 	if (_timeScheme == Explicit){
-		VecAssemblyBegin(_b);
 		MatMult(_Q,_primitiveVars, _b); 
+		VecAssemblyBegin(_b);
 		VecAssemblyEnd(_b); 
 	}
 	
-	return  _cfl * _minCell / (_maxPerim * _c);
+	return _cfl * _minCell / (_maxPerim * _c);
 
 }
 
