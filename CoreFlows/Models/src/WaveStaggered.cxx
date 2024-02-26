@@ -10,7 +10,7 @@ using namespace std;
 
 WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):ProblemCoreFlows(comm){
 	_Ndim=dim;
-	_nVar = 2; // 2 equations;
+	_nVar = 2; // 2 equations TODO : sure ?
 	_kappa = kappa;
 	_rho = rho;
 	_c = sqrt(kappa/rho);
@@ -118,7 +118,7 @@ void WaveStaggered::setInitialField(const Field &field)
 	nbVoisinsMax = _neibMaxNbCells;
 	
     _d_nnz = (nbVoisinsMax+1)*_nVar;
-    _o_nnz =  nbVoisinsMax   *_nVar; //TODO: What is it ?
+    _o_nnz =  nbVoisinsMax   *_nVar; 
 }
 
 void WaveStaggered::initialize(){
@@ -165,12 +165,12 @@ void WaveStaggered::initialize(){
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
 
-	// Création matrice Q tq U^n+1 - U^n = dt V^{-1} _Q U^n pour schéma explicite
-	MatCreate(PETSC_COMM_SELF, & _Q); 
-	MatSetSizes(_Q, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
-	MatSetFromOptions(_Q);
-	MatSetUp(_Q);
-	MatZeroEntries(_Q);
+	// Création matrice Q tq U^n+1 - U^n = dt V^{-1} _A U^n pour schéma explicite
+	MatCreate(PETSC_COMM_SELF, & _A); 
+	MatSetSizes(_A, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+	MatSetFromOptions(_A);
+	MatSetUp(_A);
+	MatZeroEntries(_A);
 
 	// matrice des Inverses Volumes V^{-1}
 	MatCreate(PETSC_COMM_SELF, &_InvVol); 
@@ -250,8 +250,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
 					FaceArea = 1;
-					InvPerimeter1 = 1;
-					InvPerimeter2 = 1;
+					InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
+					InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
 				} 
 				if (_Ndim ==2){
 					std::vector<int> nodes =  Fj.getNodesId();
@@ -269,7 +269,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					_runLogFile->close();
 					throw CdmathException("WaveStaggered pas dispo en 3D, arret de calcul");				
 				}
-				
+		
 				PetscScalar MinusFaceArea = -FaceArea;
 				PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
 				PetscScalar InvVol1 = 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces());
@@ -301,7 +301,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar det = Fj.x() - Cint.x();
 					FaceArea = 1.0;
 					InvD_sigma = 2.0/Cint.getMeasure() ;
-					InvPerimeter1 = 1.0 ;
+					InvPerimeter1 = 1.0/Cint.getNumberOfFaces() ;
 					if (j == 0)	
 						FaceArea = -FaceArea;
 				} 
@@ -352,12 +352,25 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		Mat  GradDivTilde; 
 		MatScale(Bt, -1.0);
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-		// TODO : GradDivTilde  -> facteur 2 vient de InvSurf
-		_d = 1; //TODO provisoire
+		// GradDivTilde  -> facteur 2 vient de InvSurf
+		if (_verbose){
+			_d = 1;
+			_rho =1;
+			_kappa = 1;
+		}
 		MatScale(Laplacian, _d*_c );
 		MatScale(B, -1.0/_rho);
 		MatScale(Bt, -1.0*_kappa);
 		MatScale(GradDivTilde, _d*_c/2.0);
+		if (_verbose){
+			MatView(Laplacian,PETSC_VIEWER_STDOUT_SELF);
+			MatView(B,PETSC_VIEWER_STDOUT_SELF);
+			MatView(Bt,PETSC_VIEWER_STDOUT_SELF);
+			MatView(GradDivTilde,PETSC_VIEWER_STDOUT_SELF);
+			MatView(InvSurface,PETSC_VIEWER_STDOUT_SELF);
+			MatView(_InvVol,PETSC_VIEWER_STDOUT_SELF);
+		}
+		
 		Mat G[4];
 		G[0] = Laplacian;
 		G[1] = B;
@@ -365,40 +378,45 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		G[3] = GradDivTilde;
 
 
-		// _Q = (dc Laplacian  ;  -1/rho B         )
+		// _A = (dc Laplacian  ;  -1/rho B         )
 		//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
-		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_Q); 
+		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
-		MatConvert(_Q, MATAIJ, MAT_INPLACE_MATRIX, & _Q);
+		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
+		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
 
-		MatView(_Q,PETSC_VIEWER_STDOUT_SELF);
-
-		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); 
-
-		if (_cfl > _d/2.0){
+		if (_cfl > _d/2.0 && _Ndim > 1){
 			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl;
 		 	_cfl =  0.99 * _d/2.0;
 		}
+		if (_Ndim = 1){
+			cout << "the explicit in 1D is stable with cfl = 0.4, cfl is updated "<< endl;
+		 	_cfl =  0.4;
+		}
 		Vec V, W;
+		PetscScalar minInvSurf, maxInvVol;
+
+		// Minimum size of mesh volumes
 		VecCreate(PETSC_COMM_SELF, & V);
 		VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
+		int *indices3 = new int[_globalNbUnknowns];
+		std::iota(indices3, indices3 +_globalNbUnknowns, 0);
 		VecSetFromOptions(V);
+		MatGetDiagonal(_InvVol,V);
+		VecMax(V, indices3, &maxInvVol);
+		_minCell = 1.0/maxInvVol;
+
+		//Maximum size of surfaces
 		VecCreate(PETSC_COMM_SELF, & W);
 		VecSetSizes(W, PETSC_DECIDE, _Nmailles);
 		VecSetFromOptions(W);
-		MatGetDiagonal(_InvVol,V);
 		MatGetDiagonal(InvSurface, W);
-		int *indices3 = new int[_Nmailles + _Nfaces];
-		std::iota(indices3, indices3 +_Nmailles + _Nfaces, 0);
 		int *indices4 = new int[_Nmailles];
 		std::iota(indices4, indices4 +_Nmailles, 0);
-		PetscScalar minInvSurf, maxInvVol;
-		VecMax(W, indices3, &maxInvVol);
-		VecMin(V, indices4, &minInvSurf);
+		VecMin(W, indices4, &minInvSurf);
 		_maxPerim = 1.0/minInvSurf;
-		_minCell = 1.0/maxInvVol;
-
+	
 		delete[] indices3, indices4;
 		VecDestroy(& V);
 		VecDestroy(& W); 
@@ -409,11 +427,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& GradDivTilde); 
 	}
 	if (_timeScheme == Explicit){
-		MatMult(_Q,_primitiveVars, _b); 
+		MatMult(_A,_primitiveVars, _b); 
 		VecAssemblyBegin(_b);
 		VecAssemblyEnd(_b); 
 	}
-	
 	return _cfl * _minCell / (_maxPerim * _c);
 
 }
@@ -480,9 +497,12 @@ void WaveStaggered::computeNewtonVariation()
 		cout<<"Vecteur courant Vk "<<endl;
 		VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
 		cout << endl;
-		cout << "Matrice du système linéaire avant contribution delta t" << endl;
-		//TODO : initialiser matrice sinon seg fault 
-		// MatView(_A,PETSC_VIEWER_STDOUT_SELF);
+		if (_timeScheme == Implicit)
+			cout << "Matrice du système linéaire avant contribution delta t" << endl;
+		if (_timeScheme == Explicit) {
+			cout << "Matrice _A tel que _A = (dc Laplacian  ;  -1/rho B         ) //      (kappa B^t     ;  dc -B^t(1/|dK|) B )  : du second membre avant contribution delta t" << endl;
+		}
+		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
 		cout << endl;
 		cout << "Second membre du système linéaire avant contribution delta t" << endl;
 		VecView(_b, PETSC_VIEWER_STDOUT_SELF);
@@ -533,7 +553,7 @@ void WaveStaggered::terminate(){
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
-	MatDestroy(& _Q); 
+	MatDestroy(& _A); 
 	MatDestroy(&_InvVol); 
 	
 

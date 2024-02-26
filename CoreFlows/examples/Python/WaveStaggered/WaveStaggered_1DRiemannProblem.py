@@ -16,7 +16,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=100;
+	nx=400;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -26,11 +26,11 @@ def WaveStaggered_1DRiemannProblem():
 	rho = 1;
 	c = math.sqrt(kappa/rho)
 
-	initialVelocity_Left=1;
-	initialPressure_Left=1;
+	initialVelocity_Left=3;
+	initialPressure_Left=-1;
 
 	initialVelocity_Right=1;
-	initialPressure_Right=2;
+	initialPressure_Right=3;
 
 	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
 
@@ -91,9 +91,9 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 600 ;
+	MaxNbOfTimeStep = 700 ;
 	freqSave = 1;
-	cfl = 2*10e-6; #TODO : problème 
+	cfl = 0.4 #6*10e-6; #TODO : problème 
 	maxTime = 500;
 	precision = 1e-6;
 
