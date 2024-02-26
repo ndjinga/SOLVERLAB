@@ -52,12 +52,17 @@ def WaveStaggered_2D_StructuredSquares():
 	VelocityMap = {}; 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
-		if (Fj.getNumberOfCells()==1):
-			wallPressureMap[j] = initialPressure(Fj.x()) ;
-			wallVelocityMap[j] = initialPressure(Fj.x()) ;
-		else:
-			PressureMap[j] = initialPressure(Fj.x()) ;
+		idCells = Fj.getCellsId();
+		if(Fj.getNumberOfCells()==2):
+			Ctemp1 = M.getCell(idCells[0]);
+			Ctemp2 = M.getCell(idCells[1]);
+			PressureMap[idCells[0]] = initialPressure(Ctemp1.x())/2.0 ;
+			PressureMap[idCells[1]] = initialPressure(Ctemp2.x())/2.0 ;
 			VelocityMap[j] = initialVelocity(Fj.x()) ;
+		elif (Fj.getNumberOfCells()==1):
+			Ctemp1 = M.getCell(idCells[0]);
+			wallPressureMap[idCells[0]] = initialPressure(Ctemp1.x())/2.0 ;
+			wallVelocityMap[j] = initialPressure(Fj.x()) ;
 
 	myProblem.setInitialFieldFunction(M, PressureMap, svl.CELLS, "pressure");
 	myProblem.setInitialFieldFunction(M, VelocityMap, svl.FACES, "velocity");
@@ -89,9 +94,8 @@ def WaveStaggered_2D_StructuredSquares():
 
 	# Run the computation
 	myProblem.initialize();
-	print("Running python "+ fileName );
 
-	ok = myProblem.solveStationaryProblem();
+	ok = myProblem.run();
 	if (not ok):
 		print( "Python simulation of " + fileName + "  failed ! " );
 		pass

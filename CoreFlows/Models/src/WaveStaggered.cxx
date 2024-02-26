@@ -128,6 +128,7 @@ void WaveStaggered::setInitialFieldFunction(const Mesh& M, std::map<int, double>
 	for( it= V.begin(); it != V.end(); it++){
 		VV( it->first) = it->second; 
 	}
+	cout << "bonjour" <<endl;
 	setInitialField(VV);
 }
 
