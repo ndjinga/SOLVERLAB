@@ -91,9 +91,9 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 100 ;
+	MaxNbOfTimeStep = 600 ;
 	freqSave = 1;
-	cfl = 0.00001; #TODO : problème 
+	cfl = 2*10e-6; #TODO : problème 
 	maxTime = 500;
 	precision = 1e-6;
 
@@ -145,7 +145,7 @@ def WaveStaggered_1DRiemannProblem():
 		plt.figure()
 		plt.subplot(121)
 		plt.plot(pressuredata['x'], pressure, 'k-',  label = "exact pressure")
-		plt.plot(pressuredata['x'], pressuredata['pressure'], 'k-',  label = "pressure results")
+		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
 		plt.plot(velocitydata['x'], velocitydata['velocity'], 'k-',  label = "velocity results")

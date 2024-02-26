@@ -376,10 +376,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatMatMult(_InvVol, _Q, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_Q, SAME_NONZERO_PATTERN); 
 
-		// if (_cfl > _d/2.0){
-		// 	cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl;
-		// 	_cfl =  0.99 * _d/2.0;
-		// }
+		if (_cfl > _d/2.0){
+			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl;
+		 	_cfl =  0.99 * _d/2.0;
+		}
 		Vec V, W;
 		VecCreate(PETSC_COMM_SELF, & V);
 		VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
