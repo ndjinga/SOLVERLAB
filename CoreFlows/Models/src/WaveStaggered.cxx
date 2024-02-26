@@ -63,7 +63,7 @@ void WaveStaggered::setInitialField(const Field &field)
 		_runLogFile->close();
 		throw CdmathException("WaveStaggered::setInitialField: mesh has incorrect space dimension");
 	}
-	if  (field.getTypeOfField() == CELLS ){  
+	if  (field.getName()  == "pressure" || field.getTypeOfField() == CELLS){  
 		_Pressure = field;
 		_Pressure.setName("Pressure results");
 		_time=_Pressure.getTime();
@@ -119,6 +119,16 @@ void WaveStaggered::setInitialField(const Field &field)
 	
     _d_nnz = (nbVoisinsMax+1)*_nVar;
     _o_nnz =  nbVoisinsMax   *_nVar; 
+}
+
+void WaveStaggered::setInitialFieldFunction(const Mesh& M, std::map<int, double> V, EntityType typeField, const string name)
+{
+	Field VV(name, typeField, M, 1);
+	std::map<int,double>::iterator it;
+	for( it= V.begin(); it != V.end(); it++){
+		VV( it->first) = it->second; 
+	}
+	setInitialField(VV);
 }
 
 void WaveStaggered::initialize(){

@@ -31,6 +31,7 @@ public :
 	WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm = MPI_COMM_WORLD);
 
 	void setInitialField(const Field &field);
+	void setInitialFieldFunction(const Mesh& M, std::map<int, double> V, EntityType typeField, const string name);
 
 	//! system initialisation
 	void initialize();

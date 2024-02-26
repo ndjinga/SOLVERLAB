@@ -20,25 +20,23 @@ def WaveStaggered_1DRiemannProblem():
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
-
     # set the limit field for each boundary
 	kappa = 1;
 	rho = 1;
 	c = math.sqrt(kappa/rho)
+	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
+
+    # Prepare for the initial condition
+	Pressure_Left =svl.Vector(1);
+	Pressure_Right =svl.Vector(1);
+	Velocity_Left =svl.Vector(1);
+	Velocity_Right =svl.Vector(1);
 
 	initialVelocity_Left=3;
 	initialPressure_Left=-1;
 
 	initialVelocity_Right=1;
 	initialPressure_Right=3;
-
-	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
-
-        # Prepare for the initial condition
-	Pressure_Left =svl.Vector(1);
-	Pressure_Right =svl.Vector(1);
-	Velocity_Left =svl.Vector(1);
-	Velocity_Right =svl.Vector(1);
 	
 	# left and right constant vectors		
 	Pressure_Left[0] = initialPressure_Left;
@@ -93,7 +91,7 @@ def WaveStaggered_1DRiemannProblem():
     # simulation parameters 
 	MaxNbOfTimeStep = 700 ;
 	freqSave = 1;
-	cfl = 0.4 #6*10e-6; #TODO : problème 
+	cfl = 0.4 
 	maxTime = 500;
 	precision = 1e-6;
 
