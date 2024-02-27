@@ -4,6 +4,7 @@
 
 import solverlab as svl
 import math
+import numpy as np
 def WaveStaggered_2D_StructuredSquares():
 	spaceDim = 2;
 	# Prepare for the mesh
@@ -12,8 +13,8 @@ def WaveStaggered_2D_StructuredSquares():
 	xsup = 1.0;
 	yinf = 0.0;
 	ysup = 1.0;
-	nx=120;
-	ny=120; 
+	nx=90;
+	ny=90; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -27,10 +28,13 @@ def WaveStaggered_2D_StructuredSquares():
 	# Prepare for the initial condition
 
 	def initialPressure(x,y):
-		return math.sin(2*math.pi*x*y)
+		return math.sin(2*math.pi*x)
 
-	def initialVelocity(x,y):
-		return math.cos(2*math.pi*x*y)
+	def initialVelocity(vec_y,vec_normal,x=0,y=0):
+		if (np.dot(vec_normal,vec_y) ==0):
+			return 0
+		else: 
+			return 1
 
 	 #Initial field creation
 	print("Building initial data " ); 
@@ -38,6 +42,8 @@ def WaveStaggered_2D_StructuredSquares():
 	wallVelocityMap = {}; 
 	PressureMap = {};
 	VelocityMap = {}; 
+	vec_normal = np.zeros(2)
+	vec_y = np.array([0,1])
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
@@ -46,11 +52,15 @@ def WaveStaggered_2D_StructuredSquares():
 			Ctemp2 = M.getCell(idCells[1]);
 			PressureMap[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.x())/2.0 ;
 			PressureMap[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp1.y())/2.0 ;
-			VelocityMap[j] = initialVelocity(Fj.x(),Fj.y()) ;
-		elif (Fj.getNumberOfCells()==1):
+			for l in range(Ctemp1.getNumberOfFaces()):
+				if (j == Ctemp1.getFacesId()[l]):
+					for idim in range(spaceDim):
+						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
+			VelocityMap[j] = initialVelocity(vec_y, vec_normal, Fj.x(),Fj.y()) ;
+		else:
 			Ctemp1 = M.getCell(idCells[0]);
 			wallPressureMap[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y())/2.0 ;
-			wallVelocityMap[j] = initialPressure(Fj.x(),Fj.y()) ;
+			wallVelocityMap[j] = initialVelocity(vec_y, vec_normal, Fj.x(),Fj.y()) ;
 
 	myProblem.setInitialFieldFunction(M, PressureMap, svl.CELLS, "pressure");
 	myProblem.setInitialFieldFunction(M, VelocityMap, svl.FACES, "velocity");
@@ -63,8 +73,8 @@ def WaveStaggered_2D_StructuredSquares():
 	fileName = "WaveStaggered_2D_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 500 ;
-	freqSave = 1;
+	MaxNbOfTimeStep = 2000 ;
+	freqSave = 80;
 	cfl = 0.4; 
 	maxTime = 500;
 	precision = 1e-6;
