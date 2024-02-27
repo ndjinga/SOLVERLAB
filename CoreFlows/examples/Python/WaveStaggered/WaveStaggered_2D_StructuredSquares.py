@@ -12,10 +12,9 @@ def WaveStaggered_2D_StructuredSquares():
 	xsup = 1.0;
 	yinf = 0.0;
 	ysup = 1.0;
-	nx=30;
-	ny=30; 
+	nx=120;
+	ny=120; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
-	discontinuity=(xinf+xsup)/2 + 0.75/nx #TODO à définir de manière vectorielle
 
 	
 	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
@@ -26,23 +25,12 @@ def WaveStaggered_2D_StructuredSquares():
 	#myProblem.setMesh(M);
 
 	# Prepare for the initial condition
-	initialVelocity_Left=3;
-	initialPressure_Left=-1;
 
-	initialVelocity_Right=1;
-	initialPressure_Right=3;
+	def initialPressure(x,y):
+		return math.sin(2*math.pi*x*y)
 
-	def initialPressure(x,y=0):
-		if x < discontinuity:
-			return initialPressure_Left
-		else :
-			return initialPressure_Right
-
-	def initialVelocity(x,y=0):
-		if x < discontinuity:
-			return initialVelocity_Left
-		else:
-			return initialVelocity_Right
+	def initialVelocity(x,y):
+		return math.cos(2*math.pi*x*y)
 
 	 #Initial field creation
 	print("Building initial data " ); 
@@ -56,13 +44,13 @@ def WaveStaggered_2D_StructuredSquares():
 		if(Fj.getNumberOfCells()==2):
 			Ctemp1 = M.getCell(idCells[0]);
 			Ctemp2 = M.getCell(idCells[1]);
-			PressureMap[idCells[0]] = initialPressure(Ctemp1.x())/2.0 ;
-			PressureMap[idCells[1]] = initialPressure(Ctemp2.x())/2.0 ;
-			VelocityMap[j] = initialVelocity(Fj.x()) ;
+			PressureMap[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.x())/2.0 ;
+			PressureMap[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp1.y())/2.0 ;
+			VelocityMap[j] = initialVelocity(Fj.x(),Fj.y()) ;
 		elif (Fj.getNumberOfCells()==1):
 			Ctemp1 = M.getCell(idCells[0]);
-			wallPressureMap[idCells[0]] = initialPressure(Ctemp1.x())/2.0 ;
-			wallVelocityMap[j] = initialPressure(Fj.x()) ;
+			wallPressureMap[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y())/2.0 ;
+			wallVelocityMap[j] = initialPressure(Fj.x(),Fj.y()) ;
 
 	myProblem.setInitialFieldFunction(M, PressureMap, svl.CELLS, "pressure");
 	myProblem.setInitialFieldFunction(M, VelocityMap, svl.FACES, "velocity");
@@ -75,7 +63,7 @@ def WaveStaggered_2D_StructuredSquares():
 	fileName = "WaveStaggered_2D_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 10 ;
+	MaxNbOfTimeStep = 500 ;
 	freqSave = 1;
 	cfl = 0.4; 
 	maxTime = 500;
@@ -87,7 +75,7 @@ def WaveStaggered_2D_StructuredSquares():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(svl.CSV)
+	myProblem.setSaveFileFormat(svl.VTK)
 	myProblem.saveVelocity();
 	myProblem.savePressure();
 	myProblem.setVerbose(False);

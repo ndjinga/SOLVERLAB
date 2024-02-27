@@ -128,7 +128,6 @@ void WaveStaggered::setInitialFieldFunction(const Mesh& M, std::map<int, double>
 	for( it= V.begin(); it != V.end(); it++){
 		VV( it->first) = it->second; 
 	}
-	cout << "bonjour" <<endl;
 	setInitialField(VV);
 }
 
@@ -303,6 +302,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
 				MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
 				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
+			
 						
 			}
 			else // boundary faces
@@ -320,7 +320,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					std::vector< int > nodes =  Fj.getNodesId();
 					Node vertex1 = _mesh.getNode( nodes[0] );
 					Node vertex2 = _mesh.getNode( nodes[1] );
-					PetscScalar det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (vertex2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+					PetscScalar det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Cint.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
 					FaceArea = Fj.getMeasure();
 					InvD_sigma = 1.0/PetscAbsReal(det);
@@ -398,8 +398,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
 
 		if (_cfl > _d/2.0 && _Ndim > 1){
-			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl;
-		 	_cfl =  0.99 * _d/2.0;
+			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl; 
+		 	_cfl =  0.99 * _d; //WARNING : cfl = _d/2.0 theoretical but proof leads to think that it is the double (cfl = _d)
 		}
 		if (_Ndim = 1){
 			cout << "the explicit in 1D is stable with cfl = 0.4, cfl is updated "<< endl;
