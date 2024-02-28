@@ -16,7 +16,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=400;
+	nx=100;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -32,10 +32,10 @@ def WaveStaggered_1DRiemannProblem():
 	Velocity_Left =svl.Vector(1);
 	Velocity_Right =svl.Vector(1);
 
-	initialVelocity_Left=3;
-	initialPressure_Left=-1;
+	initialVelocity_Left=-1;
+	initialPressure_Left=1;
 
-	initialVelocity_Right=1;
+	initialVelocity_Right=3;
 	initialPressure_Right=3;
 	
 	# left and right constant vectors		
@@ -68,7 +68,12 @@ def WaveStaggered_1DRiemannProblem():
 	def ExactPressure(x,t):
 		return (initialPressure(x - c * t) + initialPressure(x + c * t))/2.0 + (initialVelocity(x-c*t) -initialVelocity(x+c*t))/(2*rho*c)
 	def ExactVelocity(x,t):
-		return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
+		if x==xinf:
+			return initialVelocity_Left
+		if x==xsup:
+			return initialVelocity_Right
+		else:
+			return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
 
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
@@ -89,10 +94,10 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 700 ;
-	freqSave = 1;
+	MaxNbOfTimeStep = 1000 ;
+	freqSave = 10;
 	cfl = 0.4 
-	maxTime = 500;
+	maxTime = 10;
 	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
@@ -142,17 +147,17 @@ def WaveStaggered_1DRiemannProblem():
 			
 		plt.figure()
 		plt.subplot(121)
-		plt.plot(pressuredata['x'], pressure, 'k-',  label = "exact pressure")
+		plt.plot(pressuredata['x'], pressure,  label = "exact pressure")
 		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		plt.plot(velocitydata['x'], velocitydata['velocity'], 'k-',  label = "velocity results")
-		plt.plot(velocitydata['x'], velocity, label = "exact velocity")	
+		plt.plot(velocitydata['x'], velocity,label = "exact velocity")
+		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))
-		i+=1
-		time += dt
+		i+=freqSave
+		time += freqSave*dt
 
 	return ok
 

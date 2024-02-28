@@ -14,8 +14,8 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	yinf = 0.0;
 	ysup = 1.0;
 	discontinuity = (yinf + ysup)/2.0
-	nx=100;
-	ny=100
+	nx=50;
+	ny=200
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
 	kappa = 1;
@@ -48,12 +48,12 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 				return initialVelocity_Right
 		
 
-	 #Initial field creation
+	#Initial field creation
 	print("Building initial data " ); 
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
-	PressureMap = {};
-	VelocityMap = {}; 
+	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
+	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
 	
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
@@ -62,14 +62,14 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 		if(Fj.getNumberOfCells()==2):
 			Ctemp1 = M.getCell(idCells[0]);
 			Ctemp2 = M.getCell(idCells[1]);
-			PressureMap[idCells[0]] = initialPressure(Ctemp1.y()) ;
-			PressureMap[idCells[1]] = initialPressure(Ctemp2.y());
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.y()) ;
+			Pressure0[idCells[1]] = initialPressure(Ctemp2.y());
 			for l in range( Ctemp1.getNumberOfFaces()) :
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
 						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
 				
-			VelocityMap[j] = initialVelocity(vec_normal,Fj.y()) ;
+			Velocity0[j] = initialVelocity(vec_normal,Fj.y()) ;
 		else:
 			Ctemp1 = M.getCell(idCells[0]);
 			wallPressureMap[j] = initialPressure(Ctemp1.y()) ;
@@ -79,8 +79,8 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
 			wallVelocityMap[j] = initialVelocity(vec_normal,Fj.y()) ;
 
-	myProblem.setInitialFieldFunction(M, PressureMap, svl.CELLS, "pressure");
-	myProblem.setInitialFieldFunction(M, VelocityMap, svl.FACES, "velocity");
+	myProblem.setInitialField(Pressure0);
+	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
@@ -90,7 +90,7 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	fileName = "WaveStaggered_2DRiemannY_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 6000 ;
+	MaxNbOfTimeStep = 4000 ;
 	freqSave = 80;
 	cfl = 0.4; 
 	maxTime = 10;

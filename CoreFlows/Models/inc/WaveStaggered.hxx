@@ -31,7 +31,6 @@ public :
 	WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm = MPI_COMM_WORLD);
 
 	void setInitialField(const Field &field);
-	void setInitialFieldFunction(const Mesh& M, std::map<int, double> V, EntityType typeField, const string name); //TODO : à dégager
 
 	//! system initialisation
 	void initialize();
@@ -109,7 +108,7 @@ public :
 
 protected :
 	Field _Velocity, _Pressure ;
-	Vec _newtonVariation, _primitiveVars;
+	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms;;
 	Mat _InvVol; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	bool _savePressure, _saveVelocity;

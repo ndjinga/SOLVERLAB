@@ -121,16 +121,6 @@ void WaveStaggered::setInitialField(const Field &field)
     _o_nnz =  nbVoisinsMax   *_nVar; 
 }
 
-void WaveStaggered::setInitialFieldFunction(const Mesh& M, std::map<int, double> V, EntityType typeField, const string name)
-{
-	Field VV(name, typeField, M, 1);
-	std::map<int,double>::iterator it;
-	for( it= V.begin(); it != V.end(); it++){
-		VV( it->first) = it->second; 
-	}
-	setInitialField(VV);
-}
-
 void WaveStaggered::initialize(){
 	cout<<"\n Initialising the Wave System model\n"<<endl;
 	*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
@@ -231,12 +221,19 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatSetUp(Bt);
 		MatZeroEntries(Bt);
 
-		// matrix LAPLACIAN (we will impose to be the pressure boundary conditions in this)
+		// matrix LAPLACIAN (without boundary terms)
 		MatCreate(PETSC_COMM_SELF, & Laplacian); 
 		MatSetSizes(Laplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
 		MatSetFromOptions(Laplacian);
 		MatSetUp(Laplacian);
 		MatZeroEntries(Laplacian);
+
+		// // Vector BoundaryTerms for Pressure TODO 
+		// VecCreate(PETSC_COMM_SELF, & BoundaryTerms); 
+		// VecSetSizes(BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns ); 
+		// VecSetFromOptions(BoundaryTerms);
+		// VecSetUp(BoundaryTerms);
+		// VecZeroEntries(BoundaryTerms);
 
 		// matrice des Inverses de Surfaces
 		MatCreate(PETSC_COMM_SELF, & InvSurface); 
@@ -314,7 +311,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					InvD_sigma = 2.0/Cint.getMeasure() ;
 					InvPerimeter1 = 1.0/Cint.getNumberOfFaces() ;
 					if (j == 0)	
-						FaceArea = -FaceArea;
+						FaceArea = -1;
 				} 
 				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
@@ -342,7 +339,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
 				pExt = boundaryPressure[it->first];
 		
-				PetscScalar pressureGrad =   FaceArea *(pExt/pInt - 1 ); 
+				PetscScalar pressureGrad = Fj.getMeasure()*(pExt/pInt - 1 ); //TODO pas bon si pint = 0
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &pressureGrad, ADD_VALUES ); 
 			 
 			}	
@@ -439,8 +436,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	}
 	if (_timeScheme == Explicit){
 		MatMult(_A,_primitiveVars, _b); 
-		VecAssemblyBegin(_b);
-		VecAssemblyEnd(_b); 
 	}
 	return _cfl * _minCell / (_maxPerim * _c);
 
@@ -503,6 +498,7 @@ void WaveStaggered::validateTimeStep()
 
 void WaveStaggered::computeNewtonVariation()
 {
+	VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
 	if(_verbose)
 	{
 		cout<<"Vecteur courant Vk "<<endl;
