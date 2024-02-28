@@ -228,12 +228,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatSetUp(Laplacian);
 		MatZeroEntries(Laplacian);
 
-		// // Vector BoundaryTerms for Pressure TODO 
-		// VecCreate(PETSC_COMM_SELF, & BoundaryTerms); 
-		// VecSetSizes(BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns ); 
-		// VecSetFromOptions(BoundaryTerms);
-		// VecSetUp(BoundaryTerms);
-		// VecZeroEntries(BoundaryTerms);
+		// Vector BoundaryTerms for Pressure TODO 
+		VecCreate(PETSC_COMM_SELF, & _BoundaryTerms); 
+		VecSetSizes(_BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns ); 
+		VecSetFromOptions(_BoundaryTerms);
+		VecSetUp(_BoundaryTerms);
+		VecZeroEntries(_BoundaryTerms);
 
 		// matrice des Inverses de Surfaces
 		MatCreate(PETSC_COMM_SELF, & InvSurface); 
@@ -328,6 +328,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscScalar InvVol1 = 1.0/(Cint.getMeasure()*Cint.getNumberOfFaces());
 				PetscScalar Zero = 0;
 				
+				
+				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
@@ -339,8 +341,13 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
 				pExt = boundaryPressure[it->first];
 		
-				PetscScalar pressureGrad = Fj.getMeasure()*(pExt/pInt - 1 ); //TODO pas bon si pint = 0
+				PetscScalar pressureGrad = -FaceArea*(pExt/pInt - 1 ); //TODO pas bon si pint = 0
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &pressureGrad, ADD_VALUES ); 
+
+				/* pExt = Fj.getMeasure()*boundaryPressure[it->first];
+				PetscScalar MinusFaceArea = -FaceArea;
+				VecSetValues(_BoundaryTerms, 1, &idCells[0], &pExt, ADD_VALUES ); 
+				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );  */
 			 
 			}	
 		}
@@ -351,6 +358,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 		MatAssemblyBegin(Laplacian,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY);
+		VecAssemblyBegin(_BoundaryTerms);
+		VecAssemblyEnd(_BoundaryTerms);
+
+		
 
 		MatAssemblyBegin(InvSurface, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(InvSurface, MAT_FINAL_ASSEMBLY);
@@ -435,7 +446,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& GradDivTilde); 
 	}
 	if (_timeScheme == Explicit){
+		MatMult(_InvVol,_BoundaryTerms, _BoundaryTerms); 
 		MatMult(_A,_primitiveVars, _b); 
+		//VecAXPY(_b,     1, _BoundaryTerms);
 	}
 	return _cfl * _minCell / (_maxPerim * _c);
 
@@ -562,7 +575,7 @@ void WaveStaggered::terminate(){
 	VecDestroy(&_primitiveVars);
 	MatDestroy(& _A); 
 	MatDestroy(&_InvVol); 
-	
+	VecDestroy(& _BoundaryTerms);	
 
  
 	// 	PCDestroy(_pc);
