@@ -33,10 +33,10 @@ def WaveStaggered_1DRiemannProblem():
 	Velocity_Right =svl.Vector(1);
 
 	initialVelocity_Left=-1;
-	initialPressure_Left=1;
+	initialPressure_Left=4;
 
-	initialVelocity_Right=3;
-	initialPressure_Right=3;
+	initialVelocity_Right=2;
+	initialPressure_Right=4;
 	
 	# left and right constant vectors		
 	Pressure_Left[0] = initialPressure_Left;
@@ -95,7 +95,7 @@ def WaveStaggered_1DRiemannProblem():
 
     # simulation parameters 
 	MaxNbOfTimeStep = 1000 ;
-	freqSave = 10;
+	freqSave = 20;
 	cfl = 0.4 
 	maxTime = 10;
 	precision = 1e-6;
@@ -127,6 +127,7 @@ def WaveStaggered_1DRiemannProblem():
 	print( "------------ End of calculation !!! -----------" );
 
 	dt = myProblem.getTimeStep()
+	print("dt = ", dt)
 	myProblem.terminate();
 	time = 0
 	i=0

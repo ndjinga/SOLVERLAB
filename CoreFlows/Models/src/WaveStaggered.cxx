@@ -204,7 +204,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
 	cout << endl;
 
-	if (_timeScheme == Explicit && _nbTimeStep == 0){ // The matrices are assembled only in the first time step since linear problem
+	//The matrices are assembled only in the first time step since linear problem
+	if (_timeScheme == Explicit && _nbTimeStep == 0 ){ //TODO : pourquoi la solution exate n'évolue pas quand on enlève _nbTimeStep==0
 		Mat B, Bt, Laplacian, InvSurface;
 		
 		// matrice DIVERGENCE (|K|div(u))
@@ -328,8 +329,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscScalar InvVol1 = 1.0/(Cint.getMeasure()*Cint.getNumberOfFaces());
 				PetscScalar Zero = 0;
 				
-				
-				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
@@ -340,8 +339,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				std::map<int,double> boundaryPressure = getboundaryPressure(); 
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
 				pExt = boundaryPressure[it->first];
-		
-				PetscScalar pressureGrad = -FaceArea*(pExt/pInt - 1 ); //TODO pas bon si pint = 0
+
+				if (_Ndim == 1){ //TODO : bricolage  à modifier
+					if (j == 0)	
+						FaceArea = 1;
+				} 
+				PetscScalar pressureGrad = FaceArea*(pExt/pInt - 1 ); //TODO pas bon si pint = 0, pas bon cacr dépend de pInt qui évolue au cours du temps
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &pressureGrad, ADD_VALUES ); 
 
 				/* pExt = Fj.getMeasure()*boundaryPressure[it->first];
@@ -360,8 +363,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY);
 		VecAssemblyBegin(_BoundaryTerms);
 		VecAssemblyEnd(_BoundaryTerms);
-
-		
 
 		MatAssemblyBegin(InvSurface, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(InvSurface, MAT_FINAL_ASSEMBLY);
@@ -446,7 +447,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& GradDivTilde); 
 	}
 	if (_timeScheme == Explicit){
-		MatMult(_InvVol,_BoundaryTerms, _BoundaryTerms); 
+		//MatScale(_BoundaryTerms, _d*_c );
+		//MatMult(_InvVol,_BoundaryTerms, _BoundaryTerms); 
 		MatMult(_A,_primitiveVars, _b); 
 		//VecAXPY(_b,     1, _BoundaryTerms);
 	}
@@ -511,7 +513,6 @@ void WaveStaggered::validateTimeStep()
 
 void WaveStaggered::computeNewtonVariation()
 {
-	VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
 	if(_verbose)
 	{
 		cout<<"Vecteur courant Vk "<<endl;
