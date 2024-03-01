@@ -16,7 +16,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=100;
+	nx=60;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -51,29 +51,34 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, direction, svl.CELLS);
 	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, svl.FACES);
 
-	# set the boundary conditions
+	# set the initial conditions and boundary conditions
 	def initialPressure(x):
-		if x < discontinuity:
+		if xinf<x < discontinuity:
+			return math.sin(x)
+		elif x <=xinf :
 			return initialPressure_Left
-		else :
-			return initialPressure_Right
+		elif discontinuity < x < xsup:
+			return math.sin(x)
+		elif xsup <= x:
+			return initialPressure_Left
 
 	def initialVelocity(x):
-		if x < discontinuity:
+		if xinf<x < discontinuity:
 			return initialVelocity_Left
-		else:
+		elif x <=xinf :
+			return math.cos(x)
+		elif discontinuity < x < xsup:
+			return math.cos(x)
+		elif xsup <= x:
 			return initialVelocity_Right
+
 	
 	# Define the exact solution of the 1d Problem 
 	def ExactPressure(x,t):
 		return (initialPressure(x - c * t) + initialPressure(x + c * t))/2.0 + (initialVelocity(x-c*t) -initialVelocity(x+c*t))/(2*rho*c)
+
 	def ExactVelocity(x,t):
-		if x==xinf:
-			return initialVelocity_Left
-		if x==xsup:
-			return initialVelocity_Right
-		else:
-			return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
+		return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
 
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
@@ -94,7 +99,7 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 1000 ;
+	MaxNbOfTimeStep =  2000;
 	freqSave = 20;
 	cfl = 0.4 
 	maxTime = 10;
@@ -127,7 +132,6 @@ def WaveStaggered_1DRiemannProblem():
 	print( "------------ End of calculation !!! -----------" );
 
 	dt = myProblem.getTimeStep()
-	print("dt = ", dt)
 	myProblem.terminate();
 	time = 0
 	i=0

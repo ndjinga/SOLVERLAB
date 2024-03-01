@@ -41,20 +41,6 @@ void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure
 	_boundaryPressure = BoundaryPressure;
 }
 
-bool WaveStaggered::initTimeStep(double dt){
-	_dt = dt;
-	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
-}
-
-vector<string> WaveStaggered::getInputFieldsNames()
-{
-	vector<string> result(1);
-	
-	result[0]="NOT DEFINED";
-	return result;
-}
-void WaveStaggered::setInputField(const string& nameField, Field& inputField )
-{}
 
 void WaveStaggered::setInitialField(const Field &field)
 {
@@ -231,7 +217,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 		// Vector BoundaryTerms for Pressure TODO 
 		VecCreate(PETSC_COMM_SELF, & _BoundaryTerms); 
-		VecSetSizes(_BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns ); 
+		VecSetSizes(_BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns); 
 		VecSetFromOptions(_BoundaryTerms);
 		VecSetUp(_BoundaryTerms);
 		VecZeroEntries(_BoundaryTerms);
@@ -255,9 +241,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+				FaceArea = Fj.getMeasure();
 				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
-					FaceArea = 1;
 					InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
 					InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
 				} 
@@ -267,7 +253,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					// determinant of the vectors forming the diamond cell around the face sigma
 					// TODO : vérifier déterminant
 					det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
-					FaceArea = Fj.getMeasure();
 					InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
 					InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
 				}
@@ -282,8 +267,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
 				PetscScalar InvVol1 = 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces());
 				PetscScalar InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
-				PetscScalar One=1;
-				PetscScalar MinusOne=-1;
 
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
 				MatSetValues(B, 1, &idCells[1], 1, &j, &MinusFaceArea, ADD_VALUES );  
@@ -306,13 +289,16 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			else // boundary faces
 			{
 				Cell Cint = _mesh.getCell(idCells[0]);
+				FaceArea = Fj.getMeasure();
+				PetscScalar MinusFaceArea = -FaceArea;
 				if (_Ndim == 1){
 					PetscScalar det = Fj.x() - Cint.x();
-					FaceArea = 1.0;
 					InvD_sigma = 2.0/Cint.getMeasure() ;
 					InvPerimeter1 = 1.0/Cint.getNumberOfFaces() ;
-					if (j == 0)	
-						FaceArea = -1;
+					 if (j == 0){
+						FaceArea = -1; 
+						MinusFaceArea = -1;
+					 }
 				} 
 				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
@@ -320,37 +306,21 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					Node vertex2 = _mesh.getNode( nodes[1] );
 					PetscScalar det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Cint.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
-					FaceArea = Fj.getMeasure();
 					InvD_sigma = 1.0/PetscAbsReal(det);
-					InvPerimeter1 = 1/Cint.getNumberOfFaces();
-					
+					InvPerimeter1 = 1/Cint.getNumberOfFaces();	
 				}
-				PetscScalar One = 1;
 				PetscScalar InvVol1 = 1.0/(Cint.getMeasure()*Cint.getNumberOfFaces());
-				PetscScalar Zero = 0;
 				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 
-				PetscScalar pInt, pExt;
-				VecGetValues(_primitiveVars, 1, &idCells[0], &pInt);
 				std::map<int,double> boundaryPressure = getboundaryPressure(); 
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
-				pExt = boundaryPressure[it->first];
-
-				if (_Ndim == 1){ //TODO : bricolage  à modifier
-					if (j == 0)	
-						FaceArea = 1;
-				} 
-				PetscScalar pressureGrad = FaceArea*(pExt/pInt - 1 ); //TODO pas bon si pint = 0, pas bon cacr dépend de pInt qui évolue au cours du temps
-				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &pressureGrad, ADD_VALUES ); 
-
-				/* pExt = Fj.getMeasure()*boundaryPressure[it->first];
-				PetscScalar MinusFaceArea = -FaceArea;
-				VecSetValues(_BoundaryTerms, 1, &idCells[0], &pExt, ADD_VALUES ); 
-				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );  */
+				PetscScalar pExt = Fj.getMeasure()*boundaryPressure[it->first];
+				VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES ); 
+				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
 			 
 			}	
 		}
@@ -372,17 +342,18 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		Mat  GradDivTilde; 
 		MatScale(Bt, -1.0);
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-		// GradDivTilde  -> facteur 2 vient de InvSurf
 		if (_verbose){
 			_d = 1;
 			_rho =1;
 			_kappa = 1;
 		}
+		VecScale(_BoundaryTerms, _d*_c);
 		MatScale(Laplacian, _d*_c );
 		MatScale(B, -1.0/_rho);
 		MatScale(Bt, -1.0*_kappa);
-		MatScale(GradDivTilde, _d*_c/2.0);
+		MatScale(GradDivTilde, _d*_c);
 		if (_verbose){
+			VecView(_BoundaryTerms,PETSC_VIEWER_STDOUT_SELF);
 			MatView(Laplacian,PETSC_VIEWER_STDOUT_SELF);
 			MatView(B,PETSC_VIEWER_STDOUT_SELF);
 			MatView(Bt,PETSC_VIEWER_STDOUT_SELF);
@@ -391,15 +362,14 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatView(_InvVol,PETSC_VIEWER_STDOUT_SELF);
 		}
 		
+		
+		// _A = (dc Laplacian  ;  -1/rho B         )
+		//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 		Mat G[4];
 		G[0] = Laplacian;
 		G[1] = B;
 		G[2] = Bt;
 		G[3] = GradDivTilde;
-
-
-		// _A = (dc Laplacian  ;  -1/rho B         )
-		//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
@@ -446,11 +416,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& Laplacian);
 		MatDestroy(& GradDivTilde); 
 	}
-	if (_timeScheme == Explicit){
-		//MatScale(_BoundaryTerms, _d*_c );
-		//MatMult(_InvVol,_BoundaryTerms, _BoundaryTerms); 
+	if (_timeScheme == Explicit){	
+		Vec Prod2;
+		VecDuplicate(_BoundaryTerms, &Prod2);
+		MatMult(_InvVol, _BoundaryTerms, Prod2);  
 		MatMult(_A,_primitiveVars, _b); 
-		//VecAXPY(_b,     1, _BoundaryTerms);
+		VecAXPY(_b,     1, Prod2);
 	}
 	return _cfl * _minCell / (_maxPerim * _c);
 
@@ -477,7 +448,7 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 
 	//Change the relaxation coefficient to ease convergence
 	double relaxation=1;
-	VecAXPY(_primitiveVars,     relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+	VecAXPY(_primitiveVars, relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
 
 	return true;
 }
@@ -564,11 +535,26 @@ void WaveStaggered::testConservation()
 	
 }
 
+
+bool WaveStaggered::initTimeStep(double dt){
+	_dt = dt;
+	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
+}
+
+vector<string> WaveStaggered::getInputFieldsNames()
+{
+	vector<string> result(1);
+	
+	result[0]="NOT DEFINED";
+	return result;
+}
+void WaveStaggered::setInputField(const string& nameField, Field& inputField )
+{}
+
 double WaveStaggered::getTimeStep()
 {
 	return _dt;
 }
-
 
 void WaveStaggered::terminate(){ 
 	VecDestroy(&_newtonVariation);
