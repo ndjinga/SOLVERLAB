@@ -215,7 +215,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatSetUp(Laplacian);
 		MatZeroEntries(Laplacian);
 
-		// Vector BoundaryTerms for Pressure TODO 
+		// Vector BoundaryTerms for Pressure
 		VecCreate(PETSC_COMM_SELF, & _BoundaryTerms); 
 		VecSetSizes(_BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns); 
 		VecSetFromOptions(_BoundaryTerms);
@@ -236,8 +236,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			std::vector< int > idCells = Fj.getCellsId();
 			PetscScalar det, FaceArea, InvD_sigma, InvPerimeter1, InvPerimeter2;
 			PetscInt IndexFace = _Nmailles + j;
-
-			//  TODO : vérifier orientation, ne faut-il pas définir un vecteur n_sigma pour chaque face 
+ 
 			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
@@ -251,7 +250,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					std::vector<int> nodes =  Fj.getNodesId();
 					Node vertex = _mesh.getNode( nodes[0] );
 					// determinant of the vectors forming the diamond cell around the face sigma
-					// TODO : vérifier déterminant
 					det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
 					InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
 					InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
@@ -358,8 +356,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatView(B,PETSC_VIEWER_STDOUT_SELF);
 			MatView(Bt,PETSC_VIEWER_STDOUT_SELF);
 			MatView(GradDivTilde,PETSC_VIEWER_STDOUT_SELF);
-			MatView(InvSurface,PETSC_VIEWER_STDOUT_SELF);
-			MatView(_InvVol,PETSC_VIEWER_STDOUT_SELF);
 		}
 		
 		

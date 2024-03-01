@@ -16,7 +16,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=60;
+	nx=50;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -27,50 +27,32 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
 
     # Prepare for the initial condition
-	Pressure_Left =svl.Vector(1);
-	Pressure_Right =svl.Vector(1);
-	Velocity_Left =svl.Vector(1);
-	Velocity_Right =svl.Vector(1);
 
+	print("Building initial data " ); 
 	initialVelocity_Left=-1;
 	initialPressure_Left=4;
-
 	initialVelocity_Right=2;
 	initialPressure_Right=4;
 	
-	# left and right constant vectors		
-	Pressure_Left[0] = initialPressure_Left;
-	Pressure_Right[0] = initialPressure_Right;
-	Velocity_Left[0] = initialVelocity_Left;
-	Velocity_Right[0] = initialVelocity_Right;
-
-
-    #Initial field creation
-	print("Building initial data " ); 
-	direction = 0;
-	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, direction, svl.CELLS);
-	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, svl.FACES);
-
-	# set the initial conditions and boundary conditions
 	def initialPressure(x):
 		if xinf<x < discontinuity:
-			return math.sin(x)
+			return math.cos(x)
 		elif x <=xinf :
-			return initialPressure_Left
+			return initialPressure_Left 
 		elif discontinuity < x < xsup:
-			return math.sin(x)
+			return math.cos(x)
 		elif xsup <= x:
 			return initialPressure_Left
 
 	def initialVelocity(x):
 		if xinf<x < discontinuity:
-			return initialVelocity_Left
-		elif x <=xinf :
 			return math.cos(x)
+		elif x <=xinf :
+			return initialVelocity_Left
 		elif discontinuity < x < xsup:
 			return math.cos(x)
 		elif xsup <= x:
-			return initialVelocity_Right
+			return initialVelocity_Left
 
 	
 	# Define the exact solution of the 1d Problem 
@@ -80,14 +62,26 @@ def WaveStaggered_1DRiemannProblem():
 	def ExactVelocity(x,t):
 		return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
 
+	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
+	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
+	
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
-		if (Fj.getNumberOfCells()==1):
+		idCells = Fj.getCellsId();
+		if(Fj.getNumberOfCells()==2):
+			Ctemp1 = M.getCell(idCells[0]);
+			Ctemp2 = M.getCell(idCells[1]);
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
+			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
+			Velocity0[j] = initialVelocity(Fj.x()) ;
+		else:
 			wallPressureMap[j] = initialPressure(Fj.x()) ;
 			wallVelocityMap[j] = initialVelocity(Fj.x()) ;
 
+	myProblem.setInitialField(Pressure0);
+	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
@@ -99,10 +93,10 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep =  2000;
+	MaxNbOfTimeStep =  1500;
 	freqSave = 20;
 	cfl = 0.4 
-	maxTime = 10;
+	maxTime = 20;
 	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
