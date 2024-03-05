@@ -31,7 +31,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building initial data " ); 
 	initialVelocity_Left=4;
 	initialPressure_Left=-3;
-	initialVelocity_Right=4;
+	initialVelocity_Right=-1;
 	initialPressure_Right=0;
 	
 	def initialPressure(x):
@@ -46,11 +46,11 @@ def WaveStaggered_1DRiemannProblem():
 
 	def initialVelocity(x):
 		if xinf<x < discontinuity:
-			return math.cos(2*math.pi*x)
+			return initialVelocity_Left
 		elif x <=xinf :
 			return initialVelocity_Left
 		elif discontinuity < x < xsup:
-			return math.cos(2*math.pi*x)
+			return initialVelocity_Right
 		elif xsup <= x:
 			return initialVelocity_Left
 
@@ -93,7 +93,7 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep =  10000;
+	MaxNbOfTimeStep = 10000;
 	freqSave = 80;
 	cfl = 0.4 
 	maxTime = 20;
@@ -126,12 +126,13 @@ def WaveStaggered_1DRiemannProblem():
 	print( "------------ End of calculation !!! -----------" );
 
 	dt = myProblem.getTimeStep()
+	Tmax = myProblem.getTime();
 	myProblem.terminate();
 	time = 0
 	i=0
 	if not os.path.exists("WaveStaggered_"+fileName):
 		os.mkdir("WaveStaggered_"+fileName)
-	for t in range(MaxNbOfTimeStep):
+	while time < Tmax:
 		velocitydata = pd.read_csv("WaveStaggered_"+fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
 		pressuredata = pd.read_csv("WaveStaggered_"+fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')

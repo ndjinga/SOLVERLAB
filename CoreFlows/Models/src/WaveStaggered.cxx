@@ -187,11 +187,10 @@ void WaveStaggered::initialize(){
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 
-	cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
-	cout << endl;
-
 	//The matrices are assembled only in the first time step since linear problem
 	if (_timeScheme == Explicit && _nbTimeStep == 0 ){ //TODO : pourquoi la solution exate n'évolue pas quand on enlève _nbTimeStep==0
+		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+		cout << endl;
 		Mat B, Bt, Laplacian, InvSurface;
 		
 		// matrice DIVERGENCE (|K|div(u))
@@ -316,7 +315,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 				std::map<int,double> boundaryPressure = getboundaryPressure(); 
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
-				PetscScalar pExt = Fj.getMeasure()*boundaryPressure[it->first];
+				PetscScalar pExt =boundaryPressure[it->first]; // Fj.getMeasure()*
 				VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES ); 
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
 			 
@@ -351,7 +350,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatScale(Bt, -1.0*_kappa);
 		MatScale(GradDivTilde, _d*_c);
 		if (_verbose){
+			cout<<"Vectueur BoundaryTerms "<<endl;
 			VecView(_BoundaryTerms,PETSC_VIEWER_STDOUT_SELF);
+			cout<<"Laplacian"<<endl;
 			MatView(Laplacian,PETSC_VIEWER_STDOUT_SELF);
 			MatView(B,PETSC_VIEWER_STDOUT_SELF);
 			MatView(Bt,PETSC_VIEWER_STDOUT_SELF);
@@ -376,7 +377,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl; 
 		 	_cfl =  0.99 * _d; //WARNING : cfl = _d/2.0 theoretical but proof leads to think that it is the double (cfl = _d)
 		}
-		if (_Ndim = 1){
+		if (_Ndim == 1){
 			cout << "the explicit in 1D is stable with cfl = 0.4, cfl is updated "<< endl;
 		 	_cfl =  0.4;
 		}
@@ -488,7 +489,8 @@ void WaveStaggered::computeNewtonVariation()
 		if (_timeScheme == Implicit)
 			cout << "Matrice du système linéaire avant contribution delta t" << endl;
 		if (_timeScheme == Explicit) {
-			cout << "Matrice _A tel que _A = (dc Laplacian  ;  -1/rho B         ) //      (kappa B^t     ;  dc -B^t(1/|dK|) B )  : du second membre avant contribution delta t" << endl;
+			cout << "Matrice _A tel que _A = V^-1(dc Laplacian  ;  -1/rho B         )       "<<endl; 
+			cout << "                            (kappa B^t     ;  dc -B^t(1/|dK|) B) : du second membre avant contribution delta t" << endl;
 		}
 		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
 		cout << endl;

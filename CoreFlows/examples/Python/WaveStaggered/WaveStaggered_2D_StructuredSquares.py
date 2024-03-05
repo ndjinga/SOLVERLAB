@@ -5,7 +5,7 @@
 import solverlab as svl
 import math
 import numpy as np
-def WaveStaggered_2DRiemannX_StructuredSquares():
+def WaveStaggered_2D_StructuredSquares():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
@@ -13,9 +13,8 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	xsup = 1.0;
 	yinf = 0.0;
 	ysup = 1.0;
-	discontinuity = (xinf + xsup)/2.0
-	nx=200;
-	ny=50; 
+	nx=3;
+	ny=3; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -27,31 +26,17 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	#myProblem.setMesh(M);
 
 	# Prepare for the initial condition
-
+	# set the initial interior conditions
+	def initialPressure(x,y):
+		return 2 #math.sin(2*math.pi*x*y)		
+	def initialVelocity(x,y):
+		return 3 #math.cos(2*math.pi*x*y)
 	# set the boundary conditions
-	initialVelocity_Left=3;
-	initialPressure_Left=-1;
-
-	initialVelocity_Right=1;
-	initialPressure_Right=3;
-
-	def initialPressure(Z):
-		if Z < discontinuity:
-			return initialPressure_Left
-		else :
-			return initialPressure_Right
-
-	def initialVelocity(vec_normal,Z):
-		vec_y = np.array([1,0])
-		if (np.dot(vec_normal, vec_y)== 0):
-			return 0
-		else :
-			if Z < discontinuity:
-				return initialVelocity_Left
-			else:
-				return initialVelocity_Right
+	def initialBoundPressure(x,y):
+		return 4		
+	def initialBoundVelocity(x,y):
+		return 1
 		
-
 	#Initial field creation
 	print("Building initial data " ); 
 	wallPressureMap = {};
@@ -62,40 +47,31 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
-		vec_normal = np.zeros(2)
 		if(Fj.getNumberOfCells()==2):
 			Ctemp1 = M.getCell(idCells[0]);
 			Ctemp2 = M.getCell(idCells[1]);
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
-			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-				
-			Velocity0[j] = initialVelocity(vec_normal,Fj.x()) ;
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
+			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
+			Velocity0[j] = initialVelocity(Fj.x(),Fj.y()) ;
 		else:
 			Ctemp1 = M.getCell(idCells[0]);
-			wallPressureMap[j] = initialPressure(Ctemp1.x()) ;
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-			wallVelocityMap[j] = initialVelocity(vec_normal,Fj.x()) ;
+			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) ;
+			wallVelocityMap[j] = initialBoundVelocity(Fj.x(),Fj.y()) ;
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
+	print("Pressure0BOund =", wallPressureMap)
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);
 	# name of result file
-	fileName = "WaveStaggered_2DRiemannX_StructuredSquares";
+	fileName = "WaveStaggered_2D_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 12000 ;
-	freqSave = 80;
+	MaxNbOfTimeStep = 1 ;
+	freqSave = 1;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-6;
@@ -109,7 +85,7 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	myProblem.setSaveFileFormat(svl.VTK)
 	myProblem.saveVelocity();
 	myProblem.savePressure();
-	myProblem.setVerbose(False);
+	myProblem.setVerbose(True);
 
 	# Run the computation
 	myProblem.initialize();
@@ -127,4 +103,4 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	return ok
 
 if __name__ == """__main__""":
-	WaveStaggered_2DRiemannX_StructuredSquares()
+	WaveStaggered_2D_StructuredSquares()
