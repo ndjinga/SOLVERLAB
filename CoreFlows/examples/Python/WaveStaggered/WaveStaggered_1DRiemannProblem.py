@@ -16,7 +16,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=50;
+	nx=90;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -29,28 +29,28 @@ def WaveStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialVelocity_Left=-1;
-	initialPressure_Left=4;
-	initialVelocity_Right=2;
-	initialPressure_Right=4;
+	initialVelocity_Left=4;
+	initialPressure_Left=-3;
+	initialVelocity_Right=4;
+	initialPressure_Right=0;
 	
 	def initialPressure(x):
 		if xinf<x < discontinuity:
-			return math.cos(x)
+			return initialPressure_Left
 		elif x <=xinf :
 			return initialPressure_Left 
 		elif discontinuity < x < xsup:
-			return math.cos(x)
+			return initialPressure_Left
 		elif xsup <= x:
 			return initialPressure_Left
 
 	def initialVelocity(x):
 		if xinf<x < discontinuity:
-			return math.cos(x)
+			return math.cos(2*math.pi*x)
 		elif x <=xinf :
 			return initialVelocity_Left
 		elif discontinuity < x < xsup:
-			return math.cos(x)
+			return math.cos(2*math.pi*x)
 		elif xsup <= x:
 			return initialVelocity_Left
 
@@ -93,8 +93,8 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep =  1500;
-	freqSave = 20;
+	MaxNbOfTimeStep =  10000;
+	freqSave = 80;
 	cfl = 0.4 
 	maxTime = 20;
 	precision = 1e-6;
