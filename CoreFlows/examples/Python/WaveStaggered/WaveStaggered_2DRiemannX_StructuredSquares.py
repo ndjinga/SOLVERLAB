@@ -14,8 +14,8 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	yinf = 0.0;
 	ysup = 1.0;
 	discontinuity = (xinf + xsup)/2.0
-	nx=200;
-	ny=50; 
+	nx=70;
+	ny=70; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -24,16 +24,13 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	rho = 1;
 	c = math.sqrt(kappa/rho)
 	myProblem = svl.WaveStaggered(spaceDim,rho, kappa);
-	#myProblem.setMesh(M);
 
 	# Prepare for the initial condition
-
 	# set the boundary conditions
-	initialVelocity_Left=3;
-	initialPressure_Left=-1;
-
-	initialVelocity_Right=1;
-	initialPressure_Right=3;
+	initialVelocity_Left=4;
+	initialPressure_Left=-3;
+	initialVelocity_Right=-1;
+	initialPressure_Right=0;
 
 	def initialPressure(Z):
 		if Z < discontinuity:
@@ -94,8 +91,8 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	fileName = "WaveStaggered_2DRiemannX_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 12000 ;
-	freqSave = 80;
+	MaxNbOfTimeStep = 1000 ;
+	freqSave = 20;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-6;

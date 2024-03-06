@@ -292,10 +292,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar det = Fj.x() - Cint.x();
 					InvD_sigma = 2.0/Cint.getMeasure() ;
 					InvPerimeter1 = 1.0/Cint.getNumberOfFaces() ;
-					 if (j == 0){
-						FaceArea = -1; 
-						MinusFaceArea = -1;
-					 }
 				} 
 				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
@@ -305,7 +301,21 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
 					InvD_sigma = 1.0/PetscAbsReal(det);
 					InvPerimeter1 = 1/Cint.getNumberOfFaces();	
+					
 				}
+				double* vec_normal = new double[_Ndim];
+				for (int l=0; l< Cint.getNumberOfFaces(); l++){
+					if (j == Cint.getFacesId()[l]){
+						for (int idim=0; idim < _Ndim; idim ++){
+							vec_normal[idim] = Cint.getNormalVector(l,idim);
+						}
+					}
+				}
+				for ( int k=0; k < _Ndim; k++){
+					if (vec_normal[k] < 0)
+						FaceArea = -Fj.getMeasure();
+				}
+				delete[] vec_normal;
 				PetscScalar InvVol1 = 1.0/(Cint.getMeasure()*Cint.getNumberOfFaces());
 				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
@@ -315,7 +325,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 				std::map<int,double> boundaryPressure = getboundaryPressure(); 
 				std::map<int,double>::iterator it = boundaryPressure.find(j);
-				PetscScalar pExt =boundaryPressure[it->first]; // Fj.getMeasure()*
+				PetscScalar pExt =Fj.getMeasure()*boundaryPressure[it->first]; 
 				VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES ); 
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
 			 
@@ -375,7 +385,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 		if (_cfl > _d/2.0 && _Ndim > 1){
 			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl; 
-		 	_cfl =  0.99 * _d; //WARNING : cfl = _d/2.0 theoretical but proof leads to think that it is the double (cfl = _d)
+		 	_cfl =  0.99 * _d/2.0; //WARNING : cfl = _d/2.0 theoretical but proof leads to think that it is the double (cfl = _d)
 		}
 		if (_Ndim == 1){
 			cout << "the explicit in 1D is stable with cfl = 0.4, cfl is updated "<< endl;

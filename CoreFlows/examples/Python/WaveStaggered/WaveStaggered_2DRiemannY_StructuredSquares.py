@@ -14,8 +14,8 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	yinf = 0.0;
 	ysup = 1.0;
 	discontinuity = (yinf + ysup)/2.0
-	nx=50;
-	ny=200
+	nx=70;
+	ny=70; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
 	kappa = 1;
@@ -25,11 +25,10 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 
 	# Prepare for the initial condition
 	# set the boundary conditions
-	initialVelocity_Left=3;
-	initialPressure_Left=-1;
-
-	initialVelocity_Right=1;
-	initialPressure_Right=3;
+	initialVelocity_Left=4;
+	initialPressure_Left=-3;
+	initialVelocity_Right=-1;
+	initialPressure_Right=0
 
 	def initialPressure(Z):
 		if Z < discontinuity:
@@ -90,8 +89,8 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	fileName = "WaveStaggered_2DRiemannY_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 4000 ;
-	freqSave = 80;
+	MaxNbOfTimeStep = 1000 ;
+	freqSave = 20;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-6;

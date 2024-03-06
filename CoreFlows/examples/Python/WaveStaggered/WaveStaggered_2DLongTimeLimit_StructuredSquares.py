@@ -5,7 +5,7 @@
 import solverlab as svl
 import math
 import numpy as np
-def WaveStaggered_2D_StructuredSquares():
+def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
@@ -13,8 +13,8 @@ def WaveStaggered_2D_StructuredSquares():
 	xsup = 1.0;
 	yinf = 0.0;
 	ysup = 1.0;
-	nx=3;
-	ny=3; 
+	nx=45;
+	ny=45; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -28,14 +28,14 @@ def WaveStaggered_2D_StructuredSquares():
 	# Prepare for the initial condition
 	# set the initial interior conditions
 	def initialPressure(x,y):
-		return 2 #math.sin(2*math.pi*x*y)		
+		return math.sin(2*math.pi*x*y)		
 	def initialVelocity(x,y):
-		return 3 #math.cos(2*math.pi*x*y)
+		return math.cos(2*math.pi*x) 
 	# set the boundary conditions
 	def initialBoundPressure(x,y):
 		return 4		
 	def initialBoundVelocity(x,y):
-		return 1
+		return 5
 		
 	#Initial field creation
 	print("Building initial data " ); 
@@ -61,17 +61,16 @@ def WaveStaggered_2D_StructuredSquares():
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
-	myProblem.setboundaryVelocity(wallVelocityMap);
-	print("Pressure0BOund =", wallPressureMap)
+	myProblem.setboundaryVelocity(wallVelocityMap)
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);
 	# name of result file
-	fileName = "WaveStaggered_2D_StructuredSquares";
+	fileName = "WaveStaggered_2DLongTimeLimit_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 1 ;
-	freqSave = 1;
+	MaxNbOfTimeStep = 35000 ;
+	freqSave = 1000;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-6;
@@ -85,7 +84,7 @@ def WaveStaggered_2D_StructuredSquares():
 	myProblem.setSaveFileFormat(svl.VTK)
 	myProblem.saveVelocity();
 	myProblem.savePressure();
-	myProblem.setVerbose(True);
+	myProblem.setVerbose(False);
 
 	# Run the computation
 	myProblem.initialize();
@@ -103,4 +102,4 @@ def WaveStaggered_2D_StructuredSquares():
 	return ok
 
 if __name__ == """__main__""":
-	WaveStaggered_2D_StructuredSquares()
+	WaveStaggered_2DLongTimeLimit_StructuredSquares()
