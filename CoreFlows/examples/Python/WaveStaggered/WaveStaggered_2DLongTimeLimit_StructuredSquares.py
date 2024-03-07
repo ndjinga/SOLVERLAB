@@ -23,17 +23,16 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	rho = 1;
 	c = math.sqrt(kappa/rho)
 	myProblem = svl.WaveStaggered(spaceDim,rho, kappa);
-	#myProblem.setMesh(M);
 
 	# Prepare for the initial condition
 	# set the initial interior conditions
 	def initialPressure(x,y):
 		return math.sin(2*math.pi*x*y)		
 	def initialVelocity(x,y):
-		return math.cos(2*math.pi*x) 
+		return 30 
 	# set the boundary conditions
 	def initialBoundPressure(x,y):
-		return 4		
+		return 150		
 	def initialBoundVelocity(x,y):
 		return 5
 		
@@ -69,11 +68,11 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	fileName = "WaveStaggered_2DLongTimeLimit_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 35000 ;
-	freqSave = 1000;
+	MaxNbOfTimeStep = 40000 ;
+	freqSave = 500;
 	cfl = 0.4; 
 	maxTime = 10;
-	precision = 1e-6;
+	precision = 1e-4;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
