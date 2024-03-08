@@ -18,6 +18,7 @@
 #include "ProblemCoreFlows.hxx"
 #include "Node.hxx"
 #include "utilitaire_algebre.h"
+#include "Mesh.hxx"
 
 class WaveStaggered : public ProblemCoreFlows{
 public :
@@ -95,6 +96,8 @@ public :
      * @param void
      * */
 	void testConservation();
+
+	void setPeriodicFacesPairSquares(bool vertical_periodicity);
 
 	std::map<int,double>  getboundaryPressure();
 	void  setboundaryPressure(map< int, double> BoundaryPressure);

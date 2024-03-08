@@ -543,6 +543,54 @@ void WaveStaggered::testConservation()
 	
 }
 
+void  WaveStaggered::setPeriodicFacesPairSquares(bool vertical_periodicity){
+    if(_indexFacePeriodicSet)
+        return;
+        
+    for (int indexFace=0;indexFace<_boundaryFaceIds.size() ; indexFace++)
+    {
+        Face my_face=_faces.get()[_boundaryFaceIds[indexFace]];
+        int iface_perio=-1;
+        if(_meshDim==1)
+        {
+            for (int iface=0;iface<_boundaryFaceIds.size() ; iface++)
+                if(iface!=indexFace)
+                {
+                    iface_perio=_boundaryFaceIds[iface];
+                    break;
+                }
+        }
+        else if(_meshDim==2)
+        {
+            double x=my_face.x();
+            double y=my_face.y();
+            
+            for (int iface=0;iface<_boundaryFaceIds.size() ; iface++)
+            {
+                Face face_i=_faces.get()[_boundaryFaceIds[iface]];
+                double xi=face_i.x();
+                double yi=face_i.y();
+				if (vertical_periodicity ==true && abs(x-xi)<_epsilon  ){
+                    face_perio=_boundaryFaceIds[iface];
+                    break;
+                
+            	}
+				else if (vertical_periodicity ==false && abs(y-xyi)<_epsilon  ){
+                    face_perio=_boundaryFaceIds[iface];
+                    break;
+            	}
+       		}
+		}
+        else
+            throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 1, 2 o");
+        
+        if (iface_perio==-1)
+            throw CdmathException("Mesh::setPeriodicFaces: periodic face not found, iface_perio==-1 " );
+        else
+            _indexFacePeriodicMap[_boundaryFaceIds[indexFace]]=iface_perio;
+    }
+    _indexFacePeriodicSet=true;    
+}
 
 bool WaveStaggered::initTimeStep(double dt){
 	_dt = dt;
