@@ -69,7 +69,7 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 
 	# computation parameters
 	MaxNbOfTimeStep = 40000 ;
-	freqSave = 500;
+	freqSave = 100;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-4;
