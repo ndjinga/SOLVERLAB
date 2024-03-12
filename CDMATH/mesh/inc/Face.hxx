@@ -117,16 +117,16 @@ public: //----------------------------------------------------------------
     /**
      * @param groupName : set a groupe name for this face
      */
-    void setGroupName(const std::string groupName);
+    void setGroupName(const std::string groupName, bool belongToInnerWall = false);
 
     /**
-     * return 0 if the face is on the border of domain
-     * else -1
+     * return true if the face is on an inner wall
+     * else false
      */
-    int getRegion(void) const ;
+    bool belongToInnerWall(void) const ;
 
     /**
-     * return True if the face is on the border of domain
+     * return True if the face is on the border of domain or on an inner wall
      * else False
      */
     bool isBorder(void) ;
@@ -198,9 +198,9 @@ private: //----------------------------------------------------------------
     Point _point ;
 
     /*
-     * The region of this face. -1 if the face belongs to no group, 0 otherwise. This to manage internal wall boundary conditions.
+     * This is to manage internal wall boundary conditions where a face is surrounded by two cells but is considered an inner wall.
      */
-    int _region ;
+    bool _belongToInnerWall ;
 
     /*
      * The group names of the face.

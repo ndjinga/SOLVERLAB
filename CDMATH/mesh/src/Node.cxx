@@ -17,7 +17,6 @@ Node::Node( void )
 	_numberOfFaces = 0 ;
 	_numberOfEdges = 0 ;
 	_groupNames=std::vector<std::string>(0);
-	_region=-1;
     _isBorder=false;
 }
 
@@ -38,7 +37,6 @@ Node::Node( const Node& node )
 	_numberOfFaces = node.getNumberOfFaces() ;
 	_numberOfEdges = node.getNumberOfEdges() ;
 	_groupNames=node.getGroupNames();
-	_region=node.getRegion();
     _isBorder=node.isBorder();
 }
 
@@ -55,7 +53,6 @@ Node::Node( const int numberOfCells, const int numberOfFaces, const int numberOf
 	_facesId = std::vector< int >(_numberOfFaces,0);
 	_neighbourNodesId = std::vector< int >(_numberOfEdges,0);
 	_groupNames=std::vector<std::string>(0);
-	_region=-1;
     _isBorder=false;
 }
 
@@ -164,7 +161,6 @@ Node::setGroupName(const std::string groupName)
 	if(std::find(_groupNames.begin(), _groupNames.end(), groupName) == _groupNames.end())//No group named groupName
 	{
 		_groupNames.insert(_groupNames.begin(),groupName);
-		_region=0;
 	}
 	else
 		std::cout<<"Warning Node::setGroupName, group name "<< groupName <<" is already present. No duplication"<<std::endl;
@@ -173,16 +169,10 @@ Node::setGroupName(const std::string groupName)
 bool
 Node::isBorder(void) const
 {
-	if (_region==0 | _isBorder)
+	if ( _isBorder )
 		return true;
 	else
 		return false;
-}
-
-int
-Node::getRegion(void) const
-{
-	return _region;
 }
 
 //----------------------------------------------------------------------

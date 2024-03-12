@@ -421,10 +421,10 @@ class TestsCDMATHSwig(unittest.TestCase):
         self.assertTrue(p.x() == f.x())
         self.assertTrue(p.y() == f.y())
         self.assertTrue(p.z() == f.z())
-        self.assertTrue(-1 == f.getRegion())
+        self.assertTrue(False == f.belongToInnerWall())
         self.assertTrue(False == f.isBorder())
-        f.setGroupName("Bord1")
-        self.assertTrue(0 == f.getRegion())
+        f.setGroupName("Bord1", True)
+        self.assertTrue(True == f.belongToInnerWall())
         self.assertTrue(True == f.isBorder())
         self.assertTrue("Bord1" == f.getGroupName())
 
@@ -443,7 +443,7 @@ class TestsCDMATHSwig(unittest.TestCase):
         self.assertTrue(1.0 == f2.getMeasure())
         self.assertTrue(2 == f2.getNumberOfNodes())
         self.assertTrue(2 == f2.getNumberOfCells())
-        self.assertTrue(0 == f2.getRegion())
+        self.assertTrue(True == f2.belongToInnerWall())
         self.assertTrue(True == f2.isBorder())
         self.assertTrue("Bord1" == f2.getGroupName())
         return

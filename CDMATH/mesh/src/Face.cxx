@@ -17,7 +17,7 @@ Face::Face( void )
 //----------------------------------------------------------------------
 {
 	_measure = 0.0 ;
-	_region=-1;
+	_belongToInnerWall = false;
 	_groupNames=std::vector<std::string>(0);
 	_numberOfCells = 0 ;
 	_numberOfNodes = 0 ;
@@ -31,7 +31,7 @@ Face::Face( const Face& face )
 //----------------------------------------------------------------------
 {
 	_measure = face.getMeasure() ;
-	_region=face.getRegion();
+	_belongToInnerWall = face.belongToInnerWall();
 	_groupNames=face.getGroupNames();
 	_point = face.getBarryCenter();
 	_numberOfCells = face.getNumberOfCells() ;
@@ -53,7 +53,7 @@ Face::Face( const int numberOfNodes, const int numberOfCells, const double measu
 	_nodesId = std::vector< int >(_numberOfNodes,0);
 	_cellsId = std::vector< int >(_numberOfCells,0);
 	_measure = measure ;
-	_region=-1;
+	_belongToInnerWall = false;
 	_xN=xN;
 	_yN=yN;
 	_zN=zN;
@@ -75,10 +75,10 @@ Face::~Face( void )
 {
 }
 
-int
-Face::getRegion(void) const
+bool
+Face::belongToInnerWall(void) const
 {
-	return _region;
+	return _belongToInnerWall;
 }
 
 double
@@ -119,12 +119,12 @@ Face::getGroupName(int igroup) const
 }
 
 void
-Face::setGroupName(const string groupName)
+Face::setGroupName(const string groupName, bool belongToInnerWall)
 {
 	if(std::find(_groupNames.begin(), _groupNames.end(), groupName) == _groupNames.end())//No group named groupName
 	{
 		_groupNames.insert(_groupNames.begin(),groupName);
-		_region=0;
+		_belongToInnerWall = belongToInnerWall;
 	}
 	else
 		cout<<"Warning Face::setGroupName, group name "<< groupName <<" is already present. No duplication"<<endl;
@@ -133,7 +133,7 @@ Face::setGroupName(const string groupName)
 bool
 Face::isBorder(void)
 {
-	if (_region==0 || _numberOfCells==1)
+	if ( _numberOfCells==1 || _belongToInnerWall)
 		return true;
 	else
 		return false;
@@ -249,7 +249,7 @@ Face::operator= ( const Face& face )
 	_nodesId=face.getNodesId();
 	_cellsId=face.getCellsId();
 	_groupNames=face.getGroupNames();
-	_region=face.getRegion();
+	_belongToInnerWall=face.belongToInnerWall();
 	_xN=face.getXN();
 	_yN=face.getYN();
 	_zN=face.getZN();

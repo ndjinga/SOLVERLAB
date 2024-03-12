@@ -101,15 +101,8 @@ class Node
      */
     void setGroupName(const std::string groupName);
 
-
     /**
-     * return 0 if the node is on the border of domain
-     * else -1
-     */
-    int getRegion(void) const ;
-
-    /**
-     * return True if the node is on the border of domain
+     * return True if the node is on the border of domain or on an inner wall
      * else False
      */
     bool isBorder(void) const ;
@@ -205,16 +198,11 @@ class Node
     int _numberOfEdges ;
 
     /*
-     * The region of this node. -1 if the node belongs to no group, 0 otherwise This to manage internal wall boundary conditions.
-     */
-    int _region ;
-
-    /*
      * The group names of the Node.
      */
     std::vector<std::string> _groupNames ;
     
-    /* Is the node a border node ? */
+    /* Is the node a true border node ie located on the geometric border, not on a singularity such as an inner wall*/
     bool _isBorder;
 };
 
