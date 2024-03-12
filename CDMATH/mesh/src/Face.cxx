@@ -215,14 +215,26 @@ void
 Face::addCellId(const int numCell, const int cellId )
 //----------------------------------------------------------------------
 {
-	_cellsId[numCell] = cellId ;
+    if(numCell<_numberOfCells)
+       _cellsId[numCell] = cellId ;
+    else
+    {
+        std::cout<< "Cell index : "<< numCell<<" should be strictly smaller than total number of cells "<<_numberOfCells<<std::endl;
+        throw CdmathException("Face::addCellId : incorrect cell index");
+    }
 }
 //----------------------------------------------------------------------
 void
 Face::addNodeId(const int numNode, const int nodeId )
 //----------------------------------------------------------------------
 {
-	_nodesId[numNode] = nodeId ;
+    if(numNode<_numberOfNodes)
+        _nodesId[numNode] = nodeId ;
+    else
+    {
+        std::cout<< "Node index : "<< numNode<<" should be strictly smaller than total number of nodes "<<_numberOfNodes<<std::endl;
+        throw CdmathException("Face::addNodeId : incorrect node index");
+    }
 }
 
 //----------------------------------------------------------------------

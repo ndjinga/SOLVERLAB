@@ -190,7 +190,14 @@ void
 Node::addFaceId (const int numFace, const int faceId, bool isBorder  )
 //----------------------------------------------------------------------
 {
-	_facesId[numFace] = faceId ;
+	
+    if(numFace<_numberOfFaces)
+       _facesId[numFace] = faceId ;
+    else
+    {
+        std::cout<< "Face index : "<< numFace<<" should be strictly smaller than total number of faces "<<_numberOfFaces<<std::endl;
+        throw CdmathException("Node::addFaceId : incorrect face index");
+    }
     if(isBorder)
     {
         if(std::find(_groupNames.begin(), _groupNames.end(), "Boundary") == _groupNames.end())//No group named Boundary
@@ -204,7 +211,13 @@ void
 Node::addCellId (const int numCell, const int cellId )
 //----------------------------------------------------------------------
 {
-	_cellsId[numCell] = cellId ;
+    if(numCell<_numberOfCells)
+       _cellsId[numCell] = cellId ;
+    else
+    {
+        std::cout<< "Cell index : "<< numCell<<" should be strictly smaller than total number of cells "<<_numberOfCells<<std::endl;
+        throw CdmathException("Node::addCellId : incorrect cell index");
+    }
 }
 
 //----------------------------------------------------------------------

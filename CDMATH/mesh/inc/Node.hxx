@@ -205,7 +205,7 @@ class Node
     int _numberOfEdges ;
 
     /*
-     * The region of this face. -1 internal or number of edge that this face belongs to
+     * The region of this node. -1 if the node belongs to no group, 0 otherwise This to manage internal wall boundary conditions.
      */
     int _region ;
 

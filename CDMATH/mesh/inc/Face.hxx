@@ -198,7 +198,7 @@ private: //----------------------------------------------------------------
     Point _point ;
 
     /*
-     * The region of this face. -1 internal or number of edge that this face belongs to
+     * The region of this face. -1 if the face belongs to no group, 0 otherwise. This to manage internal wall boundary conditions.
      */
     int _region ;
 
