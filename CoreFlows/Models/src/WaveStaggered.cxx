@@ -237,10 +237,13 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 			std::map<int,int>::iterator it;
 			bool periodicFaceComputed, periodicFaceNotComputed;
-			if (_indexFacePeriodicSet == true ){
-				it=_indexFacePeriodicMap.find(j)  ; // if periodic
-				periodicFaceComputed = (it->first == j ) ;
-				periodicFaceNotComputed = (it->second == j ) ;
+			if (_indexFacePeriodicSet == true ){ // if periodic 
+				it = _indexFacePeriodicMap.find(j);
+				periodicFaceComputed = (it != _indexFacePeriodicMap.end());
+				std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
+				while ( ( j !=it2->second) && (it2 !=_indexFacePeriodicMap.end() ) )
+					it2++;
+				periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
 			}
 			else{
 				periodicFaceComputed = false;
@@ -347,7 +350,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscScalar pExt =Fj.getMeasure()*boundaryPressure[it->first]; 
 				VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES ); 
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
-			 
 			}	
 		}
 		MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY);
@@ -597,13 +599,8 @@ void WaveStaggered::setVerticalPeriodicFaces(){
 			}
 			else
 				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 2");		
-			
-			// TODO : do not fill if already in the map
 		}
 	}
-	std::map<int,int>::iterator it;
-	for (it = _indexFacePeriodicMap.begin(); it != _indexFacePeriodicMap.end(); it++ )
-		cout << "_indexFacePeriodicMap["<<it->first<<"] = "<<it->second <<endl;
 	_indexFacePeriodicSet = true;
 }
 
@@ -680,8 +677,13 @@ void WaveStaggered::save(){
 	}
 	if(_saveVelocity){
 		for (int i = 0 ; i < _Nfaces ; i++){
-				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(i); // TODO ; ne va pas fonctionner car cherche seulement dans les clés
-				int k = ( (it->second == i ) && (_indexFacePeriodicSet == true) )? it->first : i; // in periodic k stays i if it has been computed by scheme and takes the value of its matched face 
+				bool periodicFaceNotComputed;
+				std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
+				while ( ( i !=it2->second) && (it2 != _indexFacePeriodicMap.end() ) )
+					it2++;
+				periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
+				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(i);
+				int k = periodicFaceNotComputed && (_indexFacePeriodicSet == true) && (it != _indexFacePeriodicMap.end()) ? it->first : i; // in periodic k stays i if it has been computed by scheme and takes the value of its matched face 
 				int I= _Nmailles + k;
 				VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
 			}
