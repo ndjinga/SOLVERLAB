@@ -604,6 +604,41 @@ void WaveStaggered::setVerticalPeriodicFaces(){
 	_indexFacePeriodicSet = true;
 }
 
+void WaveStaggered::setHorizontalPeriodicFaces(){
+    for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
+        Face my_face=_mesh.getFace(j);
+        int iface_perio=-1;
+		double y=my_face.y();
+		if (my_face.getNumberOfCells() ==1 && my_face.y()>0 && my_face.y()<1){ //TODO : dim =1
+			/* if(_Ndim ==1){
+				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
+					Face face_i=_mesh.getFace(iface);
+					if (face_i.getNumberOfCells() ==1){
+						if(iface!=j){
+							iface_perio=iface;
+							break;
+						}
+					}
+				}
+			} */
+			if(_Ndim==2){
+				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
+					Face face_i=_mesh.getFace(iface);
+					double yi =face_i.y();
+					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(y-yi)<1e-3) ){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+						bool empty = (_indexFacePeriodicMap.find(iface) == _indexFacePeriodicMap.end()) ;
+						if (empty == true)
+							_indexFacePeriodicMap[j]=iface;
+					}
+				}
+			}
+			else
+				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 2");		
+		}
+	}
+	_indexFacePeriodicSet = true;
+}
+
 vector<string> WaveStaggered::getInputFieldsNames()
 {
 	vector<string> result(1);

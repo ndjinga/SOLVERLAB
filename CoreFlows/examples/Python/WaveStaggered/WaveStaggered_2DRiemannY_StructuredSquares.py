@@ -83,13 +83,15 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
+	myProblem.setHorizontalPeriodicFaces()
+
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);
 	# name of result file
 	fileName = "WaveStaggered_2DRiemannY_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 1000 ;
+	MaxNbOfTimeStep = 1700 ;
 	freqSave = 20;
 	cfl = 0.4; 
 	maxTime = 10;

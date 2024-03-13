@@ -98,6 +98,7 @@ public :
 	void testConservation();
 
 	void setVerticalPeriodicFaces();
+	void setHorizontalPeriodicFaces();
 
 	std::map<int,double>  getboundaryPressure();
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
