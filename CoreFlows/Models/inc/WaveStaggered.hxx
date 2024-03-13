@@ -97,7 +97,7 @@ public :
      * */
 	void testConservation();
 
-	void setPeriodicFacesPairSquares(bool vertical_periodicity);
+	void setVerticalPeriodicFaces();
 
 	std::map<int,double>  getboundaryPressure();
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
@@ -116,6 +116,7 @@ protected :
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
+	std::map<int,int> _indexFacePeriodicMap;
 	bool _facesBoundinit; // To ensure that the boundary velocity is initialized after the initial velocity 
 				
 

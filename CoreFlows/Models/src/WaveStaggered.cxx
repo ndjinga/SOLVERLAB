@@ -543,58 +543,38 @@ void WaveStaggered::testConservation()
 	
 }
 
-void  WaveStaggered::setPeriodicFacesPairSquares(bool vertical_periodicity){
-    if(_indexFacePeriodicSet)
-        return;
-        
-    for (int indexFace=0;indexFace<_boundaryFaceIds.size() ; indexFace++)
-    {
-        Face my_face=_faces.get()[_boundaryFaceIds[indexFace]];
-        int iface_perio=-1;
-        if(_meshDim==1)
-        {
-            for (int iface=0;iface<_boundaryFaceIds.size() ; iface++)
-                if(iface!=indexFace)
-                {
-                    iface_perio=_boundaryFaceIds[iface];
-                    break;
-                }
-        }
-        else if(_meshDim==2)
-        {
-            double x=my_face.x();
-            double y=my_face.y();
-            
-            for (int iface=0;iface<_boundaryFaceIds.size() ; iface++)
-            {
-                Face face_i=_faces.get()[_boundaryFaceIds[iface]];
-                double xi=face_i.x();
-                double yi=face_i.y();
-				if (vertical_periodicity ==true && abs(x-xi)<_epsilon  ){
-                    face_perio=_boundaryFaceIds[iface];
-                    break;
-                
-            	}
-				else if (vertical_periodicity ==false && abs(y-xyi)<_epsilon  ){
-                    face_perio=_boundaryFaceIds[iface];
-                    break;
-            	}
-       		}
-		}
-        else
-            throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 1, 2 o");
-        
-        if (iface_perio==-1)
-            throw CdmathException("Mesh::setPeriodicFaces: periodic face not found, iface_perio==-1 " );
-        else
-            _indexFacePeriodicMap[_boundaryFaceIds[indexFace]]=iface_perio;
-    }
-    _indexFacePeriodicSet=true;    
-}
-
 bool WaveStaggered::initTimeStep(double dt){
 	_dt = dt;
 	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
+}
+
+void WaveStaggered::setVerticalPeriodicFaces(){
+    for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
+        Face my_face=_mesh.getFace(j);
+        int iface_perio=-1;
+		if (my_face.getNumberOfCells() ==1 ){
+			if(_Ndim==2){
+				double x=my_face.x();
+				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
+					Face face_i=_mesh.getFace(iface);
+					if (face_i.getNumberOfCells() ==1){
+						double xi=face_i.x();
+						if ( (abs(x-xi)<1e-5 )){
+							iface_perio=iface;
+							break;
+						}
+					}
+				}
+			}
+			else
+				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 2");
+			
+			if (iface_perio==-1)
+				throw CdmathException("Mesh::setPeriodicFaces: periodic face not found, iface_perio==-1 " );
+			else
+				_indexFacePeriodicMap[j]=iface_perio;
+		}
+	}   
 }
 
 vector<string> WaveStaggered::getInputFieldsNames()
