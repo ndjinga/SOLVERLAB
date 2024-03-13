@@ -27,16 +27,12 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 
 	# Prepare for the initial condition
 	# set the boundary conditions
-	initialVelocity_Left=4;
-	initialPressure_Left=-3;
-	initialVelocity_Right=-1;
-	initialPressure_Right=0;
 
 	def initialPressure(Z):
 		if Z < discontinuity:
-			return initialPressure_Left
+			return -3
 		else :
-			return initialPressure_Right
+			return 0
 
 	def initialVelocity(vec_normal,Z):
 		vec_y = np.array([1,0])
@@ -44,9 +40,9 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 			return 0
 		else :
 			if Z < discontinuity:
-				return initialVelocity_Left
+				return -4
 			else:
-				return initialVelocity_Right
+				return -1
 		
 
 	#Initial field creation
@@ -84,6 +80,8 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
+	# Set periodicity on top/bottom faces
+	myProblem.setVerticalPeriodicFaces()
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);

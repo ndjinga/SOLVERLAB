@@ -577,12 +577,15 @@ void WaveStaggered::setVerticalPeriodicFaces(){
 				}
 			}
 			else
-				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 2");
+				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should e 2");
 			
 			if (iface_perio==-1)
 				throw CdmathException("Mesh::setPeriodicFaces: periodic face not found, iface_perio==-1 " );
-			else
-				_indexFacePeriodicMap[j]=iface_perio;
+			else{
+				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(j);
+				if (it->second != j) // if the face j is not already in the map as a periodic non computed face then it goes in the map as a computed face (see declaration for explanation)
+					_indexFacePeriodicMap[j]=iface_perio;
+		}
 		}
 	}
 	_indexFacePeriodicSet = true;

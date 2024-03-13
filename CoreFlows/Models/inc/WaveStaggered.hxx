@@ -116,7 +116,7 @@ protected :
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
-	std::map<int,int> _indexFacePeriodicMap;
+	std::map<int,int> _indexFacePeriodicMap; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
 	bool _facesBoundinit,_indexFacePeriodicSet; // To ensure that the boundary velocity is initialized after the initial velocity 
 				
 
