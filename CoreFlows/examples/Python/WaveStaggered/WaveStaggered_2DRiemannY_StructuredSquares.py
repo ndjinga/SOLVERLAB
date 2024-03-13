@@ -89,7 +89,7 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	fileName = "WaveStaggered_2DRiemannY_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 1700 ;
+	MaxNbOfTimeStep = 1000 ;
 	freqSave = 20;
 	cfl = 0.4; 
 	maxTime = 10;
