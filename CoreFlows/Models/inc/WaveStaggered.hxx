@@ -117,7 +117,7 @@ protected :
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
 	std::map<int,int> _indexFacePeriodicMap;
-	bool _facesBoundinit; // To ensure that the boundary velocity is initialized after the initial velocity 
+	bool _facesBoundinit,_indexFacePeriodicSet; // To ensure that the boundary velocity is initialized after the initial velocity 
 				
 
 };

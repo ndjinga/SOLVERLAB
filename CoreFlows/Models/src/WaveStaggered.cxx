@@ -234,17 +234,17 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			bool _isBoundary=Fj.isBorder();
 			std::vector< int > idCells = Fj.getCellsId();
 
-			std::map<int,int>::iterator it = _indexFacePeriodicMap.find(j);
-			bool periodicFace = (it->first == j );
+			std::map<int,int>::iterator it = _indexFacePeriodicMap.find(j)  ;
+			bool periodicFaceComputed = (it->first == j ) && (_indexFacePeriodicSet );
+			bool periodicFaceNotComputed = (it->second == j ) && (_indexFacePeriodicSet );
 			PetscScalar det, FaceArea, InvD_sigma, InvPerimeter1, InvPerimeter2;
 			PetscInt IndexFace = _Nmailles + j;
  
-			if (Fj.getNumberOfCells()==2 || periodicFace == true ){	// Fj is inside the domain and has two neighours (no junction)
+			if (Fj.getNumberOfCells()==2 || periodicFaceComputed == true ){	// Fj is inside the domain or is a boundary face and periodic
 				Cell Ctemp1 ,Ctemp2 ;
 				Ctemp1 = _mesh.getCell(idCells[0]);
-				if (periodicFace == true){
-					Face other_Fj = _mesh.getFace(it->second);
-					std::vector< int > idCells_other_Fj = other_Fj.getCellsId();
+				if (periodicFaceComputed == true){
+					std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
 					idCells.push_back( idCells_other_Fj[0]  );
 					Ctemp2 = _mesh.getCell( idCells[1]);
 				}
@@ -294,7 +294,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			
 						
 			}
-			else if (Fj.getNumberOfCells()==1 && (it->second != j ) ) {
+			else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 
 				Cell Cint = _mesh.getCell(idCells[0]);
 				FaceArea = Fj.getMeasure();
 				PetscScalar MinusFaceArea = -FaceArea;
@@ -584,7 +584,8 @@ void WaveStaggered::setVerticalPeriodicFaces(){
 			else
 				_indexFacePeriodicMap[j]=iface_perio;
 		}
-	}   
+	}
+	_indexFacePeriodicSet = true;
 }
 
 vector<string> WaveStaggered::getInputFieldsNames()
@@ -660,7 +661,9 @@ void WaveStaggered::save(){
 	}
 	if(_saveVelocity){
 		for (int i = 0 ; i < _Nfaces ; i++){
-				int I= _Nmailles + i;
+				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(i)  ;
+				int k = ( (it->second == i ) && (_indexFacePeriodicSet == true) )? it->first : i; // in periodic k stays i if it has been computed by scheme and takes the value of its matched face 
+				int I= _Nmailles + k;
 				VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
 			}
 			
