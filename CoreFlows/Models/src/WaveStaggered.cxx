@@ -17,6 +17,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_saveVelocity=false; 
 	_savePressure=false; 
 	_facesBoundinit = false;
+	_indexFacePeriodicSet = false;
 }
 
 std::map<int,double>  WaveStaggered::getboundaryPressure(){
@@ -234,16 +235,24 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			bool _isBoundary=Fj.isBorder();
 			std::vector< int > idCells = Fj.getCellsId();
 
-			std::map<int,int>::iterator it = _indexFacePeriodicMap.find(j)  ;
-			bool periodicFaceComputed = (it->first == j ) && (_indexFacePeriodicSet );
-			bool periodicFaceNotComputed = (it->second == j ) && (_indexFacePeriodicSet );
+			std::map<int,int>::iterator it;
+			bool periodicFaceComputed, periodicFaceNotComputed;
+			if (_indexFacePeriodicSet == true ){
+				it=_indexFacePeriodicMap.find(j)  ; // if periodic
+				periodicFaceComputed = (it->first == j ) ;
+				periodicFaceNotComputed = (it->second == j ) ;
+			}
+			else{
+				periodicFaceComputed = false;
+				periodicFaceNotComputed = false;
+			}
+			
 			PetscScalar det, FaceArea, InvD_sigma, InvPerimeter1, InvPerimeter2;
 			PetscInt IndexFace = _Nmailles + j;
- 
-			if (Fj.getNumberOfCells()==2 || periodicFaceComputed == true ){	// Fj is inside the domain or is a boundary face and periodic
+			if (Fj.getNumberOfCells()==2 || (periodicFaceComputed == true) ){	// Fj is inside the domain or is a boundary periodic face (computed)
 				Cell Ctemp1 ,Ctemp2 ;
 				Ctemp1 = _mesh.getCell(idCells[0]);
-				if (periodicFaceComputed == true){
+				if ( periodicFaceComputed == true){ 
 					std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
 					idCells.push_back( idCells_other_Fj[0]  );
 					Ctemp2 = _mesh.getCell( idCells[1]);
@@ -562,32 +571,39 @@ void WaveStaggered::setVerticalPeriodicFaces(){
     for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
         Face my_face=_mesh.getFace(j);
         int iface_perio=-1;
-		if (my_face.getNumberOfCells() ==1 ){
-			if(_Ndim==2){
-				double x=my_face.x();
+		double x=my_face.x();
+		if (my_face.getNumberOfCells() ==1 && my_face.x()>0 && my_face.x()<1){ //TODO : dim =1
+			/* if(_Ndim ==1){
 				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
 					Face face_i=_mesh.getFace(iface);
 					if (face_i.getNumberOfCells() ==1){
-						double xi=face_i.x();
-						if ( (abs(x-xi)<1e-5 )){
+						if(iface!=j){
 							iface_perio=iface;
 							break;
 						}
 					}
 				}
+			} */
+			if(_Ndim==2){
+				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
+					Face face_i=_mesh.getFace(iface);
+					double xi =face_i.x();
+					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(x-xi)<1e-3) ){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+						bool empty = (_indexFacePeriodicMap.find(iface) == _indexFacePeriodicMap.end()) ;
+						if (empty == true)
+							_indexFacePeriodicMap[j]=iface;
+					}
+				}
 			}
 			else
-				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should e 2");
+				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 2");		
 			
-			if (iface_perio==-1)
-				throw CdmathException("Mesh::setPeriodicFaces: periodic face not found, iface_perio==-1 " );
-			else{
-				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(j);
-				if (it->second != j) // if the face j is not already in the map as a periodic non computed face then it goes in the map as a computed face (see declaration for explanation)
-					_indexFacePeriodicMap[j]=iface_perio;
-		}
+			// TODO : do not fill if already in the map
 		}
 	}
+	std::map<int,int>::iterator it;
+	for (it = _indexFacePeriodicMap.begin(); it != _indexFacePeriodicMap.end(); it++ )
+		cout << "_indexFacePeriodicMap["<<it->first<<"] = "<<it->second <<endl;
 	_indexFacePeriodicSet = true;
 }
 
@@ -664,7 +680,7 @@ void WaveStaggered::save(){
 	}
 	if(_saveVelocity){
 		for (int i = 0 ; i < _Nfaces ; i++){
-				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(i)  ;
+				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(i); // TODO ; ne va pas fonctionner car cherche seulement dans les clés
 				int k = ( (it->second == i ) && (_indexFacePeriodicSet == true) )? it->first : i; // in periodic k stays i if it has been computed by scheme and takes the value of its matched face 
 				int I= _Nmailles + k;
 				VecGetValues(_primitiveVars,1,&I,&_Velocity(i));

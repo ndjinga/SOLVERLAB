@@ -14,8 +14,8 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	yinf = 0.0;
 	ysup = 1.0;
 	discontinuity = (xinf + xsup)/2.0
-	nx=70;
-	ny=70; 
+	nx=2;
+	ny=2; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -80,6 +80,7 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
+	print(wallPressureMap)
 	# Set periodicity on top/bottom faces
 	myProblem.setVerticalPeriodicFaces()
 
