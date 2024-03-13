@@ -233,12 +233,23 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			Face Fj = _mesh.getFace(j);
 			bool _isBoundary=Fj.isBorder();
 			std::vector< int > idCells = Fj.getCellsId();
+
+			std::map<int,int>::iterator it = _indexFacePeriodicMap.find(j);
+			bool periodicFace = (it->first == j );
 			PetscScalar det, FaceArea, InvD_sigma, InvPerimeter1, InvPerimeter2;
 			PetscInt IndexFace = _Nmailles + j;
  
-			if (Fj.getNumberOfCells()==2 ){	// Fj is inside the domain and has two neighours (no junction)
-				Cell Ctemp1 = _mesh.getCell(idCells[0]);//origin of the normal vector
-				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			if (Fj.getNumberOfCells()==2 || periodicFace == true ){	// Fj is inside the domain and has two neighours (no junction)
+				Cell Ctemp1 ,Ctemp2 ;
+				Ctemp1 = _mesh.getCell(idCells[0]);
+				if (periodicFace == true){
+					Face other_Fj = _mesh.getFace(it->second);
+					std::vector< int > idCells_other_Fj = other_Fj.getCellsId();
+					idCells.push_back( idCells_other_Fj[0]  );
+					Ctemp2 = _mesh.getCell( idCells[1]);
+				}
+				else
+					Ctemp2 = _mesh.getCell(idCells[1]);
 				FaceArea = Fj.getMeasure();
 				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
@@ -283,8 +294,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			
 						
 			}
-			else // boundary faces
-			{
+			else if (Fj.getNumberOfCells()==1 && (it->second != j ) ) {
 				Cell Cint = _mesh.getCell(idCells[0]);
 				FaceArea = Fj.getMeasure();
 				PetscScalar MinusFaceArea = -FaceArea;
