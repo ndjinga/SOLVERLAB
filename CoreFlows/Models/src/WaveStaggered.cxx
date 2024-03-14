@@ -18,6 +18,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_savePressure=false; 
 	_facesBoundinit = false;
 	_indexFacePeriodicSet = false;
+	_vec_normal=NULL;
 }
 
 std::map<int,double>  WaveStaggered::getboundaryPressure(){
@@ -62,7 +63,6 @@ void WaveStaggered::setInitialField(const Field &field)
 		_time=_Velocity.getTime();
 		_mesh=_Velocity.getMesh();
 		_facesBoundinit = true;
-
 	} 
 	_initialDataSet=true;
 	//Mesh data
@@ -124,6 +124,7 @@ void WaveStaggered::initialize(){
 	*_runLogFile << " spaceDim= "<<_Ndim <<endl;
 
 	_d = 1/(2* sqrt(_neibMaxNbCells) );
+	_vec_normal = new double[_Ndim];
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
 	double * initialFieldVelocity = new double[_Nfaces];
@@ -258,11 +259,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				if ( periodicFaceComputed == true){ 
 					std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
 					idCells.push_back( idCells_other_Fj[0]  );
-					Ctemp2 = _mesh.getCell( idCells[1]);
 				}
-				else
-					Ctemp2 = _mesh.getCell(idCells[1]);
-				FaceArea = Fj.getMeasure();
+				Ctemp2 = _mesh.getCell(idCells[1]);
+				
 				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
 					InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
@@ -282,7 +281,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					_runLogFile->close();
 					throw CdmathException("WaveStaggered pas dispo en 3D, arret de calcul");				
 				}
-		
+
+				FaceArea = Fj.getMeasure();
 				PetscScalar MinusFaceArea = -FaceArea;
 				PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
 				PetscScalar InvVol1 = 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces());
@@ -302,9 +302,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				MatSetValues(InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
 				MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
-			
-						
+				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 				
 			}
 			else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 
 				Cell Cint = _mesh.getCell(idCells[0]);
@@ -325,19 +323,18 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					InvPerimeter1 = 1/Cint.getNumberOfFaces();	
 					
 				}
-				double* vec_normal = new double[_Ndim];
-				for (int l=0; l< Cint.getNumberOfFaces(); l++){
-					if (j == Cint.getFacesId()[l]){
-						for (int idim=0; idim < _Ndim; idim ++){
-							vec_normal[idim] = Cint.getNormalVector(l,idim);
+				for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+						if (j == Cint.getFacesId()[l])
+						{
+							for (int idim = 0; idim < _Ndim; ++idim)
+								_vec_normal[idim] = Cint.getNormalVector(l,idim);
+							break;
 						}
-					}
 				}
-				for ( int k=0; k < _Ndim; k++){
-					if (vec_normal[k] < 0)
+				for (int k=0; k < _Ndim; k++){
+					if (_vec_normal[k] < 0)
 						FaceArea = -Fj.getMeasure();
 				}
-				delete[] vec_normal;
 				PetscScalar InvVol1 = 1.0/(Cint.getMeasure()*Cint.getNumberOfFaces());
 				
 				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
@@ -370,25 +367,11 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		Mat  GradDivTilde; 
 		MatScale(Bt, -1.0);
 		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-		if (_verbose){
-			_d = 1;
-			_rho =1;
-			_kappa = 1;
-		}
 		VecScale(_BoundaryTerms, _d*_c);
 		MatScale(Laplacian, _d*_c );
 		MatScale(B, -1.0/_rho);
 		MatScale(Bt, -1.0*_kappa);
 		MatScale(GradDivTilde, _d*_c);
-		if (_verbose){
-			cout<<"Vectueur BoundaryTerms "<<endl;
-			VecView(_BoundaryTerms,PETSC_VIEWER_STDOUT_SELF);
-			cout<<"Laplacian"<<endl;
-			MatView(Laplacian,PETSC_VIEWER_STDOUT_SELF);
-			MatView(B,PETSC_VIEWER_STDOUT_SELF);
-			MatView(Bt,PETSC_VIEWER_STDOUT_SELF);
-			MatView(GradDivTilde,PETSC_VIEWER_STDOUT_SELF);
-		}
 		
 		
 		// _A = (dc Laplacian  ;  -1/rho B         )
@@ -408,13 +391,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl; 
 		 	_cfl =  0.99 * _d/2.0; //WARNING : cfl = _d/2.0 theoretical but proof leads to think that it is the double (cfl = _d)
 		}
-		if (_Ndim == 1){
-			cout << "the explicit in 1D is stable with cfl = 0.4, cfl is updated "<< endl;
-		 	_cfl =  0.4;
-		}
+
 		Vec V, W;
 		PetscScalar minInvSurf, maxInvVol;
-
 		// Minimum size of mesh volumes
 		VecCreate(PETSC_COMM_SELF, & V);
 		VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
@@ -452,7 +431,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		VecAXPY(_b,     1, Prod2);
 	}
 	return _cfl * _minCell / (_maxPerim * _c);
-
 }
 
 bool WaveStaggered::iterateTimeStep(bool &converged)
@@ -479,10 +457,6 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	VecAXPY(_primitiveVars, relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
 
 	return true;
-}
-
-void WaveStaggered::abortTimeStep(){
-	_dt = 0;
 }
 
 void WaveStaggered::validateTimeStep()
@@ -569,23 +543,16 @@ bool WaveStaggered::initTimeStep(double dt){
 	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
 }
 
+void WaveStaggered::abortTimeStep(){
+	_dt = 0;
+}
+
 void WaveStaggered::setVerticalPeriodicFaces(){
     for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
         Face my_face=_mesh.getFace(j);
         int iface_perio=-1;
 		double x=my_face.x();
 		if (my_face.getNumberOfCells() ==1 && my_face.x()>0 && my_face.x()<1){ //TODO : dim =1
-			/* if(_Ndim ==1){
-				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
-					Face face_i=_mesh.getFace(iface);
-					if (face_i.getNumberOfCells() ==1){
-						if(iface!=j){
-							iface_perio=iface;
-							break;
-						}
-					}
-				}
-			} */
 			if(_Ndim==2){
 				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
 					Face face_i=_mesh.getFace(iface);
@@ -609,23 +576,12 @@ void WaveStaggered::setHorizontalPeriodicFaces(){
         Face my_face=_mesh.getFace(j);
         int iface_perio=-1;
 		double y=my_face.y();
-		if (my_face.getNumberOfCells() ==1 && my_face.y()>0 && my_face.y()<1){ //TODO : dim =1
-			/* if(_Ndim ==1){
-				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
-					Face face_i=_mesh.getFace(iface);
-					if (face_i.getNumberOfCells() ==1){
-						if(iface!=j){
-							iface_perio=iface;
-							break;
-						}
-					}
-				}
-			} */
+		if (my_face.getNumberOfCells() ==1 && my_face.y()>0 && my_face.y()<1){ //TODO : dim =1 & : pas générique ; quelle condition mettre pour ne pas compter face de bord
 			if(_Ndim==2){
 				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
 					Face face_i=_mesh.getFace(iface);
 					double yi =face_i.y();
-					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(y-yi)<1e-3) ){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(y-yi)<1e-3) ){ 
 						bool empty = (_indexFacePeriodicMap.find(iface) == _indexFacePeriodicMap.end()) ;
 						if (empty == true)
 							_indexFacePeriodicMap[j]=iface;
@@ -655,14 +611,13 @@ double WaveStaggered::getTimeStep()
 }
 
 void WaveStaggered::terminate(){ 
+	delete[]_vec_normal;
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
 	MatDestroy(& _A); 
 	MatDestroy(&_InvVol); 
 	VecDestroy(& _BoundaryTerms);	
-
- 
 	// 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
 }
@@ -711,25 +666,49 @@ void WaveStaggered::save(){
 		}
 	}
 	if(_saveVelocity){
+		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,2);//TODO : set number of component ok ?
+		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 		for (int i = 0 ; i < _Nfaces ; i++){
-				bool periodicFaceNotComputed;
-				std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
-				while ( ( i !=it2->second) && (it2 != _indexFacePeriodicMap.end() ) )
-					it2++;
-				periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
-				std::map<int,int>::iterator it = _indexFacePeriodicMap.find(i);
-				int k = periodicFaceNotComputed && (_indexFacePeriodicSet == true) && (it != _indexFacePeriodicMap.end()) ? it->first : i; // in periodic k stays i if it has been computed by scheme and takes the value of its matched face 
-				int I= _Nmailles + k;
-				VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
+			bool periodicFaceNotComputed;
+			std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
+			while ( ( i !=it2->second) && (it2 != _indexFacePeriodicMap.end() ) )
+				it2++;
+			periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
+			int k = (periodicFaceNotComputed ==true) && (_indexFacePeriodicSet == true) ? it2->first : i; // in periodic k stays i, if it has been computed by scheme and takes the value of its matched face 
+			int I= _Nmailles + k;
+			VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
+
+			
+			Face Fj = _mesh.getFace(i);
+			std::vector< int > idCells = Fj.getCellsId();
+			Cell Ctemp1 = _mesh.getCell(idCells[0]); //origin of the normal vector
+			if (_Ndim >1){
+				for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+					if (i == Ctemp1.getFacesId()[l]){
+						for (int idim = 0; idim < _Ndim; ++idim)
+							_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
+						break;
+					}
+				}
 			}
+			for (int k=0; k< _Velocity_at_Cells.getNumberOfComponents(); k++){
+				_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * _vec_normal[k]; // TODo : initialize à 0 Velcoity at cells
+				if (Fj.getNumberOfCells() ==2 )
+					_Velocity_at_Cells(idCells[1], k) -= _Velocity(i) * _vec_normal[k]; // TODO pas forcément la bonne orientation 
+			}
+		}
 			
 		_Velocity.setTime(_time,_nbTimeStep);
+		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 		if (_nbTimeStep ==0){
 			_Velocity.setInfoOnComponent(0,"Velocity . n_sigma_(m/s)");
+			_Velocity_at_Cells.setInfoOnComponent(0,"Velocity at cells x_(m/s)");
+			_Velocity_at_Cells.setInfoOnComponent(1,"Velocity at cells y_(m/s)");
 			switch(_saveFormat)
 			{
 			case VTK :
 				_Velocity.writeVTK(prim+"_Velocity");
+				_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
 				break;
 			case MED :
 				_Velocity.writeMED(prim+"_Velocity");
@@ -744,45 +723,13 @@ void WaveStaggered::save(){
 			{
 			case VTK :
 				_Velocity.writeVTK(prim+"_Velocity",false);
+				_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells",false);
 				break;
 			case MED :
 				_Velocity.writeMED(prim+"_Velocity",false);
 				break;
 			case CSV :
 				_Velocity.writeCSV(prim+"_Velocity");
-				break;
-			}
-		}
-	}
-	if(_isStationary)
-	{
-		prim+="_Stat";
-
-		if(_saveVelocity){
-			switch(_saveFormat)
-			{
-			case VTK :
-				_Velocity.writeVTK(prim+"_Velocity");
-				break;
-			case MED :
-				_Velocity.writeMED(prim+"_Velocity");
-				break;
-			case CSV :
-				_Velocity.writeCSV(prim+"_Velocity");
-				break;
-			}
-		}
-		if(_savePressure){
-			switch(_saveFormat)
-			{
-			case VTK :
-				_Pressure.writeVTK(prim+"_Pressure");
-				break;
-			case MED :
-				_Pressure.writeMED(prim+"_Pressure");
-				break;
-			case CSV :
-				_Pressure.writeCSV(prim+"_Pressure");
 				break;
 			}
 		}

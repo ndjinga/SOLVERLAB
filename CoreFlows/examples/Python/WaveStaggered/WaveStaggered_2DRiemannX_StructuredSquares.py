@@ -80,7 +80,7 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
-	print(wallPressureMap)
+
 	# Set periodicity on top/bottom faces
 	myProblem.setVerticalPeriodicFaces()
 
@@ -90,7 +90,7 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	fileName = "WaveStaggered_2DRiemannX_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 1700 ;
+	MaxNbOfTimeStep = 3000 ;
 	freqSave = 20;
 	cfl = 0.4; 
 	maxTime = 10;

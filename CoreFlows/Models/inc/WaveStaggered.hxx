@@ -111,10 +111,11 @@ public :
 
 
 protected :
-	Field _Velocity, _Pressure ;
+	Field _Velocity, _Pressure, _Velocity_at_Cells;
 	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms;;
 	Mat _InvVol; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
+	double *_vec_normal;
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
 	std::map<int,int> _indexFacePeriodicMap; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
