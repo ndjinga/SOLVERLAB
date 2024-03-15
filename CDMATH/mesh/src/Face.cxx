@@ -18,6 +18,7 @@ Face::Face( void )
 {
 	_measure = 0.0 ;
 	_belongToInnerWall = false;
+	_isPeriodicFace = false;
 	_groupNames=std::vector<std::string>(0);
 	_numberOfCells = 0 ;
 	_numberOfNodes = 0 ;
@@ -32,6 +33,7 @@ Face::Face( const Face& face )
 {
 	_measure = face.getMeasure() ;
 	_belongToInnerWall = face.belongToInnerWall();
+	_isPeriodicFace = face.isPeriodicFace();
 	_groupNames=face.getGroupNames();
 	_point = face.getBarryCenter();
 	_numberOfCells = face.getNumberOfCells() ;
@@ -54,6 +56,7 @@ Face::Face( const int numberOfNodes, const int numberOfCells, const double measu
 	_cellsId = std::vector< int >(_numberOfCells,0);
 	_measure = measure ;
 	_belongToInnerWall = false;
+	_isPeriodicFace = false;
 	_xN=xN;
 	_yN=yN;
 	_zN=zN;
@@ -79,6 +82,12 @@ bool
 Face::belongToInnerWall(void) const
 {
 	return _belongToInnerWall;
+}
+
+bool
+Face::isPeriodicFace(void) const
+{
+	return _isPeriodicFace;
 }
 
 double
@@ -223,6 +232,34 @@ Face::addCellId(const int numCell, const int cellId )
         throw CdmathException("Face::addCellId : incorrect cell index");
     }
 }
+
+void
+Face::addPeriodicCellId ( const int cellId )
+{
+	int size = _cellsId.size();
+    if( _numberOfCells == size ) 
+        _cellsId.push_back( cellId );// Increase the size of _cellsId to store the ghost cell index
+    else if( _numberOfCells == size - 1 ) 
+        _cellsId[size] = cellId;
+    else
+    {
+        std::cout<< "Cell index : "<< cellId<<" can not be added as a ghost cell because face in in wrong state : _numberOfCells = "<<_numberOfCells<<", _cellsId.size() = "<<_cellsId.size()<<std::endl;
+        throw CdmathException("Face::addPeriodicCellId : Face is in wrong state");
+    }
+}
+
+int 
+Face::getPeriodicCellId() const 
+{
+    if( _numberOfCells == _cellsId.size() - 1 ) 
+        return _cellsId[_numberOfCells];
+    else
+    {
+        std::cout<< "Face is is not associated to any ghost cell : _numberOfCells = "<<_numberOfCells<<", _cellsId.size() = "<<_cellsId.size()<<std::endl;
+        throw CdmathException("Face::getPeriodicCellId : Face is is not associated to any ghost cell");
+    }
+}
+
 //----------------------------------------------------------------------
 void
 Face::addNodeId(const int numNode, const int nodeId )

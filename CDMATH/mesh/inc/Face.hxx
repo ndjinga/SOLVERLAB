@@ -14,6 +14,7 @@
  * - number of cells allocated for this face
  * - measure of this face
  * - barycenter of this face
+ * - normal vector to the face
  */
 
 #include "Point.hxx"
@@ -53,13 +54,13 @@ public: //----------------------------------------------------------------
     ~Face ( void ) ;
 
     /**
-     * The cells ID that this face belongs to
+     * The cells ID that this face belongs to (real geometric neighbours, excluding periodic boundary pairing)
      * @return _cellsId
      */
     std::vector< int > getCellsId ( void ) const ;
 
     /**
-     * The nodes ID that this face belongs to
+     * The nodes ID that this face belongs to (real geometric neighbours, excluding periodic boundary pairing)
      * @return _nodesId
      */
     std::vector< int > getNodesId ( void ) const ;
@@ -72,13 +73,13 @@ public: //----------------------------------------------------------------
     double getMeasure( void ) const ;
 
     /**
-     * return number of cells in this face
+     * return number of cells in this face (number of real geometric neighbours, excluding periodic boundary pairing)
      * @return _numberOfCells
      */
     int getNumberOfCells ( void ) const ;
 
     /**
-     * return number of nodes in this face
+     * return number of nodes in this face (number of real geometric neighbours, excluding periodic boundary pairing)
      * @return _numberOfNodes
      */
     int getNumberOfNodes ( void ) const ;
@@ -126,20 +127,31 @@ public: //----------------------------------------------------------------
     bool belongToInnerWall(void) const ;
 
     /**
-     * return True if the face is on the border of domain or on an inner wall
+     * return true if the face is associated to a periodic boundary condition
+     * else false
+     */
+    bool isPeriodicFace(void) const;
+
+    /**
+     * return True if the face is on the geometric border of domain or physically on an inner wall  (faces associated to periodic boundary conditions are not considered proper borders)
      * else False
      */
     bool isBorder(void) ;
 
     /**
-     * @param numCell : index local of cell to add in this face
-     * @param cellId : index global of cell to add in this face
+     * @param numCell : local index of cell to add in this face
+     * @param cellId : global index of cell to add in this face
      */
     void addCellId (const int numCell, const int cellId ) ;
 
+    /** Add a ghost cell ie a cell that is not geometrically connected to the face but is associated though a periodic boundary condition 
+     * @param cellId : global index of the ghost cell to add in this face
+     */
+    void addPeriodicCellId ( const int cellId ) ;
+
     /**
-     * @param numNode : index local of node to add in this face
-     * @param nodeId : index global of node to add in this face
+     * @param numNode : local index of node to add in this face
+     * @param nodeId : global index of node to add in this face
      */
     void addNodeId (const int numNode, const int nodeId ) ;
 
@@ -155,9 +167,22 @@ public: //----------------------------------------------------------------
 
     double getZN(void) const ;
 
+    /**
+     * @param localId : local index of surrounding node
+     * @return global index of neighbouring node with local index localId
+     */
     int getNodeId(int localId) const ;
     
+    /**
+     * @param localId : local index of neighbouring cell
+     * @return global index of neighbouring cell with local index localId
+     */
     int getCellId(int localId) const ;
+
+    /**
+     * @return ghost cell associated to this face (return an exception of this face is not associated to a periodic boundary condition
+     */
+    int getPeriodicCellId() const ;
 
 private: //----------------------------------------------------------------
 
@@ -198,14 +223,22 @@ private: //----------------------------------------------------------------
     Point _point ;
 
     /*
-     * This is to manage internal wall boundary conditions where a face is surrounded by two cells but is considered an inner wall.
+     * The group names of the face.
+     */
+    std::vector<std::string> _groupNames ;
+
+    /*
+     * This is to manage internal wall boundary conditions where a face is geometrically surrounded by two cells but is physically considered an inner wall.
      */
     bool _belongToInnerWall ;
 
     /*
-     * The group names of the face.
+     * This is to manage periodic boundary conditions where a face is geometrically surrounded by a single cell but has a ghost neighbour cell because of the periodic condition imposed at the boundary.
+     * The ghost neighbour is another boundary cell stored at index numCell (not numCell-1) of the _cellsId vector
+     * The vector _cellsId stores one or two cells that are the numCell geometric neighbours and possibly a ghost neighbour if a periodic boundary condition is applied on the face.
      */
-    std::vector<std::string> _groupNames ;
+    bool _isPeriodicFace ;
+
 };
 
 #endif /* FACE_HXX_ */
