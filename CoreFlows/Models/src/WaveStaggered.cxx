@@ -666,7 +666,7 @@ void WaveStaggered::save(){
 		}
 	}
 	if(_saveVelocity){
-		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,2);//TODO : set number of component ok ?
+		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,3);
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 		for (int i = 0 ; i < _Nfaces ; i++){
 			bool periodicFaceNotComputed;
@@ -691,10 +691,12 @@ void WaveStaggered::save(){
 					}
 				}
 			}
-			for (int k=0; k< _Velocity_at_Cells.getNumberOfComponents(); k++){
-				_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * _vec_normal[k]; // TODo : initialize à 0 Velcoity at cells
+			
+			for (int k=0; k< _Ndim; k++){
+					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * _vec_normal[k]; // TODO :orientation 
 				if (Fj.getNumberOfCells() ==2 )
-					_Velocity_at_Cells(idCells[1], k) -= _Velocity(i) * _vec_normal[k]; // TODO pas forcément la bonne orientation 
+							_Velocity_at_Cells(idCells[1], k) -= _Velocity(i) * _vec_normal[k]; 
+			
 			}
 		}
 			
