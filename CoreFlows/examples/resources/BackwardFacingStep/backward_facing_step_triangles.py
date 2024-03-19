@@ -181,8 +181,7 @@ Wall_1 = mesh.GroupOnGeom(group_wall,'Wall',SMESH.EDGE)
 mesh.Compute()
 
 # Export MED
-dir_test   = "/volatile/catA/ndjinga/Maillages/backward_facing_step_1/"
-mesh.ExportMED( dir_test + "backward_facing_step_triangles.med")
+mesh.ExportMED( "./backward_facing_step_triangles.med")
 
 if salome.sg.hasDesktop():
   salome.sg.updateObjBrowser()

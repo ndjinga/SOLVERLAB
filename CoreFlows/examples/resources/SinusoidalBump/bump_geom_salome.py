@@ -1,11 +1,11 @@
-# $Id: bump_geom_salome.py,v 1.1 2010/07/27 09:44:43 kumbaro Exp $
-# $Name: FLIVAP-1-1-1 $
 #
 # Description: channel with sinusoidal bump geometry
 #
 
 import math
-import geompy
+from salome.geom import geomBuilder
+
+geompy = geomBuilder.New()
 
 ### ------------------ Geometry
 #
@@ -64,8 +64,8 @@ dx = 2.0 / nx
 for ix in range(nx+1):
     x = 1.0 + (ix * dx)
     y = bump(x)
-    print x
-    print y
+    print(x)
+    print(y)
     g_vertices_bump.append( geompy.MakeVertex(x,y,0.0) )
 
 g_bump = geompy.MakeInterpol(g_vertices_bump)
