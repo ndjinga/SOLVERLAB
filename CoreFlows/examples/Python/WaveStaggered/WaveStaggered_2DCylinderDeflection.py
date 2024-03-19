@@ -5,38 +5,27 @@
 import solverlab as svl
 import math
 import numpy as np
-def WaveStaggered_2DLongTimeLimit_StructuredSquares():
+def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	xinf = 0.0;
-	xsup = 1.0;
-	yinf = 0.0;
-	ysup = 1.0;  
-	nx=60;
-	ny=60; 
-	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
-
-	
-	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
+	inputfile="../resources/meshCube.med";
+	M=svl.Mesh(inputfile);
 	kappa = 1;
 	rho = 1;
 	c = math.sqrt(kappa/rho)
 	myProblem = svl.WaveStaggered(spaceDim,rho, kappa);
 
 	# Prepare for the initial condition
-	# set the initial interior conditions
-	def initialPressure(x,y):
-		return math.sin(2*math.pi*x*y)		
-	def initialVelocity(x,y):
-		vec = np.array([1, -1])
-		return vec
 	# set the boundary conditions
-	def initialBoundPressure(x,y):
-		return 3		
-	def initialBoundVelocity(x,y):
-		vec = np.array([1, -1])
-		return vec
+
+	def initialPressure(Z):
+		return 0
+
+	def initialVelocity(vec_normal,Z):
+		return 0
+		
+
 	#Initial field creation
 	print("Building initial data " ); 
 	wallPressureMap = {};
@@ -47,37 +36,45 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
-		Ctemp1 = M.getCell(idCells[0]);
 		vec_normal = np.zeros(2)
-		for l in range( Ctemp1.getNumberOfFaces()) :
+		if(Fj.getNumberOfCells()==2):
+			Ctemp1 = M.getCell(idCells[0]);
+			Ctemp2 = M.getCell(idCells[1]);
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.y()) ;
+			Pressure0[idCells[1]] = initialPressure(Ctemp2.y());
+			for l in range( Ctemp1.getNumberOfFaces()) :
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim)
-		if(Fj.getNumberOfCells()==2):
-			Ctemp2 = M.getCell(idCells[1]);
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
-			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
-			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()), -vec_normal)  ;
+						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
+				
+			Velocity0[j] = initialVelocity(vec_normal,Fj.y()) ;
 		else:
-			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) ;
-			wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), -vec_normal) ;
+			Ctemp1 = M.getCell(idCells[0]);
+			wallPressureMap[j] = initialPressure(Ctemp1.y()) ;
+			for l in range( Ctemp1.getNumberOfFaces()) :
+				if (j == Ctemp1.getFacesId()[l]):
+					for idim in range(spaceDim):
+						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
+			wallVelocityMap[j] = initialVelocity(vec_normal,Fj.y()) ;
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
-	myProblem.setboundaryVelocity(wallVelocityMap)
+	myProblem.setboundaryVelocity(wallVelocityMap);
+
+	myProblem.setHorizontalPeriodicFaces()
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);
 	# name of result file
-	fileName = "WaveStaggered_2DLongTimeLimit_StructuredSquares";
+	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameters
-	MaxNbOfTimeStep = 50000 ;
-	freqSave = 400;
+	MaxNbOfTimeStep = 2000 ;
+	freqSave = 20;
 	cfl = 0.4; 
 	maxTime = 10;
-	precision = 1e-3;
+	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -106,4 +103,4 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	return ok
 
 if __name__ == """__main__""":
-	WaveStaggered_2DLongTimeLimit_StructuredSquares()
+	WaveStaggered_2DCylinderDeflection()
