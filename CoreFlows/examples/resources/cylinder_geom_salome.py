@@ -1,46 +1,101 @@
-# $Id: mesh_salome_hexaedre.py,v 1.1 2010/07/27 09:44:33 kumbaro Exp $
-# $Name: FLIVAP-1-1-1 $
-#
-# Description: channel with sinusoidal bump. SALOME meshing
-# Mesh: 40x10 hexaedres
+#!/usr/bin/env python
 
-import os
-import smesh
-import geompy
+###
+### This file is generated automatically by SALOME v9.12.0 with dump python functionality
+###
 
-### ------------------ Geometry
+import sys
+import salome
 
-dipha_root = os.getenv("DIPHA_ROOT")
-dir_test   = dipha_root + "/Tests/3eqs/channel_sinus_bump/"
-execfile(dir_test + "Meshing/bump_geom_salome.py")
+salome.salome_init()
+import salome_notebook
+notebook = salome_notebook.NoteBook()
+sys.path.insert(0, r'/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources')
 
-### ------------------ Meshing
+###
+### SHAPER component
+###
 
-mesh = smesh.Mesh(g_for_mesh, "Mesh_channel_bump")
+from salome.shaper import model
 
-nb_cells_nx = 40
-nb_cells_ny = 10
+model.begin()
+partSet = model.moduleDocument()
 
-# Hypotheses
-hyp_y = mesh.Segment()
-hyp_y.NumberOfSegments(nb_cells_ny)
+### Create Part
+Part_1 = model.addPart(partSet)
+Part_1_doc = Part_1.document()
 
-hyp_q1 = mesh.Segment( geompy.GetEdgeNearPoint(g_for_mesh, geompy.MakeVertex( 0.5, 1.0, 0.0 ) ) )
-hyp_q1.NumberOfSegments(nb_cells_nx / 4)
-hyp_q1.Propagation()
+model.end()
 
-hyp_q2 = mesh.Segment( geompy.GetEdgeNearPoint(g_for_mesh, geompy.MakeVertex( 3.5, 1.0, 0.0 ) ) )
-hyp_q2.NumberOfSegments(nb_cells_nx / 4)
-hyp_q2.Propagation()
+###
+### SHAPERSTUDY component
+###
 
-hyp_qb = mesh.Segment( geompy.GetEdgeNearPoint(g_for_mesh, geompy.MakeVertex( 2.0, 1.0, 0.0 ) ) )
-hyp_qb.NumberOfSegments(nb_cells_nx / 2)
-hyp_qb.Propagation()
+###
+### GEOM component
+###
 
-# Quadrangle cells
-mesh.Quadrangle()
-mesh.Compute()
+import GEOM
+from salome.geom import geomBuilder
+import math
+import SALOMEDS
 
-# Export MED
 
-mesh.ExportMED(dir_test + "Meshing/Mesh_40x10/bump_40x10_hexaedre.med")
+geompy = geomBuilder.New()
+
+O = geompy.MakeVertex(0, 0, 0)
+OX = geompy.MakeVectorDXDYDZ(1, 0, 0)
+OY = geompy.MakeVectorDXDYDZ(0, 1, 0)
+OZ = geompy.MakeVectorDXDYDZ(0, 0, 1)
+Disk_1 = geompy.MakeDiskR(5.5, 1)
+Disk_2 = geompy.MakeDiskR(1.2, 1)
+Cut_1 = geompy.MakeCutList(Disk_1, [Disk_2], True)
+geompy.addToStudy( O, 'O' )
+geompy.addToStudy( OX, 'OX' )
+geompy.addToStudy( OY, 'OY' )
+geompy.addToStudy( OZ, 'OZ' )
+geompy.addToStudy( Disk_1, 'Disk_1' )
+geompy.addToStudy( Disk_2, 'Disk_2' )
+geompy.addToStudy( Cut_1, 'Cut_1' )
+
+###
+### SMESH component
+###
+
+import  SMESH, SALOMEDS
+from salome.smesh import smeshBuilder
+
+smesh = smeshBuilder.New()
+#smesh.SetEnablePublish( False ) # Set to False to avoid publish in study if not needed or in some particular situations:
+                                 # multiples meshes built in parallel, complex and numerous mesh edition (performance)
+
+QuadFromMedialAxis_1D2D = smesh.CreateHypothesis('QuadFromMedialAxis_1D2D')
+RadialQuadrangle_1D2D = smesh.CreateHypothesis('RadialQuadrangle_1D2D')
+Number_of_Segments_1 = smesh.CreateHypothesis('NumberOfSegments')
+Number_of_Segments_1.SetNumberOfSegments( 160 )
+Regular_1D = smesh.CreateHypothesis('Regular_1D')
+Number_of_Layers_1 = smesh.CreateHypothesis('NumberOfLayers2D')
+Number_of_Layers_1.SetNumberOfLayers( 50 )
+Mesh_1 = smesh.Mesh(Cut_1,'Mesh_1')
+status = Mesh_1.AddHypothesis(Number_of_Layers_1)
+status = Mesh_1.AddHypothesis(QuadFromMedialAxis_1D2D)
+isDone = Mesh_1.Compute()
+smesh.SetName(Mesh_1, 'Mesh_1')
+try:
+  Mesh_1.ExportMED( r'/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/cylinder_geom_salome.med', 0, 41, 1, Mesh_1, 1, [], '',-1, 1 )
+  pass
+except:
+  print('ExportPartToMED() failed. Invalid file name?')
+
+
+## Set names of Mesh objects
+smesh.SetName(Regular_1D, 'Regular_1D')
+smesh.SetName(RadialQuadrangle_1D2D, 'RadialQuadrangle_1D2D')
+smesh.SetName(QuadFromMedialAxis_1D2D, 'QuadFromMedialAxis_1D2D')
+smesh.SetName(Number_of_Segments_1, 'Number of Segments_1')
+smesh.SetName(Number_of_Layers_1, 'Number of Layers_1')
+smesh.SetName(Mesh_1.GetMesh(), 'Mesh_1')
+
+
+if salome.sg.hasDesktop():
+  salome.sg.updateObjBrowser()

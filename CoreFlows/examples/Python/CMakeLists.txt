@@ -163,6 +163,7 @@ CreatePythonTest(WaveStaggered/WaveStaggered_1DRiemannProblem.py "Python fv Wave
 CreatePythonTest(WaveStaggered/WaveStaggered_2DRiemannX_StructuredSquares.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DRiemannY_StructuredSquares.py "Python fv Wave staggered 2D Riemann Y structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DLongTimeLimit_StructuredSquares.py "Python fv Wave staggered structured coreflows")
+CreatePythonTest(WaveStaggered/WaveStaggered_2DCylinderDeflection.py "Python fv Wave staggered structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_1DLongTimeLimit.py "Python fv Wave staggered structured coreflows")
 
 if( SOLVERLAB_WITH_MPI )

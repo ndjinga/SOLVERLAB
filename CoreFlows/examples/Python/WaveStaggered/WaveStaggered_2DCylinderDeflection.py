@@ -9,7 +9,8 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="../resources/meshCube.med";
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/cylinder_geom_salome.med"
+
 	M=svl.Mesh(inputfile);
 	kappa = 1;
 	rho = 1;
@@ -20,10 +21,10 @@ def WaveStaggered_2DCylinderDeflection():
 	# set the boundary conditions
 
 	def initialPressure(Z):
-		return 0
+		return 3
 
 	def initialVelocity(vec_normal,Z):
-		return 0
+		return 10
 		
 
 	#Initial field creation
@@ -61,8 +62,6 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
-
-	myProblem.setHorizontalPeriodicFaces()
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);
