@@ -22,11 +22,11 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialPressure(x,y):
 		return 0
 	def initialBoundPressure(x,y):
-		return 
-	def initialVelocity(vec_normal,x,y):
-		return 0
+		return 3
+	def initialVelocity(x,y):
+		return [0,0]
 	def initialBoundVelocity(x,y):
-		return 4
+		return [4,4]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -50,17 +50,16 @@ def WaveStaggered_2DCylinderDeflection():
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
-			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma)  ;
-		else:
+			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
+		elif (Fj.getNumberOfCells()==1):
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) > 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
-				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
-				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma) ;
-			else :
-				myProblem.setWallBoundIndex(j)
+			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
+			wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)
+			""" if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
+				myProblem.setWallBoundIndex(j) """
 
 
 	myProblem.setInitialField(Pressure0);
@@ -68,17 +67,17 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
-    # set the numerical method
+    # set the numerical metho50
 	myProblem.setTimeScheme(svl.Explicit);
 	# name of result file
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameters
-	MaxNbOfTimeStep = 2000 ;
-	freqSave = 1;
+	MaxNbOfTimeStep = 100000 ;
+	freqSave = 700;
 	cfl = 0.4; 
 	maxTime = 10;
-	precision = 1e-6;
+	precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
