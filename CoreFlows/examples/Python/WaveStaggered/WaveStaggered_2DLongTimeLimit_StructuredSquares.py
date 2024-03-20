@@ -84,7 +84,7 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	freqSave = 400;
 	cfl = 0.4; 
 	maxTime = 10;
-	precision = 1e-3;
+	precision = 1e-5;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
