@@ -102,6 +102,7 @@ public :
 
 	double getOrientation(int j, Cell Cint);
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
+	void setWallBoundIndex(int j );
 
 	std::map<int,double>  getboundaryPressure();
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
@@ -122,7 +123,8 @@ protected :
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
 	std::map<int, std::vector<double> > _vec_sigma; // arbitrary degree of liberty associated to a face
-	std::map<int,int> _indexFacePeriodicMap; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
+	std::map<int,int> _indexFacePeriodicMap;
+	std::vector<int>_indexWallBoundFaceSet; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
 	bool _facesBoundinit,_indexFacePeriodicSet; // To ensure that the boundary velocity is initialized after the initial velocity 
 				
 

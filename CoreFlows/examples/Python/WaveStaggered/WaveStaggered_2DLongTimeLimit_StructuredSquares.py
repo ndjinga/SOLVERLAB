@@ -47,20 +47,27 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
+		vec_normal_sigma = np.zeros(2)
 		Ctemp1 = M.getCell(idCells[0]);
-		vec_normal = np.zeros(2)
 		for l in range( Ctemp1.getNumberOfFaces()) :
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim)
+						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+
 		if(Fj.getNumberOfCells()==2):
+			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
-			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()), -vec_normal)  ;
+			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma)  ;
 		else:
 			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) ;
-			wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), -vec_normal) ;
+			for idim in range(spaceDim):
+				if vec_normal_sigma[idim] < 0:	
+					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
+			myProblem.setOrientation(j,vec_normal_sigma)
+			wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma) ;
+
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);

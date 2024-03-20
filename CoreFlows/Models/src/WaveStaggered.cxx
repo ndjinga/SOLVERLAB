@@ -50,6 +50,10 @@ void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure
 	_boundaryPressure = BoundaryPressure;
 }
 
+void WaveStaggered::setWallBoundIndex(int j ){
+		_indexWallBoundFaceSet.push_back(j);
+}
+
 void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 	for (int idim = 0; idim < _Ndim; ++idim)
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
@@ -274,6 +278,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			PetscInt IndexFace = _Nmailles + j;
 			PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 
+			//Is the face periodic face ? If yes will it be seen by the scheme or is it the "other" face ?
 			std::map<int,int>::iterator it;
 			bool periodicFaceComputed, periodicFaceNotComputed;
 			if (_indexFacePeriodicSet == true ){ // if periodic 
@@ -287,8 +292,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			else{
 				periodicFaceComputed = false;
 				periodicFaceNotComputed = false;
-			}
-			
+			}			
 			
 			if (Fj.getNumberOfCells()==2 || (periodicFaceComputed == true) ){	// Fj is inside the domain or is a boundary periodic face (computed)
 				if ( periodicFaceComputed == true){ 
@@ -331,7 +335,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			}
 			else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 		
 				if (_Ndim == 1){
-					det = Fj.x() - Ctemp1.x();
+					det = Fj.x() - Ctemp1.x(); //TODO  ??
 					InvD_sigma = 2.0/Ctemp1.getMeasure() ;
 					InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
 				} 
@@ -344,16 +348,27 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					InvD_sigma = 1.0/PetscAbsReal(det);	
 					InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?
 				}
-				MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+				
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
-				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
+				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
+				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
 
-				std::map<int,double> boundaryPressure = getboundaryPressure(); 
-				std::map<int,double>::iterator it = boundaryPressure.find(j);
-				PetscScalar pExt =Fj.getMeasure()*boundaryPressure[it->first]; 
-				VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES ); 
-				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
+				//Is the face a wall boundarycondition face
+				if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
+					PetscScalar pExt =Fj.getMeasure()*_Pressure(idCells[0]); 
+					PetscScalar zero = 0;
+					VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES );
+					MatSetValues(_B, 1, &idCells[0], 1, &j, &zero, ADD_VALUES ); 
+
+				}
+				else{ //Imposed boundaryconditions
+					MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+					std::map<int,double> boundaryPressure = getboundaryPressure(); 
+					std::map<int,double>::iterator it = boundaryPressure.find(j);
+					PetscScalar pExt =Fj.getMeasure()*boundaryPressure[it->first]; 
+					VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES );
+				}
 			}	
 		}
 		MatAssemblyBegin(_B,MAT_FINAL_ASSEMBLY);

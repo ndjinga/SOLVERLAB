@@ -19,21 +19,15 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# Prepare for the initial condition
 	# set the boundary conditions
-
 	def initialPressure(x,y):
 		return 0
 	def initialBoundPressure(x,y):
 		return 
-
 	def initialVelocity(vec_normal,x,y):
 		return 0
 	def initialBoundVelocity(x,y):
 		return 4
-		
 	
-
-		
-
 	#Initial field creation
 	print("Building initial data " ); 
 	wallPressureMap = {};
@@ -44,26 +38,30 @@ def WaveStaggered_2DCylinderDeflection():
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
-		vec_normal = np.zeros(2)
+		vec_normal_sigma = np.zeros(2)
+		Ctemp1 = M.getCell(idCells[0]);
+		for l in range( Ctemp1.getNumberOfFaces()) :
+				if (j == Ctemp1.getFacesId()[l]):
+					for idim in range(spaceDim):
+						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+
 		if(Fj.getNumberOfCells()==2):
-			Ctemp1 = M.getCell(idCells[0]);
+			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.y()) ;
-			Pressure0[idCells[1]] = initialPressure(Ctemp2.y());
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-				
-			Velocity0[j] = initialVelocity(vec_normal,Fj.y()) ;
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
+			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
+			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma)  ;
 		else:
-			Ctemp1 = M.getCell(idCells[0]);
-			wallPressureMap[j] = initialBoundPressure(Ctemp1.y()) ;
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-			wallVelocityMap[j] = initialBoundVelocity(vec_normal,Fj.y()) ;
+			for idim in range(spaceDim):
+				if vec_normal_sigma[idim] < 0:	
+					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
+			myProblem.setOrientation(j,vec_normal_sigma)
+			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) > 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
+				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
+				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma) ;
+			else :
+				myProblem.setWallBoundIndex(j)
+
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
@@ -77,7 +75,7 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# computation parameters
 	MaxNbOfTimeStep = 2000 ;
-	freqSave = 20;
+	freqSave = 1;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-6;
