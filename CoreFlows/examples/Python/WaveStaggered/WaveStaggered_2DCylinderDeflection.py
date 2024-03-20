@@ -58,8 +58,8 @@ def WaveStaggered_2DCylinderDeflection():
 			myProblem.setOrientation(j,vec_normal_sigma)
 			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
 			wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)
-			""" if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
-				myProblem.setWallBoundIndex(j) """
+			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
+				myProblem.setWallBoundIndex(j) 
 
 
 	myProblem.setInitialField(Pressure0);
@@ -73,8 +73,8 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameters
-	MaxNbOfTimeStep = 100000 ;
-	freqSave = 700;
+	MaxNbOfTimeStep = 300000 ;
+	freqSave = 2000;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-8;

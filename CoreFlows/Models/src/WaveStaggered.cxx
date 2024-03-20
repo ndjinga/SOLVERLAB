@@ -268,6 +268,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			std::vector< int > idCells = Fj.getCellsId();
 			Cell Ctemp1 = _mesh.getCell(idCells[0]);
 			double orien = getOrientation(j,Ctemp1);
+			
 
 			// Metrics
 			PetscScalar orientedFaceArea = orien * Fj.getMeasure();
@@ -357,9 +358,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				//Is the face a wall boundarycondition face
 				if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
 					PetscScalar pExt =Fj.getMeasure()*_Pressure(idCells[0]); 
-					PetscScalar zero = 0;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, ADD_VALUES );
-					MatSetValues(_B, 1, &idCells[0], 1, &j, &zero, ADD_VALUES ); 
+					//MatSetValues(_B, 1, &idCells[0], 1, &j, &zero, ADD_VALUES ); 
 
 				}
 				else{ //Imposed boundaryconditions
