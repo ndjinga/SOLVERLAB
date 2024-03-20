@@ -19,6 +19,13 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_facesBoundinit = false;
 	_indexFacePeriodicSet = false;
 	_vec_normal=NULL;
+	if (_Ndim == 3){	
+		cout<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+		*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+		_runLogFile->close();
+		throw CdmathException("WaveStaggered pas dispo en 3D, arret de calcul");				
+	}
+				
 }
 
 std::map<int,double>  WaveStaggered::getboundaryPressure(){
@@ -26,7 +33,7 @@ std::map<int,double>  WaveStaggered::getboundaryPressure(){
 }
 
 void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
-	if (_facesBoundinit == true){
+	if (_facesBoundinit == true){ 
 		std::map<int,double>::iterator it;
 		for( it= BoundaryVelocity.begin(); it != BoundaryVelocity.end(); it++){
 			_Velocity( it->first ) = it->second; 
@@ -41,6 +48,26 @@ void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity
 
 void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure){
 	_boundaryPressure = BoundaryPressure;
+}
+
+void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
+	for (int idim = 0; idim < _Ndim; ++idim)
+		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
+}
+
+double WaveStaggered::getOrientation(int j, Cell Cint){
+	std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(j);
+			
+	for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+		if (j == Cint.getFacesId()[l]){
+			for (int idim = 0; idim < _Ndim; ++idim)
+				_vec_normal[idim] = Cint.getNormalVector(l,idim);
+			}
+		}
+	double orien = 0;
+	for (int idim = 0; idim < _Ndim; ++idim)
+		orien += _vec_normal[idim] * it->second[idim];
+	return orien;
 }
 
 
@@ -167,6 +194,20 @@ void WaveStaggered::initialize(){
 	MatSetUp(_InvVol);
 	MatZeroEntries(_InvVol);
 
+	// matrice DIVERGENCE (|K|div(u))
+	MatCreate(PETSC_COMM_SELF, & _B); 
+	MatSetSizes(_B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+	MatSetFromOptions(_B);
+	MatSetUp(_B);
+	MatZeroEntries(_B);
+	
+	// matrix GRADIENT (we will impose to _Be 0 on faces so that u^n+1 = u^n at the _Boundary)
+	MatCreate(PETSC_COMM_SELF, & _Bt); 
+	MatSetSizes(_Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
+	MatSetFromOptions(_Bt);
+	MatSetUp(_Bt);
+	MatZeroEntries(_Bt);
+
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
@@ -193,22 +234,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	if (_timeScheme == Explicit && _nbTimeStep == 0 ){ //TODO : pourquoi la solution exate n'évolue pas quand on enlève _nbTimeStep==0
 		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
 		cout << endl;
-		Mat B, Bt, Laplacian, InvSurface;
+		Mat Laplacian, InvSurface;
 		
-		// matrice DIVERGENCE (|K|div(u))
-		MatCreate(PETSC_COMM_SELF, & B); 
-		MatSetSizes(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-		MatSetFromOptions(B);
-		MatSetUp(B);
-		MatZeroEntries(B);
-		
-		// matrix GRADIENT (we will impose to be 0 on faces so that u^n+1 = u^n at the boundary)
-		MatCreate(PETSC_COMM_SELF, & Bt); 
-		MatSetSizes(Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
-		MatSetFromOptions(Bt);
-		MatSetUp(Bt);
-		MatZeroEntries(Bt);
-
 		// matrix LAPLACIAN (without boundary terms)
 		MatCreate(PETSC_COMM_SELF, & Laplacian); 
 		MatSetSizes(Laplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
@@ -235,6 +262,17 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			Face Fj = _mesh.getFace(j);
 			bool _isBoundary=Fj.isBorder();
 			std::vector< int > idCells = Fj.getCellsId();
+			Cell Ctemp1 = _mesh.getCell(idCells[0]);
+			double orien = getOrientation(j,Ctemp1);
+
+			// Metrics
+			PetscScalar orientedFaceArea = orien * Fj.getMeasure();
+			PetscScalar orientedMinusFaceArea = -orientedFaceArea;
+			PetscScalar FaceArea = Fj.getMeasure();
+			PetscScalar MinusFaceArea = -FaceArea;
+			PetscScalar det, InvD_sigma, InvPerimeter1, InvPerimeter2;
+			PetscInt IndexFace = _Nmailles + j;
+			PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 
 			std::map<int,int>::iterator it;
 			bool periodicFaceComputed, periodicFaceNotComputed;
@@ -251,17 +289,13 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				periodicFaceNotComputed = false;
 			}
 			
-			PetscScalar det, FaceArea, InvD_sigma, InvPerimeter1, InvPerimeter2;
-			PetscInt IndexFace = _Nmailles + j;
+			
 			if (Fj.getNumberOfCells()==2 || (periodicFaceComputed == true) ){	// Fj is inside the domain or is a boundary periodic face (computed)
-				Cell Ctemp1 ,Ctemp2 ;
-				Ctemp1 = _mesh.getCell(idCells[0]);
 				if ( periodicFaceComputed == true){ 
 					std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
 					idCells.push_back( idCells_other_Fj[0]  );
 				}
-				Ctemp2 = _mesh.getCell(idCells[1]);
-				
+				Cell Ctemp2 = _mesh.getCell(idCells[1]);
 				if (_Ndim == 1){
 					det = Ctemp2.x() - Ctemp1.x();
 					InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
@@ -275,23 +309,14 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
 					InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
 				}
-				if (_Ndim == 3){	
-					cout<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
-					*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
-					_runLogFile->close();
-					throw CdmathException("WaveStaggered pas dispo en 3D, arret de calcul");				
-				}
-
-				FaceArea = Fj.getMeasure();
-				PetscScalar MinusFaceArea = -FaceArea;
-				PetscScalar InvD_sigma = 1.0/PetscAbsReal(det);
-				PetscScalar InvVol1 = 1/( Ctemp1.getMeasure()* Ctemp1.getNumberOfFaces());
+			
+				InvD_sigma = 1.0/PetscAbsReal(det);
 				PetscScalar InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
 
-				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
-				MatSetValues(B, 1, &idCells[1], 1, &j, &MinusFaceArea, ADD_VALUES );  
-				MatSetValues(Bt, 1, &j, 1, &idCells[0], &FaceArea, ADD_VALUES ); 
-				MatSetValues(Bt, 1, &j, 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
+				MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+				MatSetValues(_B, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES );  
+				MatSetValues(_Bt, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
+				MatSetValues(_Bt, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
@@ -304,40 +329,22 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
 				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 				
 			}
-			else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 
-				Cell Cint = _mesh.getCell(idCells[0]);
-				FaceArea = Fj.getMeasure();
-				PetscScalar MinusFaceArea = -FaceArea;
+			else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 		
 				if (_Ndim == 1){
-					PetscScalar det = Fj.x() - Cint.x();
-					InvD_sigma = 2.0/Cint.getMeasure() ;
-					InvPerimeter1 = 1.0/Cint.getNumberOfFaces() ;
+					det = Fj.x() - Ctemp1.x();
+					InvD_sigma = 2.0/Ctemp1.getMeasure() ;
+					InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
 				} 
 				if (_Ndim == 2){
 					std::vector< int > nodes =  Fj.getNodesId();
 					Node vertex1 = _mesh.getNode( nodes[0] );
 					Node vertex2 = _mesh.getNode( nodes[1] );
-					PetscScalar det = (Cint.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Cint.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+					det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 					// determinant of the vectors forming the interior half diamond cell around the face sigma
-					InvD_sigma = 1.0/PetscAbsReal(det);
-					InvPerimeter1 = 1/Cint.getNumberOfFaces();	
-					
+					InvD_sigma = 1.0/PetscAbsReal(det);	
+					InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?
 				}
-				for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-						if (j == Cint.getFacesId()[l])
-						{
-							for (int idim = 0; idim < _Ndim; ++idim)
-								_vec_normal[idim] = Cint.getNormalVector(l,idim);
-							break;
-						}
-				}
-				for (int k=0; k < _Ndim; k++){
-					if (_vec_normal[k] < 0)
-						FaceArea = -Fj.getMeasure();
-				}
-				PetscScalar InvVol1 = 1.0/(Cint.getMeasure()*Cint.getNumberOfFaces());
-				
-				MatSetValues(B, 1, &idCells[0], 1, &j, &FaceArea, ADD_VALUES ); 
+				MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 				MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
 				MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 				MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
@@ -349,10 +356,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
 			}	
 		}
-		MatAssemblyBegin(B,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
-		MatAssemblyBegin(Bt, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(Bt, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_B,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_B, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_Bt, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_Bt, MAT_FINAL_ASSEMBLY);
 
 		MatAssemblyBegin(Laplacian,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY);
@@ -365,12 +372,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
 		Mat  GradDivTilde; 
-		MatScale(Bt, -1.0);
-		MatMatMatMult(Bt,InvSurface, B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
+		MatScale(_Bt, -1.0);
+		MatMatMatMult(_Bt,InvSurface, _B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
 		VecScale(_BoundaryTerms, _d*_c);
 		MatScale(Laplacian, _d*_c );
-		MatScale(B, -1.0/_rho);
-		MatScale(Bt, -1.0*_kappa);
+		MatScale(_B, -1.0/_rho);
+		MatScale(_Bt, -1.0*_kappa);
 		MatScale(GradDivTilde, _d*_c);
 		
 		
@@ -378,8 +385,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 		Mat G[4];
 		G[0] = Laplacian;
-		G[1] = B;
-		G[2] = Bt;
+		G[1] = _B;
+		G[2] = _Bt;
 		G[3] = GradDivTilde;
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
@@ -417,8 +424,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		delete[] indices3, indices4;
 		VecDestroy(& V);
 		VecDestroy(& W); 
-		MatDestroy(& B); 
-		MatDestroy(& Bt); 
 		MatDestroy(& InvSurface);
 		MatDestroy(& Laplacian);
 		MatDestroy(& GradDivTilde); 
@@ -618,6 +623,8 @@ void WaveStaggered::terminate(){
 	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
 	MatDestroy(& _A); 
+	MatDestroy(& _B); 
+	MatDestroy(& _Bt); 
 	MatDestroy(&_InvVol); 
 	VecDestroy(& _BoundaryTerms);	
 	// 	PCDestroy(_pc);

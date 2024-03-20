@@ -62,13 +62,24 @@ def WaveStaggered_1DRiemannProblem():
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
+		vec_normal_sigma = np.zeros(2)
+		Ctemp1 = M.getCell(idCells[0]);
+		for l in range( Ctemp1.getNumberOfFaces()) :
+				if (j == Ctemp1.getFacesId()[l]):
+					for idim in range(spaceDim):
+						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+		
 		if(Fj.getNumberOfCells()==2):
-			Ctemp1 = M.getCell(idCells[0]);
+			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
-			Velocity0[j] = initialVelocity(Fj.x()) ;
+			Velocity0[j] = initialVelocity(Fj.x())
 		else:
+			for idim in range(spaceDim):
+				if vec_normal_sigma[idim] < 0:	
+					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
+			myProblem.setOrientation(j,vec_normal_sigma)
 			wallPressureMap[j] = initialPressure(Fj.x()) ;
 			wallVelocityMap[j] = initialVelocity(Fj.x()) ;
 

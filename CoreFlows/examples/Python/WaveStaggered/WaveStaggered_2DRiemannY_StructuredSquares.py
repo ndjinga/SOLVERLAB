@@ -25,26 +25,21 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 
 	# Prepare for the initial condition
 	# set the boundary conditions
-	initialVelocity_Left=4;
-	initialPressure_Left=-3;
-	initialVelocity_Right=-1;
-	initialPressure_Right=0
-
 	def initialPressure(Z):
 		if Z < discontinuity:
-			return initialPressure_Left
+			return -3
 		else :
-			return initialPressure_Right
+			return 0
 
-	def initialVelocity(vec_normal,Z):
-		vec_y = np.array([0,1])
-		if (np.dot(vec_normal, vec_y)== 0):
+	def initialVelocity(vec_normal_sigma,Z):
+		vec_x = np.array([1,0])
+		if (np.dot(vec_normal_sigma, vec_x)== 0):
 			return 0
 		else :
 			if Z < discontinuity:
-				return initialVelocity_Left
+				return -4 
 			else:
-				return initialVelocity_Right
+				return -1 
 		
 
 	#Initial field creation
@@ -57,26 +52,26 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
-		vec_normal = np.zeros(2)
+		vec_normal_sigma = np.zeros(2)
+		Ctemp1 = M.getCell(idCells[0]);
+		for l in range( Ctemp1.getNumberOfFaces()) :
+				if (j == Ctemp1.getFacesId()[l]):
+					for idim in range(spaceDim):
+						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+
 		if(Fj.getNumberOfCells()==2):
-			Ctemp1 = M.getCell(idCells[0]);
+			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.y()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.y());
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-				
-			Velocity0[j] = initialVelocity(vec_normal,Fj.y()) ;
+			Velocity0[j] = initialVelocity(vec_normal_sigma,Fj.y()) ;
 		else:
-			Ctemp1 = M.getCell(idCells[0]);
 			wallPressureMap[j] = initialPressure(Ctemp1.y()) ;
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-			wallVelocityMap[j] = initialVelocity(vec_normal,Fj.y()) ;
+			wallVelocityMap[j] = initialVelocity(vec_normal_sigma,Fj.y()) ;
+			for idim in range(spaceDim):
+				if vec_normal_sigma[idim] < 0:	
+					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
+			myProblem.setOrientation(j,vec_normal_sigma)
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);

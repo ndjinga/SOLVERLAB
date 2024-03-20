@@ -14,8 +14,8 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	yinf = 0.0;
 	ysup = 1.0;
 	discontinuity = (xinf + xsup)/2.0
-	nx=70;
-	ny=70; 
+	nx=120;
+	ny=60; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -34,15 +34,15 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 		else :
 			return 0
 
-	def initialVelocity(vec_normal,Z):
-		vec_y = np.array([1,0])
-		if (np.dot(vec_normal, vec_y)== 0):
+	def initialVelocity(vec_normal_sigma,Z):
+		vec_x = np.array([1,0])
+		if (np.dot(vec_normal_sigma, vec_x)== 0):
 			return 0
 		else :
 			if Z < discontinuity:
-				return -4
+				return -4 
 			else:
-				return -1
+				return -1 
 		
 
 	#Initial field creation
@@ -55,26 +55,26 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
-		vec_normal = np.zeros(2)
+		vec_normal_sigma = np.zeros(2)
+		Ctemp1 = M.getCell(idCells[0]);
+		for l in range( Ctemp1.getNumberOfFaces()) :
+				if (j == Ctemp1.getFacesId()[l]):
+					for idim in range(spaceDim):
+						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+
 		if(Fj.getNumberOfCells()==2):
-			Ctemp1 = M.getCell(idCells[0]);
+			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-				
-			Velocity0[j] = initialVelocity(vec_normal,Fj.x()) ;
+			Velocity0[j] = initialVelocity(vec_normal_sigma,Fj.x()) ;
 		else:
-			Ctemp1 = M.getCell(idCells[0]);
 			wallPressureMap[j] = initialPressure(Ctemp1.x()) ;
-			for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-			wallVelocityMap[j] = initialVelocity(vec_normal,Fj.x()) ;
+			wallVelocityMap[j] = initialVelocity(vec_normal_sigma,Fj.x()) ;
+			for idim in range(spaceDim):
+				if vec_normal_sigma[idim] < 0:	
+					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
+			myProblem.setOrientation(j,vec_normal_sigma)
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
@@ -91,7 +91,7 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 
 	# computation parameters
 	MaxNbOfTimeStep = 2000 ;
-	freqSave = 20;
+	freqSave = 40;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-6;
