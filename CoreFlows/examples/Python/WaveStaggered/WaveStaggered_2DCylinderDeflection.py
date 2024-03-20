@@ -20,11 +20,18 @@ def WaveStaggered_2DCylinderDeflection():
 	# Prepare for the initial condition
 	# set the boundary conditions
 
-	def initialPressure(Z):
-		return 3
+	def initialPressure(x,y):
+		return 0
+	def initialBoundPressure(x,y):
+		return 
 
-	def initialVelocity(vec_normal,Z):
-		return 10
+	def initialVelocity(vec_normal,x,y):
+		return 0
+	def initialBoundVelocity(x,y):
+		return 4
+		
+	
+
 		
 
 	#Initial field creation
@@ -51,12 +58,12 @@ def WaveStaggered_2DCylinderDeflection():
 			Velocity0[j] = initialVelocity(vec_normal,Fj.y()) ;
 		else:
 			Ctemp1 = M.getCell(idCells[0]);
-			wallPressureMap[j] = initialPressure(Ctemp1.y()) ;
+			wallPressureMap[j] = initialBoundPressure(Ctemp1.y()) ;
 			for l in range( Ctemp1.getNumberOfFaces()) :
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
 						vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
-			wallVelocityMap[j] = initialVelocity(vec_normal,Fj.y()) ;
+			wallVelocityMap[j] = initialBoundVelocity(vec_normal,Fj.y()) ;
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);

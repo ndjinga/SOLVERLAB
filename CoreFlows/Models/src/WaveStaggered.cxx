@@ -433,6 +433,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	return _cfl * _minCell / (_maxPerim * _c);
 }
 
+
+
 bool WaveStaggered::iterateTimeStep(bool &converged)
 {
 	bool stop=false;
