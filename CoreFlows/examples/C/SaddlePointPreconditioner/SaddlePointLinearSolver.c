@@ -81,7 +81,7 @@ int main( int argc, char **args ){
 	int nb_velocity_lines = irow_min <= n_u ? n_u - irow_min : 0;
 	PetscInt i_p[nb_pressure_lines],i_u[nb_velocity_lines];
 
-	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not squared !!!\n");
+	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
 	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
 	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
 	PetscPrintf(PETSC_COMM_SELF,"Process %d, local rows : irow_min = %d, irow_max = %d \n", rank, irow_min, irow_max);
