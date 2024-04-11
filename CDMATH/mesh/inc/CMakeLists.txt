@@ -1,7 +1,3 @@
 FILE(GLOB include_mesh_HXX . *.hxx)
 
-INCLUDE_DIRECTORIES(
-  ${MEDCOUPLING_INCLUDE_DIR}
-)
-
 INSTALL(FILES ${include_mesh_HXX} DESTINATION include)
