@@ -33,28 +33,28 @@ using namespace std;
 Mesh::Mesh( void )
 //----------------------------------------------------------------------
 {
-	_mesh=NULL;
+    _mesh=NULL;
     _meshNotDeleted=false;
-	_cells=NULL;
-	_nodes=NULL;
-	_faces=NULL;
-	_spaceDim = 0 ;
-	_meshDim  = 0 ;
-	_numberOfNodes = 0;
-	_numberOfFaces = 0;
-	_numberOfCells = 0;
-	_numberOfEdges = 0;
+    _cells=NULL;
+    _nodes=NULL;
+    _faces=NULL;
+    _spaceDim = 0 ;
+    _meshDim  = 0 ;
+    _numberOfNodes = 0;
+    _numberOfFaces = 0;
+    _numberOfCells = 0;
+    _numberOfEdges = 0;
     _isStructured=false;
     _nxyz.resize(0);
-	_boundaryMesh=NULL;
+    _boundaryMesh=NULL;
     _boundaryFaceIds.resize(0);
     _boundaryNodeIds.resize(0);
-	_faceGroupNames.resize(0);
-	_faceGroups.resize(0);
-	_faceGroupsIds.resize(0);
-	_nodeGroupNames.resize(0);
-	_nodeGroups.resize(0);
-	_nodeGroupsIds.resize(0);
+    _faceGroupNames.resize(0);
+    _faceGroups.resize(0);
+    _faceGroupsIds.resize(0);
+    _nodeGroupNames.resize(0);
+    _nodeGroups.resize(0);
+    _nodeGroupsIds.resize(0);
     _indexFacePeriodicSet=false;
     _name="";
     _epsilon=1e-6;
@@ -64,13 +64,13 @@ Mesh::Mesh( void )
 Mesh::~Mesh( void )
 //----------------------------------------------------------------------
 {
-	//for(int i=0; i< _faceGroups.size(); i++)
-	//	_faceGroups[i]->decrRef();
-	//	_nodeGroups[i]->decrRef();
-	if( _meshNotDeleted)
-		(_mesh.retn())->decrRef();
-	//if( _boundaryMesh)
-	//    _boundaryMesh->decrRef();
+    //for(int i=0; i< _faceGroups.size(); i++)
+    //    _faceGroups[i]->decrRef();
+    //    _nodeGroups[i]->decrRef();
+    if( _meshNotDeleted)
+        (_mesh.retn())->decrRef();
+    //if( _boundaryMesh)
+    //    _boundaryMesh->decrRef();
 }
 
 std::string 
@@ -81,14 +81,14 @@ Mesh::getName( void ) const
 
 Mesh::Mesh( MEDCoupling::MCAuto<const MEDCoupling::MEDCouplingMesh> mesh )
 {
-	_spaceDim=mesh->getSpaceDimension();
-	_meshDim=mesh->getMeshDimension();
+    _spaceDim=mesh->getSpaceDimension();
+    _meshDim=mesh->getMeshDimension();
     _name=mesh->getName();
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
-	_meshNotDeleted=true;
+    _meshNotDeleted=true;
     
-	_mesh= mesh->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
+    _mesh= mesh->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
 
     MEDCoupling::MEDCouplingStructuredMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingStructuredMesh*> (_mesh.retn());
     if(structuredMesh)
@@ -99,43 +99,43 @@ Mesh::Mesh( MEDCoupling::MCAuto<const MEDCoupling::MEDCouplingMesh> mesh )
     else
         _isStructured=false;
 
-	MEDCouplingUMesh*  mu = setMesh();
-	mu->decrRef();
+    MEDCouplingUMesh*  mu = setMesh();
+    mu->decrRef();
 }
 
 //----------------------------------------------------------------------
 Mesh::Mesh( const std::string filename, const std::string & meshName, int meshLevel)
 //----------------------------------------------------------------------
 {
-	readMeshMed(filename, meshName, meshLevel);
+    readMeshMed(filename, meshName, meshLevel);
 }
 
 //----------------------------------------------------------------------
 Mesh::Mesh( const Mesh& mesh )
 //----------------------------------------------------------------------
 {
-	_spaceDim = mesh.getSpaceDimension() ;
-	_meshDim = mesh.getMeshDimension() ;
+    _spaceDim = mesh.getSpaceDimension() ;
+    _meshDim = mesh.getMeshDimension() ;
     _name=mesh.getName();
     _epsilon=mesh.getComparisonEpsilon();
     _isStructured=mesh.isStructured();
     if(_isStructured)
         _nxyz = mesh.getCellGridStructure() ;
-	_numberOfNodes = mesh.getNumberOfNodes();
-	_numberOfFaces = mesh.getNumberOfFaces();
-	_numberOfCells = mesh.getNumberOfCells();
-	_numberOfEdges = mesh.getNumberOfEdges();
+    _numberOfNodes = mesh.getNumberOfNodes();
+    _numberOfFaces = mesh.getNumberOfFaces();
+    _numberOfCells = mesh.getNumberOfCells();
+    _numberOfEdges = mesh.getNumberOfEdges();
 
-	_faceGroupNames = mesh.getNameOfFaceGroups() ;
-	_faceGroups = mesh.getMEDCouplingFaceGroups() ;
-	_faceGroupsIds = mesh.getFaceGroups() ;
-	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
-	_nodeGroups = mesh.getMEDCouplingNodeGroups() ;
-	_nodeGroupsIds = mesh.getNodeGroups() ;
+    _faceGroupNames = mesh.getNameOfFaceGroups() ;
+    _faceGroups = mesh.getMEDCouplingFaceGroups() ;
+    _faceGroupsIds = mesh.getFaceGroups() ;
+    _nodeGroupNames = mesh.getNameOfNodeGroups() ;
+    _nodeGroups = mesh.getMEDCouplingNodeGroups() ;
+    _nodeGroupsIds = mesh.getNodeGroups() ;
 
-	_nodes   = mesh.getNodes() ;
-	_faces   = mesh.getFaces() ;
-	_cells   = mesh.getCells() ;
+    _nodes   = mesh.getNodes() ;
+    _faces   = mesh.getFaces() ;
+    _cells   = mesh.getCells() ;
     
     _indexFacePeriodicSet= mesh.isIndexFacePeriodicSet();
     if(_indexFacePeriodicSet)
@@ -143,15 +143,15 @@ Mesh::Mesh( const Mesh& mesh )
 
     _boundaryFaceIds=mesh.getBoundaryFaceIds();
     _boundaryNodeIds=mesh.getBoundaryNodeIds();
-	
+    
     _boundaryMesh=mesh.getBoundaryMEDCouplingMesh();
-		
+        
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
     
-	MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
+    MCAuto<MEDCouplingMesh> m1=mesh.getMEDCouplingMesh()->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
 
-	_mesh=m1;
+    _mesh=m1;
     _meshNotDeleted=mesh.meshNotDeleted();
 }
 
@@ -160,21 +160,21 @@ void
 Mesh::readMeshMed( const std::string filename, const std::string & meshName, int meshLevel)
 //----------------------------------------------------------------------
 {
-	MEDFileMesh *m;
-	if( meshName == "" )
-		m=MEDFileMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
-	else
-		m=MEDFileMesh::New(filename.c_str(), meshName.c_str());//seeks the mesh named meshName in the file
+    MEDFileMesh *m;
+    if( meshName == "" )
+        m=MEDFileMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
+    else
+        m=MEDFileMesh::New(filename.c_str(), meshName.c_str());//seeks the mesh named meshName in the file
 
-	_mesh=m->getMeshAtLevel(meshLevel);
+    _mesh=m->getMeshAtLevel(meshLevel);
     _mesh->checkConsistencyLight();
-	_mesh->setName(_mesh->getName());
-	_meshDim=_mesh->getMeshDimension();
-	_spaceDim=_mesh->getSpaceDimension();
+    _mesh->setName(_mesh->getName());
+    _meshDim=_mesh->getMeshDimension();
+    _spaceDim=_mesh->getSpaceDimension();
     _name=_mesh->getName();
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
-	_meshNotDeleted=true;
+    _meshNotDeleted=true;
 
     MEDCoupling::MEDCouplingStructuredMesh* structuredMesh = dynamic_cast<MEDCoupling::MEDCouplingStructuredMesh*> (_mesh.retn());
     if(structuredMesh)
@@ -185,17 +185,17 @@ Mesh::readMeshMed( const std::string filename, const std::string & meshName, int
     else
         _isStructured=false;
     
-	MEDCouplingUMesh*  mu = setMesh();
-	setNodeGroups(m, mu);//Works for both cartesan and unstructured meshes
-	MEDFileUMesh *umedfile=dynamic_cast< MEDFileUMesh * > (m);
-	if(umedfile)
-		setFaceGroups(umedfile, mu);//Works only for unstructured meshes
+    MEDCouplingUMesh*  mu = setMesh();
+    setNodeGroups(m, mu);//Works for both cartesan and unstructured meshes
+    MEDFileUMesh *umedfile=dynamic_cast< MEDFileUMesh * > (m);
+    if(umedfile)
+        setFaceGroups(umedfile, mu);//Works only for unstructured meshes
 
-	cout<<endl<< "Loaded file "<< filename<<endl;
+    cout<<endl<< "Loaded file "<< filename<<endl;
     cout<<"Mesh name = "<<m->getName()<<", mesh dim = "<< _meshDim<< ", space dim = "<< _spaceDim<< ", nb cells= "<<getNumberOfCells()<< ", nb nodes= "<<getNumberOfNodes()<<endl;
 
-	m->decrRef();
-	mu->decrRef();
+    m->decrRef();
+    mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -204,19 +204,19 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
 {
     int nx=points.size();
     
-	if(nx<2)
-		throw CdmathException("Mesh::Mesh( vector<double> points, string meshName) : nx < 2, vector should contain at least two values");
+    if(nx<2)
+        throw CdmathException("Mesh::Mesh( vector<double> points, string meshName) : nx < 2, vector should contain at least two values");
     int i=0;
     while( i<nx-1 && points[i+1]>points[i] )
         i++;
-	if( i!=nx-1 )
+    if( i!=nx-1 )
     {
         //cout<< points << endl;
-		throw CdmathException("Mesh::Mesh( vector<double> points, string meshName) : vector values should be sorted");
+        throw CdmathException("Mesh::Mesh( vector<double> points, string meshName) : vector values should be sorted");
     }
     
-	_spaceDim = 1 ;
-	_meshDim  = 1 ;
+    _spaceDim = 1 ;
+    _meshDim  = 1 ;
     _name=meshName;
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
@@ -247,95 +247,95 @@ Mesh::Mesh( std::vector<double> points, std::string meshName )
     _meshNotDeleted=true;
     _isStructured = false;
 
-	MEDCouplingUMesh*  mu = setMesh();
-	mu->decrRef();
+    MEDCouplingUMesh*  mu = setMesh();
+    mu->decrRef();
 }
 
 //----------------------------------------------------------------------
 Mesh::Mesh( double xmin, double xmax, int nx, std::string meshName )
 //----------------------------------------------------------------------
 {
-	if(nx<=0)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx) : nx <= 0");
-	if(xmin>=xmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx) : xmin >= xmax");
+    if(nx<=0)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx) : nx <= 0");
+    if(xmin>=xmax)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx) : xmin >= xmax");
 
-	double dx = (xmax - xmin)/nx ;
+    double dx = (xmax - xmin)/nx ;
 
-	_spaceDim = 1 ;
-	_meshDim  = 1 ;
+    _spaceDim = 1 ;
+    _meshDim  = 1 ;
     _name=meshName;
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
 
-	_nxyz.resize(_spaceDim);
-	_nxyz[0]=nx;
+    _nxyz.resize(_spaceDim);
+    _nxyz[0]=nx;
 
-	double originPtr[_spaceDim];
-	double dxyzPtr[_spaceDim];
-	mcIdType nodeStrctPtr[_spaceDim];
+    double originPtr[_spaceDim];
+    double dxyzPtr[_spaceDim];
+    mcIdType nodeStrctPtr[_spaceDim];
 
-	originPtr[0]=xmin;
-	nodeStrctPtr[0]=nx+1;
-	dxyzPtr[0]=dx;
+    originPtr[0]=xmin;
+    nodeStrctPtr[0]=nx+1;
+    dxyzPtr[0]=dx;
 
-	_mesh=MEDCouplingIMesh::New(meshName,
-			_spaceDim,
-			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
-			originPtr,
-			originPtr+_spaceDim,
-			dxyzPtr,
-			dxyzPtr+_spaceDim);
+    _mesh=MEDCouplingIMesh::New(meshName,
+            _spaceDim,
+            nodeStrctPtr,
+            nodeStrctPtr+_spaceDim,
+            originPtr,
+            originPtr+_spaceDim,
+            dxyzPtr,
+            dxyzPtr+_spaceDim);
     _meshNotDeleted=true;
     _isStructured = true;
 
-	MEDCouplingUMesh*  mu = setMesh();
-	mu->decrRef();
+    MEDCouplingUMesh*  mu = setMesh();
+    mu->decrRef();
 }
 
 //----------------------------------------------------------------------
 Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, int split_to_triangles_policy, std::string meshName)
 //----------------------------------------------------------------------
 {
-	if(nx<=0 || ny<=0)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : nx <= 0 or ny <= 0");
-	if(xmin>=xmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : xmin >= xmax");
-	if(ymin>=ymax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : ymin >= ymax");
+    if(nx<=0 || ny<=0)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : nx <= 0 or ny <= 0");
+    if(xmin>=xmax)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : xmin >= xmax");
+    if(ymin>=ymax)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : ymin >= ymax");
 
-	double dx = (xmax - xmin)/nx ;
-	double dy = (ymax - ymin)/ny ;
+    double dx = (xmax - xmin)/nx ;
+    double dy = (ymax - ymin)/ny ;
 
-	_spaceDim = 2 ;
-	_meshDim  = 2 ;
+    _spaceDim = 2 ;
+    _meshDim  = 2 ;
     _name=meshName;
     _epsilon=1e-6;
     _indexFacePeriodicSet=false;
-	_nxyz.resize(_spaceDim);
-	_nxyz[0]=nx;
-	_nxyz[1]=ny;
+    _nxyz.resize(_spaceDim);
+    _nxyz[0]=nx;
+    _nxyz[1]=ny;
 
-	double originPtr[_spaceDim];
-	double dxyzPtr[_spaceDim];
-	mcIdType nodeStrctPtr[_spaceDim];
+    double originPtr[_spaceDim];
+    double dxyzPtr[_spaceDim];
+    mcIdType nodeStrctPtr[_spaceDim];
 
-	originPtr[0]=xmin;
-	originPtr[1]=ymin;
-	nodeStrctPtr[0]=nx+1;
-	nodeStrctPtr[1]=ny+1;
-	dxyzPtr[0]=dx;
-	dxyzPtr[1]=dy;
+    originPtr[0]=xmin;
+    originPtr[1]=ymin;
+    nodeStrctPtr[0]=nx+1;
+    nodeStrctPtr[1]=ny+1;
+    dxyzPtr[0]=dx;
+    dxyzPtr[1]=dy;
 
-	_mesh=MEDCouplingIMesh::New(meshName,
-			_spaceDim,
-			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
-			originPtr,
-			originPtr+_spaceDim,
-			dxyzPtr,
-			dxyzPtr+_spaceDim);
+    _mesh=MEDCouplingIMesh::New(meshName,
+            _spaceDim,
+            nodeStrctPtr,
+            nodeStrctPtr+_spaceDim,
+            originPtr,
+            originPtr+_spaceDim,
+            dxyzPtr,
+            dxyzPtr+_spaceDim);
     _meshNotDeleted=true;
     _isStructured = true;
 
@@ -344,7 +344,7 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             DataArrayIdType * o2n = _mesh->simplexize(split_to_triangles_policy);
             o2n->decrRef();
-			_isStructured = false;
+            _isStructured = false;
         }
     else if (split_to_triangles_policy != -1)
         {
@@ -352,59 +352,59 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny) : Unknown splitting policy");
         }
     
-	MEDCouplingUMesh*  mu = setMesh();
-	mu->decrRef();
+    MEDCouplingUMesh*  mu = setMesh();
+    mu->decrRef();
 }
 
 //----------------------------------------------------------------------
 Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz, int split_to_tetrahedra_policy, std::string meshName)
 //----------------------------------------------------------------------
 {
-	if(nx<=0 || ny<=0 || nz<=0)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : nx <= 0 or ny <= 0 or nz <= 0");
-	if(xmin>=xmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : xmin >= xmax");
-	if(ymin>=ymax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : ymin >= ymax");
-	if(zmin>=zmax)
-		throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : zmin >= zmax");
+    if(nx<=0 || ny<=0 || nz<=0)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : nx <= 0 or ny <= 0 or nz <= 0");
+    if(xmin>=xmax)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : xmin >= xmax");
+    if(ymin>=ymax)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : ymin >= ymax");
+    if(zmin>=zmax)
+        throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : zmin >= zmax");
 
-	_spaceDim = 3;
-	_meshDim  = 3;
+    _spaceDim = 3;
+    _meshDim  = 3;
     _name=meshName;
     _epsilon=1e-6;
 
-	double dx = (xmax - xmin)/nx ;
-	double dy = (ymax - ymin)/ny ;
-	double dz = (zmax - zmin)/nz ;
+    double dx = (xmax - xmin)/nx ;
+    double dy = (ymax - ymin)/ny ;
+    double dz = (zmax - zmin)/nz ;
 
-	_nxyz.resize(_spaceDim);
-	_nxyz[0]=nx;
-	_nxyz[1]=ny;
-	_nxyz[2]=nz;
+    _nxyz.resize(_spaceDim);
+    _nxyz[0]=nx;
+    _nxyz[1]=ny;
+    _nxyz[2]=nz;
 
-	double originPtr[_spaceDim];
-	double dxyzPtr[_spaceDim];
-	mcIdType nodeStrctPtr[_spaceDim];
+    double originPtr[_spaceDim];
+    double dxyzPtr[_spaceDim];
+    mcIdType nodeStrctPtr[_spaceDim];
 
-	originPtr[0]=xmin;
-	originPtr[1]=ymin;
-	originPtr[2]=zmin;
-	nodeStrctPtr[0]=nx+1;
-	nodeStrctPtr[1]=ny+1;
-	nodeStrctPtr[2]=nz+1;
-	dxyzPtr[0]=dx;
-	dxyzPtr[1]=dy;
-	dxyzPtr[2]=dz;
+    originPtr[0]=xmin;
+    originPtr[1]=ymin;
+    originPtr[2]=zmin;
+    nodeStrctPtr[0]=nx+1;
+    nodeStrctPtr[1]=ny+1;
+    nodeStrctPtr[2]=nz+1;
+    dxyzPtr[0]=dx;
+    dxyzPtr[1]=dy;
+    dxyzPtr[2]=dz;
 
-	_mesh=MEDCouplingIMesh::New(meshName,
-			_spaceDim,
-			nodeStrctPtr,
-			nodeStrctPtr+_spaceDim,
-			originPtr,
-			originPtr+_spaceDim,
-			dxyzPtr,
-			dxyzPtr+_spaceDim);
+    _mesh=MEDCouplingIMesh::New(meshName,
+            _spaceDim,
+            nodeStrctPtr,
+            nodeStrctPtr+_spaceDim,
+            originPtr,
+            originPtr+_spaceDim,
+            dxyzPtr,
+            dxyzPtr+_spaceDim);
     _meshNotDeleted=true;
     _isStructured = true;
 
@@ -413,14 +413,14 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             DataArrayIdType * o2n = _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_5);
             o2n->decrRef();
-			_isStructured = false;
+            _isStructured = false;
         }
     else if( split_to_tetrahedra_policy == 1 )
         {
             _mesh=_mesh->buildUnstructured();//simplexize is not available for structured meshes
             DataArrayIdType * o2n = _mesh->simplexize(INTERP_KERNEL::PLANAR_FACE_6);
             o2n->decrRef();
-			_isStructured = false;
+            _isStructured = false;
         }
     else if ( split_to_tetrahedra_policy != -1 )
         {
@@ -428,8 +428,8 @@ Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, 
             throw CdmathException("Mesh::Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz) : splitting policy value should be 0 or 1");
         }
     
-	MEDCouplingUMesh*  mu = setMesh();
-	mu->decrRef();
+    MEDCouplingUMesh*  mu = setMesh();
+    mu->decrRef();
 }
 
 //----------------------------------------------------------------------
@@ -437,88 +437,88 @@ MEDCouplingUMesh*
 Mesh::setMesh( void )
 //----------------------------------------------------------------------
 {
-	/* This is the main function translating medcouplingumesh info into Mesh class to be used when designing numerical methods
-	 * We need the level 0 mesh to extract the cell-node connectvity
-	 * We need the level -1 mesh to extract the cell-face and face-node connectivities (use o build descending connectivity)
-	 * Be careful : the nodes in the medcoupling mesh are not necessarily all conected to a cell/face. 
-	 * Mesh class discard isolated nodes, hence the number of nodes in Mesh class can be lower than the number of nodes in medcouplingumesh.
-	 */
-	 
-	DataArrayIdType *desc  = DataArrayIdType::New();
-	DataArrayIdType *descI = DataArrayIdType::New();
-	DataArrayIdType *revDesc  = DataArrayIdType::New();
-	DataArrayIdType *revDescI = DataArrayIdType::New();
-	MEDCouplingUMesh* mu = _mesh->buildUnstructured();
-	MEDCouplingUMesh* mu2;//mesh of dimension N-1 containing the cell interfaces->cell/face connectivity
-	
-	mu->unPolyze();
+    /* This is the main function translating medcouplingumesh info into Mesh class to be used when designing numerical methods
+     * We need the level 0 mesh to extract the cell-node connectvity
+     * We need the level -1 mesh to extract the cell-face and face-node connectivities (use o build descending connectivity)
+     * Be careful : the nodes in the medcoupling mesh are not necessarily all conected to a cell/face. 
+     * Mesh class discard isolated nodes, hence the number of nodes in Mesh class can be lower than the number of nodes in medcouplingumesh.
+     */
+     
+    DataArrayIdType *desc  = DataArrayIdType::New();
+    DataArrayIdType *descI = DataArrayIdType::New();
+    DataArrayIdType *revDesc  = DataArrayIdType::New();
+    DataArrayIdType *revDescI = DataArrayIdType::New();
+    MEDCouplingUMesh* mu = _mesh->buildUnstructured();
+    MEDCouplingUMesh* mu2;//mesh of dimension N-1 containing the cell interfaces->cell/face connectivity
+    
+    mu->unPolyze();
     DataArrayIdType * o2n = mu->sortCellsInMEDFileFrmt( );
-	o2n->decrRef();
-	
-	if(_meshDim<2)
-		mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
-	else
-		mu2=mu->buildDescendingConnectivity2(desc,descI,revDesc,revDescI);
-	
+    o2n->decrRef();
+    
+    if(_meshDim<2)
+        mu2=mu->buildDescendingConnectivity(desc,descI,revDesc,revDescI);
+    else
+        mu2=mu->buildDescendingConnectivity2(desc,descI,revDesc,revDescI);
+    
     const mcIdType *tmp = desc->getConstPointer();//Lists the faces surrounding each cell
     const mcIdType *tmpI=descI->getConstPointer();
 
-	const mcIdType *tmpA =revDesc->getConstPointer();//Lists the cells surrounding each face
-	const mcIdType *tmpAI=revDescI->getConstPointer();
+    const mcIdType *tmpA =revDesc->getConstPointer();//Lists the cells surrounding each face
+    const mcIdType *tmpAI=revDescI->getConstPointer();
 
-	//Test du type d'éléments contenus dans le maillage afin d'éviter les éléments contenant des points de gauss
-	_eltsTypes=mu->getAllGeoTypesSorted();
-	for(int i=0; i<_eltsTypes.size();i++)
-	{
-		if(
-				   _eltsTypes[i]!= INTERP_KERNEL::NORM_POINT1 && _eltsTypes[i]!= INTERP_KERNEL::NORM_SEG2
-				&& _eltsTypes[i]!= INTERP_KERNEL::NORM_TRI3   && _eltsTypes[i]!= INTERP_KERNEL::NORM_QUAD4
-				&& _eltsTypes[i]!= INTERP_KERNEL::NORM_TETRA4 && _eltsTypes[i]!= INTERP_KERNEL::NORM_PYRA5
-				&& _eltsTypes[i]!= INTERP_KERNEL::NORM_PENTA6 && _eltsTypes[i]!= INTERP_KERNEL::NORM_HEXA8
-				&& _eltsTypes[i]!= INTERP_KERNEL::NORM_POLYGON&& _eltsTypes[i]!= INTERP_KERNEL::NORM_POLYHED
-		)
-		{
-			cout<< "Mesh " + mu->getName() + " contains an element of type " <<endl;
-			cout<< _eltsTypes[i]<<endl;
-			throw CdmathException("Mesh::setMesh : in order to avoid gauss points, mesh should contain elements of type NORM_POINT1, NORM_SEG2, NORM_TRI3, NORM_QUAD4, NORM_TETRA4, NORM_PYRA5, NORM_PENTA6, NORM_HEXA8, NORM_POLYGON, NORM_POLYHED");
-		}
-	}
+    //Test du type d'éléments contenus dans le maillage afin d'éviter les éléments contenant des points de gauss
+    _eltsTypes=mu->getAllGeoTypesSorted();
+    for(int i=0; i<_eltsTypes.size();i++)
+    {
+        if(
+                   _eltsTypes[i]!= INTERP_KERNEL::NORM_POINT1 && _eltsTypes[i]!= INTERP_KERNEL::NORM_SEG2
+                && _eltsTypes[i]!= INTERP_KERNEL::NORM_TRI3   && _eltsTypes[i]!= INTERP_KERNEL::NORM_QUAD4
+                && _eltsTypes[i]!= INTERP_KERNEL::NORM_TETRA4 && _eltsTypes[i]!= INTERP_KERNEL::NORM_PYRA5
+                && _eltsTypes[i]!= INTERP_KERNEL::NORM_PENTA6 && _eltsTypes[i]!= INTERP_KERNEL::NORM_HEXA8
+                && _eltsTypes[i]!= INTERP_KERNEL::NORM_POLYGON&& _eltsTypes[i]!= INTERP_KERNEL::NORM_POLYHED
+        )
+        {
+            cout<< "Mesh " + mu->getName() + " contains an element of type " <<endl;
+            cout<< _eltsTypes[i]<<endl;
+            throw CdmathException("Mesh::setMesh : in order to avoid gauss points, mesh should contain elements of type NORM_POINT1, NORM_SEG2, NORM_TRI3, NORM_QUAD4, NORM_TETRA4, NORM_PYRA5, NORM_PENTA6, NORM_HEXA8, NORM_POLYGON, NORM_POLYHED");
+        }
+    }
 
-	DataArrayDouble *baryCell = mu->computeCellCenterOfMass() ;
-	const double *coorBary=baryCell->getConstPointer();//Used for cell center coordinates
+    DataArrayDouble *baryCell = mu->computeCellCenterOfMass() ;
+    const double *coorBary=baryCell->getConstPointer();//Used for cell center coordinates
 
-	MEDCouplingFieldDouble* fields=mu->getMeasureField(true);
-	DataArrayDouble *surface = fields->getArray();
-	const double *surf=surface->getConstPointer();//Used for cell lenght/surface/volume
+    MEDCouplingFieldDouble* fields=mu->getMeasureField(true);
+    DataArrayDouble *surface = fields->getArray();
+    const double *surf=surface->getConstPointer();//Used for cell lenght/surface/volume
 
-	DataArrayDouble *coo = mu->getCoords() ;
-	const double    *cood=coo->getConstPointer();//Used for nodes coordinates
+    DataArrayDouble *coo = mu->getCoords() ;
+    const double    *cood=coo->getConstPointer();//Used for nodes coordinates
 
-	DataArrayIdType *revNode =DataArrayIdType::New();
-	DataArrayIdType *revNodeI=DataArrayIdType::New();
-	mu->getReverseNodalConnectivity(revNode,revNodeI) ;
-	const mcIdType *tmpN =revNode->getConstPointer();//Used to know which cells surround a given node
-	const mcIdType *tmpNI=revNodeI->getConstPointer();
+    DataArrayIdType *revNode =DataArrayIdType::New();
+    DataArrayIdType *revNodeI=DataArrayIdType::New();
+    mu->getReverseNodalConnectivity(revNode,revNodeI) ;
+    const mcIdType *tmpN =revNode->getConstPointer();//Used to know which cells surround a given node
+    const mcIdType *tmpNI=revNodeI->getConstPointer();
 
-	DataArrayIdType *revCell =DataArrayIdType::New();
-	DataArrayIdType *revCellI=DataArrayIdType::New();
-	mu2->getReverseNodalConnectivity(revCell,revCellI);
-	const mcIdType *tmpC =revCell->getConstPointer();//Used to know which faces surround a given node
-	const mcIdType *tmpCI=revCellI->getConstPointer();
+    DataArrayIdType *revCell =DataArrayIdType::New();
+    DataArrayIdType *revCellI=DataArrayIdType::New();
+    mu2->getReverseNodalConnectivity(revCell,revCellI);
+    const mcIdType *tmpC =revCell->getConstPointer();//Used to know which faces surround a given node
+    const mcIdType *tmpCI=revCellI->getConstPointer();
 
-	const DataArrayIdType *nodal  = mu2->getNodalConnectivity() ;
-	const DataArrayIdType *nodalI = mu2->getNodalConnectivityIndex() ;
-	const mcIdType *tmpNE =nodal->getConstPointer();//Used to know which nodes surround a given face
-	const mcIdType *tmpNEI=nodalI->getConstPointer();
+    const DataArrayIdType *nodal  = mu2->getNodalConnectivity() ;
+    const DataArrayIdType *nodalI = mu2->getNodalConnectivityIndex() ;
+    const mcIdType *tmpNE =nodal->getConstPointer();//Used to know which nodes surround a given face
+    const mcIdType *tmpNEI=nodalI->getConstPointer();
 
-	_numberOfCells = mu->getNumberOfCells() ;
-	_cells      = std::shared_ptr<Cell>(new Cell[_numberOfCells], std::default_delete<Cell[]>()) ;
+    _numberOfCells = mu->getNumberOfCells() ;
+    _cells      = std::shared_ptr<Cell>(new Cell[_numberOfCells], std::default_delete<Cell[]>()) ;
 
-	_numberOfNodes = mu->getNumberOfNodes() ;//This number may include isolated nodes that will not be loaded. The number will be updated during nodes constructions
-	_nodes      = std::shared_ptr<Node>(new Node[_numberOfNodes], std::default_delete<Node[]>())  ;//This array may be resized if isolated nodes are found
+    _numberOfNodes = mu->getNumberOfNodes() ;//This number may include isolated nodes that will not be loaded. The number will be updated during nodes constructions
+    _nodes      = std::shared_ptr<Node>(new Node[_numberOfNodes], std::default_delete<Node[]>())  ;//This array may be resized if isolated nodes are found
 
-	_numberOfFaces = mu2->getNumberOfCells();
-	_faces       = std::shared_ptr<Face>(new Face[_numberOfFaces], std::default_delete<Face[]>()) ;
+    _numberOfFaces = mu2->getNumberOfCells();
+    _faces       = std::shared_ptr<Face>(new Face[_numberOfFaces], std::default_delete<Face[]>()) ;
 
     _indexFacePeriodicSet=false;
 
@@ -533,7 +533,7 @@ Mesh::setMesh( void )
     const mcIdType *tmpNI2;
     MEDCouplingUMesh* mu3;
     
-	if (_meshDim == 1)
+    if (_meshDim == 1)
         _numberOfEdges = mu->getNumberOfCells();
     else if (_meshDim == 2)
         _numberOfEdges = mu2->getNumberOfCells();
@@ -546,268 +546,268 @@ Mesh::setMesh( void )
         tmpNI2=revNodeI2->getConstPointer();
     }    
 
-	// _cells, _nodes and _faces initialization:
-	if (_meshDim == 1)
-	{
-		double xn, yn=0., zn=0.;//Components of the normal vector at a cell interface
-		double norm;
-		for( int id=0;id<_numberOfCells;id++ )
-		{
-			Point p(0.0,0.0,0.0) ;
-			for(int idim=0; idim<_spaceDim; idim++)
-				p[idim]=coorBary[id*_spaceDim+idim];
-	
-			mcIdType nbVertices=mu->getNumberOfNodesInCell(id) ;//should be equal to 2
-			assert( nbVertices==2);
-			std::vector<mcIdType> nodeIdsOfCell ;
-			mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
-	
-	        mcIdType nbFaces=tmpI[id+1]-tmpI[id];//should be equal to 2
-			assert( nbFaces==2);
-	        const mcIdType *work=tmp+tmpI[id];
-	
-			/* compute the normal to the face */
-	            xn = cood[nodeIdsOfCell[0]*_spaceDim  ] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim  ];
-	        if(_spaceDim>1)        
-				yn = cood[nodeIdsOfCell[0]*_spaceDim+1] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+1];
-	        if(_spaceDim>2)        
-				zn = cood[nodeIdsOfCell[0]*_spaceDim+2] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+2];
-			norm = sqrt(xn*xn+yn*yn+zn*zn);
-			if(norm<_epsilon)
-				throw CdmathException("!!! Mesh::setMesh Normal vector has norm 0 !!!");
-			else
-			{
-				xn /= norm;
-				yn /= norm;
-				zn /= norm;
-			}
-	        
-			Cell ci( nbVertices, nbFaces, surf[id], p ) ;//nbCells=nbFaces=2
-	        for( int el=0;el<nbFaces;el++ )
-			{
-				ci.addNodeId(el,nodeIdsOfCell[el]) ;//global node number
-				ci.addNormalVector(el,xn,yn,zn) ;
-				ci.addFaceId(el,work[el]) ;
-				xn = - xn; yn=-yn; zn=-zn;
-			}
-			_cells.get()[id] = ci ;
-		}
-	
-		for( int id(0); id<_numberOfFaces; id++ )
-		{
-			const mcIdType *workv=tmpNE+tmpNEI[id]+1;
-			mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;//Normally equal to 1.
-			assert( nbNodes==1);
-	
-			std::vector<double> coo(0) ;
-			mu2->getCoordinatesOfNode(workv[0],coo);
-			Point p(0,0.0,0.0) ;
-			for(int idim=0; idim<_spaceDim; idim++)
-				p[idim]=coo[idim];
-	
-		    const mcIdType *workc=tmpA+tmpAI[id];
-		    mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
-			assert( nbCells>0);//To make sure our face is not located on an isolated node
-		    
-			Face fi( nbNodes, nbCells, 1.0, p, 1., 0., 0. ) ;
-			for(int node_id=0; node_id<nbNodes;node_id++)//This loop could be deleted since nbNodes=1. Trying to merge with setMesh
-				fi.addNodeId(node_id,workv[node_id]) ;//global node number
-	
-			fi.addCellId(0,workc[0]) ;
-			for(int cell_id=1; cell_id<nbCells;cell_id++)
-			{
-				int cell_idx=0;
-				if (workc[cell_id]!=workc[cell_id-1])//For some meshes (bad ones) the same cell can appear several times
-					{
-					fi.addCellId(cell_idx+1,workc[cell_id]) ;
-					cell_idx++;
-					}                
-			}
-			if(nbCells==1)
-				_boundaryFaceIds.push_back(id);
-			_faces.get()[id] = fi ;
-		}
-	
-		int correctNbNodes=0;
-		for( int id=0;id<_numberOfNodes;id++ )
-		{
-			const mcIdType *workc=tmpN+tmpNI[id];
-			mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
-			
-			if( nbCells>0)//To make sure this is not an isolated node
-			{
-				correctNbNodes++;
-				std::vector<double> coo(0) ;
-				mu->getCoordinatesOfNode(id,coo);
-				Point p(0,0.0,0.0) ;
-				for(int idim=0; idim<_spaceDim; idim++)
-					p[idim]=coo[idim];
-		
-				const mcIdType *workf=tmpC+tmpCI[id];
-				mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
-				assert( nbFaces==1);
-		
-			    const mcIdType *workn=tmpN+tmpNI[id];
-			    mcIdType nbNeighbourNodes=tmpNI[id+1]-tmpNI[id];
-		        
-				Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
-		        for( int el=0;el<nbCells;el++ )
-					vi.addCellId(el,workc[el]) ;
-		        for( int el=0;el<nbNeighbourNodes;el++ )
-					vi.addNeighbourNodeId(el,workn[el]) ;//global node number
-				for( int el=0;el<nbFaces;el++ )
-					vi.addFaceId(el,workf[el],_faces.get()[workf[el]].isBorder()) ;
-		 		if(vi.isBorder())
-					_boundaryNodeIds.push_back(id);
-				_nodes.get()[id] = vi ;
-			}
-		}
-		if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
-		{
-			cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
-			_numberOfNodes = correctNbNodes;
-			//memcpy(_nodes,mesh.getNodes(),correctNbNodes*sizeof(*mesh.getNodes())) ;
-		}
-	}
-	else if(_meshDim==2  || _meshDim==3)
-	{
-		DataArrayDouble *barySeg = mu2->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;//Used as face center
-		const double *coorBarySeg=barySeg->getConstPointer();
-
-		MEDCouplingFieldDouble* fieldl=mu2->getMeasureField(true);
-		DataArrayDouble *longueur = fieldl->getArray();
-		const double *lon=longueur->getConstPointer();//The lenght/area of each face
-
-		MEDCouplingFieldDouble* fieldn;//The normal to each face
-		DataArrayDouble *normal;
-		const double *tmpNormal;
-
-		if(_spaceDim==_meshDim)
-			fieldn = mu2->buildOrthogonalField();//Compute the normal to each cell interface
-		else
-			fieldn = mu->buildOrthogonalField();//compute the 3D normal vector to the 2D cell
-		
-		normal = fieldn->getArray();
-		tmpNormal = normal->getConstPointer();
-
-		/*Building mesh cells */
-		for(int id(0), k(0); id<_numberOfCells; id++, k+=_spaceDim)
-		{
-            const mcIdType *work=tmp+tmpI[id];      
-			mcIdType nbFaces=tmpI[id+1]-tmpI[id];
+    // _cells, _nodes and _faces initialization:
+    if (_meshDim == 1)
+    {
+        double xn, yn=0., zn=0.;//Components of the normal vector at a cell interface
+        double norm;
+        for( int id=0;id<_numberOfCells;id++ )
+        {
+            Point p(0.0,0.0,0.0) ;
+            for(int idim=0; idim<_spaceDim; idim++)
+                p[idim]=coorBary[id*_spaceDim+idim];
+    
+            mcIdType nbVertices=mu->getNumberOfNodesInCell(id) ;//should be equal to 2
+            assert( nbVertices==2);
+            std::vector<mcIdType> nodeIdsOfCell ;
+            mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
+    
+            mcIdType nbFaces=tmpI[id+1]-tmpI[id];//should be equal to 2
+            assert( nbFaces==2);
+            const mcIdType *work=tmp+tmpI[id];
+    
+            /* compute the normal to the face */
+                xn = cood[nodeIdsOfCell[0]*_spaceDim  ] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim  ];
+            if(_spaceDim>1)        
+                yn = cood[nodeIdsOfCell[0]*_spaceDim+1] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+1];
+            if(_spaceDim>2)        
+                zn = cood[nodeIdsOfCell[0]*_spaceDim+2] - cood[nodeIdsOfCell[nbFaces-1]*_spaceDim+2];
+            norm = sqrt(xn*xn+yn*yn+zn*zn);
+            if(norm<_epsilon)
+                throw CdmathException("!!! Mesh::setMesh Normal vector has norm 0 !!!");
+            else
+            {
+                xn /= norm;
+                yn /= norm;
+                zn /= norm;
+            }
             
-			mcIdType nbVertices=mu->getNumberOfNodesInCell(id) ;
+            Cell ci( nbVertices, nbFaces, surf[id], p ) ;//nbCells=nbFaces=2
+            for( int el=0;el<nbFaces;el++ )
+            {
+                ci.addNodeId(el,nodeIdsOfCell[el]) ;//global node number
+                ci.addNormalVector(el,xn,yn,zn) ;
+                ci.addFaceId(el,work[el]) ;
+                xn = - xn; yn=-yn; zn=-zn;
+            }
+            _cells.get()[id] = ci ;
+        }
+    
+        for( int id(0); id<_numberOfFaces; id++ )
+        {
+            const mcIdType *workv=tmpNE+tmpNEI[id]+1;
+            mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;//Normally equal to 1.
+            assert( nbNodes==1);
+    
+            std::vector<double> coo(0) ;
+            mu2->getCoordinatesOfNode(workv[0],coo);
+            Point p(0,0.0,0.0) ;
+            for(int idim=0; idim<_spaceDim; idim++)
+                p[idim]=coo[idim];
+    
+            const mcIdType *workc=tmpA+tmpAI[id];
+            mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
+            assert( nbCells>0);//To make sure our face is not located on an isolated node
+            
+            Face fi( nbNodes, nbCells, 1.0, p, 1., 0., 0. ) ;
+            for(int node_id=0; node_id<nbNodes;node_id++)//This loop could be deleted since nbNodes=1. Trying to merge with setMesh
+                fi.addNodeId(node_id,workv[node_id]) ;//global node number
+    
+            fi.addCellId(0,workc[0]) ;
+            for(int cell_id=1; cell_id<nbCells;cell_id++)
+            {
+                int cell_idx=0;
+                if (workc[cell_id]!=workc[cell_id-1])//For some meshes (bad ones) the same cell can appear several times
+                    {
+                    fi.addCellId(cell_idx+1,workc[cell_id]) ;
+                    cell_idx++;
+                    }                
+            }
+            if(nbCells==1)
+                _boundaryFaceIds.push_back(id);
+            _faces.get()[id] = fi ;
+        }
+    
+        int correctNbNodes=0;
+        for( int id=0;id<_numberOfNodes;id++ )
+        {
+            const mcIdType *workc=tmpN+tmpNI[id];
+            mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
+            
+            if( nbCells>0)//To make sure this is not an isolated node
+            {
+                correctNbNodes++;
+                std::vector<double> coo(0) ;
+                mu->getCoordinatesOfNode(id,coo);
+                Point p(0,0.0,0.0) ;
+                for(int idim=0; idim<_spaceDim; idim++)
+                    p[idim]=coo[idim];
+        
+                const mcIdType *workf=tmpC+tmpCI[id];
+                mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+                assert( nbFaces==1);
+        
+                const mcIdType *workn=tmpN+tmpNI[id];
+                mcIdType nbNeighbourNodes=tmpNI[id+1]-tmpNI[id];
+                
+                Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
+                for( int el=0;el<nbCells;el++ )
+                    vi.addCellId(el,workc[el]) ;
+                for( int el=0;el<nbNeighbourNodes;el++ )
+                    vi.addNeighbourNodeId(el,workn[el]) ;//global node number
+                for( int el=0;el<nbFaces;el++ )
+                    vi.addFaceId(el,workf[el],_faces.get()[workf[el]].isBorder()) ;
+                 if(vi.isBorder())
+                    _boundaryNodeIds.push_back(id);
+                _nodes.get()[id] = vi ;
+            }
+        }
+        if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
+        {
+            cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
+            _numberOfNodes = correctNbNodes;
+            //memcpy(_nodes,mesh.getNodes(),correctNbNodes*sizeof(*mesh.getNodes())) ;
+        }
+    }
+    else if(_meshDim==2  || _meshDim==3)
+    {
+        DataArrayDouble *barySeg = mu2->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;//Used as face center
+        const double *coorBarySeg=barySeg->getConstPointer();
 
-			vector<double> coorBaryXyz(3,0);
-			for (int d=0; d<_spaceDim; d++)
-				coorBaryXyz[d] = coorBary[k+d];
+        MEDCouplingFieldDouble* fieldl=mu2->getMeasureField(true);
+        DataArrayDouble *longueur = fieldl->getArray();
+        const double *lon=longueur->getConstPointer();//The lenght/area of each face
 
-			Point p(coorBaryXyz[0],coorBaryXyz[1],coorBaryXyz[2]) ;
-			Cell ci( nbVertices, nbFaces, surf[id], p ) ;
+        MEDCouplingFieldDouble* fieldn;//The normal to each face
+        DataArrayDouble *normal;
+        const double *tmpNormal;
 
-			/* Filling cell nodes */
-			std::vector<mcIdType> nodeIdsOfCell ;
-			mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
-			for( int el=0;el<nbVertices;el++ )
-				ci.addNodeId(el,nodeIdsOfCell[el]) ;
+        if(_spaceDim==_meshDim)
+            fieldn = mu2->buildOrthogonalField();//Compute the normal to each cell interface
+        else
+            fieldn = mu->buildOrthogonalField();//compute the 3D normal vector to the 2D cell
+        
+        normal = fieldn->getArray();
+        tmpNormal = normal->getConstPointer();
 
-			/* Filling cell faces */
-			if(_spaceDim==_meshDim)//use the normal field generated by buildOrthogonalField()
-				for( int el=0;el<nbFaces;el++ )
-				{
+        /*Building mesh cells */
+        for(int id(0), k(0); id<_numberOfCells; id++, k+=_spaceDim)
+        {
+            const mcIdType *work=tmp+tmpI[id];      
+            mcIdType nbFaces=tmpI[id+1]-tmpI[id];
+            
+            mcIdType nbVertices=mu->getNumberOfNodesInCell(id) ;
+
+            vector<double> coorBaryXyz(3,0);
+            for (int d=0; d<_spaceDim; d++)
+                coorBaryXyz[d] = coorBary[k+d];
+
+            Point p(coorBaryXyz[0],coorBaryXyz[1],coorBaryXyz[2]) ;
+            Cell ci( nbVertices, nbFaces, surf[id], p ) ;
+
+            /* Filling cell nodes */
+            std::vector<mcIdType> nodeIdsOfCell ;
+            mu->getNodeIdsOfCell(id,nodeIdsOfCell) ;
+            for( int el=0;el<nbVertices;el++ )
+                ci.addNodeId(el,nodeIdsOfCell[el]) ;
+
+            /* Filling cell faces */
+            if(_spaceDim==_meshDim)//use the normal field generated by buildOrthogonalField()
+                for( int el=0;el<nbFaces;el++ )
+                {
                     mcIdType faceIndex=(abs(work[el])-1);//=work[el] since Fortran type numbering was used, and negative sign means anticlockwise numbering
-					vector<double> xyzn(3,0);//Outer normal to the cell
-					if (work[el]<0)
-						for (int d=0; d<_spaceDim; d++)
-							xyzn[d] = -tmpNormal[_spaceDim*faceIndex+d];
-					else
-						for (int d=0; d<_spaceDim; d++)
-							xyzn[d] = +tmpNormal[_spaceDim*faceIndex+d];
-					ci.addNormalVector(el,xyzn[0],xyzn[1],xyzn[2]) ;
-					ci.addFaceId(el,faceIndex) ;
-				}
-			else//build normals associated to the couple (cell id, face el)
-			{//Case _meshDim=1 should be moved upper since we are in the 2D/3D branch
-				if(_meshDim==1)//we know in this case there are only two faces around the cell id, each face is composed of a single node
-				{//work[0]= first face global number, work[1]= second face global number
+                    vector<double> xyzn(3,0);//Outer normal to the cell
+                    if (work[el]<0)
+                        for (int d=0; d<_spaceDim; d++)
+                            xyzn[d] = -tmpNormal[_spaceDim*faceIndex+d];
+                    else
+                        for (int d=0; d<_spaceDim; d++)
+                            xyzn[d] = +tmpNormal[_spaceDim*faceIndex+d];
+                    ci.addNormalVector(el,xyzn[0],xyzn[1],xyzn[2]) ;
+                    ci.addFaceId(el,faceIndex) ;
+                }
+            else//build normals associated to the couple (cell id, face el)
+            {//Case _meshDim=1 should be moved upper since we are in the 2D/3D branch
+                if(_meshDim==1)//we know in this case there are only two faces around the cell id, each face is composed of a single node
+                {//work[0]= first face global number, work[1]= second face global number
                     mcIdType indexFace0=abs(work[0])-1;//=work[0] since Fortran type numbering was used, and negative sign means anticlockwise numbering
                     mcIdType indexFace1=abs(work[1])-1;//=work[1] since Fortran type numbering was used, and negative sign means anticlockwise numbering
-					mcIdType idNodeA=(tmpNE+tmpNEI[indexFace0]+1)[0];//global number of the first  face node work[0]=(abs(work[0])-1)
-					mcIdType idNodeB=(tmpNE+tmpNEI[indexFace1]+1)[0];//global number of the second face node work[1]=(abs(work[1])-1)
-					Vector vecAB(3);
-					for(int i=0;i<_spaceDim;i++)
-						vecAB[i]=coo->getIJ(idNodeB,i) - coo->getIJ(idNodeA,i);
-					vecAB/=vecAB.norm();
-					ci.addNormalVector(0,-vecAB[0],-vecAB[1],-vecAB[2]) ;
-					ci.addNormalVector(1,vecAB[0],vecAB[1],vecAB[2]) ;				
-					ci.addFaceId(0,indexFace0) ;
-					ci.addFaceId(1,indexFace1) ;	
-				}
-				else//_meshDim==2, number of faces around the cell id is variable, each face is composed of two nodes
-				{
-					Vector xyzn(3);
-					for (int d=0; d<_spaceDim; d++)
-						xyzn[d] = tmpNormal[_spaceDim*id+d];
-					for( int el=0;el<nbFaces;el++ )
-					{
+                    mcIdType idNodeA=(tmpNE+tmpNEI[indexFace0]+1)[0];//global number of the first  face node work[0]=(abs(work[0])-1)
+                    mcIdType idNodeB=(tmpNE+tmpNEI[indexFace1]+1)[0];//global number of the second face node work[1]=(abs(work[1])-1)
+                    Vector vecAB(3);
+                    for(int i=0;i<_spaceDim;i++)
+                        vecAB[i]=coo->getIJ(idNodeB,i) - coo->getIJ(idNodeA,i);
+                    vecAB/=vecAB.norm();
+                    ci.addNormalVector(0,-vecAB[0],-vecAB[1],-vecAB[2]) ;
+                    ci.addNormalVector(1,vecAB[0],vecAB[1],vecAB[2]) ;                
+                    ci.addFaceId(0,indexFace0) ;
+                    ci.addFaceId(1,indexFace1) ;    
+                }
+                else//_meshDim==2, number of faces around the cell id is variable, each face is composed of two nodes
+                {
+                    Vector xyzn(3);
+                    for (int d=0; d<_spaceDim; d++)
+                        xyzn[d] = tmpNormal[_spaceDim*id+d];
+                    for( int el=0;el<nbFaces;el++ )
+                    {
                         int faceIndex=(abs(work[el])-1);//=work[el] since Fortran type numbering was used, and negative sign means anticlockwise numbering
-						const mcIdType *workv=tmpNE+tmpNEI[faceIndex]+1;
-						mcIdType nbNodes= tmpNEI[faceIndex+1]-tmpNEI[faceIndex]-1;
-						if(nbNodes!=2)//We want to compute the normal to a straight line, not a curved interface composed of more thant 2 points
-						{
-							cout<<"Mesh name "<< mu->getName()<< " space dim= "<< _spaceDim <<" mesh dim= "<< _meshDim <<endl;
-							cout<<"For cell id "<<id<<" and local face number "<<el<<", the number of nodes is "<< nbNodes<< ", total number of faces is "<< nbFaces <<endl;
-							throw CdmathException("Mesh::setMesh number of nodes around a face should be 2");
-						}
+                        const mcIdType *workv=tmpNE+tmpNEI[faceIndex]+1;
+                        mcIdType nbNodes= tmpNEI[faceIndex+1]-tmpNEI[faceIndex]-1;
+                        if(nbNodes!=2)//We want to compute the normal to a straight line, not a curved interface composed of more thant 2 points
+                        {
+                            cout<<"Mesh name "<< mu->getName()<< " space dim= "<< _spaceDim <<" mesh dim= "<< _meshDim <<endl;
+                            cout<<"For cell id "<<id<<" and local face number "<<el<<", the number of nodes is "<< nbNodes<< ", total number of faces is "<< nbFaces <<endl;
+                            throw CdmathException("Mesh::setMesh number of nodes around a face should be 2");
+                        }
 
-						mcIdType idNodeA=workv[0];
-						mcIdType idNodeB=workv[1];
-						vector<double> nodeA(_spaceDim), nodeB(_spaceDim), nodeP(_spaceDim);
-						for(int i=0;i<_spaceDim;i++)
-						{
-							nodeA[i]=coo->getIJ(idNodeA,i);
-							nodeB[i]=coo->getIJ(idNodeB,i);
-							nodeP[i]=coorBary[_spaceDim*id+i];
-						}
-						//Let P be the barycenter of the cell id
-						Vector vecAB(3), vecPA(3);
-						for(int i=0;i<_spaceDim;i++)
-						{
-							vecAB[i]=coo->getIJ(idNodeB,i)       - coo->getIJ(idNodeA,i);
-							vecPA[i]=coo->getIJ(idNodeA,i) - coorBary[_spaceDim*id+i];
-						}
+                        mcIdType idNodeA=workv[0];
+                        mcIdType idNodeB=workv[1];
+                        vector<double> nodeA(_spaceDim), nodeB(_spaceDim), nodeP(_spaceDim);
+                        for(int i=0;i<_spaceDim;i++)
+                        {
+                            nodeA[i]=coo->getIJ(idNodeA,i);
+                            nodeB[i]=coo->getIJ(idNodeB,i);
+                            nodeP[i]=coorBary[_spaceDim*id+i];
+                        }
+                        //Let P be the barycenter of the cell id
+                        Vector vecAB(3), vecPA(3);
+                        for(int i=0;i<_spaceDim;i++)
+                        {
+                            vecAB[i]=coo->getIJ(idNodeB,i)       - coo->getIJ(idNodeA,i);
+                            vecPA[i]=coo->getIJ(idNodeA,i) - coorBary[_spaceDim*id+i];
+                        }
 
-						Vector normale = xyzn % vecAB;//Normal to the edge
-						normale/=normale.norm();
+                        Vector normale = xyzn % vecAB;//Normal to the edge
+                        normale/=normale.norm();
                         
-						if(normale*vecPA<0)
-							ci.addNormalVector(el,normale[0],normale[1],normale[2]) ;	
-						else
-							ci.addNormalVector(el,-normale[0],-normale[1],-normale[2]) ;	
-						ci.addFaceId(el,faceIndex) ;
-					}
-				}
-			}
-			_cells.get()[id] = ci ;
-		}
+                        if(normale*vecPA<0)
+                            ci.addNormalVector(el,normale[0],normale[1],normale[2]) ;    
+                        else
+                            ci.addNormalVector(el,-normale[0],-normale[1],-normale[2]) ;    
+                        ci.addFaceId(el,faceIndex) ;
+                    }
+                }
+            }
+            _cells.get()[id] = ci ;
+        }
 
-		if(_spaceDim!=_meshDim)
-		{
-			/* Since spaceDim!=meshDim, don't build normal to faces */
-			fieldn->decrRef();
+        if(_spaceDim!=_meshDim)
+        {
+            /* Since spaceDim!=meshDim, don't build normal to faces */
+            fieldn->decrRef();
             normal=NULL;
             tmpNormal=NULL;
-		}
+        }
 
-		/*Building mesh faces */
-		for(int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim)
-		{
-			vector<double> coorBarySegXyz(3);
-			for (int d=0; d<_spaceDim; d++)
-				coorBarySegXyz[d] = coorBarySeg[k+d];
-			Point p(coorBarySegXyz[0],coorBarySegXyz[1],coorBarySegXyz[2]) ;
-			const mcIdType *workc=tmpA+tmpAI[id];
-			mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
+        /*Building mesh faces */
+        for(int id(0), k(0); id<_numberOfFaces; id++, k+=_spaceDim)
+        {
+            vector<double> coorBarySegXyz(3);
+            for (int d=0; d<_spaceDim; d++)
+                coorBarySegXyz[d] = coorBarySeg[k+d];
+            Point p(coorBarySegXyz[0],coorBarySegXyz[1],coorBarySegXyz[2]) ;
+            const mcIdType *workc=tmpA+tmpAI[id];
+            mcIdType nbCells=tmpAI[id+1]-tmpAI[id];
             
             if (nbCells>2 && _spaceDim==_meshDim)
             {
@@ -821,23 +821,23 @@ Mesh::setMesh( void )
             if (nbCells==1)
                 _boundaryFaceIds.push_back(id);
                 
-			const mcIdType *workv=tmpNE+tmpNEI[id]+1;
-			mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;
+            const mcIdType *workv=tmpNE+tmpNEI[id]+1;
+            mcIdType nbNodes= tmpNEI[id+1]-tmpNEI[id]-1;
 
-			Face fi;
-			if(_spaceDim==_meshDim)//Euclidean flat mesh geometry
+            Face fi;
+            if(_spaceDim==_meshDim)//Euclidean flat mesh geometry
                 if(_spaceDim==2)
                     fi=Face( nbNodes, nbCells, lon[id], p, tmpNormal[k], tmpNormal[k+1], 0.0) ;
                 else
                     fi=Face( nbNodes, nbCells, lon[id], p, tmpNormal[k], tmpNormal[k+1], tmpNormal[k+2]) ;
-			else//Curved mesh geometry
-				fi=Face( nbNodes, nbCells, lon[id], p, 0.0, 0.0, 0.0) ;//Since spaceDim!=meshDim, normal to face is not defined
+            else//Curved mesh geometry
+                fi=Face( nbNodes, nbCells, lon[id], p, 0.0, 0.0, 0.0) ;//Since spaceDim!=meshDim, normal to face is not defined
 
-			for(int node_id=0; node_id<nbNodes;node_id++)
-				fi.addNodeId(node_id,workv[node_id]) ;
+            for(int node_id=0; node_id<nbNodes;node_id++)
+                fi.addNodeId(node_id,workv[node_id]) ;
 
-			fi.addCellId(0,workc[0]) ;
-			for(int cell_id=1; cell_id<nbCells;cell_id++)
+            fi.addCellId(0,workc[0]) ;
+            for(int cell_id=1; cell_id<nbCells;cell_id++)
             {
                 int cell_idx=0;
                 if (workc[cell_id]!=workc[cell_id-1])//For some meshes (bad ones) the same cell can appear several times
@@ -847,70 +847,70 @@ Mesh::setMesh( void )
                     }                
             }
             
-			_faces.get()[id] = fi ;
-		}
+            _faces.get()[id] = fi ;
+        }
 
-		/*Building mesh nodes, should be done after building mesh faces in order to detect boundary nodes*/
-		int correctNbNodes=0;
-		for(int id(0), k(0); id<_numberOfNodes; id++, k+=_spaceDim)
-		{
-			const mcIdType *workc=tmpN+tmpNI[id];
-			mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
+        /*Building mesh nodes, should be done after building mesh faces in order to detect boundary nodes*/
+        int correctNbNodes=0;
+        for(int id(0), k(0); id<_numberOfNodes; id++, k+=_spaceDim)
+        {
+            const mcIdType *workc=tmpN+tmpNI[id];
+            mcIdType nbCells=tmpNI[id+1]-tmpNI[id];
 
-			if( nbCells>0)//To make sure this is not an isolated node
-			{
-				correctNbNodes++;
-				vector<double> coorP(3);
-				for (int d=0; d<_spaceDim; d++)
-					coorP[d] = cood[k+d];
-				Point p(coorP[0],coorP[1],coorP[2]) ;
-		
-				const mcIdType *workf=tmpC+tmpCI[id];
-				mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
-				const mcIdType *workn;
-				mcIdType nbNeighbourNodes;
-				if (_meshDim == 1)
-				{
-					workn=tmpA+tmpAI[id];
-					nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
-				}
-				else if (_meshDim == 2)
-				{
-					workn=tmpC+tmpCI[id];
-					nbNeighbourNodes=tmpCI[id+1]-tmpCI[id];
-				}
-				else//_meshDim == 3
-				{
-					workn=tmpN2+tmpNI2[id];
-					nbNeighbourNodes=tmpNI2[id+1]-tmpNI2[id];
-				}    
-				Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
-		
-				for( int el=0;el<nbCells;el++ )
-					vi.addCellId(el,workc[el]) ;
-				for( int el=0;el<nbNeighbourNodes;el++ )
-					vi.addNeighbourNodeId(el,workn[el]) ;
-				//Detection of border nodes    
-				for( int el=0;el<nbFaces;el++ )
-					vi.addFaceId(el,workf[el],_faces.get()[workf[el]].isBorder()) ;
-				if(vi.isBorder())
-					_boundaryNodeIds.push_back(id);
-				_nodes.get()[id] = vi ;
-			}
-		}
-		if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
-		{
-			cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
-			_numberOfNodes = correctNbNodes;
-		}
-		
-		if(_spaceDim==_meshDim)
-			fieldn->decrRef();
-		fieldl->decrRef();
-		barySeg->decrRef();
-	}
-	else
-		throw CdmathException("Mesh::setMesh space dimension should be 1, 2 or 3");
+            if( nbCells>0)//To make sure this is not an isolated node
+            {
+                correctNbNodes++;
+                vector<double> coorP(3);
+                for (int d=0; d<_spaceDim; d++)
+                    coorP[d] = cood[k+d];
+                Point p(coorP[0],coorP[1],coorP[2]) ;
+        
+                const mcIdType *workf=tmpC+tmpCI[id];
+                mcIdType nbFaces=tmpCI[id+1]-tmpCI[id];
+                const mcIdType *workn;
+                mcIdType nbNeighbourNodes;
+                if (_meshDim == 1)
+                {
+                    workn=tmpA+tmpAI[id];
+                    nbNeighbourNodes=tmpAI[id+1]-tmpAI[id];
+                }
+                else if (_meshDim == 2)
+                {
+                    workn=tmpC+tmpCI[id];
+                    nbNeighbourNodes=tmpCI[id+1]-tmpCI[id];
+                }
+                else//_meshDim == 3
+                {
+                    workn=tmpN2+tmpNI2[id];
+                    nbNeighbourNodes=tmpNI2[id+1]-tmpNI2[id];
+                }    
+                Node vi( nbCells, nbFaces, nbNeighbourNodes, p ) ;
+        
+                for( int el=0;el<nbCells;el++ )
+                    vi.addCellId(el,workc[el]) ;
+                for( int el=0;el<nbNeighbourNodes;el++ )
+                    vi.addNeighbourNodeId(el,workn[el]) ;
+                //Detection of border nodes    
+                for( int el=0;el<nbFaces;el++ )
+                    vi.addFaceId(el,workf[el],_faces.get()[workf[el]].isBorder()) ;
+                if(vi.isBorder())
+                    _boundaryNodeIds.push_back(id);
+                _nodes.get()[id] = vi ;
+            }
+        }
+        if( _numberOfNodes!=correctNbNodes)//To do : reduce the size of pointer _nodes
+        {
+            cout<<"Found isolated nodes : correctNbNodes= "<<correctNbNodes<<", _numberOfNodes= "<<_numberOfNodes<<endl;
+            _numberOfNodes = correctNbNodes;
+        }
+        
+        if(_spaceDim==_meshDim)
+            fieldn->decrRef();
+        fieldl->decrRef();
+        barySeg->decrRef();
+    }
+    else
+        throw CdmathException("Mesh::setMesh space dimension should be 1, 2 or 3");
 
     //Set boundary groups
     _faceGroupNames.push_back("Boundary");
@@ -918,237 +918,237 @@ Mesh::setMesh( void )
     _faceGroupsIds.push_back(_boundaryFaceIds);
     _nodeGroupsIds.push_back(_boundaryNodeIds);
     if( _meshDim>1 )//Set face boundary group
-		_boundaryMesh = mu->computeSkin();
+        _boundaryMesh = mu->computeSkin();
     else//in dimension 1 computeSkin leads to a degenerate mesh
-		_boundaryMesh = NULL;
+        _boundaryMesh = NULL;
 
     _faceGroups.push_back(_boundaryMesh);
     _nodeGroups.push_back(NULL);
 
     desc->decrRef();
-	descI->decrRef();
-	revDesc->decrRef();
-	revDescI->decrRef();
-	mu2->decrRef();
-	baryCell->decrRef();
-	fields->decrRef();
-	revNode->decrRef();
-	revNodeI->decrRef();
-	revCell->decrRef();
-	revCellI->decrRef();
+    descI->decrRef();
+    revDesc->decrRef();
+    revDescI->decrRef();
+    mu2->decrRef();
+    baryCell->decrRef();
+    fields->decrRef();
+    revNode->decrRef();
+    revNodeI->decrRef();
+    revCell->decrRef();
+    revCellI->decrRef();
 
     // Arrays used if _meshDim =3 to determine the edges
-	revNode2->decrRef();
-	revNodeI2->decrRef();
-	desc2->decrRef();
-	descI2->decrRef();
-	revDesc2->decrRef();
-	revDescI2->decrRef();
+    revNode2->decrRef();
+    revNodeI2->decrRef();
+    desc2->decrRef();
+    descI2->decrRef();
+    revDesc2->decrRef();
+    revDescI2->decrRef();
 
     if (_meshDim == 3)
         mu3->decrRef();
-    	
+        
     return mu;
 }
 
 void
 Mesh::setGroupAtFaceByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup)
 {
-	std::vector< int > faceIds(0);
-	double FX, FY, FZ;
-	Face Fi;
-	
-	/* Construction of the face group */
-	if(isBoundaryGroup)        
+    std::vector< int > faceIds(0);
+    double FX, FY, FZ;
+    Face Fi;
+    
+    /* Construction of the face group */
+    if(isBoundaryGroup)        
         for(int i=0; i<_boundaryFaceIds.size(); i++)
         {
-			Fi=_faces.get()[_boundaryFaceIds[i]];
-			FX=Fi.x();
-			FY=Fi.y();
-			FZ=Fi.z();
-			if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
-			{
-				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
-				_faces.get()[_boundaryFaceIds[i]].setGroupName(groupName);
-			}
+            Fi=_faces.get()[_boundaryFaceIds[i]];
+            FX=Fi.x();
+            FY=Fi.y();
+            FZ=Fi.z();
+            if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
+            {
+                faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
+                _faces.get()[_boundaryFaceIds[i]].setGroupName(groupName);
+            }
         }
-	else
-		for (int iface=0;iface<_numberOfFaces;iface++)
-		{
-			Fi=_faces.get()[iface];
-			FX=Fi.x();
-			FY=Fi.y();
-			FZ=Fi.z();
-			if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
-			{
-				faceIds.insert(faceIds.end(),iface);
-				_faces.get()[iface].setGroupName(groupName);
-			}
-		}
+    else
+        for (int iface=0;iface<_numberOfFaces;iface++)
+        {
+            Fi=_faces.get()[iface];
+            FX=Fi.x();
+            FY=Fi.y();
+            FZ=Fi.z();
+            if (abs(FX-x)<eps && abs(FY-y)<eps && abs(FZ-z)<eps)
+            {
+                faceIds.insert(faceIds.end(),iface);
+                _faces.get()[iface].setGroupName(groupName);
+            }
+        }
 
-	if (faceIds.size()>0)
+    if (faceIds.size()>0)
     {
-		std::vector< std::string >::iterator it = std::find(_faceGroupNames.begin(), _faceGroupNames.end(), groupName);
-		if(it == _faceGroupNames.end())//No group named groupName
-		{
-			_faceGroupNames.insert(_faceGroupNames.end(),groupName);
-			_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
-			_faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
-		}
-		else
-		{
-			std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
-			faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
-			/* Detect and erase duplicates face ids */
-			sort( faceGroupIds.begin(), faceGroupIds.end() );
-			faceGroupIds.erase( unique( faceGroupIds.begin(), faceGroupIds.end() ), faceGroupIds.end() );
-			_faceGroupsIds[it-_faceGroupNames.begin()] = faceGroupIds;
-		}
-	}
+        std::vector< std::string >::iterator it = std::find(_faceGroupNames.begin(), _faceGroupNames.end(), groupName);
+        if(it == _faceGroupNames.end())//No group named groupName
+        {
+            _faceGroupNames.insert(_faceGroupNames.end(),groupName);
+            _faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
+            _faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
+        }
+        else
+        {
+            std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
+            faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
+            /* Detect and erase duplicates face ids */
+            sort( faceGroupIds.begin(), faceGroupIds.end() );
+            faceGroupIds.erase( unique( faceGroupIds.begin(), faceGroupIds.end() ), faceGroupIds.end() );
+            _faceGroupsIds[it-_faceGroupNames.begin()] = faceGroupIds;
+        }
+    }
 }
 
 void
 Mesh::setGroupAtNodeByCoords(double x, double y, double z, double eps, std::string groupName, bool isBoundaryGroup)
 {
-	std::vector< int > nodeIds(0);
-	double NX, NY, NZ;
-	Node Ni;
-	
-	/* Construction of the node group */
-	if(isBoundaryGroup)        
+    std::vector< int > nodeIds(0);
+    double NX, NY, NZ;
+    Node Ni;
+    
+    /* Construction of the node group */
+    if(isBoundaryGroup)        
         for(int i=0; i<_boundaryNodeIds.size(); i++)
         {
-			Ni=_nodes.get()[_boundaryNodeIds[i]];
-			NX=Ni.x();
-			NY=Ni.y();
-			NZ=Ni.z();
-			if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
-			{
-				nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
-				_nodes.get()[_boundaryNodeIds[i]].setGroupName(groupName);
-			}
+            Ni=_nodes.get()[_boundaryNodeIds[i]];
+            NX=Ni.x();
+            NY=Ni.y();
+            NZ=Ni.z();
+            if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
+            {
+                nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
+                _nodes.get()[_boundaryNodeIds[i]].setGroupName(groupName);
+            }
         }
-	else
-		for (int inode=0;inode<_numberOfNodes;inode++)
-		{
-			NX=_nodes.get()[inode].x();
-			NY=_nodes.get()[inode].y();
-			NZ=_nodes.get()[inode].z();
-			if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
-			{
-				nodeIds.insert(nodeIds.end(),inode);
-				_nodes.get()[inode].setGroupName(groupName);
-			}
-		}
+    else
+        for (int inode=0;inode<_numberOfNodes;inode++)
+        {
+            NX=_nodes.get()[inode].x();
+            NY=_nodes.get()[inode].y();
+            NZ=_nodes.get()[inode].z();
+            if (abs(NX-x)<eps && abs(NY-y)<eps && abs(NZ-z)<eps)
+            {
+                nodeIds.insert(nodeIds.end(),inode);
+                _nodes.get()[inode].setGroupName(groupName);
+            }
+        }
 
-	if (nodeIds.size()>0)
+    if (nodeIds.size()>0)
     {
-		std::vector< std::string >::iterator it = std::find(_nodeGroupNames.begin(), _nodeGroupNames.end(), groupName);
-		if(it == _nodeGroupNames.end())//No group named groupName
-		{
-			_nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
-			_nodeGroupsIds.insert(  _nodeGroupsIds.end(),nodeIds);
-			_nodeGroups.insert(    _nodeGroups.end(), NULL);//No mesh created. Create one ?
-		}
-		else
-		{
-			std::vector< int > nodeGroupIds = _nodeGroupsIds[it-_nodeGroupNames.begin()];
-			nodeGroupIds.insert( nodeGroupIds.end(), nodeIds.begin(), nodeIds.end());
-			/* Detect and erase duplicates node ids */
-			sort( nodeGroupIds.begin(), nodeGroupIds.end() );
-			nodeGroupIds.erase( unique( nodeGroupIds.begin(), nodeGroupIds.end() ), nodeGroupIds.end() );
-			_nodeGroupsIds[it-_nodeGroupNames.begin()] = nodeGroupIds;
-		}
+        std::vector< std::string >::iterator it = std::find(_nodeGroupNames.begin(), _nodeGroupNames.end(), groupName);
+        if(it == _nodeGroupNames.end())//No group named groupName
+        {
+            _nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
+            _nodeGroupsIds.insert(  _nodeGroupsIds.end(),nodeIds);
+            _nodeGroups.insert(    _nodeGroups.end(), NULL);//No mesh created. Create one ?
+        }
+        else
+        {
+            std::vector< int > nodeGroupIds = _nodeGroupsIds[it-_nodeGroupNames.begin()];
+            nodeGroupIds.insert( nodeGroupIds.end(), nodeIds.begin(), nodeIds.end());
+            /* Detect and erase duplicates node ids */
+            sort( nodeGroupIds.begin(), nodeGroupIds.end() );
+            nodeGroupIds.erase( unique( nodeGroupIds.begin(), nodeGroupIds.end() ), nodeGroupIds.end() );
+            _nodeGroupsIds[it-_nodeGroupNames.begin()] = nodeGroupIds;
+        }
     }
 }
 
 void
 Mesh::setGroupAtPlan(double value, int direction, double eps, std::string groupName, bool isBoundaryGroup)
 {
-	std::vector< int > faceIds(0), nodeIds(0);
-	double cord;
-	
-	/* Construction of the face group */	
-	if(isBoundaryGroup)        
+    std::vector< int > faceIds(0), nodeIds(0);
+    double cord;
+    
+    /* Construction of the face group */    
+    if(isBoundaryGroup)        
         for(int i=0; i<_boundaryFaceIds.size(); i++)
         {
-			cord=_faces.get()[_boundaryFaceIds[i]].getBarryCenter()[direction];
-			if (abs(cord-value)<eps)
-			{
-				faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
-				_faces.get()[_boundaryFaceIds[i]].setGroupName(groupName);
-			}
+            cord=_faces.get()[_boundaryFaceIds[i]].getBarryCenter()[direction];
+            if (abs(cord-value)<eps)
+            {
+                faceIds.insert(faceIds.end(),_boundaryFaceIds[i]);
+                _faces.get()[_boundaryFaceIds[i]].setGroupName(groupName);
+            }
         }
-	else
-		for (int iface=0;iface<_numberOfFaces;iface++)
-		{
-			cord=_faces.get()[iface].getBarryCenter()[direction];
-			if (abs(cord-value)<eps)
-			{
-				faceIds.insert(faceIds.end(),iface);
-				_faces.get()[iface].setGroupName(groupName);
-			}
-		}
+    else
+        for (int iface=0;iface<_numberOfFaces;iface++)
+        {
+            cord=_faces.get()[iface].getBarryCenter()[direction];
+            if (abs(cord-value)<eps)
+            {
+                faceIds.insert(faceIds.end(),iface);
+                _faces.get()[iface].setGroupName(groupName);
+            }
+        }
 
-	/* Construction of the node group */
-	if(isBoundaryGroup)        
+    /* Construction of the node group */
+    if(isBoundaryGroup)        
         for(int i=0; i<_boundaryNodeIds.size(); i++)
         {
-			cord=_nodes.get()[_boundaryNodeIds[i]].getPoint()[direction];
-			if (abs(cord-value)<eps)
-			{
-				nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
-				_nodes.get()[_boundaryNodeIds[i]].setGroupName(groupName);
-			}
+            cord=_nodes.get()[_boundaryNodeIds[i]].getPoint()[direction];
+            if (abs(cord-value)<eps)
+            {
+                nodeIds.insert(nodeIds.end(),_boundaryNodeIds[i]);
+                _nodes.get()[_boundaryNodeIds[i]].setGroupName(groupName);
+            }
         }
-	else
-		for (int inode=0;inode<_numberOfNodes;inode++)
-		{
-			cord=_nodes.get()[inode].getPoint()[direction];
-			if (abs(cord-value)<eps)
-			{
-				nodeIds.insert(nodeIds.end(),inode);
-				_nodes.get()[inode].setGroupName(groupName);
-			}
-		}
+    else
+        for (int inode=0;inode<_numberOfNodes;inode++)
+        {
+            cord=_nodes.get()[inode].getPoint()[direction];
+            if (abs(cord-value)<eps)
+            {
+                nodeIds.insert(nodeIds.end(),inode);
+                _nodes.get()[inode].setGroupName(groupName);
+            }
+        }
 
-	if (faceIds.size()>0)
+    if (faceIds.size()>0)
     {
-		std::vector< std::string >::iterator it = std::find(_faceGroupNames.begin(), _faceGroupNames.end(), groupName);
-		if(it == _faceGroupNames.end())//No group named groupName
-		{
-			_faceGroupNames.insert(_faceGroupNames.end(),groupName);
-			_faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
-			_faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
-		}
-		else
-		{
-			std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
-			faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
-			/* Detect and erase duplicates face ids */
-			sort( faceGroupIds.begin(), faceGroupIds.end() );
-			faceGroupIds.erase( unique( faceGroupIds.begin(), faceGroupIds.end() ), faceGroupIds.end() );
-			_faceGroupsIds[it-_faceGroupNames.begin()] = faceGroupIds;
-		}
-	}
-	if (nodeIds.size()>0)
+        std::vector< std::string >::iterator it = std::find(_faceGroupNames.begin(), _faceGroupNames.end(), groupName);
+        if(it == _faceGroupNames.end())//No group named groupName
+        {
+            _faceGroupNames.insert(_faceGroupNames.end(),groupName);
+            _faceGroupsIds.insert(  _faceGroupsIds.end(),faceIds);
+            _faceGroups.insert(    _faceGroups.end(), NULL);//No mesh created. Create one ?
+        }
+        else
+        {
+            std::vector< int > faceGroupIds = _faceGroupsIds[it-_faceGroupNames.begin()];
+            faceGroupIds.insert( faceGroupIds.end(), faceIds.begin(), faceIds.end());
+            /* Detect and erase duplicates face ids */
+            sort( faceGroupIds.begin(), faceGroupIds.end() );
+            faceGroupIds.erase( unique( faceGroupIds.begin(), faceGroupIds.end() ), faceGroupIds.end() );
+            _faceGroupsIds[it-_faceGroupNames.begin()] = faceGroupIds;
+        }
+    }
+    if (nodeIds.size()>0)
     {
-		std::vector< std::string >::iterator it = std::find(_nodeGroupNames.begin(), _nodeGroupNames.end(), groupName);
-		if(it == _nodeGroupNames.end())//No group named groupName
-		{
-			_nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
-			_nodeGroupsIds.insert(  _nodeGroupsIds.end(),nodeIds);
-			_nodeGroups.insert(    _nodeGroups.end(), NULL);//No mesh created. Create one ?
-		}
-		else
-		{
-			std::vector< int > nodeGroupIds = _nodeGroupsIds[it-_nodeGroupNames.begin()];
-			nodeGroupIds.insert( nodeGroupIds.end(), nodeIds.begin(), nodeIds.end());
-			/* Detect and erase duplicates node ids */
-			sort( nodeGroupIds.begin(), nodeGroupIds.end() );
-			nodeGroupIds.erase( unique( nodeGroupIds.begin(), nodeGroupIds.end() ), nodeGroupIds.end() );
-			_nodeGroupsIds[it-_nodeGroupNames.begin()] = nodeGroupIds;
-		}
+        std::vector< std::string >::iterator it = std::find(_nodeGroupNames.begin(), _nodeGroupNames.end(), groupName);
+        if(it == _nodeGroupNames.end())//No group named groupName
+        {
+            _nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
+            _nodeGroupsIds.insert(  _nodeGroupsIds.end(),nodeIds);
+            _nodeGroups.insert(    _nodeGroups.end(), NULL);//No mesh created. Create one ?
+        }
+        else
+        {
+            std::vector< int > nodeGroupIds = _nodeGroupsIds[it-_nodeGroupNames.begin()];
+            nodeGroupIds.insert( nodeGroupIds.end(), nodeIds.begin(), nodeIds.end());
+            /* Detect and erase duplicates node ids */
+            sort( nodeGroupIds.begin(), nodeGroupIds.end() );
+            nodeGroupIds.erase( unique( nodeGroupIds.begin(), nodeGroupIds.end() ), nodeGroupIds.end() );
+            _nodeGroupsIds[it-_nodeGroupNames.begin()] = nodeGroupIds;
+        }
     }
 }
 
@@ -1182,6 +1182,11 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
         
     for (int indexFace=0;indexFace<_boundaryFaceIds.size() ; indexFace++)
     {
+        /* On regarde si la face (en fait son double) a déjà été détectée auparavant */
+        std::map<int,int>::const_iterator  it = _indexFacePeriodicMap.find(_boundaryFaceIds[indexFace]);
+        if( it != _indexFacePeriodicMap.end() )
+            break;
+            
         Face my_face=_faces.get()[_boundaryFaceIds[indexFace]];
         int iface_perio=-1;
         if(_meshDim==1)
@@ -1247,7 +1252,10 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
         if (iface_perio==-1)
             throw CdmathException("Mesh::setPeriodicFaces: periodic face not found, iface_perio==-1 " );
         else
+        {
             _indexFacePeriodicMap[_boundaryFaceIds[indexFace]]=iface_perio;
+            _indexFacePeriodicMap[iface_perio] = _boundaryFaceIds[indexFace];
+        }
     }
     _indexFacePeriodicSet=true;    
 }
@@ -1255,7 +1263,7 @@ Mesh::setPeriodicFaces(bool check_groups, bool use_central_inversion)
 int
 Mesh::getIndexFacePeriodic(int indexFace, bool check_groups, bool use_central_inversion)
 {
-	if (!_faces.get()[indexFace].isBorder())
+    if (!_faces.get()[indexFace].isBorder())
         {
             cout<<"Pb with indexFace= "<<indexFace<<endl;
             throw CdmathException("Mesh::getIndexFacePeriodic: not a border face" );
@@ -1277,13 +1285,13 @@ Mesh::getIndexFacePeriodic(int indexFace, bool check_groups, bool use_central_in
 bool
 Mesh::isBorderNode(int nodeid) const
 {
-	return _nodes.get()[nodeid].isBorder();
+    return _nodes.get()[nodeid].isBorder();
 }
 
 bool
 Mesh::isBorderFace(int faceid) const
 {
-	return _faces.get()[faceid].isBorder();
+    return _faces.get()[faceid].isBorder();
 }
 
 std::vector< int > 
@@ -1301,27 +1309,27 @@ Mesh::getBoundaryNodeIds() const
 bool
 Mesh::isTriangular() const
 {
-	return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_TRI3;
+    return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_TRI3;
 }
 bool
 Mesh::isTetrahedral() const
 {
-	return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_TETRA4;
+    return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_TETRA4;
 }
 bool
 Mesh::isQuadrangular() const
 {
-	return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_QUAD4;
+    return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_QUAD4;
 }
 bool
 Mesh::isHexahedral() const
 {
-	return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_HEXA8;
+    return _eltsTypes.size()==1 && _eltsTypes[0]==INTERP_KERNEL::NORM_HEXA8;
 }
 bool
 Mesh::isStructured() const
 {
-	return _isStructured;
+    return _isStructured;
 }
 
 std::vector< INTERP_KERNEL::NormalizedCellType > 
@@ -1357,10 +1365,10 @@ Mesh::getElementTypesNames() const
         else if( _eltsTypes[i]==INTERP_KERNEL::NORM_POLYHED)
             result.push_back("Polyhedrons");
         else
-		{
-			cout<< "Mesh " + _name + " contains an element of type " <<endl;
-			cout<< _eltsTypes[i]<<endl;
-			throw CdmathException("Mesh::getElementTypes : recognised cell med types are NORM_POINT1, NORM_SEG2, NORM_TRI3, NORM_QUAD4, NORM_TETRA4, NORM_PYRA5, NORM_PENTA6, NORM_HEXA8, NORM_POLYGON, NORM_POLYHED");
+        {
+            cout<< "Mesh " + _name + " contains an element of type " <<endl;
+            cout<< _eltsTypes[i]<<endl;
+            throw CdmathException("Mesh::getElementTypes : recognised cell med types are NORM_POINT1, NORM_SEG2, NORM_TRI3, NORM_QUAD4, NORM_TETRA4, NORM_PYRA5, NORM_PENTA6, NORM_HEXA8, NORM_POLYGON, NORM_POLYHED");
         }
     }
     return result;
@@ -1369,111 +1377,111 @@ Mesh::getElementTypesNames() const
 void
 Mesh::setFaceGroups( const MEDFileUMesh* medmesh, MEDCouplingUMesh*  mu)
 {
-	int nbCellsSubMesh;
-	bool foundFace;
-	
-	/* Searching for face groups */
-	vector<string> faceGroups=medmesh->getGroupsNames() ;
+    int nbCellsSubMesh;
+    bool foundFace;
+    
+    /* Searching for face groups */
+    vector<string> faceGroups=medmesh->getGroupsNames() ;
 
-	for (unsigned int i=0;i<faceGroups.size();i++ )
-	{
-		string groupName=faceGroups[i];
-		vector<mcIdType> nonEmptyGrp(medmesh->getGrpNonEmptyLevels(groupName));
-		//We check if the group has a relative dimension equal to -1 
-		//before call to the function getGroup(-1,groupName.c_str())
-		vector<mcIdType>::iterator it = find(nonEmptyGrp.begin(), nonEmptyGrp.end(), -1);
-		if (it != nonEmptyGrp.end())
-		{
-			MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
+    for (unsigned int i=0;i<faceGroups.size();i++ )
+    {
+        string groupName=faceGroups[i];
+        vector<mcIdType> nonEmptyGrp(medmesh->getGrpNonEmptyLevels(groupName));
+        //We check if the group has a relative dimension equal to -1 
+        //before call to the function getGroup(-1,groupName.c_str())
+        vector<mcIdType>::iterator it = find(nonEmptyGrp.begin(), nonEmptyGrp.end(), -1);
+        if (it != nonEmptyGrp.end())
+        {
+            MEDCouplingUMesh *m=medmesh->getGroup(-1,groupName.c_str());
             m->unPolyze();
-			nbCellsSubMesh=m->getNumberOfCells();
-			
-			_faceGroups.insert(_faceGroups.end(),m);//Vector of group meshes
-			_faceGroupNames.insert(_faceGroupNames.end(),groupName);//Vector of group names
-			_faceGroupsIds.insert(_faceGroupsIds.end(),std::vector<int>(nbCellsSubMesh));//Vector of group face Ids. The filling of the face ids takes place below.
-			
-			DataArrayDouble *baryCell = m->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
-			const double *coorBary=baryCell->getConstPointer();
-			// Face identification 
-			for (int ic(0), k(0); ic<nbCellsSubMesh; ic++, k+=_spaceDim)
-			{
-				vector<double> coorBaryXyz(3,0);
-				for (int d=0; d<_spaceDim; d++)
-					coorBaryXyz[d] = coorBary[k+d];
-				Point p1(coorBaryXyz[0],coorBaryXyz[1],coorBaryXyz[2]) ;
+            nbCellsSubMesh=m->getNumberOfCells();
+            
+            _faceGroups.insert(_faceGroups.end(),m);//Vector of group meshes
+            _faceGroupNames.insert(_faceGroupNames.end(),groupName);//Vector of group names
+            _faceGroupsIds.insert(_faceGroupsIds.end(),std::vector<int>(nbCellsSubMesh));//Vector of group face Ids. The filling of the face ids takes place below.
+            
+            DataArrayDouble *baryCell = m->computeIsoBarycenterOfNodesPerCell();//computeCellCenterOfMass() ;
+            const double *coorBary=baryCell->getConstPointer();
+            // Face identification 
+            for (int ic(0), k(0); ic<nbCellsSubMesh; ic++, k+=_spaceDim)
+            {
+                vector<double> coorBaryXyz(3,0);
+                for (int d=0; d<_spaceDim; d++)
+                    coorBaryXyz[d] = coorBary[k+d];
+                Point p1(coorBaryXyz[0],coorBaryXyz[1],coorBaryXyz[2]) ;
 
-				foundFace=false;
-				for (int iface=0;iface<_numberOfFaces;iface++ )
-				{
-					Point p2=_faces.get()[iface].getBarryCenter();
-					if(p1.distance(p2)<_epsilon)
-					{
-						_faces.get()[iface].setGroupName(groupName);
-						_faceGroupsIds[_faceGroupsIds.size()-1][ic]=iface;
-						foundFace=true;
-						break;
-					}
-				}
-				if (not foundFace)
-					throw CdmathException("No face found for group " + groupName );
-			}
-			baryCell->decrRef();
-			//m->decrRef();
-		}
-	}
+                foundFace=false;
+                for (int iface=0;iface<_numberOfFaces;iface++ )
+                {
+                    Point p2=_faces.get()[iface].getBarryCenter();
+                    if(p1.distance(p2)<_epsilon)
+                    {
+                        _faces.get()[iface].setGroupName(groupName);
+                        _faceGroupsIds[_faceGroupsIds.size()-1][ic]=iface;
+                        foundFace=true;
+                        break;
+                    }
+                }
+                if (not foundFace)
+                    throw CdmathException("No face found for group " + groupName );
+            }
+            baryCell->decrRef();
+            //m->decrRef();
+        }
+    }
 }
 void
 Mesh::setNodeGroups( const MEDFileMesh* medmesh, MEDCouplingUMesh*  mu)
 {
-	int  nbNodesSubMesh;
-	bool foundNode;
-	
-	/* Searching for node groups */
-	vector<string> nodeGroups=medmesh->getGroupsOnSpecifiedLev(1) ;
+    int  nbNodesSubMesh;
+    bool foundNode;
+    
+    /* Searching for node groups */
+    vector<string> nodeGroups=medmesh->getGroupsOnSpecifiedLev(1) ;
 
-	for (unsigned int i=0;i<nodeGroups.size();i++ )
-	{
-		string groupName=nodeGroups[i];
-		DataArrayIdType * nodeGroup=medmesh->getNodeGroupArr( groupName );
-		const mcIdType *nodeids=nodeGroup->getConstPointer();
+    for (unsigned int i=0;i<nodeGroups.size();i++ )
+    {
+        string groupName=nodeGroups[i];
+        DataArrayIdType * nodeGroup=medmesh->getNodeGroupArr( groupName );
+        const mcIdType *nodeids=nodeGroup->getConstPointer();
 
-		if(nodeids!=NULL)
-		{
-			_nodeGroups.insert(_nodeGroups.end(),nodeGroup);
-			_nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
+        if(nodeids!=NULL)
+        {
+            _nodeGroups.insert(_nodeGroups.end(),nodeGroup);
+            _nodeGroupNames.insert(_nodeGroupNames.end(),groupName);
 
-			nbNodesSubMesh=nodeGroup->getNumberOfTuples();//nodeGroup->getNbOfElems();
+            nbNodesSubMesh=nodeGroup->getNumberOfTuples();//nodeGroup->getNbOfElems();
 
-			DataArrayDouble *coo = mu->getCoords() ;
-			const double *cood=coo->getConstPointer();
+            DataArrayDouble *coo = mu->getCoords() ;
+            const double *cood=coo->getConstPointer();
 
-			_nodeGroupsIds.insert(_nodeGroupsIds.end(),std::vector<int>(nbNodesSubMesh));//Vector of boundary faces
-			/* Node identification */
-			for (int ic(0); ic<nbNodesSubMesh; ic++)
-			{
-				vector<double> coorP(3,0);
-				for (int d=0; d<_spaceDim; d++)
-					coorP[d] = cood[nodeids[ic]*_spaceDim+d];
-				Point p1(coorP[0],coorP[1],coorP[2]) ;
+            _nodeGroupsIds.insert(_nodeGroupsIds.end(),std::vector<int>(nbNodesSubMesh));//Vector of boundary faces
+            /* Node identification */
+            for (int ic(0); ic<nbNodesSubMesh; ic++)
+            {
+                vector<double> coorP(3,0);
+                for (int d=0; d<_spaceDim; d++)
+                    coorP[d] = cood[nodeids[ic]*_spaceDim+d];
+                Point p1(coorP[0],coorP[1],coorP[2]) ;
 
-				foundNode=false;
-				for (int inode=0;inode<_numberOfNodes;inode++ )
-				{
-					Point p2=_nodes.get()[inode].getPoint();
-					if(p1.distance(p2)<_epsilon)
-					{
-						_nodes.get()[inode].setGroupName(groupName);
-						_nodeGroupsIds[_nodeGroupsIds.size()-1][ic]=inode;
-						foundNode=true;
-						break;
-					}
-				}
-				if (not foundNode)
-					throw CdmathException("No node found for group " + groupName );
-			}
-		}
-	nodeGroup->decrRef();
-	}
+                foundNode=false;
+                for (int inode=0;inode<_numberOfNodes;inode++ )
+                {
+                    Point p2=_nodes.get()[inode].getPoint();
+                    if(p1.distance(p2)<_epsilon)
+                    {
+                        _nodes.get()[inode].setGroupName(groupName);
+                        _nodeGroupsIds[_nodeGroupsIds.size()-1][ic]=inode;
+                        foundNode=true;
+                        break;
+                    }
+                }
+                if (not foundNode)
+                    throw CdmathException("No node found for group " + groupName );
+            }
+        }
+    nodeGroup->decrRef();
+    }
 }
 
 //----------------------------------------------------------------------
@@ -1481,7 +1489,7 @@ int
 Mesh::getSpaceDimension( void )  const
 //----------------------------------------------------------------------
 {
-	return _spaceDim ;
+    return _spaceDim ;
 }
 
 //----------------------------------------------------------------------
@@ -1489,16 +1497,16 @@ int
 Mesh::getMeshDimension( void )  const
 //----------------------------------------------------------------------
 {
-	return _meshDim ;
+    return _meshDim ;
 }
 
 std::vector<mcIdType>
 Mesh::getCellGridStructure() const
 {
     if(!_isStructured)
-		throw CdmathException("std::vector<int> Mesh::getCellGridStructure() : nx, ny and nz are defined only for structured meshes !");
+        throw CdmathException("std::vector<int> Mesh::getCellGridStructure() : nx, ny and nz are defined only for structured meshes !");
 
-	return _nxyz;
+    return _nxyz;
 }
 
 //----------------------------------------------------------------------
@@ -1507,9 +1515,9 @@ Mesh::getNx( void )  const
 //----------------------------------------------------------------------
 {
     if(!_isStructured)
-		throw CdmathException("int Mesh::getNx( void ) : Nx is defined only for structured meshes !");
+        throw CdmathException("int Mesh::getNx( void ) : Nx is defined only for structured meshes !");
 
-	return _nxyz[0];
+    return _nxyz[0];
 }
 
 //----------------------------------------------------------------------
@@ -1518,11 +1526,11 @@ Mesh::getNy( void )  const
 //----------------------------------------------------------------------
 {
     if(!_isStructured)
-		throw CdmathException("int Mesh::getNy( void ) : Ny is defined only for structured meshes !");
-	if(_meshDim < 2)
-		throw CdmathException("int Mesh::getNy( void ) : Ny is not defined for mesh dimension < 2!");
+        throw CdmathException("int Mesh::getNy( void ) : Ny is defined only for structured meshes !");
+    if(_meshDim < 2)
+        throw CdmathException("int Mesh::getNy( void ) : Ny is not defined for mesh dimension < 2!");
 
-	return _nxyz[1];
+    return _nxyz[1];
 }
 
 //----------------------------------------------------------------------
@@ -1531,11 +1539,11 @@ Mesh::getNz( void )  const
 //----------------------------------------------------------------------
 {
     if(!_isStructured)
-		throw CdmathException("int Mesh::getNz( void ) : Nz is defined only for structured meshes !");
-	if(_meshDim < 3)
-		throw CdmathException("int Mesh::getNz( void ) : Nz is not defined for mesh dimension < 3!");
+        throw CdmathException("int Mesh::getNz( void ) : Nz is defined only for structured meshes !");
+    if(_meshDim < 3)
+        throw CdmathException("int Mesh::getNz( void ) : Nz is not defined for mesh dimension < 3!");
 
-	return _nxyz[2];
+    return _nxyz[2];
 }
 
 //----------------------------------------------------------------------
@@ -1543,10 +1551,10 @@ double
 Mesh::getXMin( void )  const
 //----------------------------------------------------------------------
 {
-	double Box0[2*_meshDim];
+    double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
-	return Box0[0] ;
+    return Box0[0] ;
 }
 
 //----------------------------------------------------------------------
@@ -1554,10 +1562,10 @@ double
 Mesh::getXMax( void )  const
 //----------------------------------------------------------------------
 {
-	double Box0[2*_meshDim];
+    double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
-	return Box0[1] ;
+    return Box0[1] ;
 }
 
 //----------------------------------------------------------------------
@@ -1565,13 +1573,13 @@ double
 Mesh::getYMin( void )  const
 //----------------------------------------------------------------------
 {
-	if(_meshDim<2)
-		throw CdmathException("Mesh::getYMin : dimension should be >=2");
-		
-	double Box0[2*_meshDim];
+    if(_meshDim<2)
+        throw CdmathException("Mesh::getYMin : dimension should be >=2");
+        
+    double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
-	return Box0[2] ;
+    return Box0[2] ;
 }
 
 //----------------------------------------------------------------------
@@ -1579,13 +1587,13 @@ double
 Mesh::getYMax( void )  const
 //----------------------------------------------------------------------
 {
-	if(_meshDim<2)
-		throw CdmathException("Mesh::getYMax : dimension should be >=2");
-		
-	double Box0[2*_meshDim];
+    if(_meshDim<2)
+        throw CdmathException("Mesh::getYMax : dimension should be >=2");
+        
+    double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
-	return Box0[3] ;
+    return Box0[3] ;
 }
 
 //----------------------------------------------------------------------
@@ -1593,13 +1601,13 @@ double
 Mesh::getZMin( void )  const
 //----------------------------------------------------------------------
 {
-	if(_meshDim<3)
-		throw CdmathException("Mesh::getZMin : dimension should be 3");
-		
-	double Box0[2*_meshDim];
+    if(_meshDim<3)
+        throw CdmathException("Mesh::getZMin : dimension should be 3");
+        
+    double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
-	return Box0[4] ;
+    return Box0[4] ;
 }
 
 //----------------------------------------------------------------------
@@ -1607,13 +1615,13 @@ double
 Mesh::getZMax( void )  const
 //----------------------------------------------------------------------
 {
-	if(_meshDim<3)
-		throw CdmathException("Mesh::getZMax : dimension should be 3");
+    if(_meshDim<3)
+        throw CdmathException("Mesh::getZMax : dimension should be 3");
 
-	double Box0[2*_meshDim];
+    double Box0[2*_meshDim];
     _mesh->getBoundingBox(Box0);
 
-	return Box0[5] ;
+    return Box0[5] ;
 }
 
 //----------------------------------------------------------------------
@@ -1621,7 +1629,7 @@ MCAuto<MEDCouplingMesh>
 Mesh::getMEDCouplingMesh( void )  const
 //----------------------------------------------------------------------
 {
-	return _mesh ;
+    return _mesh ;
 }
 
 //----------------------------------------------------------------------
@@ -1629,7 +1637,7 @@ int
 Mesh::getNumberOfNodes ( void ) const
 //----------------------------------------------------------------------
 {
-	return _numberOfNodes ;
+    return _numberOfNodes ;
 }
 
 //----------------------------------------------------------------------
@@ -1637,7 +1645,7 @@ int
 Mesh::getNumberOfCells ( void ) const
 //----------------------------------------------------------------------
 {
-	return _numberOfCells ;
+    return _numberOfCells ;
 }
 
 //----------------------------------------------------------------------
@@ -1645,7 +1653,7 @@ int
 Mesh::getNumberOfFaces ( void ) const
 //----------------------------------------------------------------------
 {
-	return _numberOfFaces ;
+    return _numberOfFaces ;
 }
 
 //----------------------------------------------------------------------
@@ -1653,7 +1661,7 @@ int
 Mesh::getNumberOfEdges ( void ) const
 //----------------------------------------------------------------------
 {
-	return _numberOfEdges ;
+    return _numberOfEdges ;
 }
 
 //----------------------------------------------------------------------
@@ -1661,7 +1669,7 @@ std::shared_ptr<Face>
 Mesh::getFaces ( void )  const
 //----------------------------------------------------------------------
 {
-	return _faces ;
+    return _faces ;
 }
 
 //----------------------------------------------------------------------
@@ -1669,7 +1677,7 @@ std::shared_ptr<Cell>
 Mesh::getCells ( void ) const
 //----------------------------------------------------------------------
 {
-	return _cells ;
+    return _cells ;
 }
 
 //----------------------------------------------------------------------
@@ -1677,7 +1685,7 @@ Cell&
 Mesh::getCell ( int i ) const
 //----------------------------------------------------------------------
 {
-	return _cells.get()[i] ;
+    return _cells.get()[i] ;
 }
 
 //----------------------------------------------------------------------
@@ -1685,7 +1693,7 @@ Face&
 Mesh::getFace ( int i ) const
 //----------------------------------------------------------------------
 {
-	return _faces.get()[i] ;
+    return _faces.get()[i] ;
 }
 
 //----------------------------------------------------------------------
@@ -1693,7 +1701,7 @@ Node&
 Mesh::getNode ( int i ) const
 //----------------------------------------------------------------------
 {
-	return _nodes.get()[i] ;
+    return _nodes.get()[i] ;
 }
 
 //----------------------------------------------------------------------
@@ -1701,44 +1709,44 @@ std::shared_ptr<Node>
 Mesh::getNodes ( void )  const
 //----------------------------------------------------------------------
 {
-	return _nodes ;
+    return _nodes ;
 }
 
 vector<string>
 Mesh::getNameOfFaceGroups( void )  const
 {
-	return _faceGroupNames;
+    return _faceGroupNames;
 }
 
 vector< std::vector<int> >
 Mesh::getFaceGroups( void )  const
 {
-	return _faceGroupsIds;
+    return _faceGroupsIds;
 }
 
 vector<MEDCoupling::MEDCouplingUMesh *>
 Mesh::getMEDCouplingFaceGroups( void )  const
 {
-	return _faceGroups;
+    return _faceGroups;
 }
 
 vector<string>
 Mesh::getNameOfNodeGroups( void )  const
 {
-	return _nodeGroupNames;
+    return _nodeGroupNames;
 }
 
 vector< std::vector<int> >
 Mesh::getNodeGroups( void )  const
 {
-	return _nodeGroupsIds;
+    return _nodeGroupsIds;
 }
 
 
 vector<MEDCoupling::DataArrayIdType *>
 Mesh::getMEDCouplingNodeGroups( void )  const
 {
-	return _nodeGroups;
+    return _nodeGroups;
 }
 
 //----------------------------------------------------------------------
@@ -1746,14 +1754,14 @@ const Mesh&
 Mesh::operator= ( const Mesh& mesh )
 //----------------------------------------------------------------------
 {
-	_spaceDim = mesh.getSpaceDimension() ;
-	_meshDim  = mesh.getMeshDimension() ;
+    _spaceDim = mesh.getSpaceDimension() ;
+    _meshDim  = mesh.getMeshDimension() ;
     _name = mesh.getName();
     _epsilon=mesh.getComparisonEpsilon();
-	_numberOfNodes = mesh.getNumberOfNodes();
-	_numberOfFaces = mesh.getNumberOfFaces();
-	_numberOfCells = mesh.getNumberOfCells();
-	_numberOfEdges = mesh.getNumberOfEdges();
+    _numberOfNodes = mesh.getNumberOfNodes();
+    _numberOfFaces = mesh.getNumberOfFaces();
+    _numberOfCells = mesh.getNumberOfCells();
+    _numberOfEdges = mesh.getNumberOfEdges();
     
     _isStructured = mesh.isStructured();
     _meshNotDeleted = mesh.meshNotDeleted();
@@ -1761,16 +1769,16 @@ Mesh::operator= ( const Mesh& mesh )
     if(_isStructured)
         _nxyz = mesh.getCellGridStructure() ;
 
-	_faceGroupNames = mesh.getNameOfFaceGroups() ;
-	_faceGroupsIds = mesh.getFaceGroups() ;
-	_faceGroups = mesh.getMEDCouplingFaceGroups() ;
-	_nodeGroupNames = mesh.getNameOfNodeGroups() ;
-	_nodeGroupsIds = mesh.getNodeGroups() ;
-	_nodeGroups = mesh.getMEDCouplingNodeGroups() ;
+    _faceGroupNames = mesh.getNameOfFaceGroups() ;
+    _faceGroupsIds = mesh.getFaceGroups() ;
+    _faceGroups = mesh.getMEDCouplingFaceGroups() ;
+    _nodeGroupNames = mesh.getNameOfNodeGroups() ;
+    _nodeGroupsIds = mesh.getNodeGroups() ;
+    _nodeGroups = mesh.getMEDCouplingNodeGroups() ;
 
-	_nodes   = mesh.getNodes() ;
-	_faces   = mesh.getFaces() ;
-	_cells   = mesh.getCells() ;
+    _nodes   = mesh.getNodes() ;
+    _faces   = mesh.getFaces() ;
+    _cells   = mesh.getCells() ;
 
     _indexFacePeriodicSet= mesh.isIndexFacePeriodicSet();
     if(_indexFacePeriodicSet)
@@ -1782,9 +1790,9 @@ Mesh::operator= ( const Mesh& mesh )
     _eltsTypes=mesh.getElementTypes();
     _eltsTypesNames=mesh.getElementTypesNames();
 
-	_mesh=mesh.getMEDCouplingMesh()->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
+    _mesh=mesh.getMEDCouplingMesh()->clone(false);//Clone because you will need to buildUnstructured. No deep copy : it is assumed node coordinates and cell connectivity will not change
 
-	return *this;
+    return *this;
 }
 
 bool Mesh::isIndexFacePeriodicSet() const
@@ -1820,31 +1828,31 @@ Mesh::minRatioVolSurf() const
 Mesh
 Mesh::getBoundaryMesh ( void )  const 
 {
-	if( _boundaryMesh )
-		return Mesh(_boundaryMesh);
-	else
-		throw CdmathException("Mesh::getBoundaryMesh Boundary mesh is empty");
+    if( _boundaryMesh )
+        return Mesh(_boundaryMesh);
+    else
+        throw CdmathException("Mesh::getBoundaryMesh Boundary mesh is empty");
 }
 
 MEDCoupling::MEDCouplingUMesh *
 Mesh::getBoundaryMEDCouplingMesh ( void )  const 
 {
-	return _boundaryMesh;
+    return _boundaryMesh;
 }
 
 Mesh 
 Mesh::getBoundaryGroupMesh ( std::string groupName, int nth_occurence )  const 
 {
-	//count occurences of groupName in known group name list
-	int count_occurences = std::count (_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
-	
+    //count occurences of groupName in known group name list
+    int count_occurences = std::count (_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
+    
     if( count_occurences ==0 )//No group found
     {
         cout<<"Mesh::getBoundaryGroupMesh Error : face group " << groupName << " does not exist"<<endl;
         cout<<"Known face group names are " ;
         for(int i=0; i<_faceGroupNames.size(); i++)
-			cout<< _faceGroupNames[i]<<" ";
-		cout<< endl;
+            cout<< _faceGroupNames[i]<<" ";
+        cout<< endl;
         throw CdmathException("Required face group does not exist");
     }
     else if ( count_occurences <= nth_occurence)//Too many groups found
@@ -1854,14 +1862,14 @@ Mesh::getBoundaryGroupMesh ( std::string groupName, int nth_occurence )  const
         throw CdmathException("Several face groups have the same name but you asked for an occurence that does not exsit");
     }
     else if( count_occurences >1 )//Wrning several groups found
-		cout<<"Warning : "<<count_occurences<<" groups have name " << groupName<<". Searching occurence number "<<nth_occurence<<endl;
-		
-	//search occurence of group name in known group name list
-	std::vector<std::string>::const_iterator it = _faceGroupNames.begin();
-	for (int i = 0; i<nth_occurence+1; i++)
-		it = std::find(it,_faceGroupNames.end(),groupName);
-		
-	return Mesh(_faceGroups[it - _faceGroupNames.begin()]);	
+        cout<<"Warning : "<<count_occurences<<" groups have name " << groupName<<". Searching occurence number "<<nth_occurence<<endl;
+        
+    //search occurence of group name in known group name list
+    std::vector<std::string>::const_iterator it = _faceGroupNames.begin();
+    for (int i = 0; i<nth_occurence+1; i++)
+        it = std::find(it,_faceGroupNames.end(),groupName);
+        
+    return Mesh(_faceGroups[it - _faceGroupNames.begin()]);    
 }
 
 int 
@@ -1870,8 +1878,8 @@ Mesh::getMaxNbNeighbours(EntityType type) const
     int result=0;
     
     if (type==CELLS)
-	{
-		int nbNeib;//local number of neighbours
+    {
+        int nbNeib;//local number of neighbours
         for(int i=0; i<_numberOfCells; i++)
         {
             Cell Ci = _cells.get()[i];
@@ -1882,16 +1890,16 @@ Mesh::getMaxNbNeighbours(EntityType type) const
             
             if(result < nbNeib)
                 result=nbNeib;
-		}
-	}
+        }
+    }
     else if(type==NODES)
-	{
+    {
         for(int i=0; i<_numberOfNodes; i++)
             if(result < _nodes.get()[i].getNumberOfEdges())
                 result=_nodes.get()[i].getNumberOfEdges();
-	}
+    }
     else
-		throw CdmathException("Mesh::getMaxNbNeighbours : entity type is not accepted. Should be CELLS or NODES");
+        throw CdmathException("Mesh::getMaxNbNeighbours : entity type is not accepted. Should be CELLS or NODES");
 
     return result;
 }
@@ -1900,11 +1908,11 @@ void
 Mesh::writeVTK ( const std::string fileName ) const
 //----------------------------------------------------------------------
 {
-	if( !_meshNotDeleted )
-		throw CdmathException("Mesh::writeVTK : Cannot save mesh : no MEDCouplingMesh loaded (may be deleted)");
-		
-	string fname=fileName+".vtu";
-	_mesh->writeVTK(fname.c_str()) ;
+    if( !_meshNotDeleted )
+        throw CdmathException("Mesh::writeVTK : Cannot save mesh : no MEDCouplingMesh loaded (may be deleted)");
+        
+    string fname=fileName+".vtu";
+    _mesh->writeVTK(fname.c_str()) ;
 }
 
 //----------------------------------------------------------------------
@@ -1912,40 +1920,40 @@ void
 Mesh::writeMED ( const std::string fileName, bool fromScratch ) const
 //----------------------------------------------------------------------
 {
-	if( !_meshNotDeleted )
-		throw CdmathException("Mesh::writeMED : Cannot save mesh : no MEDCouplingMesh loaded (may be deleted)");
+    if( !_meshNotDeleted )
+        throw CdmathException("Mesh::writeMED : Cannot save mesh : no MEDCouplingMesh loaded (may be deleted)");
 
-	string fname=fileName+".med";
-	if(_isStructured)//Check if we have a medcouplingimesh that can't be written directly
-	{
-		const MEDCoupling::MEDCouplingIMesh* iMesh = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingMesh*) _mesh);
-		if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
-		{
-			MEDCouplingCMesh * cMesh = iMesh->convertToCartesian();
-			MEDCoupling::WriteMesh(fname.c_str(), cMesh, fromScratch);
-			cMesh->decrRef();
-		}
-		else//medcouplingcmesh : save directly
-			MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
-	}
-	else
-		MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
+    string fname=fileName+".med";
+    if(_isStructured)//Check if we have a medcouplingimesh that can't be written directly
+    {
+        const MEDCoupling::MEDCouplingIMesh* iMesh = dynamic_cast< const MEDCoupling::MEDCouplingIMesh* > ((const MEDCoupling::MEDCouplingMesh*) _mesh);
+        if(iMesh)//medcouplingimesh : Use convertToCartesian in order to write mesh
+        {
+            MEDCouplingCMesh * cMesh = iMesh->convertToCartesian();
+            MEDCoupling::WriteMesh(fname.c_str(), cMesh, fromScratch);
+            cMesh->decrRef();
+        }
+        else//medcouplingcmesh : save directly
+            MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
+    }
+    else
+        MEDCoupling::WriteMesh(fname.c_str(),_mesh, fromScratch);
 
-	/* Try to save mesh groups */
-	//MEDFileUMesh meshMEDFile;
-	//meshMEDFile.setMeshAtLevel(0,mu);
-	//for(int i=0; i< _faceGroups.size(); i++)
-	//meshMEDFile.setMeshAtLevel(-1,_faceGroups[i]);
-	//if (fromScratch)
-	//MEDCoupling::meshMEDFile.write(fname.c_str(),2)	;
-	//else
-	//MEDCoupling::meshMEDFile.write(fname.c_str(),1)	;
+    /* Try to save mesh groups */
+    //MEDFileUMesh meshMEDFile;
+    //meshMEDFile.setMeshAtLevel(0,mu);
+    //for(int i=0; i< _faceGroups.size(); i++)
+    //meshMEDFile.setMeshAtLevel(-1,_faceGroups[i]);
+    //if (fromScratch)
+    //MEDCoupling::meshMEDFile.write(fname.c_str(),2)    ;
+    //else
+    //MEDCoupling::meshMEDFile.write(fname.c_str(),1)    ;
 }
 
 std::vector< int > 
 Mesh::getFaceGroupIds(std::string groupName, bool isBoundaryGroup) const
 {
-	std::vector<std::string>::const_iterator  it = std::find(_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
+    std::vector<std::string>::const_iterator  it = std::find(_faceGroupNames.begin(),_faceGroupNames.end(),groupName);
     if( it == _faceGroupNames.end() )
     {
         cout<<"Mesh::getGroupFaceIds Error : face group " << groupName << " does not exist"<<endl;
@@ -1953,14 +1961,14 @@ Mesh::getFaceGroupIds(std::string groupName, bool isBoundaryGroup) const
     }
     else
     {   
-		return _faceGroupsIds[it-_faceGroupNames.begin()];
-	}
+        return _faceGroupsIds[it-_faceGroupNames.begin()];
+    }
 }
 
 std::vector< int > 
 Mesh::getNodeGroupIds(std::string groupName, bool isBoundaryGroup) const
 {
-	std::vector<std::string>::const_iterator  it = std::find(_nodeGroupNames.begin(),_nodeGroupNames.end(),groupName);
+    std::vector<std::string>::const_iterator  it = std::find(_nodeGroupNames.begin(),_nodeGroupNames.end(),groupName);
     if( it == _nodeGroupNames.end() )
     {
         cout<<"Mesh::getGroupNodeIds Error : node group " << groupName << " does not exist"<<endl;
@@ -1990,11 +1998,11 @@ Mesh::setNodeGroupByIds(std::vector< int > nodeIds, std::string groupName)
 
 void Mesh::deleteMEDCouplingMesh()
 { 
-	if(_meshNotDeleted) 
-	{
-		(_mesh.retn())->decrRef(); 
-		_meshNotDeleted=false;
-	} 
-	else 
-		throw CdmathException("Mesh::deleteMEDCouplingMesh() : mesh is not loaded");
+    if(_meshNotDeleted) 
+    {
+        (_mesh.retn())->decrRef(); 
+        _meshNotDeleted=false;
+    } 
+    else 
+        throw CdmathException("Mesh::deleteMEDCouplingMesh() : mesh is not loaded");
 };
