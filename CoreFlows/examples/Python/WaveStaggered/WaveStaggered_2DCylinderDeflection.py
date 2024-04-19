@@ -9,7 +9,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/cylinder_geom_salome.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
 
 	M=svl.Mesh(inputfile);
 	kappa = 1;
@@ -61,7 +61,7 @@ def WaveStaggered_2DCylinderDeflection():
 			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
 				myProblem.setWallBoundIndex(j) 
 
-
+	
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
@@ -73,11 +73,11 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameters
-	MaxNbOfTimeStep = 300000 ;
-	freqSave = 2000;
+	MaxNbOfTimeStep = 50000 ;
+	freqSave = 50;
 	cfl = 0.4; 
-	maxTime = 10;
-	precision = 1e-8;
+	maxTime = 70
+	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
