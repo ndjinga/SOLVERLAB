@@ -36,7 +36,7 @@ def WaveStaggered_1DLongTimeLimit():
 		elif x <=xinf :
 			return -12
 		elif discontinuity < x < xsup:
-			return -1
+			return -10
 		elif xsup <= x:
 			return -12
 
@@ -130,9 +130,11 @@ def WaveStaggered_1DLongTimeLimit():
 		plt.figure()
 		plt.subplot(121)
 		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
+		plt.ylim(13,8)
 		plt.legend()
 		plt.subplot(122)
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
+		plt.ylim(-15,-8)
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))

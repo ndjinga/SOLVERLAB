@@ -82,7 +82,7 @@ def WaveStaggered_1DRiemannProblem():
 			myProblem.setOrientation(j,vec_normal_sigma)
 			wallPressureMap[j] = initialPressure(Fj.x()) ;
 			wallVelocityMap[j] = initialVelocity(Fj.x()) ;
-			myProblem.setWallBoundIndex(j) 
+			
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
