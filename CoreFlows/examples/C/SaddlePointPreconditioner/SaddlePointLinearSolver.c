@@ -154,6 +154,7 @@ int main( int argc, char **args ){
 	VecSetFromOptions(v);
 	VecSetUp(v);
 	MatGetDiagonal(M,v);
+	//Create the matrix 2*diag(M). Why not use MatCreateDiagonal ???
 	MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
 	MatConvert(diag_2M,  MATAIJ, MAT_INPLACE_MATRIX, &diag_2M);
 	MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
