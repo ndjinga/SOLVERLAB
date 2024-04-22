@@ -20,8 +20,6 @@
 # ---------------------------------------------------------------------------- #
 
 import salome
-salome.salome_init()
-gg = salome.ImportComponentGUI("GEOM")
 from salome.geom import geomBuilder
 geompy = geomBuilder.New()
 
@@ -50,7 +48,6 @@ g_q1_e4 = geompy.MakeEdge( g_q1_v4, g_q1_v1)
 
 g_q1 = geompy.MakeQuad( g_q1_e1, g_q1_e2, g_q1_e3, g_q1_e4 )
 
-geompy.addToStudy(g_q1, "Quad_1")
 
 # Quad 2
 
@@ -66,8 +63,6 @@ g_q2_e4 = geompy.MakeEdge( g_q2_v4, g_q2_v1)
 
 g_q2 = geompy.MakeQuad( g_q2_e1, g_q2_e2, g_q2_e3, g_q2_e4 )
 
-geompy.addToStudy(g_q2, "Quad_2")
-
 # Quad 3
 
 g_q3_v1 = geompy.MakeVertex(  0.0, 1.0, 0.0 )
@@ -82,14 +77,11 @@ g_q3_e4 = geompy.MakeEdge( g_q3_v4, g_q3_v1)
 
 g_q3 = geompy.MakeQuad( g_q3_e1, g_q3_e2, g_q3_e3, g_q3_e4 )
 
-geompy.addToStudy(g_q3, "Quad_3")
-
 # Channel geometry
 
 ###g_for_mesh = geompy.MakeCompound( [g_q1, g_q2, g_qb] )
 ###g_for_mesh = geompy.MakeGlueFaces(g_for_mesh, 1.e-3)
 g_for_mesh = geompy.MakeSewing( [g_q1, g_q2, g_q3], 1.e-3 )
-id_g = geompy.addToStudy(g_for_mesh, "backward_facing_step")
 
 # Groups
 
@@ -102,14 +94,10 @@ def add_edge_to_group(g, e):
 
 group_inlet = geompy.CreateGroup(g_for_mesh, geompy.ShapeType["EDGE"])
 add_edge_to_group(group_inlet, g_q1_e4)
-#id_inlet = geompy.GetSubShapeID(g_for_mesh, g_q1_e4)
-#geompy.AddObject(group_inlet, id_inlet)
-id_inlet = geompy.addToStudy(group_inlet, "Inlet")
 
 group_outlet = geompy.CreateGroup(g_for_mesh, geompy.ShapeType["EDGE"])
 add_edge_to_group(group_outlet, g_q2_e2)
 add_edge_to_group(group_outlet, g_q3_e2)
-id_outlet = geompy.addToStudy(group_outlet, "Outlet")
 
 group_wall = geompy.CreateGroup(g_for_mesh, geompy.ShapeType["EDGE"])
 add_edge_to_group(group_wall, g_q1_e1)
@@ -117,13 +105,6 @@ add_edge_to_group(group_wall, g_q3_e3)
 add_edge_to_group(group_wall, g_q2_e1)
 add_edge_to_group(group_wall, g_q1_e3)
 add_edge_to_group(group_wall, g_q2_e4)
-id_wall = geompy.addToStudy(group_wall, "Wall")
-
-gg.createAndDisplayGO(id_g)
-gg.createAndDisplayGO(id_inlet)
-gg.createAndDisplayGO(id_outlet)
-gg.createAndDisplayGO(id_wall)
-
 
 ##################### Meshing
 import  SMESH
@@ -181,6 +162,3 @@ mesh.Compute()
 
 # Export MED
 mesh.ExportMED( "./backward_facing_step_hexaedra.med")
-
-if salome.sg.hasDesktop():
-  salome.sg.updateObjBrowser()
