@@ -11,7 +11,7 @@ CMAKE_POLICY(SET CMP0074 NEW)
 # Project name
 project (SOLVERLAB C CXX)
 set (SOLVERLAB_VERSION_MAJOR 9)  # https://semver.org/
-set (SOLVERLAB_VERSION_MINOR 10)
+set (SOLVERLAB_VERSION_MINOR 13)
 set (SOLVERLAB_VERSION_PATCH 0)
 set (SOLVERLAB_VERSION ${SOLVERLAB_VERSION_MAJOR}.${SOLVERLAB_VERSION_MINOR}.${SOLVERLAB_VERSION_PATCH})
 
@@ -36,9 +36,9 @@ set (PARAVIEW_ROOT_DIR    OFF CACHE STRING "PARAVIEW library path" )
 set (MPI4PY_ROOT_DIR      OFF CACHE STRING "MPI4PY library path" )
 
 #url of tarball librairies
-set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.6.tar.gz
+set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.21.0.tar.gz
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.19.2.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.21.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.8.0.q2.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
@@ -54,9 +54,9 @@ set (GIT_CONFIGURATION        http://git.salome-platform.org/gitpub/tools/config
      CACHE STRING           "CONFIGURATION git repository" )
 set (DOWNLOAD_OPENMPI       https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.6.tar.gz
      CACHE STRING           "OPENMPI tarball path/url" )
-set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.25.0.zip
+set (DOWNLOAD_HYPRE         https://github.com/hypre-space/hypre/archive/v2.31.0.zip
      CACHE STRING           "HYPRE tarball path/url" )
-set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.4.tar.gz
+set (DOWNLOAD_MPI4PY         https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-3.1.6.tar.gz
      CACHE STRING           "MPY4PY tarball path/url" )
 
 
@@ -521,7 +521,7 @@ else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
   else( DEFINED DOWNLOAD_MEDCOUPLING )
     ExternalProject_Add (CONFIGURATION
           GIT_REPOSITORY    ${GIT_CONFIGURATION}  #location of medcoupling source repository
-          GIT_TAG           V9_10_0
+          GIT_TAG           V9_9_0
           SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/configuration
           CONFIGURE_COMMAND ""
           BUILD_COMMAND ""
@@ -530,7 +530,7 @@ else( MEDCOUPLING_ROOT_DIR OR DEFINED ENV{MEDCOUPLING_ROOT_DIR})
     )
     ExternalProject_Add (MEDCoupling
           GIT_REPOSITORY    ${GIT_MEDCOUPLING}  #location of medcoupling source repository
-          GIT_TAG           V9_10_0
+          GIT_TAG           V9_9_0
           SOURCE_DIR        ${CMAKE_CURRENT_BINARY_DIR}/pre_requis/medcoupling
           BUILD_IN_SOURCE   TRUE
           CONFIGURE_COMMAND cmake <SOURCE_DIR> -DCMAKE_INSTALL_PREFIX=${MEDCOUPLING_ROOT_DIR} -DCONFIGURATION_ROOT_DIR=<SOURCE_DIR>/../configuration -DMEDFILE_ROOT_DIR=${MEDFILE_ROOT_DIR} -DMEDCOUPLING_ENABLE_PARTITIONER=OFF -DMEDCOUPLING_PARTITIONER_METIS=OFF -DMEDCOUPLING_PARTITIONER_SCOTCH=OFF -DMEDCOUPLING_ENABLE_RENUMBER=OFF -DMEDCOUPLING_BUILD_DOC=OFF -DHDF5_ROOT_DIR=${HDF5_ROOT} -DMEDCOUPLING_USE_64BIT_IDS=ON #-DSALOME_USE_MPI=ON

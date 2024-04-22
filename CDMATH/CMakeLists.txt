@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Project name
 project (CDMATH)
 set (CDMATH_VERSION_MAJOR 9)
-set (CDMATH_VERSION_MINOR 9)
+set (CDMATH_VERSION_MINOR 13)
 
 # CDMATH project options (deprecated, see SOLVERLAB options)
 set (CDMATH_WITH_PETSC ${SOLVERLAB_WITH_PETSC} CACHE STRING "Compile CDMATH with PETSc linking")
@@ -23,9 +23,9 @@ set (HDF5_ROOT            OFF CACHE STRING "HDF5 library path" )#For the compila
 set (MEDFILE_ROOT_DIR     OFF CACHE STRING "MED library path" )
 set (MEDCOUPLING_ROOT_DIR OFF CACHE STRING "MEDCoupling library path" )
 
-set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.6.tar.gz
+set (DOWNLOAD_PETSC         https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.21.0.tar.gz
      CACHE STRING           "PETSc tarball path/url" )
-set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.19.2.tar.gz
+set (DOWNLOAD_SLEPC         https://slepc.upv.es/download/distrib/slepc-3.21.0.tar.gz
      CACHE STRING           "SLEPC tarball path/url" )
 set (DOWNLOAD_F2CBLASLAPACK https://www.mcs.anl.gov/petsc/mirror/externalpackages/f2cblaslapack-3.8.0.q2.tar.gz
      CACHE STRING           "F2CBLASLAPACK tarball path/url" )
