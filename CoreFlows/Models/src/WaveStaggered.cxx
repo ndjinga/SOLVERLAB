@@ -358,7 +358,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				//Is the face a wall boundarycondition face
 				PetscScalar pExt;
 				if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
-					pExt = Fj.getMeasure()*_Pressure(idCells[0]); //pExt = Pin so (grad p)_j = 0
+					VecGetValues(_primitiveVars,1,&idCells[0],&pExt);
+					pExt = Fj.getMeasure()*pExt; //pExt = pin so (grad p)_j = 0
 				}
 				else{ //Imposed boundaryconditions
 					std::map<int,double> boundaryPressure = getboundaryPressure(); 
@@ -450,7 +451,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	return _cfl * _minCell / (_maxPerim * _c);
 }
 
+void WaveStaggered::ComputeEnergy(){
 
+
+}
 
 bool WaveStaggered::iterateTimeStep(bool &converged)
 {
