@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(
   ${CPPUNIT_INCLUDE_DIR}
   ${MEDFILE_INCLUDE_DIRS}
   ${MEDCOUPLING_INCLUDE_DIR}
+  ${HDF5_INCLUDE_DIRS}#Important pour la compilation de Salome sur DEB10 et DEB11 pour EDF
   ${MESH_DIR}/inc 
   ${BASE_DIR}/inc
   )
