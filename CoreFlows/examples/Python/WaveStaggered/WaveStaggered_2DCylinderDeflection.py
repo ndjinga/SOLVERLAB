@@ -22,11 +22,11 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialPressure(x,y):
 		return 0
 	def initialBoundPressure(x,y):
-		return 6
+		return 10
 	def initialVelocity(x,y):
 		return [0,0]
 	def initialBoundVelocity(x,y):
-		return [5,1]
+		return [0,0]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -58,7 +58,6 @@ def WaveStaggered_2DCylinderDeflection():
 				wallVelocityMap[j] = 0
 			else :
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)
-
 
 	
 	myProblem.setInitialField(Pressure0);

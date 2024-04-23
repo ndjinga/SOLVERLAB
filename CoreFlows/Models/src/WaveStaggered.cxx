@@ -451,9 +451,45 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	return _cfl * _minCell / (_maxPerim * _c);
 }
 
-void WaveStaggered::ComputeEnergy(){
+void WaveStaggered::ComputeEnergyAtTimeT(){
+	double E = 0;
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		PetscInt I = _Nmailles + j;
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		PetscScalar InvD_sigma, InvCell1measure, InvCell2measure, pressure_in, pressure_out, velocity;
+		
+		if (Fj.getNumberOfCells()==2  ){	// Fj is inside the domain or is a boundary periodic face (computed)
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
+			MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell1measure );
+			MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell2measure );
+			VecGetValues(_primitiveVars, 1, &idCells[0], &pressure_in );
+			VecGetValues(_primitiveVars, 1, &idCells[1], &pressure_out );
+			VecGetValues(_primitiveVars, 1, &I, &velocity );
 
+			double pressure_int=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ;
+			double pressure_ext=  1/(InvCell2measure*Ctemp2.getNumberOfFaces()) * (pressure_out)*(pressure_out);
+			double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
+			E += pressure_int + pressure_ext + velocity_part ;
+						
+		}
+		else if (Fj.getNumberOfCells()==1 ) { //if boundary face and face index is different from periodic faces not computed 	
+			MatGetValues(_InvVol,1,&I, 1, &I,&InvD_sigma);
+			MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell1measure );
+			VecGetValues(_primitiveVars, 1, &idCells[0], &pressure_in );
+			VecGetValues(_primitiveVars, 1, &I, &velocity );
 
+			double pressure_part_cellint=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ; 
+			double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
+			E += pressure_part_cellint + velocity_part ;
+			
+		}
+
+	
+	}
+	_Energy.push_back(E);
 }
 
 bool WaveStaggered::iterateTimeStep(bool &converged)

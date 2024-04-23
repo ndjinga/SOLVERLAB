@@ -112,7 +112,7 @@ public :
 	bool  initTimeStep( double dt);
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );
-	void ComputeEnergy();
+	void ComputeEnergyAtTimeT();
 
 
 protected :
