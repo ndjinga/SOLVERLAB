@@ -1,15 +1,15 @@
 # -*-coding:utf-8 -*
 
-#### Décomposition radiale d'un disque 
-### input : xcenter, ycenter, radius, nr, ntheta
-### output : diskWithspiderWeb.vtu, diskWithspiderWeb.med
+#### Décomposition radiale d'un disque (r0=0) ou d'un anneau (0<r0<r1)
+### input : xcenter, ycenter, radius_min, radius_max, nr, ntheta
+### output : nameWithSpiderWeb.vtu, nameWithspiderWeb.med
 
 import medcoupling as mc
 import MEDLoader as ML
 from math import pi
 
 
-def drawPolarGrid(center_x, center_y, r0, r1, angle0, angle1, n_r, n_theta):
+def drawPolarGrid(center_x, center_y, r0, r1, angle0, angle1, n_r, n_theta, name):
   """ Build a polar grid, centered at (center_x, center_y), with n_r subdivisions in the radial direction
   and n_theta subdivisions in the angular direction.
   The radial coordinates start at r0 and end at r1, and the angular coordinates start at angle0 and end at
@@ -55,18 +55,20 @@ def drawPolarGrid(center_x, center_y, r0, r1, angle0, angle1, n_r, n_theta):
   # Ecrit le maillage 1D
   meshMEDFile.setMeshAtLevel(-1,mesh_1d)
   # Ecrit les groupes
-  arr_circle = mc.DataArrayIdType(range(mesh_1d.getNumberOfCells()))
+  arr_circle = mc.DataArrayInt(list(range(mesh_1d.getNumberOfCells())))
   arr_circle.setName("Circle")
   meshMEDFile.addGroup(-1, arr_circle)
 
-  filename = "diskWithSpiderWeb"+str(m.getNumberOfCells())+".med"
+  filename = name+"SpiderWeb"+str(n_r)+"x"+str(n_theta)+".med"
   # Write the result into a VTU file that can be read with ParaView
-  m.writeVTK("diskWithSpiderWeb.vtu")
+  m.writeVTK(name+"SpiderWeb"+str(n_r)+"x"+str(n_theta)+".vtu")
   # Write the result into a MED file that can be read with Salomé
   meshMEDFile.write(filename,2) # 2 stands for write from scratch
   
   return m
 
 if __name__ == "__main__":
-  drawPolarGrid(0., 0.,0., 1., 0., 360., 30, 30)
+  drawPolarGrid(0., 0.,0., 1., 0., 360., 30, 30,"Disk")
+  drawPolarGrid(0., 0.,0.5, 1., 0., 360., 15, 15,"Annulus")
+
 
