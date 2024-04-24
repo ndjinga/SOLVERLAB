@@ -14,6 +14,7 @@ add_subdirectory (C)
 if (COREFLOWS_WITH_PYTHON )
 
   add_subdirectory (Python)
+  add_subdirectory (resources)
 
 endif (COREFLOWS_WITH_PYTHON )
 
