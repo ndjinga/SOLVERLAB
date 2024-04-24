@@ -24,9 +24,9 @@ def createLocallyRefinedMesh(nb_segs_x, mesh_name):
   amr = MC.MEDCouplingCartesianAMRMesh(mesh_1)
   
   # 1er raffinement
-  amr.addPatch([(nb_segs_x/2,nb_segs_x),(0,nb_segs_x/2)],[2,2])
+  amr.addPatch(   [(int(nb_segs_x/2),nb_segs_x),(0,int(nb_segs_x/2))],[2,2])
   # 2eme raffinement
-  amr[0].addPatch([(nb_segs_x/2,nb_segs_x),(0,nb_segs_x/2)],[2,2])
+  amr[0].addPatch([(int(nb_segs_x/2),nb_segs_x),(0,int(nb_segs_x/2))],[2,2])
   
   # Crée un seul maillage avec tous les rafinements
   mesh = amr.buildUnstructured()
@@ -66,10 +66,10 @@ def createLocallyRefinedMesh(nb_segs_x, mesh_name):
     elif abs(y-1) < tol:
       ids_top.append(i)
 
-  arr_left = MC.DataArrayIdType(ids_left)
-  arr_right = MC.DataArrayIdType(ids_right)
-  arr_bottom = MC.DataArrayIdType(ids_bottom)
-  arr_top = MC.DataArrayIdType(ids_top)
+  arr_left = MC.DataArrayInt(ids_left)
+  arr_right = MC.DataArrayInt(ids_right)
+  arr_bottom = MC.DataArrayInt(ids_bottom)
+  arr_top = MC.DataArrayInt(ids_top)
   
   arr_left.setName("Left")
   arr_right.setName("Right")

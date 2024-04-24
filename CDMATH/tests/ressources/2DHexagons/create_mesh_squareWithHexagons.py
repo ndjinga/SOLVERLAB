@@ -19,7 +19,7 @@ def mesh_square_with_hexagons(xmin=0,xmax=1,ymin=0,ymax=1,ny=14,mesh_name="squar
     # Building the coordinates of the initial hexagon, centered at 0,0
     d = mc.DataArrayDouble(6,2)
     d[:,0] = radius
-    d[:,1] = range(6)
+    d[:,1] = list(range(6))
     d[:,1] *= math.pi/3.
     d = d.fromPolarToCart()
     d.setInfoOnComponents(["X [m]","Y [m]"])
@@ -79,10 +79,10 @@ def mesh_square_with_hexagons(xmin=0,xmax=1,ymin=0,ymax=1,ny=14,mesh_name="squar
         else:
             raise ValueError("Pb with boundary construction : barycenter does not belong to any border group")
         
-    arr_left = mc.DataArrayIdType(ids_left)
-    arr_right = mc.DataArrayIdType(ids_right)
-    arr_bottom = mc.DataArrayIdType(ids_bottom)
-    arr_top = mc.DataArrayIdType(ids_top)
+    arr_left = mc.DataArrayInt(ids_left)
+    arr_right = mc.DataArrayInt(ids_right)
+    arr_bottom = mc.DataArrayInt(ids_bottom)
+    arr_top = mc.DataArrayInt(ids_top)
     
     arr_left.setName("Left")
     arr_right.setName("Right")

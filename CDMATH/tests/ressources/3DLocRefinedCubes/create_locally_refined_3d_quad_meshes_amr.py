@@ -25,9 +25,9 @@ def createLocallyRefinedMesh(nb_segs_x, mesh_name):
   amr = MC.MEDCouplingCartesianAMRMesh(mesh_1)
   
   # 1er raffinement
-  amr.addPatch([(nb_segs_x/2,nb_segs_x),(0,nb_segs_x/2),(0,nb_segs_x/2)],[2,2,2])
+  amr.addPatch([   (int(nb_segs_x/2),nb_segs_x),(0,int(nb_segs_x/2)),(0,int(nb_segs_x/2))],[2,2,2])
   # 2eme raffinement
-  amr[0].addPatch([(nb_segs_x/2,nb_segs_x),(0,nb_segs_x/2),(0,nb_segs_x/2)],[2,2,2])
+  amr[0].addPatch([(int(nb_segs_x/2),nb_segs_x),(0,int(nb_segs_x/2)),(0,int(nb_segs_x/2))],[2,2,2])
   
   # Crée un seul maillage avec tous les rafinements
   mesh = amr.buildUnstructured()
@@ -71,12 +71,12 @@ def createLocallyRefinedMesh(nb_segs_x, mesh_name):
     elif abs(z-1) < tol:
       ids_front.append(i)
 
-  arr_left = MC.DataArrayIdType(ids_left)
-  arr_right = MC.DataArrayIdType(ids_right)
-  arr_bottom = MC.DataArrayIdType(ids_bottom)
-  arr_top = MC.DataArrayIdType(ids_top)
-  arr_back = MC.DataArrayIdType(ids_back)
-  arr_front = MC.DataArrayIdType(ids_front)
+  arr_left = MC.DataArrayInt(ids_left)
+  arr_right = MC.DataArrayInt(ids_right)
+  arr_bottom = MC.DataArrayInt(ids_bottom)
+  arr_top = MC.DataArrayInt(ids_top)
+  arr_back = MC.DataArrayInt(ids_back)
+  arr_front = MC.DataArrayInt(ids_front)
 
   arr_left.setName("Left")
   arr_right.setName("Right")
@@ -105,5 +105,5 @@ def createLocallyRefinedMesh(nb_segs_x, mesh_name):
 if __name__ == '__main__':
   createLocallyRefinedMesh(4, "cubeWithLocRefCubes_1")
   createLocallyRefinedMesh(8, "cubeWithLocRefCubes_2")
-  createLocallyRefinedMesh(16, "cubeWithLocRefCubes_3")
-  createLocallyRefinedMesh(32, "cubeWithLocRefCubes_4")
+  #createLocallyRefinedMesh(16, "cubeWithLocRefCubes_3")
+  #createLocallyRefinedMesh(32, "cubeWithLocRefCubes_4")

@@ -44,10 +44,10 @@ def createCheckerboardMesh(nb_segs_x, mesh_name=""):
   # généralise avec une double boucle
   for i in range(0, nb_segs_x, 1):
     if i%2 == 0:
-      for j in range(0, (nb_segs_x+1)/2):
+      for j in range(0, int((nb_segs_x+1)/2)):
         amr.addPatch([(i, i+1), (2*j, 2*j+1)], [2, 2])
     else:
-      for j in range(0, nb_segs_x/2):
+      for j in range(0, int(nb_segs_x/2)):
         amr.addPatch([(i, i+1), (1+2*j, 2*j+2)], [2, 2])
   
   # Crée un seul maillage avec tous les rafinements
@@ -88,10 +88,10 @@ def createCheckerboardMesh(nb_segs_x, mesh_name=""):
     elif abs(y-1) < tol:
       ids_top.append(i)
 
-  arr_left = MC.DataArrayIdType(ids_left)
-  arr_right = MC.DataArrayIdType(ids_right)
-  arr_bottom = MC.DataArrayIdType(ids_bottom)
-  arr_top = MC.DataArrayIdType(ids_top)
+  arr_left = MC.DataArrayInt(ids_left)
+  arr_right = MC.DataArrayInt(ids_right)
+  arr_bottom = MC.DataArrayInt(ids_bottom)
+  arr_top = MC.DataArrayInt(ids_top)
   
   arr_left.setName("Left")
   arr_right.setName("Right")
@@ -122,8 +122,8 @@ if __name__ == '__main__':
   createCheckerboardMesh(16)
   createCheckerboardMesh(32)
   createCheckerboardMesh(64)
-  createCheckerboardMesh(128)
-  createCheckerboardMesh(256)
+  #createCheckerboardMesh(128)
+  #createCheckerboardMesh(256)
   createCheckerboardMesh(5)
   createCheckerboardMesh(9)
   createCheckerboardMesh(17)

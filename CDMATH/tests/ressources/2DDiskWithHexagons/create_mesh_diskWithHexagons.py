@@ -23,7 +23,7 @@ def mesh_disk_with_hexagons(xcenter=0., ycenter=0.,Radius=1.,ny=16,mesh_name="di
     # Building the coordinates of the initial hexagon, centered at 0,0
     d = mc.DataArrayDouble(6,2)
     d[:,0] = hradius
-    d[:,1] = range(6)
+    d[:,1] = list(range(6))
     d[:,1] *= math.pi/3.
     d = d.fromPolarToCart()
     d.setInfoOnComponents(["X [m]","Y [m]"])
@@ -50,11 +50,11 @@ def mesh_disk_with_hexagons(xcenter=0., ycenter=0.,Radius=1.,ny=16,mesh_name="di
     oldNbOfTuples = d2.getNumberOfTuples()
     c,cI = d2.findCommonTuples(1e-12)
     tmp = c[cI[0]:cI[0+1]]
-    print tmp
+    print( tmp )
     a = cI.deltaShiftIndex()
     b = a - 1
     myNewNbOfTuples = oldNbOfTuples - sum(b.getValues())
-    o2n, newNbOfTuples = mc.DataArrayIdType.ConvertIndexArrayToO2N(oldNbOfTuples,c,cI)
+    o2n, newNbOfTuples = mc.DataArrayInt.ConvertIndexArrayToO2N(oldNbOfTuples,c,cI)
     print( "Have I got the right number of tuples ?" )
     print( "myNewNbOfTuples = %d, newNbOfTuples = %d" % (myNewNbOfTuples, newNbOfTuples) )
     assert(myNewNbOfTuples == newNbOfTuples)
@@ -90,7 +90,7 @@ def mesh_disk_with_hexagons(xcenter=0., ycenter=0.,Radius=1.,ny=16,mesh_name="di
     # Ecrit le maillage 1D
     meshMEDFile.setMeshAtLevel(-1,mesh_1d)
     # Ecrit les groupes
-    arr_circle = mc.DataArrayIdType(range(mesh_1d.getNumberOfCells()))
+    arr_circle = mc.DataArrayInt(list(range(mesh_1d.getNumberOfCells())))
     arr_circle.setName("Circle")
     meshMEDFile.addGroup(-1, arr_circle)
     
