@@ -9,7 +9,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb3x4.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
 
 	M=svl.Mesh(inputfile);
 	kappa = 1;
@@ -22,11 +22,11 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialPressure(x,y):
 		return 0
 	def initialBoundPressure(x,y):
-		return 10
+		return 2
 	def initialVelocity(x,y):
 		return [ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	def initialBoundVelocity(x,y):
-		return [1,1]
+		return [ 1,1]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -60,15 +60,15 @@ def WaveStaggered_2DCylinderDeflection():
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
 				
 
-	for j in range( M.getNumberOfFaces() ):
-		print(x= ',Fj.x()', y=', Fj.y()', velocity=',Velocity0[',j,']')
-		#if abs(Velocity0[j] ) > 0.1 and abs( Velocity0[j]-1 ) >0.1 :
-		
-	
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
+
+	for j in range( M.getNumberOfFaces() ):
+		Fj = M.getFace(j);
+		if(Fj.getNumberOfCells()==1):
+			print("Velocity0[",j,"=", Velocity0[j])
 
     # set the numerical metho50
 	myProblem.setTimeScheme(svl.Explicit);
@@ -76,11 +76,11 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameters
-	MaxNbOfTimeStep = 1 ;
-	freqSave = 1;
-	cfl = 0.01; 
+	MaxNbOfTimeStep = 100000 ;
+	freqSave = 1000;
+	cfl = 0.1; 
 	maxTime = 120
-	precision = 1e-6;
+	precision = 1e-5;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -88,7 +88,7 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(svl.CSV)
+	myProblem.setSaveFileFormat(svl.VTK)
 	myProblem.saveVelocity();
 	myProblem.savePressure();
 	myProblem.setVerbose(False);

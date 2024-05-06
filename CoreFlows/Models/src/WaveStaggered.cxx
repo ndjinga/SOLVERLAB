@@ -212,7 +212,6 @@ void WaveStaggered::initialize(){
 	MatSetUp(_Bt);
 	MatZeroEntries(_Bt);
 
-	VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
@@ -234,7 +233,7 @@ void WaveStaggered::initialize(){
 
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
-
+	ComputeEnergyAtTimeT();
 	//The matrices are assembled only in the first time step since linear problem
 	if (_timeScheme == Explicit && _nbTimeStep == 0 ){ //TODO : pourquoi la solution exate n'évolue pas quand on enlève _nbTimeStep==0
 		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
@@ -537,7 +536,38 @@ void WaveStaggered::validateTimeStep()
 	}
 
 	_isStationary =_erreur_rel <_precision;
+	if (_isStationary == true){
+		std::vector<double> div(_Nmailles, 0.0);
+		for (int j=0; j<_Nfaces;j++){
+			Face Fj = _mesh.getFace(j);
+			std::vector< int > idCells = Fj.getCellsId();
+			Cell Ctemp1 = _mesh.getCell(idCells[0]);
 
+			double u;
+			int I = _Nmailles + j;
+			VecGetValues(_primitiveVars, 1, &I, &u);
+			double orien = getOrientation(j, Ctemp1);
+			if (Fj.getNumberOfCells() == 2){ // Intérieur
+				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+				div[ idCells[0] ] += Fj.getMeasure() * orien * u/Ctemp1.getNumberOfFaces();
+				div[ idCells[1] ] -= Fj.getMeasure() * orien * u/Ctemp2.getNumberOfFaces();
+			}
+			else if (Fj.getNumberOfCells() == 1){ // Bord
+				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+				div[ idCells[0] ] += Fj.getMeasure() * orien * u;
+			}
+		}
+		double norm = 0;
+		for (int i = 0; i < div.size(); i++)
+			norm += div[i] * div[i];
+		cout << "||div(u)||= "<< sqrt(norm) <<endl;
+		if (fabs(norm) >0.1){
+			cout<<"Divergence of u is not equal to 0"<<endl;
+			*_runLogFile<<"Divergence of u is not equal to 0"<<endl;
+			_runLogFile->close();
+			throw CdmathException("Divergence of u is not equal to 0");	
+		}
+	}
 	_time+=_dt;
 	_nbTimeStep++;
 	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
