@@ -233,7 +233,7 @@ void WaveStaggered::initialize(){
 
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
-	ComputeEnergyAtTimeT();
+	//ComputeEnergyAtTimeT(); TODO ?
 	//The matrices are assembled only in the first time step since linear problem
 	if (_timeScheme == Explicit && _nbTimeStep == 0 ){ //TODO : pourquoi la solution exate n'évolue pas quand on enlève _nbTimeStep==0
 		cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
@@ -549,19 +549,20 @@ void WaveStaggered::validateTimeStep()
 			double orien = getOrientation(j, Ctemp1);
 			if (Fj.getNumberOfCells() == 2){ // Intérieur
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-				div[ idCells[0] ] += Fj.getMeasure() * orien * u/Ctemp1.getNumberOfFaces();
-				div[ idCells[1] ] -= Fj.getMeasure() * orien * u/Ctemp2.getNumberOfFaces();
+				div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
+				div[ idCells[1] ] -= Fj.getMeasure() * orien * u/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
 			}
 			else if (Fj.getNumberOfCells() == 1){ // Bord
-				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-				div[ idCells[0] ] += Fj.getMeasure() * orien * u;
+				div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()* Ctemp1.getMeasure());
 			}
 		}
-		double norm = 0;
-		for (int i = 0; i < div.size(); i++)
-			norm += div[i] * div[i];
-		cout << "||div(u)||= "<< sqrt(norm) <<endl;
-		if (fabs(norm) >0.1){
+		double norm = 1;
+		for (int i = 0; i < div.size(); i++){
+			if (norm < fabs(div[i]))
+				norm = fabs(div[i]);
+		}
+		cout << "max|div(u)|= "<< norm <<endl;
+		if (norm >0.1){
 			cout<<"Divergence of u is not equal to 0"<<endl;
 			*_runLogFile<<"Divergence of u is not equal to 0"<<endl;
 			_runLogFile->close();

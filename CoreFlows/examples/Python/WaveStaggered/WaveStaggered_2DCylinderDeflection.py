@@ -9,7 +9,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb3x8.med"
 
 	M=svl.Mesh(inputfile);
 	kappa = 1;
@@ -65,10 +65,7 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
-	for j in range( M.getNumberOfFaces() ):
-		Fj = M.getFace(j);
-		if(Fj.getNumberOfCells()==1):
-			print("Velocity0[",j,"=", Velocity0[j])
+	
 
     # set the numerical metho50
 	myProblem.setTimeScheme(svl.Explicit);
@@ -76,11 +73,11 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameters
-	MaxNbOfTimeStep = 100000 ;
+	MaxNbOfTimeStep = 1000000 ;
 	freqSave = 1000;
 	cfl = 0.1; 
 	maxTime = 120
-	precision = 1e-5;
+	precision = 1e-4;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

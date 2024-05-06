@@ -13,8 +13,8 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	xsup = 1.0;
 	yinf = 0.0;
 	ysup = 1.0;  
-	nx=60;
-	ny=60; 
+	nx=40;
+	ny=40; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -27,15 +27,21 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	# Prepare for the initial condition
 	# set the initial interior conditions
 	def initialPressure(x,y):
-		return math.sin(2*math.pi*x*y)		
+		x1 = x -0.5
+		y1 = y - 0.5
+		norm = math.sqrt(x1*x1 + y1*y1)
+		if norm <0.2:
+			return 1/2
+		else :
+			return 0	
 	def initialVelocity(x,y):
-		vec = np.array([1, -1])
+		vec = np.array([0, 0])
 		return vec
 	# set the boundary conditions
 	def initialBoundPressure(x,y):
-		return 3		
+		return 0		
 	def initialBoundVelocity(x,y):
-		vec = np.array([1, -1])
+		vec = np.array([0, 0])
 		return vec
 	#Initial field creation
 	print("Building initial data " ); 
@@ -81,7 +87,7 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 
 	# computation parameters
 	MaxNbOfTimeStep = 50000 ;
-	freqSave = 400;
+	freqSave = 50;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-5;
