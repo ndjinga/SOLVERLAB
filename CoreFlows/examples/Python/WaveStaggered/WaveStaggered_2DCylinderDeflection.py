@@ -9,7 +9,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb3x8.med"
 
 	M=svl.Mesh(inputfile);
 	kappa = 1;
@@ -24,9 +24,9 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialBoundPressure(x,y):
 		return 10
 	def initialVelocity(x,y):
-		return [0,0]
+		return [ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	def initialBoundVelocity(x,y):
-		return [0,0]
+		return [1,1]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -44,6 +44,7 @@ def WaveStaggered_2DCylinderDeflection():
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+		
 
 		myProblem.setOrientation(j,vec_normal_sigma)
 		if(Fj.getNumberOfCells()==2):
@@ -51,14 +52,19 @@ def WaveStaggered_2DCylinderDeflection():
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
+			#print('x= ',Fj.x(), 'y=', Fj.y(), 'velocity=',Velocity0[j], 'norm =',np.sqrt( Fj.x()*Fj.x() + Fj.y()*Fj.y()) )
 		elif (Fj.getNumberOfCells()==1):
 			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
 			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
-				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)
+				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
+				
 
+	for j in range( M.getNumberOfFaces() ):
+		if abs(Velocity0[j] ) > 0.1 and abs( Velocity0[j]-1 ) >0.1 :
+			print(x= ',Fj.x(), 'y=', Fj.y(), 'velocity=',Velocity0[j]')
 	
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
@@ -71,11 +77,11 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameters
-	MaxNbOfTimeStep = 100000 ;
-	freqSave = 50;
-	cfl = 0.4; 
+	MaxNbOfTimeStep = 1 ;
+	freqSave = 1;
+	cfl = 0.01; 
 	maxTime = 120
-	precision = 1e-7;
+	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -83,7 +89,7 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(svl.VTK)
+	myProblem.setSaveFileFormat(svl.CSV)
 	myProblem.saveVelocity();
 	myProblem.savePressure();
 	myProblem.setVerbose(False);

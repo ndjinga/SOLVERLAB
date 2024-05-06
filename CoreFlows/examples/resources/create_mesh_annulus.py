@@ -74,6 +74,7 @@ if __name__ == "__main__":
   Rmax = 5.
   Rmin = 1.2
   drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 5, 16,"Annulus")
+  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 3, 8,"Annulus")
   Rmax = 6.
   Rmin = 0.8
   drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 10, 32,"Annulus")

@@ -212,6 +212,7 @@ void WaveStaggered::initialize(){
 	MatSetUp(_Bt);
 	MatZeroEntries(_Bt);
 
+	VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
