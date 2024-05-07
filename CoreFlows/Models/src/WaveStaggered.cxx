@@ -563,7 +563,18 @@ void WaveStaggered::validateTimeStep()
 			}
 		}
 		double norm = 0;
+		
 		for (int i = 0; i < div.size(); i++){
+			Cell Ci = _mesh.getCell(i);
+			std::vector< int > idFaces = Ci.getFacesId();
+			for (int i=0; i <idFaces.size(); i++){
+				int f = Ci.getFaceId(i);
+				Face Fj = _mesh.getFace(f);
+				if (Fj.getNumberOfCells() == 1){
+					cout <<"face "<< f<< " is a boundary face" <<endl;
+					break;
+				}
+			}
 			if (norm < fabs(div[i]))
 				norm = fabs(div[i]);
 			cout<<"div["<< i <<"]="<< div[i]<<endl;
@@ -575,7 +586,8 @@ void WaveStaggered::validateTimeStep()
 			*_runLogFile<<"Divergence of u is not equal to 0"<<endl;
 			_runLogFile->close();
 			throw CdmathException("Divergence of u is not equal to 0");	
-		}
+		}1 is a boundary face
+
 	}
 	_time+=_dt;
 	_nbTimeStep++;
