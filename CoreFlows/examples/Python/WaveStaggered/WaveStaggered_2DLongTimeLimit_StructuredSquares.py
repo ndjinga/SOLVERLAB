@@ -42,7 +42,7 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 		return 0		
 	def initialBoundVelocity(x,y):
 		vec = np.array([0, 0])
-		return vec
+		return vec #[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	#Initial field creation
 	print("Building initial data " ); 
 	wallPressureMap = {};

@@ -26,7 +26,7 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialVelocity(x,y):
 		return [ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	def initialBoundVelocity(x,y):
-		return [ 1,1]
+		return [ 0,0]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -77,7 +77,7 @@ def WaveStaggered_2DCylinderDeflection():
 	freqSave = 1000;
 	cfl = 0.1; 
 	maxTime = 120
-	precision = 1e-8;
+	precision = 1e-5;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

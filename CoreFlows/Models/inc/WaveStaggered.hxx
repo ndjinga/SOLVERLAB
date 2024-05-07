@@ -113,6 +113,7 @@ public :
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );
 	void ComputeEnergyAtTimeT();
+	void validateDivergence();
 
 
 protected :

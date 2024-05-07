@@ -29,22 +29,23 @@ def WaveStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialVelocity_Left=4;
-	initialPressure_Left=-3;
-	initialVelocity_Right=-1;
-	initialPressure_Right=0;
-	
+	def initialBoundPressure(x):
+		if x < discontinuity:
+			return 2
+		elif discontinuity < x:
+			return 0
+			
 	def initialPressure(x):
 		if x < discontinuity:
-			return initialPressure_Left
+			return 1
 		elif discontinuity < x:
-			return initialPressure_Right
+			return 0
 
 	def initialVelocity(x):
 		if x < discontinuity:
-			return initialVelocity_Left
+			return 0
 		elif discontinuity < x:
-			return initialVelocity_Right
+			return 2
 
 	
 	# Define the exact solution of the 1d Problem 
@@ -80,8 +81,12 @@ def WaveStaggered_1DRiemannProblem():
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			wallPressureMap[j] = initialPressure(Fj.x()) ;
-			wallVelocityMap[j] = initialVelocity(Fj.x()) ;
+			wallPressureMap[j] = initialBoundPressure(Fj.x()) ;
+			if ( j==0 ): 
+				myProblem.setWallBoundIndex(j) 
+				wallVelocityMap[j] = 0
+			else :
+				wallVelocityMap[j] =initialVelocity(Fj.x()) ;
 			
 
 	myProblem.setInitialField(Pressure0);

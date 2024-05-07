@@ -454,6 +454,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatMult(_A,_primitiveVars, _b); 
 		VecAXPY(_b,     1, Prod2);
 	}
+	ComputeEnergyAtTimeT();
 	return _cfl * _minCell / (_maxPerim * _c);
 }
 
@@ -490,10 +491,7 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 			double pressure_part_cellint=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ; 
 			double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
 			E += pressure_part_cellint + velocity_part ;
-			
-		}
-
-	
+		}	
 	}
 	_Energy.push_back(E);
 }
@@ -524,6 +522,56 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	return true;
 }
 
+void WaveStaggered::validateDivergence(){
+	std::vector<double> div(_Nmailles, 0.0);
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+
+		double u;
+		int I = _Nmailles + j;
+		VecGetValues(_primitiveVars, 1, &I, &u);
+		double orien = getOrientation(j, Ctemp1);
+		if (Fj.getNumberOfCells() == 2){ // Intérieur
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
+			div[ idCells[1] ] -= Fj.getMeasure() * orien * u/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
+		}
+		else if (Fj.getNumberOfCells() == 1){ // Bord
+			div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()* Ctemp1.getMeasure());
+		}
+	}
+	double norm = 0;
+	
+	for (int i = 0; i < div.size(); i++){
+		Cell Ci = _mesh.getCell(i);
+		std::vector< int > idFaces = Ci.getFacesId();
+		for (int j=0; j <idFaces.size(); j++){
+			int f = Ci.getFaceId(j);
+			Face Fj = _mesh.getFace(f);
+			if (Fj.getNumberOfCells() == 1){
+				if (fabs(Fj.x()) > 2)
+					cout <<"For cell "<< i<< " divergence contains an outer boundary face" <<endl;
+				if (fabs(Fj.x()) <= 2)
+					cout <<"For cell "<< i<< " divergence contains an inner boundary face" <<endl;
+				break;
+			}
+		}
+		if (norm < fabs(div[i]))
+			norm = fabs(div[i]);
+		cout<<"div["<< i <<"]="<< div[i]<<endl;
+		
+	}
+	cout << "max|div(u)|= "<< norm <<endl;
+	if (norm >0.1){
+		cout<<"Divergence of u is not equal to 0"<<endl;
+		*_runLogFile<<"Divergence of u is not equal to 0"<<endl;
+		_runLogFile->close();
+		throw CdmathException("Divergence of u is not equal to 0");	
+	}
+}
+
 void WaveStaggered::validateTimeStep()
 {
 	//Calcul de la variation Un+1-Un
@@ -543,51 +591,7 @@ void WaveStaggered::validateTimeStep()
 
 	_isStationary =_erreur_rel <_precision;
 	if (_isStationary == true){
-		std::vector<double> div(_Nmailles, 0.0);
-		for (int j=0; j<_Nfaces;j++){
-			Face Fj = _mesh.getFace(j);
-			std::vector< int > idCells = Fj.getCellsId();
-			Cell Ctemp1 = _mesh.getCell(idCells[0]);
-
-			double u;
-			int I = _Nmailles + j;
-			VecGetValues(_primitiveVars, 1, &I, &u);
-			double orien = getOrientation(j, Ctemp1);
-			if (Fj.getNumberOfCells() == 2){ // Intérieur
-				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-				div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
-				div[ idCells[1] ] -= Fj.getMeasure() * orien * u/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
-			}
-			else if (Fj.getNumberOfCells() == 1){ // Bord
-				div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()* Ctemp1.getMeasure());
-			}
-		}
-		double norm = 0;
-		
-		for (int i = 0; i < div.size(); i++){
-			Cell Ci = _mesh.getCell(i);
-			std::vector< int > idFaces = Ci.getFacesId();
-			for (int i=0; i <idFaces.size(); i++){
-				int f = Ci.getFaceId(i);
-				Face Fj = _mesh.getFace(f);
-				if (Fj.getNumberOfCells() == 1){
-					cout <<"face "<< f<< " is a boundary face" <<endl;
-					break;
-				}
-			}
-			if (norm < fabs(div[i]))
-				norm = fabs(div[i]);
-			cout<<"div["<< i <<"]="<< div[i]<<endl;
-			
-		}
-		cout << "max|div(u)|= "<< norm <<endl;
-		if (norm >0.1){
-			cout<<"Divergence of u is not equal to 0"<<endl;
-			*_runLogFile<<"Divergence of u is not equal to 0"<<endl;
-			_runLogFile->close();
-			throw CdmathException("Divergence of u is not equal to 0");	
-		}1 is a boundary face
-
+		validateDivergence();
 	}
 	_time+=_dt;
 	_nbTimeStep++;
