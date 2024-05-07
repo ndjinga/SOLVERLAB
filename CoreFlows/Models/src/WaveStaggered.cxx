@@ -68,9 +68,15 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 				_vec_normal[idim] = Cint.getNormalVector(l,idim);
 			}
 		}
-	double orien = 0;
+	double dotprod = 0;
+	double orien;
 	for (int idim = 0; idim < _Ndim; ++idim)
-		orien += _vec_normal[idim] * it->second[idim];
+		dotprod += _vec_normal[idim] * it->second[idim]; 
+
+	if (dotprod > 0)
+		orien = 1;
+	else if (dotprod < 0)
+		orien = -1;
 	return orien;
 }
 
@@ -556,10 +562,12 @@ void WaveStaggered::validateTimeStep()
 				div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()* Ctemp1.getMeasure());
 			}
 		}
-		double norm = 1;
+		double norm = 0;
 		for (int i = 0; i < div.size(); i++){
 			if (norm < fabs(div[i]))
 				norm = fabs(div[i]);
+			cout<<"div["<< i <<"]="<< div[i]<<endl;
+			
 		}
 		cout << "max|div(u)|= "<< norm <<endl;
 		if (norm >0.1){

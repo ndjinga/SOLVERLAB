@@ -13,8 +13,8 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	xsup = 1.0;
 	yinf = 0.0;
 	ysup = 1.0;  
-	nx=40;
-	ny=40; 
+	nx=30;
+	ny=30; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	
@@ -55,23 +55,19 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 		idCells = Fj.getCellsId();
 		vec_normal_sigma = np.zeros(2)
 		Ctemp1 = M.getCell(idCells[0]);
+		
 		for l in range( Ctemp1.getNumberOfFaces()) :
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
-
+		myProblem.setOrientation(j,vec_normal_sigma)
 		if(Fj.getNumberOfCells()==2):
-			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma)  ;
 		else:
 			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) ;
-			for idim in range(spaceDim):
-				if vec_normal_sigma[idim] < 0:	
-					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
-			myProblem.setOrientation(j,vec_normal_sigma)
 			wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma) ;
 
 
@@ -87,10 +83,10 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 
 	# computation parameters
 	MaxNbOfTimeStep = 50000 ;
-	freqSave = 50;
+	freqSave = 80;
 	cfl = 0.4; 
 	maxTime = 10;
-	precision = 1e-5;
+	precision = 1e-3;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
