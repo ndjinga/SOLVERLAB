@@ -29,16 +29,16 @@ def WaveStaggered_1DLongTimeLimit():
     # Prepare for the initial condition
 	print("Building initial data " ); 
 	def initialPressure(x):
-		return 10
+		return 3
 	def initialVelocity(x):
 		if xinf<x < discontinuity:
-			return -12
+			return 1
 		elif x <=xinf :
-			return -12
+			return 1
 		elif discontinuity < x < xsup:
-			return -10
+			return 2
 		elif xsup <= x:
-			return -12
+			return 2
 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
@@ -67,7 +67,11 @@ def WaveStaggered_1DLongTimeLimit():
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
 			wallPressureMap[j] = initialPressure(Fj.x()) ;
-			wallVelocityMap[j] = initialVelocity(Fj.x()) ;
+			if (Fj.x() < discontinuity) : 
+				myProblem.setWallBoundIndex(j) 
+				wallVelocityMap[j] = 0
+			else :
+				wallVelocityMap[j] = initialVelocity(Fj.x()) ;
 			
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
@@ -82,7 +86,7 @@ def WaveStaggered_1DLongTimeLimit():
 	fileName = "1DLongTimeLimit";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 10000;
+	MaxNbOfTimeStep = 100000;
 	freqSave = 200;
 	cfl = 0.4 
 	maxTime = 20;
@@ -130,11 +134,11 @@ def WaveStaggered_1DLongTimeLimit():
 		plt.figure()
 		plt.subplot(121)
 		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
-		plt.ylim(13,8)
+		plt.ylim(-3,4)
 		plt.legend()
 		plt.subplot(122)
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
-		plt.ylim(-15,-8)
+		plt.ylim(-1,3)
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))

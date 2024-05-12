@@ -43,7 +43,7 @@ def WaveStaggered_1DRiemannProblem():
 
 	def initialVelocity(x):
 		if x < discontinuity:
-			return 0
+			return 1
 		elif discontinuity < x:
 			return 2
 

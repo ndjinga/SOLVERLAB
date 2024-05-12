@@ -14,8 +14,8 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	yinf = 0.0;
 	ysup = 1.0;
 	discontinuity = (yinf + ysup)/2.0
-	nx=70;
-	ny=70; 
+	nx=20;
+	ny=30; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
 	kappa = 1;
@@ -27,9 +27,9 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	# set the boundary conditions
 	def initialPressure(Z):
 		if Z < discontinuity:
-			return -3
+			return 2
 		else :
-			return 0
+			return 1
 
 	def initialVelocity(vec_normal_sigma,Z):
 		vec_x = np.array([1,0])
@@ -37,9 +37,9 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 			return 0
 		else :
 			if Z < discontinuity:
-				return -4 
+				return 0 
 			else:
-				return -1 
+				return 1 
 		
 
 	#Initial field creation
@@ -67,11 +67,16 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 			Velocity0[j] = initialVelocity(vec_normal_sigma,Fj.y()) ;
 		else:
 			wallPressureMap[j] = initialPressure(Ctemp1.y()) ;
-			wallVelocityMap[j] = initialVelocity(vec_normal_sigma,Fj.y()) ;
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
+			if (Fj.y() < discontinuity) : 
+				myProblem.setWallBoundIndex(j) 
+				wallVelocityMap[j] = 0
+			else :
+				wallVelocityMap[j] = initialVelocity(vec_normal_sigma,Fj.y()) ;
+
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
@@ -86,8 +91,8 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	fileName = "WaveStaggered_2DRiemannY_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 2000 ;
-	freqSave = 20;
+	MaxNbOfTimeStep = 1000 ;
+	freqSave = 4;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-6;

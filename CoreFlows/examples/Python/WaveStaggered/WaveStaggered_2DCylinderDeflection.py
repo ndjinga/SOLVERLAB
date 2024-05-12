@@ -9,7 +9,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb3x8.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
 
 	M=svl.Mesh(inputfile);
 	kappa = 1;
@@ -22,11 +22,11 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialPressure(x,y):
 		return 0
 	def initialBoundPressure(x,y):
-		return 2
+		return 3
 	def initialVelocity(x,y):
-		return [ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [0,0]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	def initialBoundVelocity(x,y):
-		return [ 0,0]
+		return [0,0]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -72,12 +72,11 @@ def WaveStaggered_2DCylinderDeflection():
 	# name of result file
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
-	# computation parameters
-	MaxNbOfTimeStep = 1000000 ;
-	freqSave = 1000;
-	cfl = 0.1; 
+	# computation parameers
+	MaxNbOfTimeStep = 500000
+	freqSave = 70
 	maxTime = 120
-	precision = 1e-5;
+	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

@@ -30,7 +30,7 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 		x1 = x -0.5
 		y1 = y - 0.5
 		norm = math.sqrt(x1*x1 + y1*y1)
-		if norm <0.2:
+		if norm <0.1:
 			return 1/2
 		else :
 			return 0	
@@ -82,8 +82,8 @@ def WaveStaggered_2DLongTimeLimit_StructuredSquares():
 	fileName = "WaveStaggered_2DLongTimeLimit_StructuredSquares";
 
 	# computation parameters
-	MaxNbOfTimeStep = 50000 ;
-	freqSave = 80;
+	MaxNbOfTimeStep = 1000 ;
+	freqSave = 30;
 	cfl = 0.4; 
 	maxTime = 10;
 	precision = 1e-3;

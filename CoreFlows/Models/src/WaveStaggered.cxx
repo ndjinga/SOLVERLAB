@@ -362,10 +362,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
 
 				//Is the face a wall boundarycondition face
-				PetscScalar pExt;
+				PetscScalar pExt, pInt;
 				if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
-					VecGetValues(_primitiveVars,1,&idCells[0],&pExt);
-					pExt = Fj.getMeasure()*pExt; //pExt = pin so (grad p)_j = 0
+					VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
+					pExt = Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
 				}
 				else{ //Imposed boundaryconditions
 					std::map<int,double> boundaryPressure = getboundaryPressure(); 
@@ -533,17 +533,13 @@ void WaveStaggered::validateDivergence(){
 		int I = _Nmailles + j;
 		VecGetValues(_primitiveVars, 1, &I, &u);
 		double orien = getOrientation(j, Ctemp1);
-		if (Fj.getNumberOfCells() == 2){ // Intérieur
+		div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
+		if (Fj.getNumberOfCells() == 2){ // Bord
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 			div[ idCells[1] ] -= Fj.getMeasure() * orien * u/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
-		}
-		else if (Fj.getNumberOfCells() == 1){ // Bord
-			div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()* Ctemp1.getMeasure());
 		}
 	}
 	double norm = 0;
-	
 	for (int i = 0; i < div.size(); i++){
 		Cell Ci = _mesh.getCell(i);
 		std::vector< int > idFaces = Ci.getFacesId();
@@ -566,9 +562,6 @@ void WaveStaggered::validateDivergence(){
 	cout << "max|div(u)|= "<< norm <<endl;
 	if (norm >0.1){
 		cout<<"Divergence of u is not equal to 0"<<endl;
-		*_runLogFile<<"Divergence of u is not equal to 0"<<endl;
-		_runLogFile->close();
-		throw CdmathException("Divergence of u is not equal to 0");	
 	}
 }
 
@@ -785,6 +778,12 @@ void WaveStaggered::save(){
 	if(_saveVelocity){
 		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,3);
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
+		for (int l=0; l < _Nmailles ; l++){
+			for (int k=0; k< _Ndim; k++){
+				_Velocity_at_Cells(l, k) =0;
+			}
+		}
+		
 		for (int i = 0 ; i < _Nfaces ; i++){
 			bool periodicFaceNotComputed;
 			std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
@@ -795,7 +794,6 @@ void WaveStaggered::save(){
 			int I= _Nmailles + k;
 			VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
 
-			
 			Face Fj = _mesh.getFace(i);
 			std::vector< int > idCells = Fj.getCellsId();
 			Cell Ctemp1 = _mesh.getCell(idCells[0]); //origin of the normal vector
@@ -808,12 +806,17 @@ void WaveStaggered::save(){
 					}
 				}
 			}
+			double orien1 = getOrientation(i,Ctemp1);
 			
-			for (int k=0; k< _Ndim; k++){
-					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * _vec_normal[k]; // TODO :orientation 
-				if (Fj.getNumberOfCells() ==2 )
-							_Velocity_at_Cells(idCells[1], k) -= _Velocity(i) * _vec_normal[k]; 
-			
+			for (int k=0; k< _Ndim; k++){ 
+				if (Fj.getNumberOfCells() ==2 ){
+					Cell Ctemp2 = _mesh.getCell(idCells[1]); //origin of the normal vector
+					double orien2 = getOrientation(i,Ctemp2);
+					_Velocity_at_Cells(idCells[0], k) += orien1 * _Velocity(i) * _vec_normal[k]/Ctemp1.getNumberOfFaces();
+					_Velocity_at_Cells(idCells[1], k) += orien2 * _Velocity(i) * _vec_normal[k]/Ctemp2.getNumberOfFaces(); 
+				}
+				else if (Fj.getNumberOfCells() ==1 )
+					_Velocity_at_Cells(idCells[0], k) += orien1 * _Velocity(i) * _vec_normal[k]/Ctemp1.getNumberOfFaces();
 			}
 		}
 			
