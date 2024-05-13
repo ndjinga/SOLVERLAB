@@ -20,13 +20,13 @@ def WaveStaggered_2DCylinderDeflection():
 	# Prepare for the initial condition
 	# set the boundary conditions
 	def initialPressure(x,y):
-		return 0
+		return -6
 	def initialBoundPressure(x,y):
-		return 3
+		return 4
 	def initialVelocity(x,y):
-		return [0,0]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [x*y,y*y]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	def initialBoundVelocity(x,y):
-		return [0,0]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [3,-5] #x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -34,6 +34,7 @@ def WaveStaggered_2DCylinderDeflection():
 	wallVelocityMap = {}; 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
+	
 	
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
@@ -53,12 +54,19 @@ def WaveStaggered_2DCylinderDeflection():
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
 		elif (Fj.getNumberOfCells()==1):
 			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
-			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since raduis of small circle (on which we impose wallbound conditions)is 1.2
-				myProblem.setWallBoundIndex(j) 
+			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since radius of small circle (on which we impose wallbound conditions)is 1.2
+				#myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
-				
+		
+	boundaryIntegral = 0
+	for j in range( M.getNumberOfFaces() ):
+		Fj = M.getFace(j);
+		if (Fj.getNumberOfCells()==1):
+			boundaryIntegral += Fj.getMeasure() * wallVelocityMap[j]
+
+	print("velocity boundary integral = ", boundaryIntegral)
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
@@ -75,7 +83,8 @@ def WaveStaggered_2DCylinderDeflection():
 	# computation parameers
 	MaxNbOfTimeStep = 500000
 	freqSave = 70
-	maxTime = 120
+	maxTime = 200
+	cfl =0.4
 	precision = 1e-6;
 
 	myProblem.setCFL(cfl);

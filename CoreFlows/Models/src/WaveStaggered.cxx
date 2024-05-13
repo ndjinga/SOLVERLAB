@@ -522,8 +522,10 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	return true;
 }
 
+
 void WaveStaggered::validateDivergence(){
 	std::vector<double> div(_Nmailles, 0.0);
+	double boundaryIntegral =0;
 	for (int j=0; j<_Nfaces;j++){
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
@@ -532,36 +534,26 @@ void WaveStaggered::validateDivergence(){
 		double u;
 		int I = _Nmailles + j;
 		VecGetValues(_primitiveVars, 1, &I, &u);
-		double orien = getOrientation(j, Ctemp1);
-		div[ idCells[0] ] += Fj.getMeasure() * orien * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
-		if (Fj.getNumberOfCells() == 2){ // Bord
+		double orien1 = getOrientation(j, Ctemp1);
+		if (Fj.getNumberOfCells() == 2){ 
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			div[ idCells[1] ] -= Fj.getMeasure() * orien * u/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
+			double orien2 = getOrientation(j,Ctemp2);
+			div[ idCells[0] ] += Fj.getMeasure() * orien1 * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
+			div[ idCells[1] ] += Fj.getMeasure() * orien2 * u/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
+		}
+		else if (Fj.getNumberOfCells() == 1){ 
+			div[ idCells[0] ] += Fj.getMeasure() * orien1 * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
+			boundaryIntegral += Fj.getMeasure() * orien1 * u;
 		}
 	}
 	double norm = 0;
 	for (int i = 0; i < div.size(); i++){
-		Cell Ci = _mesh.getCell(i);
-		std::vector< int > idFaces = Ci.getFacesId();
-		for (int j=0; j <idFaces.size(); j++){
-			int f = Ci.getFaceId(j);
-			Face Fj = _mesh.getFace(f);
-			if (Fj.getNumberOfCells() == 1){
-				if (fabs(Fj.x()) > 2)
-					cout <<"For cell "<< i<< " divergence contains an outer boundary face" <<endl;
-				if (fabs(Fj.x()) <= 2)
-					cout <<"For cell "<< i<< " divergence contains an inner boundary face" <<endl;
-				break;
-			}
-		}
 		if (norm < fabs(div[i]))
-			norm = fabs(div[i]);
-		cout<<"div["<< i <<"]="<< div[i]<<endl;
-		
+			norm = fabs(div[i]);	
 	}
-	cout << "max|div(u)|= "<< norm <<endl;
-	if (norm >0.1){
-		cout<<"Divergence of u is not equal to 0"<<endl;
+	cout << "max|div(u)|= "<< norm << " et /int u_b.n d/gamma = "<< boundaryIntegral <<endl;
+	if (norm > _precision && boundaryIntegral < _precision){
+		cout<<"WARNING : Divergence of u SHOULD BE equal to 0"<<endl;
 	}
 }
 
@@ -807,7 +799,6 @@ void WaveStaggered::save(){
 				}
 			}
 			double orien1 = getOrientation(i,Ctemp1);
-			
 			for (int k=0; k< _Ndim; k++){ 
 				if (Fj.getNumberOfCells() ==2 ){
 					Cell Ctemp2 = _mesh.getCell(idCells[1]); //origin of the normal vector
