@@ -20,13 +20,13 @@ def WaveStaggered_2DCylinderDeflection():
 	# Prepare for the initial condition
 	# set the boundary conditions
 	def initialPressure(x,y):
-		return -6
+		return 10
 	def initialBoundPressure(x,y):
 		return 4
 	def initialVelocity(x,y):
-		return [x*y,y*y]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [-math.cos(x)*y,y*y]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	def initialBoundVelocity(x,y):
-		return [3,-5] #x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [-3,10]#[x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -60,14 +60,6 @@ def WaveStaggered_2DCylinderDeflection():
 			else :
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
 		
-	boundaryIntegral = 0
-	for j in range( M.getNumberOfFaces() ):
-		Fj = M.getFace(j);
-		if (Fj.getNumberOfCells()==1):
-			boundaryIntegral += Fj.getMeasure() * wallVelocityMap[j]
-
-	print("velocity boundary integral = ", boundaryIntegral)
-
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
@@ -81,7 +73,7 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameers
-	MaxNbOfTimeStep = 500000
+	MaxNbOfTimeStep = 200000
 	freqSave = 70
 	maxTime = 200
 	cfl =0.4

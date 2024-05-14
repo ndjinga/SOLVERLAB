@@ -522,41 +522,6 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	return true;
 }
 
-
-void WaveStaggered::validateDivergence(){
-	std::vector<double> div(_Nmailles, 0.0);
-	double boundaryIntegral =0;
-	for (int j=0; j<_Nfaces;j++){
-		Face Fj = _mesh.getFace(j);
-		std::vector< int > idCells = Fj.getCellsId();
-		Cell Ctemp1 = _mesh.getCell(idCells[0]);
-
-		double u;
-		int I = _Nmailles + j;
-		VecGetValues(_primitiveVars, 1, &I, &u);
-		double orien1 = getOrientation(j, Ctemp1);
-		if (Fj.getNumberOfCells() == 2){ 
-			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			double orien2 = getOrientation(j,Ctemp2);
-			div[ idCells[0] ] += Fj.getMeasure() * orien1 * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
-			div[ idCells[1] ] += Fj.getMeasure() * orien2 * u/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
-		}
-		else if (Fj.getNumberOfCells() == 1){ 
-			div[ idCells[0] ] += Fj.getMeasure() * orien1 * u/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
-			boundaryIntegral += Fj.getMeasure() * orien1 * u;
-		}
-	}
-	double norm = 0;
-	for (int i = 0; i < div.size(); i++){
-		if (norm < fabs(div[i]))
-			norm = fabs(div[i]);	
-	}
-	cout << "max|div(u)|= "<< norm << " et /int u_b.n d/gamma = "<< boundaryIntegral <<endl;
-	if (norm > _precision && boundaryIntegral < _precision){
-		cout<<"WARNING : Divergence of u SHOULD BE equal to 0"<<endl;
-	}
-}
-
 void WaveStaggered::validateTimeStep()
 {
 	//Calcul de la variation Un+1-Un
@@ -573,11 +538,7 @@ void WaveStaggered::validateTimeStep()
 		else if(_erreur_rel < fabs(dx/x))
 			_erreur_rel = fabs(dx/x);
 	}
-
 	_isStationary =_erreur_rel <_precision;
-	if (_isStationary == true){
-		validateDivergence();
-	}
 	_time+=_dt;
 	_nbTimeStep++;
 	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
@@ -769,8 +730,12 @@ void WaveStaggered::save(){
 	}
 	if(_saveVelocity){
 		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,3);
+		Field  _DivVelocity("velocity divergence", CELLS, _mesh, 1);
+
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
+		_DivVelocity.setTime(_time,_nbTimeStep);
 		for (int l=0; l < _Nmailles ; l++){
+			_DivVelocity(l) =0;
 			for (int k=0; k< _Ndim; k++){
 				_Velocity_at_Cells(l, k) =0;
 			}
@@ -799,29 +764,61 @@ void WaveStaggered::save(){
 				}
 			}
 			double orien1 = getOrientation(i,Ctemp1);
-			for (int k=0; k< _Ndim; k++){ 
-				if (Fj.getNumberOfCells() ==2 ){
-					Cell Ctemp2 = _mesh.getCell(idCells[1]); //origin of the normal vector
-					double orien2 = getOrientation(i,Ctemp2);
+			if (Fj.getNumberOfCells() ==2 ){
+				Cell Ctemp2 = _mesh.getCell(idCells[1]); 
+				double orien2 = getOrientation(i,Ctemp2);
+				for (int k=0; k< _Ndim; k++){ 
 					_Velocity_at_Cells(idCells[0], k) += orien1 * _Velocity(i) * _vec_normal[k]/Ctemp1.getNumberOfFaces();
 					_Velocity_at_Cells(idCells[1], k) += orien2 * _Velocity(i) * _vec_normal[k]/Ctemp2.getNumberOfFaces(); 
 				}
-				else if (Fj.getNumberOfCells() ==1 )
+				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
+				_DivVelocity( idCells[1]) += Fj.getMeasure() * orien2 * _Velocity(i)/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
+			}
+			else if (Fj.getNumberOfCells() ==1 ){
+				for (int k=0; k< _Ndim; k++)
 					_Velocity_at_Cells(idCells[0], k) += orien1 * _Velocity(i) * _vec_normal[k]/Ctemp1.getNumberOfFaces();
+				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 			}
 		}
-			
+
+		double boundaryIntegral =0;
+		for (int j=0; j<_Nfaces;j++){
+			Face Fj = _mesh.getFace(j);
+			if (Fj.getNumberOfCells() == 1){ 
+				std::vector< int > idCells = Fj.getCellsId();
+				Cell Ctemp1 = _mesh.getCell(idCells[0]);
+
+				double u;
+				int I = _Nmailles + j;
+				VecGetValues(_primitiveVars, 1, &I, &u);
+				double orien1 = getOrientation(j, Ctemp1);
+				boundaryIntegral += Fj.getMeasure() * orien1 * u;
+			}
+		}
+		double norm = 0;
+		for (int i = 0; i < _Nmailles; i++){
+			if (norm < fabs(_DivVelocity(i)))
+				norm = fabs(_DivVelocity(i));	
+		}
+		if (_isStationary){
+			cout << "max|div(u)|= "<< norm << " et /int u_b.n d/gamma = "<< boundaryIntegral <<endl;
+			if (norm > _precision*10 && boundaryIntegral < _precision)
+				cout<<"WARNING : Divergence of u SHOULD BE equal to 0"<<endl;
+		}
 		_Velocity.setTime(_time,_nbTimeStep);
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
+		_DivVelocity.setTime(_time,_nbTimeStep);
 		if (_nbTimeStep ==0){
 			_Velocity.setInfoOnComponent(0,"Velocity . n_sigma_(m/s)");
 			_Velocity_at_Cells.setInfoOnComponent(0,"Velocity at cells x_(m/s)");
 			_Velocity_at_Cells.setInfoOnComponent(1,"Velocity at cells y_(m/s)");
+			_DivVelocity.setInfoOnComponent(0,"divergence velocity (s^-1)");
 			switch(_saveFormat)
 			{
 			case VTK :
 				_Velocity.writeVTK(prim+"_Velocity");
 				_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
+				_DivVelocity.writeVTK(prim+"Divergence Velocity");
 				break;
 			case MED :
 				_Velocity.writeMED(prim+"_Velocity");
@@ -837,6 +834,7 @@ void WaveStaggered::save(){
 			case VTK :
 				_Velocity.writeVTK(prim+"_Velocity",false);
 				_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells",false);
+				_DivVelocity.writeVTK(prim+"Divergence Velocity",false);
 				break;
 			case MED :
 				_Velocity.writeMED(prim+"_Velocity",false);
