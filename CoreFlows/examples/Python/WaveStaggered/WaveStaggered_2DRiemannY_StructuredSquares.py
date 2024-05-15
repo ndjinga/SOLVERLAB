@@ -14,7 +14,7 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 	yinf = 0.0;
 	ysup = 1.0;
 	discontinuity = (yinf + ysup)/2.0
-	nx=20;
+	nx=3;
 	ny=30; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 	print( "Built a regular 2D square mesh with ", nx,"x" ,ny, " cells")
@@ -71,7 +71,7 @@ def WaveStaggered_2DRiemannY_StructuredSquares():
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if (Fj.y() < discontinuity) : 
+			if (Fj.y() < (ysup - yinf)/(3*ny) ) : 
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :

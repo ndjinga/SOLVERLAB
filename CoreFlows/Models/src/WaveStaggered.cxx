@@ -241,7 +241,7 @@ void WaveStaggered::initialize(){
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 	//The matrices are assembled only in the first time step since linear problem
-	if (_timeScheme == Explicit ){ // TODO : pourquoi la solution exate n'évolue pas quand on enlève _nbTimeStep==0
+	if (_timeScheme == Explicit ){ 
 		if ( _nbTimeStep == 0 ){
 			cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
 			cout << endl;
@@ -386,7 +386,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			VecAssemblyBegin(_BoundaryTerms);
 			VecAssemblyEnd(_BoundaryTerms);
 			VecScale(_BoundaryTerms, _d*_c);
-			
+
 			MatAssemblyBegin(InvSurface, MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(InvSurface, MAT_FINAL_ASSEMBLY);
 			MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
@@ -446,32 +446,20 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		if (_isWall && _nbTimeStep >0){	
 			for (int j=0; j<_Nfaces;j++){
 				Face Fj = _mesh.getFace(j);
-				std::vector< int > idCells = Fj.getCellsId();
-				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				std::map<int,int>::iterator it;
-				bool periodicFaceComputed, periodicFaceNotComputed;
-				if (_indexFacePeriodicSet == true  && (periodicFaceNotComputed == false) ){ // if periodic 
-					std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
-					while ( ( j !=it2->second) && (it2 !=_indexFacePeriodicMap.end() ) )
-						it2++;
-					periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
-				}
-				else{
-					periodicFaceNotComputed = false;
-				}	
-				if (Fj.getNumberOfCells()==1) { //if boundary face 		 && (periodicFaceNotComputed == false)
+				if (Fj.getNumberOfCells()==1) { //if boundary face 
 					//Is the face a wall boundarycondition face
 					PetscScalar pExt, pInt;
 					if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
+						std::vector< int > idCells = Fj.getCellsId();
+						Cell Ctemp1 = _mesh.getCell(idCells[0]);
 						VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
-						pExt = Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
+						pExt = _d * _c * Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
 						VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, INSERT_VALUES );
-					}
+					} 
 				}	
 			}
 			VecAssemblyBegin(_BoundaryTerms);
 			VecAssemblyEnd(_BoundaryTerms);
-			VecScale(_BoundaryTerms, _d*_c);
 		}
 		Vec Prod2;
 		VecDuplicate(_BoundaryTerms, &Prod2);

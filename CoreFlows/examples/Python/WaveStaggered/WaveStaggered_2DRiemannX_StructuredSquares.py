@@ -74,7 +74,7 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if (Fj.x() < discontinuity) : 
+			if (Fj.x() <(xsup - xinf)/(3*nx) ) : 
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :

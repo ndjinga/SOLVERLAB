@@ -29,23 +29,23 @@ def WaveStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
+		
 	def initialBoundPressure(x):
 		if x < discontinuity:
-			return 2
+			return 1
 		elif discontinuity < x:
-			return 0
-			
+			return 1
 	def initialPressure(x):
 		if x < discontinuity:
 			return 1
 		elif discontinuity < x:
-			return 0
+			return 1
 
 	def initialVelocity(x):
 		if x < discontinuity:
-			return 1
+			return -3
 		elif discontinuity < x:
-			return 2
+			return -3
 
 	
 	# Define the exact solution of the 1d Problem 
@@ -76,17 +76,17 @@ def WaveStaggered_1DRiemannProblem():
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
 			Velocity0[j] = initialVelocity(Fj.x())
-		else:
+		elif (Fj.getNumberOfCells()==1):
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			wallPressureMap[j] = initialBoundPressure(Fj.x()) ;
-			if ( j==0 ): 
+			if ( j== nx ): 
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
 				wallVelocityMap[j] =initialVelocity(Fj.x()) ;
+				wallPressureMap[j] = initialBoundPressure(Fj.x()) ;
 			
 
 	myProblem.setInitialField(Pressure0);
@@ -102,7 +102,7 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 430;
+	MaxNbOfTimeStep = 800;
 	freqSave = 5;
 	cfl = 0.4 
 	maxTime = 20;
@@ -156,11 +156,11 @@ def WaveStaggered_1DRiemannProblem():
 			
 		plt.figure()
 		plt.subplot(121)
-		plt.plot(pressuredata['x'], pressure,  label = "exact pressure")
+		#plt.plot(pressuredata['x'], pressure,  label = "exact pressure")
 		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		plt.plot(velocitydata['x'], velocity,label = "exact velocity")
+		#plt.plot(velocitydata['x'], velocity,label = "exact velocity")
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))
