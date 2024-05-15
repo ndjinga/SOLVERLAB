@@ -20,13 +20,13 @@ def WaveStaggered_2DCylinderDeflection():
 	# Prepare for the initial condition
 	# set the boundary conditions
 	def initialPressure(x,y):
-		return 10
+		return 13.5
 	def initialBoundPressure(x,y):
-		return 4
+		return 2
 	def initialVelocity(x,y):
-		return [-math.cos(x)*y,y*y]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [-math.cos(x)*y,y*y*math.sin(y)]#[ x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	def initialBoundVelocity(x,y):
-		return [-3,10]#[x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [-3,40]#[x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -53,12 +53,13 @@ def WaveStaggered_2DCylinderDeflection():
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
 		elif (Fj.getNumberOfCells()==1):
-			wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
-			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 2): #in fact 1.2 is enough since radius of small circle (on which we impose wallbound conditions)is 1.2
-				#myProblem.setWallBoundIndex(j) 
+			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) <= 1.3):  # r_int = 1.2
+				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
+				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
+				
 		
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
@@ -74,10 +75,10 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# computation parameers
 	MaxNbOfTimeStep = 200000
-	freqSave = 70
+	freqSave = 40
 	maxTime = 200
 	cfl =0.4
-	precision = 1e-6;
+	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
