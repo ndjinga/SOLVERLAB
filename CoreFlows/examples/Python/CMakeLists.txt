@@ -157,14 +157,12 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DEF_Ro
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_StructuredCubes.py "Python fv stationary diffusion 3D dirichlet unstructured cubes CUBE coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_UnstructuredTetras.py "Python fv stationary diffusion 3D dirichlet unstructured tetrahedra CUBE coreflows")
 
-
-CreatePythonTest(WaveStaggered/WaveStaggered_Statio.py "Python fv Wave staggered 1D Riemann Problem structured coreflows")
-CreatePythonTest(WaveStaggered/WaveStaggered_1DRiemannProblem.py "Python fv Wave staggered 1D Riemann Problem structured coreflows")
+CreatePythonTest(WaveStaggered/WaveStaggered_1DRightWall.py "Python fv Wave staggered 1D for wall boundary conditions on right wall structured coreflows")
+CreatePythonTest(WaveStaggered/WaveStaggered_1DLeftWall.py "Python fv Wave staggered 1D test for wall boundary conditions on left wall structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DRiemannX_StructuredSquares.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DRiemannY_StructuredSquares.py "Python fv Wave staggered 2D Riemann Y structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DLongTimeLimit_StructuredSquares.py "Python fv Wave staggered structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DCylinderDeflection.py "Python fv Wave staggered structured coreflows")
-CreatePythonTest(WaveStaggered/WaveStaggered_1DLongTimeLimit.py "Python fv Wave staggered structured coreflows")
 
 if( SOLVERLAB_WITH_MPI )
   add_test(NAME MPI4PY_2Procs                                        COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testMPI4PY.py")     

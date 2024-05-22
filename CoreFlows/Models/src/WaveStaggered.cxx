@@ -161,7 +161,7 @@ void WaveStaggered::initialize(){
 	cout << "mesh dimension = "<<_Ndim <<endl;
 	*_runLogFile << " spaceDim= "<<_Ndim <<endl;
 
-	_d = 1/(2* sqrt(_neibMaxNbCells) );
+	_d = 1; //1/(2* sqrt(_neibMaxNbCells) );
 	_vec_normal = new double[_Ndim];
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
@@ -366,6 +366,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar pExt, pInt;
 					if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
 						VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
+						cout << "Fj.mesa = " << Fj.getMeasure() << endl;
 						pExt = Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
 					}
 					else{ //Imposed boundaryconditions

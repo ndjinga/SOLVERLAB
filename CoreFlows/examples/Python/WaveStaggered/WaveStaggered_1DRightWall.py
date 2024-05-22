@@ -30,11 +30,6 @@ def WaveStaggered_1DRiemannProblem():
 
 	print("Building initial data " ); 
 		
-	def initialBoundPressure(x):
-		if x < discontinuity:
-			return 1
-		elif discontinuity < x:
-			return 1
 	def initialPressure(x):
 		if x < discontinuity:
 			return 1
@@ -42,10 +37,10 @@ def WaveStaggered_1DRiemannProblem():
 			return 1
 
 	def initialVelocity(x):
-		if x < discontinuity:
-			return -3
-		elif discontinuity < x:
-			return -3
+		if x < xsup:
+			return 3
+		elif xsup <= x:
+			return 0
 
 	
 	# Define the exact solution of the 1d Problem 
@@ -86,7 +81,7 @@ def WaveStaggered_1DRiemannProblem():
 				wallVelocityMap[j] = 0
 			else :
 				wallVelocityMap[j] =initialVelocity(Fj.x()) ;
-				wallPressureMap[j] = initialBoundPressure(Fj.x()) ;
+				wallPressureMap[j] = initialPressure(Fj.x()) ;
 			
 
 	myProblem.setInitialField(Pressure0);
@@ -102,7 +97,7 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 800;
+	MaxNbOfTimeStep = 300;
 	freqSave = 5;
 	cfl = 0.4 
 	maxTime = 20;
@@ -156,11 +151,11 @@ def WaveStaggered_1DRiemannProblem():
 			
 		plt.figure()
 		plt.subplot(121)
-		#plt.plot(pressuredata['x'], pressure,  label = "exact pressure")
+		plt.plot(pressuredata['x'], pressure,  label = "exact pressure")
 		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		#plt.plot(velocitydata['x'], velocity,label = "exact velocity")
+		plt.plot(velocitydata['x'], velocity,label = "exact velocity")
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))
