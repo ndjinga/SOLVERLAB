@@ -19,6 +19,8 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# Prepare for the initial condition
 	# set the boundary conditions
+	def ExactVelocity(r, theta, r1, r0):
+		return [r1*r1/(r1*r1 -r0*r0)(1 - r0*r0/(r*r) * math.cos(2*theta)),  r1*r1/(r1*r1 -r0*r0)(- r0*r0/(r*r) * math.sin(2*theta))]
 	def initialPressure(x,y):
 		return 1.5
 	def initialBoundPressure(x,y):
@@ -34,6 +36,7 @@ def WaveStaggered_2DCylinderDeflection():
 	wallVelocityMap = {}; 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
+	ExactVelocityInfty = svl.Field("ExactVelocityInfty", svl.FACES, M, 1);
 	
 	
 	for j in range( M.getNumberOfFaces() ):
@@ -52,6 +55,7 @@ def WaveStaggered_2DCylinderDeflection():
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
+			ExactVelocityInfty[j] = np.dot(ExactVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
 		elif (Fj.getNumberOfCells()==1):
 			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) ) <= 1.5:  # r_int = 1.2
 				myProblem.setWallBoundIndex(j) 
@@ -59,12 +63,14 @@ def WaveStaggered_2DCylinderDeflection():
 			else :
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
 				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
+			ExactVelocityInfty[j] = wallVelocityMap[j]	
 				
 		
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
+
 
 	
 
@@ -102,7 +108,7 @@ def WaveStaggered_2DCylinderDeflection():
 		print( "Python simulation of " + fileName + " is successful !" );
 
 	print( "------------ !!! End of calculation !!! -----------" );
-
+	myProblem.setExactVelocityField(ExactVelocityInfty)
 	myProblem.terminate();
 	return ok
 

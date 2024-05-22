@@ -81,6 +81,27 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 	return orien;
 }
 
+void WaveStaggered::setExactVelocityField(const Field &field){
+	_ExactVelocityInfty = field;
+	_ExactVelocityInfty.setName("_ExactVelocityInfty");
+	_time=_ExactVelocityInfty.getTime();
+	_mesh=_ExactVelocityInfty.getMesh();
+	_ExactVelocityInfty.setInfoOnComponent(0,"ExactVelocityInfty . n_sigma_(m/s)");
+	switch(_saveFormat)
+	{
+	case VTK :
+		ExactVelocityInfty.writeVTK(prim+"ExactVelocityInfty");
+		break;
+	case MED :
+		ExactVelocityInfty.writeMED(prim+"ExactVelocityInfty");
+		break;
+	case CSV :
+		ExactVelocityInfty.writeCSV(prim+"ExactVelocityInfty");
+		break;
+	}
+
+}
+
 
 void WaveStaggered::setInitialField(const Field &field)
 {
@@ -366,7 +387,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar pExt, pInt;
 					if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
 						VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
-						cout << "Fj.mesa = " << Fj.getMeasure() << endl;
 						pExt = Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
 					}
 					else{ //Imposed boundaryconditions
@@ -452,9 +472,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar pExt, pInt;
 					if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
 						std::vector< int > idCells = Fj.getCellsId();
-						Cell Ctemp1 = _mesh.getCell(idCells[0]);
 						VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
 						pExt = _d * _c * Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
+						cout << "d c sigma pext = " << pExt << endl; 
 						VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, INSERT_VALUES );
 					} 
 				}	
