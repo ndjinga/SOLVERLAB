@@ -87,16 +87,18 @@ void WaveStaggered::setExactVelocityField(const Field &field){
 	_time=_ExactVelocityInfty.getTime();
 	_mesh=_ExactVelocityInfty.getMesh();
 	_ExactVelocityInfty.setInfoOnComponent(0,"ExactVelocityInfty . n_sigma_(m/s)");
+	string prim(_path+"/WaveStaggered_");///Results
+	prim+=_fileName;
 	switch(_saveFormat)
 	{
 	case VTK :
-		ExactVelocityInfty.writeVTK(prim+"ExactVelocityInfty");
+		_ExactVelocityInfty.writeVTK(prim+"ExactVelocityInfty");
 		break;
 	case MED :
-		ExactVelocityInfty.writeMED(prim+"ExactVelocityInfty");
+		_ExactVelocityInfty.writeMED(prim+"ExactVelocityInfty");
 		break;
 	case CSV :
-		ExactVelocityInfty.writeCSV(prim+"ExactVelocityInfty");
+		_ExactVelocityInfty.writeCSV(prim+"ExactVelocityInfty");
 		break;
 	}
 
@@ -182,7 +184,7 @@ void WaveStaggered::initialize(){
 	cout << "mesh dimension = "<<_Ndim <<endl;
 	*_runLogFile << " spaceDim= "<<_Ndim <<endl;
 
-	_d = 1; //1/(2* sqrt(_neibMaxNbCells) );
+	_d = 1/(2* sqrt(_neibMaxNbCells) );
 	_vec_normal = new double[_Ndim];
 
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
@@ -474,7 +476,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						std::vector< int > idCells = Fj.getCellsId();
 						VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
 						pExt = _d * _c * Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
-						cout << "d c sigma pext = " << pExt << endl; 
 						VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, INSERT_VALUES );
 					} 
 				}	

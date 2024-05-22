@@ -10,6 +10,8 @@ def WaveStaggered_2DCylinderDeflection():
 	# Prepare for the mesh
 	print("Building mesh " );
 	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb10x32.med"
+	r0 = 0.8
+	r1 = 6
 
 	M=svl.Mesh(inputfile);
 	kappa = 1;
@@ -20,15 +22,15 @@ def WaveStaggered_2DCylinderDeflection():
 	# Prepare for the initial condition
 	# set the boundary conditions
 	def ExactVelocity(r, theta, r1, r0):
-		return [r1*r1/(r1*r1 -r0*r0)(1 - r0*r0/(r*r) * math.cos(2*theta)),  r1*r1/(r1*r1 -r0*r0)(- r0*r0/(r*r) * math.sin(2*theta))]
+		return [r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * math.cos(2*theta)),  r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * math.sin(2*theta))]
 	def initialPressure(x,y):
 		return 1.5
 	def initialBoundPressure(x,y):
 		return 2
 	def initialVelocity(x,y):
-		return [-math.cos(x)*y/5,y*y*math.sin(y)/5]
+		return [0,1]
 	def initialBoundVelocity(x,y):
-		return [-3,1]#[x/np.sqrt((x*x)+ (y*y)),y/np.sqrt((x*x)+ (y*y))]
+		return [-3,1]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -55,15 +57,18 @@ def WaveStaggered_2DCylinderDeflection():
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
-			ExactVelocityInfty[j] = np.dot(ExactVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
+			r = np.sqrt( Fj.x()**2 + Fj.y()**2 ) 
+			theta = np.arctan(Fj.y()/Fj.x())
+			ExactVelocityInfty[j] = np.dot( ExactVelocity(r, theta, r1, r0), vec_normal_sigma ) 
 		elif (Fj.getNumberOfCells()==1):
-			if ( np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 ) ) <= 1.5:  # r_int = 1.2
+			if ( np.sqrt( Fj.x()**2 + Fj.y()**2 )  ) <= 1.5:  # r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
 				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
 			ExactVelocityInfty[j] = wallVelocityMap[j]	
+
 				
 		
 	myProblem.setInitialField(Pressure0);

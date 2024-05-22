@@ -15,7 +15,7 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	ysup = 1.0;
 	discontinuity = (xinf + xsup)/2.0
 	nx=30;
-	ny=20; 
+	ny=3; 
 	M=svl.Mesh(xinf,xsup,nx,yinf,ysup,ny)#Regular square mesh
 
 	

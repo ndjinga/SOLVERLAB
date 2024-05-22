@@ -94,7 +94,7 @@ def WaveStaggered_1DRiemannProblem():
 
     
     # name of result file
-	fileName = "1DRiemannProblem";
+	fileName = "1DRightWall";
 
     # simulation parameters 
 	MaxNbOfTimeStep = 300;
