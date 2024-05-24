@@ -366,7 +366,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				}
 				else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 		
 					if (_Ndim == 1){
-						det = Fj.x() - Ctemp1.x(); //TODO  ??
 						InvD_sigma = 2.0/Ctemp1.getMeasure() ;
 						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
 					} 
@@ -377,10 +376,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 						// determinant of the vectors forming the interior half diamond cell around the face sigma
 						InvD_sigma = 1.0/PetscAbsReal(det);	
-						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?
+						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
 					}
 					MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES ),
+					MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 					MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
@@ -389,13 +388,14 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar pExt, pInt;
 					if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
 						VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
-						pExt = Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
+						pExt =  Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
 					}
 					else{ //Imposed boundaryconditions
 						std::map<int,double> boundaryPressure = getboundaryPressure(); 
 						std::map<int,double>::iterator it = boundaryPressure.find(j);
 						pExt = Fj.getMeasure()*boundaryPressure[it->first]; 
 					}
+					
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &pExt, INSERT_VALUES );
 				}	
 			}
@@ -403,12 +403,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatAssemblyEnd(_B, MAT_FINAL_ASSEMBLY);
 			MatAssemblyBegin(_Bt, MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(_Bt, MAT_FINAL_ASSEMBLY);
+
 			MatAssemblyBegin(Laplacian,MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY);
-
 			VecAssemblyBegin(_BoundaryTerms);
 			VecAssemblyEnd(_BoundaryTerms);
-			VecScale(_BoundaryTerms, _d*_c);
+			VecScale(_BoundaryTerms, _d * _c);
 
 			MatAssemblyBegin(InvSurface, MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(InvSurface, MAT_FINAL_ASSEMBLY);

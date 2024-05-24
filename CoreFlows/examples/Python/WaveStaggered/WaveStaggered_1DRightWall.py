@@ -32,16 +32,21 @@ def WaveStaggered_1DRiemannProblem():
 		
 	def initialPressure(x):
 		if x < discontinuity:
-			return 1
+			return 6
 		elif discontinuity < x:
-			return 1
+			return 6
 
-	def initialVelocity(x):
+	def initialVelocity(x): # in order to compute exacte solution at the wall bond cond
 		if x < xsup:
-			return 3
+			return 2
 		elif xsup <= x:
-			return 0
+			return -2
 
+	def initialVelocityForPb(x): # in order to test th wall boundary cond
+		if x < discontinuity:
+			return 2
+		elif discontinuity <= x:
+			return 2
 	
 	# Define the exact solution of the 1d Problem 
 	def ExactPressure(x,t):
@@ -70,7 +75,7 @@ def WaveStaggered_1DRiemannProblem():
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
-			Velocity0[j] = initialVelocity(Fj.x())
+			Velocity0[j] = initialVelocityForPb(Fj.x())
 		elif (Fj.getNumberOfCells()==1):
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
@@ -80,7 +85,7 @@ def WaveStaggered_1DRiemannProblem():
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
-				wallVelocityMap[j] =initialVelocity(Fj.x()) ;
+				wallVelocityMap[j] =initialVelocityForPb(Fj.x()) ;
 				wallPressureMap[j] = initialPressure(Fj.x()) ;
 			
 
@@ -97,7 +102,7 @@ def WaveStaggered_1DRiemannProblem():
 	fileName = "1DRightWall";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 300;
+	MaxNbOfTimeStep = 200;
 	freqSave = 5;
 	cfl = 0.4 
 	maxTime = 20;
