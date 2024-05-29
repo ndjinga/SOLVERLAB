@@ -14,6 +14,8 @@ endif( NOT DEFINED PETSC_FOUND )
 # copy tests matrices into the build directory
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Matrices DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+add_custom_target (saddle    COMMAND ctest -R Saddle)# may be replace ctest -R with ctest -L
+
 ###### Initial version of the saddle point preconditoner (no Shat)
 add_executable(SaddlePointLinearSolver.exe ./SaddlePointLinearSolver.c)
 target_link_libraries(SaddlePointLinearSolver.exe ${PETSC_LIBRARIES} )
@@ -96,6 +98,11 @@ install(TARGETS SaddlePointLinearSolver_par.exe DESTINATION share/examples)
 add_test(NAME SaddlePointLinearSolver_2DKershaw_par.exe         COMMAND "./SaddlePointLinearSolver_par.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type upper -fieldsplit_1_ksp_type gmres -fieldsplit_1_pc_type gamg -fieldsplit_1_pc_gamg_type agg -fieldsplit_0_ksp_type preonly -fieldsplit_0_pc_type lu )     
 set_property (TEST SaddlePointLinearSolver_2DKershaw_par.exe PROPERTY LABELS "C++ PETSC multigrid")     
  
+    if( SOLVERLAB_WITH_MPI )#Tests parallèles
+add_test(NAME SaddlePointLinearSolver_2DKershaw_par_MPI.exe     COMMAND "${MPIEXEC}" "-n" "2" "./SaddlePointLinearSolver_par.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type upper -fieldsplit_1_ksp_type gmres -fieldsplit_1_pc_type gamg -fieldsplit_1_pc_gamg_type agg -fieldsplit_0_ksp_type preonly -fieldsplit_0_pc_type lu -on_error_attach_debugger)     
+set_property (TEST SaddlePointLinearSolver_2DKershaw_par_MPI.exe PROPERTY LABELS "C++ PETSC multigrid")     
+    endif( SOLVERLAB_WITH_MPI )
+
     SET(MATRIX_FILE  Matrices/Cartesian_PolyMAC_1.petsc  )
     SET(nu  40  )
     SET(np  16  )
@@ -128,6 +135,11 @@ set_property (TEST SaddlePointLinearSolver_2DKershaw_par.exe PROPERTY LABELS "C+
 add_test(NAME SaddlePointLinearSolver_2DKershaw_par_pc_composite.exe         COMMAND "./SaddlePointLinearSolver_par.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -fieldsplit_1_ksp_type gmres -fieldsplit_1_pc_type gamg -fieldsplit_1_pc_gamg_type agg -fieldsplit_0_ksp_type preonly -fieldsplit_0_pc_type lu )     
 set_property (TEST SaddlePointLinearSolver_2DKershaw_par_pc_composite.exe PROPERTY LABELS "C++ PETSC multigrid")     
  
+    if( SOLVERLAB_WITH_MPI )#Tests parallèles
+add_test(NAME SaddlePointLinearSolver_2DKershaw_par_pc_composite_MPI.exe     COMMAND "${MPIEXEC}" "./SaddlePointLinearSolver_par.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -fieldsplit_1_ksp_type gmres -fieldsplit_1_pc_type gamg -fieldsplit_1_pc_gamg_type agg -fieldsplit_0_ksp_type preonly -fieldsplit_0_pc_type lu )   
+set_property (TEST SaddlePointLinearSolver_2DKershaw_par_pc_composite_MPI.exe PROPERTY LABELS "C++ PETSC multigrid")     
+    endif( SOLVERLAB_WITH_MPI )
+
     SET(MATRIX_FILE  Matrices/Cartesian_PolyMAC_1.petsc  )
     SET(nu  40  )
     SET(np  16  )
