@@ -77,26 +77,20 @@ int main( int argc, char **args ){
 	n=n_u+n_p;
 	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
 	MatGetSize( A_input, &nrows, &ncolumns);
-	int nb_pressure_lines = irow_max >= n_u ? irow_max - n_u : 0;
-	int nb_velocity_lines = irow_min <= n_u ? n_u - irow_min : 0;
 	int min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
 	int max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
-	PetscInt i_p[nb_pressure_lines],i_u[nb_velocity_lines];
+	int nb_pressure_lines = irow_max >= n_u ? irow_max - min_pressure_lines : 0;
+	int nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
 
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
 	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
 	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
-	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d \n", rank, irow_min, irow_max);
+	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, nb_pressure_lines = %d, nb_velocity_lines = %d \n", rank, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
 	
-	for (int i = min_pressure_lines;i<irow_max;i++){
-		i_p[i-n_u]=i;
-	}
-	for (int i=irow_min;i<max_velocity_lines;i++){
-		i_u[i]=i;
-	}
 	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
-	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u,PETSC_OWN_POINTER,&is_U);
-	ISCreateGeneral(PETSC_COMM_WORLD,n_p,(const PetscInt *) i_p,PETSC_OWN_POINTER,&is_P);
+	ISCreateStride(PETSC_COMM_WORLD, n_u,   0, 1, &is_U);
+	ISCreateStride(PETSC_COMM_WORLD, n_p, n_u, 1, &is_P);
+	
 	MatCreateSubMatrix(A_input,is_U, is_U,MAT_INITIAL_MATRIX,&M);
 	MatCreateSubMatrix(A_input,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A_input,is_P, is_U,MAT_INITIAL_MATRIX,&D);
@@ -120,10 +114,15 @@ int main( int argc, char **args ){
 
 	VecSet(X_anal,0.0);
 
+	PetscInt i_p[nb_pressure_lines];
 	for (int i = min_pressure_lines;i<irow_max;i++){
 		y[i-n_u]=1.0/i;
+		i_p[i-n_u]=i;
 	}
+	
 	VecSetValues(X_anal,nb_pressure_lines,i_p,y,INSERT_VALUES);
+	VecAssemblyBegin(X_anal);
+	VecAssemblyEnd(X_anal);
 	VecNormalize( X_anal, NULL);
 	MatMult( A_input, X_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
