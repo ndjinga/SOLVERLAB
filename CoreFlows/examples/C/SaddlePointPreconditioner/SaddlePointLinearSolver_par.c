@@ -62,7 +62,7 @@ int main( int argc, char **args ){
 	MatLoad(A_input,viewer);
 	PetscViewerDestroy(&viewer);
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
-	
+	PetscBarrier(NULL);
 
 //####	Decompose the matrix A_input into 4 blocks M, G, D, C
 	Mat M, G, D, C;
@@ -87,15 +87,25 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
 	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, nb_pressure_lines = %d, nb_velocity_lines = %d \n", rank, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
 	
-	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
-	ISCreateStride(PETSC_COMM_WORLD, n_u,   0, 1, &is_U);
-	ISCreateStride(PETSC_COMM_WORLD, n_p, n_u, 1, &is_P);
+	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n M G\n D C\n");
+	ISCreateStride(PETSC_COMM_WORLD, nb_velocity_lines, max_velocity_lines - nb_velocity_lines, 1, &is_U);
+	ISCreateStride(PETSC_COMM_WORLD, nb_pressure_lines, min_pressure_lines                    , 1, &is_P);
 	
 	MatCreateSubMatrix(A_input,is_U, is_U,MAT_INITIAL_MATRIX,&M);
 	MatCreateSubMatrix(A_input,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A_input,is_P, is_U,MAT_INITIAL_MATRIX,&D);
 	MatCreateSubMatrix(A_input,is_P, is_P,MAT_INITIAL_MATRIX,&C);
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
+
+	int size1, size2;
+	MatGetSize(M, &size1,&size2);
+	PetscPrintf(PETSC_COMM_WORLD,"Size of M : %d,%d\n", size1,size2);
+	MatGetSize(C, &size1,&size2);
+	PetscPrintf(PETSC_COMM_WORLD,"Size of C : %d,%d\n", size1,size2);
+	MatGetSize(G, &size1,&size2);
+	PetscPrintf(PETSC_COMM_WORLD,"Size of G : %d,%d\n", size1,size2);
+	MatGetSize(D, &size1,&size2);
+	PetscPrintf(PETSC_COMM_WORLD,"Size of D : %d,%d\n", size1,size2);
 
 //##### Definition of the right hand side to test the preconditioner
 	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
@@ -105,8 +115,10 @@ int main( int argc, char **args ){
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
 	VecCreate(PETSC_COMM_WORLD,&b_input);
-	VecSetSizes(b_input,n_u+n_p,PETSC_DECIDE);
+	VecSetSizes(b_input,PETSC_DECIDE,n_u+n_p);
 	VecSetFromOptions(b_input);
+	int sizeVec;
+	VecGetSize(b_input, &sizeVec);
 	
 	VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
 	VecDuplicate(b_input,&X_hat);//u will store the numerical solution
@@ -149,15 +161,18 @@ int main( int argc, char **args ){
 	Mat_array[0]=M;//Top left block of A_hat
 
 	//Extraction of the diagonal of M
-	VecCreate(PETSC_COMM_WORLD,&v);
-	VecSetSizes(v,n_u,PETSC_DECIDE);
-	VecSetFromOptions(v);
-	VecSetUp(v);
+	MatCreateVecs(M,NULL,&v);
+	//VecCreate(PETSC_COMM_WORLD,&v);
+	//VecSetSizes(v,PETSC_DECIDE,n_u);
+	//VecSetFromOptions(v);
+	//VecSetUp(v);
 	MatGetDiagonal(M,v);
 	//Create the matrix 2*diag(M). Why not use MatCreateDiagonal ???
-	MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
+	//MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
+	//MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
+	MatCreateDiagonal(v,&diag_2M);
+	MatScale(diag_2M,2);
 	MatConvert(diag_2M,  MATAIJ, MAT_INPLACE_MATRIX, &diag_2M);
-	MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
 	VecReciprocal(v);
 	
 	// Creation of D_M_inv_G = D_M_inv*G
