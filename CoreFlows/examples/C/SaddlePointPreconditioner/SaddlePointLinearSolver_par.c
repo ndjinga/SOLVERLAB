@@ -213,11 +213,22 @@ int main( int argc, char **args ){
 	KSPSetTolerances(ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT, PETSC_DEFAULT);
 	KSPGetPC(ksp,&pc);
 	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner...\n");
-	PCSetType(pc,PCFIELDSPLIT);
-	PCFieldSplitSetIS(pc, "0",is_U);
-	PCFieldSplitSetIS(pc, "1",is_P);
-	PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
-//	PCSetType(pc,PCILU);
+	if( size==1 ){
+		PCSetType(pc,PCFIELDSPLIT);
+		PCFieldSplitSetIS(pc, "0",is_U);
+		PCFieldSplitSetIS(pc, "1",is_P);
+		//PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
+		//PCSetType(pc,PCILU);
+	}
+	else{
+		//PCSetType(pc, PCBJACOBI);//Global preconditioner is block jacobi
+		//PetscOptionsSetValue(NULL,"-sub_pc_type ","lu");
+		//PetscOptionsSetValue(NULL,"-sub_ksp_type ","preonly");	
+		//PCSetType(pc,PCFIELDSPLIT);
+		//PCFieldSplitSetIS(pc, "0",is_U);
+		//PCFieldSplitSetIS(pc, "1",is_P);
+		//PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
+	}
 	PCSetFromOptions(pc);
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
