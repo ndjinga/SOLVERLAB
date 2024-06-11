@@ -28,8 +28,7 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialBoundPressure(x,y):
 		return 0
 	def initialVelocity(x,y):
-		#norm = math.sqrt( x*x + y*y)
-		return [0,0] #[x/norm, y/norm]
+		return [0,0] 
 	def initialBoundVelocity(x,y):
 		return [1,0]
 	
@@ -39,7 +38,7 @@ def WaveStaggered_2DCylinderDeflection():
 	wallVelocityMap = {}; 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
-	ExactVelocityInfty = svl.Field("ExactVelocityInfty", svl.FACES, M, 1);
+	ExactVelocityInftyAtCells = svl.Field("ExactVelocityInftyAtCells", svl.CELLS, M, 2);
 	
 	
 	for j in range( M.getNumberOfFaces() ):
@@ -47,38 +46,32 @@ def WaveStaggered_2DCylinderDeflection():
 		idCells = Fj.getCellsId();
 		vec_normal_sigma = np.zeros(2)
 		Ctemp1 = M.getCell(idCells[0]);
+		#set orientation
 		for l in range( Ctemp1.getNumberOfFaces()) :
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
-		
 		myProblem.setOrientation(j,vec_normal_sigma)
+
 		if(Fj.getNumberOfCells()==2):
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
-			r = np.sqrt( Fj.x()**2 + Fj.y()**2 ) 
-			theta = np.arctan(Fj.y()/Fj.x())
-			ExactVelocityInfty[j] = np.dot( ExactVelocity(r, theta, r1, r0), vec_normal_sigma ) 
 		elif (Fj.getNumberOfCells()==1):
-			if ( np.sqrt( Fj.x()**2 + Fj.y()**2 )  ) <= 1.5:  # r_int = 1.2 ou 0.8 selon le maillage
+			# if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
+			if ( np.sqrt( Fj.x()**2 + Fj.y()**2 )  ) <= 1.5:  
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
-			else :
+			# if face is on exterior (stegger condition) 
+			else : 											
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
-				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 
-			ExactVelocityInfty[j] = wallVelocityMap[j]	
-
-				
+				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 				
 		
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
-
-
-	
 
     # set the numerical metho50
 	myProblem.setTimeScheme(svl.Explicit);
@@ -87,10 +80,10 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# computation parameers
 	MaxNbOfTimeStep = 500000
-	freqSave = 100
+	freqSave = 200
 	maxTime = 200
 	cfl =0.4
-	precision = 1e-8;
+	precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -114,7 +107,17 @@ def WaveStaggered_2DCylinderDeflection():
 		print( "Python simulation of " + fileName + " is successful !" );
 
 	print( "------------ !!! End of calculation !!! -----------" );
-	myProblem.setExactVelocityField(ExactVelocityInfty)
+
+	testTempsLong = True
+	if testTempsLong :
+		for l in range(M.getNumberOfCells()):
+			Ctemp1 = M.getCell(l)
+			rayon1 =  np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 )
+			theta1 = np.arctan(Ctemp1.y()/Ctemp1.x())
+			for k in range(spaceDim):
+				exa = ExactVelocity(rayon1, theta1, r1, r0)
+				ExactVelocityInftyAtCells[idCells[0],k] = exa[k]
+	myProblem.setExactVelocityField(ExactVelocityInftyatCells)
 	myProblem.terminate();
 	return ok
 

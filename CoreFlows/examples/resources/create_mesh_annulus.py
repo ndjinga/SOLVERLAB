@@ -68,16 +68,11 @@ def drawPolarGrid(center_x, center_y, r0, r1, angle0, angle1, n_r, n_theta, name
   return m
 
 if __name__ == "__main__":
-  drawPolarGrid(0., 0.,0. , 1., 0., 360., 30, 30,"Disk")
-  drawPolarGrid(0., 0.,0.5, 1., 0., 360., 15, 15,"Annulus")
-
-  Rmax = 5.
-  Rmin = 1.2
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 5, 16,"Annulus")
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 3, 4,"Annulus")
   Rmax = 6.
   Rmin = 0.8
   drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 5, 16,"Annulus")
   drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 10, 32,"Annulus")
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 20, 64,"Annulus")
-
+  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 20,64,"Annulus")
+  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 40, 128,"Annulus")
+  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 80, 254,"Annulus")
+ 

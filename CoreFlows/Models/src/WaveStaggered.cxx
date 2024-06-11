@@ -81,24 +81,27 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 	return orien;
 }
 
-void WaveStaggered::setExactVelocityField(const Field &field){
-	_ExactVelocityInfty = field;
-	_ExactVelocityInfty.setName("_ExactVelocityInfty");
-	_time=_ExactVelocityInfty.getTime();
-	_mesh=_ExactVelocityInfty.getMesh();
-	_ExactVelocityInfty.setInfoOnComponent(0,"ExactVelocityInfty . n_sigma_(m/s)");
+void WaveStaggered::setExactVelocityField(const Field &atCells){
+
+	_ExactVelocityInftyAtCells = atCells;
+
+	_ExactVelocityInftyAtCells.setName("_ExactVelocityInftyAtCells");
+	_time=_ExactVelocityInftyAtCells.getTime();
+	_mesh=_ExactVelocityInftyAtCells.getMesh();
+	_ExactVelocityInftyAtCells.setInfoOnComponent(0,"ExactVelocityInfty_x(m/s)");
+	_ExactVelocityInftyAtCells.setInfoOnComponent(1,"ExactVelocityInfty_y(m/s)");
 	string prim(_path+"/WaveStaggered_");///Results
 	prim+=_fileName;
 	switch(_saveFormat)
 	{
 	case VTK :
-		_ExactVelocityInfty.writeVTK(prim+"ExactVelocityInfty");
+		_ExactVelocityInftyAtCells.writeVTK(prim+"ExactVelocityInftyAtCells");
 		break;
 	case MED :
-		_ExactVelocityInfty.writeMED(prim+"ExactVelocityInfty");
+		_ExactVelocityInftyAtCells.writeMED(prim+"_ExactVelocityInftyAtCells");
 		break;
 	case CSV :
-		_ExactVelocityInfty.writeCSV(prim+"ExactVelocityInfty");
+		_ExactVelocityInftyAtCells.writeCSV(prim+"_ExactVelocityInftyAtCells	");
 		break;
 	}
 
@@ -776,7 +779,7 @@ void WaveStaggered::save(){
 		_DivVelocity.setTime(_time,_nbTimeStep);
 		for (int l=0; l < _Nmailles ; l++){
 			_DivVelocity(l) =0;
-			for (int k=0; k< _Ndim; k++){
+			for (int k=0; k< 3; k++){
 				_Velocity_at_Cells(l, k) =0;
 			}
 		}
