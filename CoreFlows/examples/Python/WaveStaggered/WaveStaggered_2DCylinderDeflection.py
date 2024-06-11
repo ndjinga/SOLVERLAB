@@ -24,13 +24,14 @@ def WaveStaggered_2DCylinderDeflection():
 	def ExactVelocity(r, theta, r1, r0):
 		return [r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * math.cos(2*theta)),  r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * math.sin(2*theta))]
 	def initialPressure(x,y):
-		return 1.5
+		return 0
 	def initialBoundPressure(x,y):
-		return 2
+		return 0
 	def initialVelocity(x,y):
-		return [0,1]
+		#norm = math.sqrt( x*x + y*y)
+		return [0,0] #[x/norm, y/norm]
 	def initialBoundVelocity(x,y):
-		return [-3,1]
+		return [1,0]
 	
 	#Initial field creation
 	print("Building initial data " ); 
@@ -89,7 +90,7 @@ def WaveStaggered_2DCylinderDeflection():
 	freqSave = 100
 	maxTime = 200
 	cfl =0.4
-	precision = 1e-5;
+	precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

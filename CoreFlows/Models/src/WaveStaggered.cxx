@@ -768,7 +768,7 @@ void WaveStaggered::save(){
 			}
 		}
 	}
-	if(_saveVelocity){
+	if(_saveVelocity && _isStationary){
 		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,3);
 		Field  _DivVelocity("velocity divergence", CELLS, _mesh, 1);
 
@@ -840,47 +840,28 @@ void WaveStaggered::save(){
 			if (norm < fabs(_DivVelocity(i)))
 				norm = fabs(_DivVelocity(i));	
 		}
-		if (_isStationary)
-			cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
+		cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
 
 		_Velocity.setTime(_time,_nbTimeStep);
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 		_DivVelocity.setTime(_time,_nbTimeStep);
-		if (_nbTimeStep ==0){
-			_Velocity.setInfoOnComponent(0,"Velocity . n_sigma_(m/s)");
-			_Velocity_at_Cells.setInfoOnComponent(0,"Velocity at cells x_(m/s)");
-			_Velocity_at_Cells.setInfoOnComponent(1,"Velocity at cells y_(m/s)");
-			_DivVelocity.setInfoOnComponent(0,"divergence velocity (s^-1)");
-			switch(_saveFormat)
-			{
-			case VTK :
-				_Velocity.writeVTK(prim+"_Velocity");
-				_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
-				_DivVelocity.writeVTK(prim+"Divergence Velocity");
-				break;
-			case MED :
-				_Velocity.writeMED(prim+"_Velocity");
-				break;
-			case CSV :
-				_Velocity.writeCSV(prim+"_Velocity");
-				break;
-			}
-		}
-		else{
-			switch(_saveFormat)
-			{
-			case VTK :
-				_Velocity.writeVTK(prim+"_Velocity",false);
-				_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells",false);
-				_DivVelocity.writeVTK(prim+"Divergence Velocity",false);
-				break;
-			case MED :
-				_Velocity.writeMED(prim+"_Velocity",false);
-				break;
-			case CSV :
-				_Velocity.writeCSV(prim+"_Velocity");
-				break;
-			}
+		_Velocity.setInfoOnComponent(0,"Velocity . n_sigma_(m/s)");
+		_Velocity_at_Cells.setInfoOnComponent(0,"Velocity at cells x_(m/s)");
+		_Velocity_at_Cells.setInfoOnComponent(1,"Velocity at cells y_(m/s)");
+		_DivVelocity.setInfoOnComponent(0,"divergence velocity (s^-1)");
+		switch(_saveFormat)
+		{
+		case VTK :
+			_Velocity.writeVTK(prim+"_Velocity");
+			_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
+			_DivVelocity.writeVTK(prim+"Divergence Velocity");
+			break;
+		case MED :
+			_Velocity.writeMED(prim+"_Velocity");
+			break;
+		case CSV :
+			_Velocity.writeCSV(prim+"_Velocity");
+			break;
 		}
 	}
 }
