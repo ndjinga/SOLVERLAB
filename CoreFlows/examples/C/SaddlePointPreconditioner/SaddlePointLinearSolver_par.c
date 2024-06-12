@@ -77,10 +77,10 @@ int main( int argc, char **args ){
 	n=n_u+n_p;
 	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
 	MatGetSize( A_input, &nrows, &ncolumns);
-	int min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
-	int max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
-	int nb_pressure_lines = irow_max >= n_u ? irow_max - min_pressure_lines : 0;
-	int nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
+	PetscInt min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
+	PetscInt max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
+	PetscInt nb_pressure_lines = irow_max >= n_u ? irow_max - min_pressure_lines : 0;
+	PetscInt nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
 
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
 	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
@@ -154,18 +154,17 @@ int main( int argc, char **args ){
 //##### Application of the transformation A -> A_hat
 	// Declaration
 	Mat D_M_inv_G, Mat_array[4];
-	Mat A_hat,Pmat, C_hat,G_hat;
+	Mat A_hat, Pmat, C_hat, G_hat;
 	Mat diag_2M;//Will store 2*diagonal part of M (to approximate the Schur complement)
 	Vec v;
+	Vec v_redistributed;//different distribution of coefficients among the processors
+	VecScatter scat;//tool to redistribute a vector on the processors
+	IS is_to, is_from;
 	
 	Mat_array[0]=M;//Top left block of A_hat
 
 	//Extraction of the diagonal of M
-	MatCreateVecs(M,NULL,&v);
-	//VecCreate(PETSC_COMM_WORLD,&v);
-	//VecSetSizes(v,PETSC_DECIDE,n_u);
-	//VecSetFromOptions(v);
-	//VecSetUp(v);
+	MatCreateVecs(M,NULL,&v);//v has the parallel distribution of M
 	MatGetDiagonal(M,v);
 	//Create the matrix 2*diag(M). Why not use MatCreateDiagonal ???
 	//MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
@@ -177,7 +176,16 @@ int main( int argc, char **args ){
 	
 	// Creation of D_M_inv_G = D_M_inv*G
 	MatDuplicate(G,MAT_COPY_VALUES,&D_M_inv_G);//D_M_inv_G contains G
-	MatDiagonalScale( D_M_inv_G, v, NULL);//D_M_inv_G contains D_M_inv*G
+	MatCreateVecs(D_M_inv_G,NULL,&v_redistributed);//v_redistributed has the parallel distribution of D_M_inv_G
+	PetscInt col_min, col_max;
+	VecGetOwnershipRange(v,&col_min,&col_max);
+	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_from);
+	VecGetOwnershipRange(v_redistributed,&col_min,&col_max);
+	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_to);
+	VecScatterCreate(v,is_from,v_redistributed,is_to,&scat);
+	VecScatterBegin(scat, v, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
+	VecScatterEnd(  scat, v, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
+	MatDiagonalScale( D_M_inv_G, v_redistributed, NULL);//D_M_inv_G contains D_M_inv*G
 
 	// Creation of C_hat
 	MatMatMult(D,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);//C_hat contains D*D_M_inv*G
@@ -329,6 +337,7 @@ int main( int argc, char **args ){
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
 	KSPDestroy(&ksp);
+	VecScatterDestroy(&scat);
 
 	PetscFinalize();
 	return ierr;
