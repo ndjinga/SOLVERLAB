@@ -178,6 +178,8 @@ int main( int argc, char **args ){
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&A_hat);
 
 	// Finalisation of the preconditioner	
+	//ISCreateStride(PETSC_COMM_WORLD, n_u, n_p, 1, &is_U_hat);
+	//ISCreateStride(PETSC_COMM_WORLD, n_p, 0, 1, &is_P_hat);
 	PetscInt i_p_hat[n_p],i_u_hat[n_u];
 	IS is_U_hat,is_P_hat;
 	
@@ -199,6 +201,7 @@ int main( int argc, char **args ){
 //##### Calling KSP solver and monitor convergence
 	double residu, abstol, rtol=1e-7, dtol;
 	int iter, numberMaxOfIter;
+
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 	KSPSetType(ksp,KSPFGMRES);
