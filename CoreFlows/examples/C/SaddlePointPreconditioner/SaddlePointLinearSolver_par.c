@@ -1,7 +1,7 @@
 static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Parameters : \n -f0 : matrix fileName \n -nU :number of velocity lines \n -nP : number of pressure lines \n -mat_type : PETSc matrix type \n";
 
 /*************************************************************************************************/
-/* Implementation of a new preconditioner for the linear system A_{input} X_{output} = b_{input} */
+/* Parallel implementation of a new preconditioner for the linear system A_{input} X_{output} = b_{input} */
 /*                                                                                               */
 /* Input  : - Matrix A_{input}    (system matrix, loaded from a file)                            */
 /*          - Vector b_{input}    (right hand side, made up for testing)                         */
@@ -97,6 +97,7 @@ int main( int argc, char **args ){
 	MatCreateSubMatrix(A_input,is_P, is_P,MAT_INITIAL_MATRIX,&C);
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
+	//#Display some informations about the four blocs
 	int size1, size2;
 	MatGetSize(M, &size1,&size2);
 	PetscPrintf(PETSC_COMM_WORLD,"Size of M : %d,%d\n", size1,size2);
@@ -117,8 +118,6 @@ int main( int argc, char **args ){
 	VecCreate(PETSC_COMM_WORLD,&b_input);
 	VecSetSizes(b_input,PETSC_DECIDE,n_u+n_p);
 	VecSetFromOptions(b_input);
-	int sizeVec;
-	VecGetSize(b_input, &sizeVec);
 	
 	VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
 	VecDuplicate(b_input,&X_hat);//u will store the numerical solution
