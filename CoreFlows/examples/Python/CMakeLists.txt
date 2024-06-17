@@ -162,6 +162,8 @@ CreatePythonTest(WaveStaggered/WaveStaggered_1DLeftWall.py "Python fv Wave stagg
 CreatePythonTest(WaveStaggered/WaveStaggered_2DRiemannX_StructuredSquares.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DRiemannY_StructuredSquares.py "Python fv Wave staggered 2D Riemann Y structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DCylinderDeflection.py "Python fv Wave staggered structured coreflows")
+CreatePythonTest(WaveStaggered/WaveStaggered_2DCylinderMeshConvergence.py "Python fv Wave staggered mesh convergence structured coreflows")
+
 
 if( SOLVERLAB_WITH_MPI )
   add_test(NAME MPI4PY_2Procs                                        COMMAND "${MPIEXEC}" "-n" "2" "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MPI4PY/testMPI4PY.py")     

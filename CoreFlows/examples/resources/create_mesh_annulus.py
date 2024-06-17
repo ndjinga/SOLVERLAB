@@ -74,5 +74,5 @@ if __name__ == "__main__":
   drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 10, 32,"Annulus")
   drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 20,64,"Annulus")
   drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 40, 128,"Annulus")
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 80, 254,"Annulus")
+  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 80, 256,"Annulus")
  

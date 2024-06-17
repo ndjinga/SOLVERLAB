@@ -81,7 +81,7 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 	return orien;
 }
 
-void WaveStaggered::setExactVelocityInterpolate(Field &Interpolate){
+void WaveStaggered::setExactVelocityInterpolate(const Field &Interpolate){
 	_ExactVelocityInftyInterpolate = Interpolate;
 
 	_ExactVelocityInftyInterpolate.setName("_ExactVelocityInftyInterpolate");
@@ -100,7 +100,7 @@ void WaveStaggered::setExactVelocityInterpolate(Field &Interpolate){
 }
 
 
-void WaveStaggered::setExactVelocityField(const Field &atCells){
+void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 
 	_ExactVelocityInftyAtCells = atCells;
 
@@ -126,6 +126,17 @@ void WaveStaggered::setExactVelocityField(const Field &atCells){
 
 }
 
+double WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInfty){
+	double error =0;
+	for (int j=0; j < _Nfaces; j++){
+		PetscInt I = _Nmailles + j;
+		double InvD_sigma;
+		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
+		double Dsigma = 1/InvD_sigma;
+		error += Dsigma * (_Velocity(j) - ExactVelocityInfty(j))*(_Velocity(j) - ExactVelocityInfty(j));
+	}
+	return error;
+}
 
 void WaveStaggered::setInitialField(const Field &field)
 {
@@ -470,7 +481,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatGetDiagonal(_InvVol,V);
 			VecMax(V, indices3, &maxInvVol);
 			_minCell = 1.0/maxInvVol;
-
+		
 			//Maximum size of surfaces
 			VecCreate(PETSC_COMM_SELF, & W);
 			VecSetSizes(W, PETSC_DECIDE, _Nmailles);
@@ -589,7 +600,7 @@ void WaveStaggered::validateTimeStep()
 	//Calcul de la variation Un+1-Un
 	_erreur_rel= 0;
 	double x, dx;
-	for(int j=1; j<_globalNbUnknowns; j++){
+	for(int j=0; j<_globalNbUnknowns; j++){
 		VecGetValues(_newtonVariation, 1, &j, &dx);
 		VecGetValues(_primitiveVars, 1, &j, &x);
 		if (fabs(x)< _precision)
@@ -790,7 +801,7 @@ void WaveStaggered::save(){
 			}
 		}
 	}
-	if(_saveVelocity && _isStationary){
+	if(_saveVelocity  ){ //&& (_isStationary || _time == _timeMax)
 		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,3);
 		Field  _DivVelocity("velocity divergence", CELLS, _mesh, 1);
 

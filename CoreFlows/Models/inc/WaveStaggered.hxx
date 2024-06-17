@@ -113,8 +113,9 @@ public :
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );
 	void ComputeEnergyAtTimeT();
-	void setExactVelocityField(const Field &atCells);
-	void setExactVelocityInterpolate(Field &atFaces);
+	void setExactVelocityFieldAtCells(const Field &atCells);
+	void setExactVelocityInterpolate(const Field &atFaces);
+	double ErrorL2VelocityInfty(const Field &ExactVelocityInfty);
 
 
 protected :

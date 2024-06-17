@@ -4,12 +4,18 @@
 
 import solverlab as svl
 import math
+from  matplotlib import pyplot as plt
+import pandas as pd
+import os 
 import numpy as np
-def WaveStaggered_2DCylinderDeflection():
+
+def WaveStaggered_2DCylinderDeflection(n):
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
+	nr = 5*n
+	ntheta = 16*n
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb"+ str(nr)+"x" +str(ntheta)+".med"
 	r0 = 0.8
 	r1 = 6
 
@@ -38,12 +44,8 @@ def WaveStaggered_2DCylinderDeflection():
 	wallVelocityMap = {}; 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
-	ExactVelocityInftyAtCells = svl.Field("ExactVelocityInftyAtCells", svl.CELLS, M, 3); #TO DO : 3 components ?
 	ExactVelocityInftyAtFaces = svl.Field("ExactVelocityInftyAtFaces", svl.FACES, M, 1)
-	ExactVelocityInftyInterpolate = svl.Field("ExactVelocityInftyAtInterpolate", svl.CELLS, M, 3);
-	for l in range(M.getNumberOfCells()):
-		for k in range(spaceDim):
-			ExactVelocityInftyInterpolate[l, k] =0;
+	
 	
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
@@ -62,27 +64,21 @@ def WaveStaggered_2DCylinderDeflection():
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
 			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
-
 			r =  np.sqrt( Fj.x()**2 + Fj.y()**2 )
 			theta = np.arctan(Fj.y()/Fj.x())
 			ExactVelocityInftyAtFaces[j] = np.dot(ExactVelocity(r, theta, r1, r0),vec_normal_sigma ) 
-			for k in range(spaceDim):
-					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
-					ExactVelocityInftyInterpolate[idCells[1], k] -= ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp2.getNumberOfFaces(); 
+
 		elif (Fj.getNumberOfCells()==1):
-			# if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
+			# if face is on interior (Wall boundary condition) r_int = 0.6
 			if ( np.sqrt( Fj.x()**2 + Fj.y()**2 )  ) <= (r0 +r1)/2.0:  
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
-			# if face is on exterior (stegger condition) 
+			# if face is on exterior (Stegger-Warming condition) 
 			else : 											
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
 				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 				
 			ExactVelocityInftyAtFaces[j] = wallVelocityMap[j]
-			for k in range(spaceDim):
-					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
 
-	myProblem.setExactVelocityInterpolate(ExactVelocityInftyInterpolate)
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
@@ -94,9 +90,9 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameers
-	MaxNbOfTimeStep = 180000
-	freqSave = 10000
-	maxTime = 447
+	MaxNbOfTimeStep = 1000000
+	freqSave = 100000
+	maxTime = 100000
 	cfl =0.4
 	precision = 1e-6;
 
@@ -108,19 +104,8 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(svl.VTK)
 	myProblem.saveVelocity();
-	myProblem.savePressure(True);
+	myProblem.savePressure(False);
 	myProblem.setVerbose(False);
-
-	testTempsLong = True
-	if testTempsLong == True :
-		for l in range(M.getNumberOfCells()):
-			Ctemp1 = M.getCell(l)
-			rayon1 =  np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 )
-			theta1 = np.arctan(Ctemp1.y()/Ctemp1.x())
-			for k in range(spaceDim):
-				exa = ExactVelocity(rayon1, theta1, r1, r0)
-				ExactVelocityInftyAtCells[l,k] = exa[k]
-	myProblem.setExactVelocityField(ExactVelocityInftyAtCells)
 
 	# Run the computation
 	myProblem.initialize();
@@ -134,9 +119,22 @@ def WaveStaggered_2DCylinderDeflection():
 
 	print( "------------ !!! End of calculation !!! -----------" );
 
-	
+	normL2 = myProblem.ErrorL2VelocityInfty(ExactVelocityInftyAtFaces)
+	sizeMesh = M.getNumberOfCells()
 	myProblem.terminate();
-	return ok
+	return [normL2, sizeMesh]
 
 if __name__ == """__main__""":
-	WaveStaggered_2DCylinderDeflection()
+	NormL2 = []
+	sizeMesh = []
+	for i in range(5):
+		N = 2**i
+		result = WaveStaggered_2DCylinderDeflection(N)
+		sizeMesh.append(result[1])
+		NormL2.append(result[0])
+	plt.figure()
+	plt.loglog(sizeMesh, NormL2,label = "error on velocity infty")
+	plt.loglog(sizeMesh, sizeMesh,label = "order 1")
+	plt.legend()
+	plt.title("error on velocity infty")
+	plt.savefig("error on velocity infty")
