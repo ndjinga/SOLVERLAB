@@ -87,8 +87,8 @@ void WaveStaggered::setExactVelocityInterpolate(Field &Interpolate){
 	_ExactVelocityInftyInterpolate.setName("_ExactVelocityInftyInterpolate");
 	_time=_ExactVelocityInftyInterpolate.getTime();
 	_mesh=_ExactVelocityInftyInterpolate.getMesh();
-	_ExactVelocityInftyInterpolate.setInfoOnComponent(0,"_ExactVelocityInftyInterpolate(m/s)");
-	_ExactVelocityInftyInterpolate.setInfoOnComponent(1,"_ExactVelocityInftyInterpolate(m/s)");
+	_ExactVelocityInftyInterpolate.setInfoOnComponent(0,"_ExactVelocityInftyInterpolate_x(m/s)");
+	_ExactVelocityInftyInterpolate.setInfoOnComponent(1,"_ExactVelocityInftyInterpolate_y(m/s)");
 	string prim(_path+"/WaveStaggered_");///Results
 	prim+=_fileName;
 	switch(_saveFormat)

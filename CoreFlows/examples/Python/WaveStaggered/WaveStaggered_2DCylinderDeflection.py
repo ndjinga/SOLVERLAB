@@ -95,7 +95,7 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# computation parameers
 	MaxNbOfTimeStep = 5000000
-	freqSave = 400
+	freqSave = 10000
 	maxTime = 400
 	cfl =0.4
 	precision = 1e-6;
@@ -111,6 +111,17 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.savePressure(False);
 	myProblem.setVerbose(False);
 
+	testTempsLong = True
+	if testTempsLong == True :
+		for l in range(M.getNumberOfCells()):
+			Ctemp1 = M.getCell(l)
+			rayon1 =  np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 )
+			theta1 = np.arctan(Ctemp1.y()/Ctemp1.x())
+			for k in range(spaceDim):
+				exa = ExactVelocity(rayon1, theta1, r1, r0)
+				ExactVelocityInftyAtCells[l,k] = exa[k]
+	myProblem.setExactVelocityField(ExactVelocityInftyAtCells)
+
 	# Run the computation
 	myProblem.initialize();
 
@@ -123,16 +134,7 @@ def WaveStaggered_2DCylinderDeflection():
 
 	print( "------------ !!! End of calculation !!! -----------" );
 
-	testTempsLong = True
-	if testTempsLong == True :
-		for l in range(M.getNumberOfCells()):
-			Ctemp1 = M.getCell(l)
-			rayon1 =  np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 )
-			theta1 = np.arctan(Ctemp1.y()/Ctemp1.x())
-			for k in range(spaceDim):
-				exa = ExactVelocity(rayon1, theta1, r1, r0)
-				ExactVelocityInftyAtCells[l,k] = exa[k]
-	myProblem.setExactVelocityField(ExactVelocityInftyAtCells)
+	
 	myProblem.terminate();
 	return ok
 
