@@ -81,6 +81,25 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 	return orien;
 }
 
+void WaveStaggered::setExactVelocityInterpolate(Field &Interpolate){
+	_ExactVelocityInftyInterpolate = Interpolate;
+
+	_ExactVelocityInftyInterpolate.setName("_ExactVelocityInftyInterpolate");
+	_time=_ExactVelocityInftyInterpolate.getTime();
+	_mesh=_ExactVelocityInftyInterpolate.getMesh();
+	_ExactVelocityInftyInterpolate.setInfoOnComponent(0,"_ExactVelocityInftyInterpolate(m/s)");
+	_ExactVelocityInftyInterpolate.setInfoOnComponent(1,"_ExactVelocityInftyInterpolate(m/s)");
+	string prim(_path+"/WaveStaggered_");///Results
+	prim+=_fileName;
+	switch(_saveFormat)
+	{
+	case VTK :
+		_ExactVelocityInftyInterpolate.writeVTK(prim+"_ExactVelocityInftyInterpolate");
+		break;
+	}
+}
+
+
 void WaveStaggered::setExactVelocityField(const Field &atCells){
 
 	_ExactVelocityInftyAtCells = atCells;
@@ -95,7 +114,7 @@ void WaveStaggered::setExactVelocityField(const Field &atCells){
 	switch(_saveFormat)
 	{
 	case VTK :
-		_ExactVelocityInftyAtCells.writeVTK(prim+"ExactVelocityInftyAtCells");
+		_ExactVelocityInftyAtCells.writeVTK(prim+"_ExactVelocityInftyAtCells");
 		break;
 	case MED :
 		_ExactVelocityInftyAtCells.writeMED(prim+"_ExactVelocityInftyAtCells");
@@ -855,9 +874,10 @@ void WaveStaggered::save(){
 		switch(_saveFormat)
 		{
 		case VTK :
-			_Velocity.writeVTK(prim+"_Velocity");
+			//_Velocity.writeVTK(prim+"_Velocity");
 			_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
 			_DivVelocity.writeVTK(prim+"Divergence Velocity");
+			_Velocity.writeVTK(prim+"_Velocity");
 			break;
 		case MED :
 			_Velocity.writeMED(prim+"_Velocity");

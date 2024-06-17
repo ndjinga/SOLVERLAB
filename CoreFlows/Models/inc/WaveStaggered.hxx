@@ -114,10 +114,11 @@ public :
 	void setInputField(const string& nameField, Field& inputField );
 	void ComputeEnergyAtTimeT();
 	void setExactVelocityField(const Field &atCells);
+	void setExactVelocityInterpolate(Field &atFaces);
 
 
 protected :
-	Field _Velocity, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells;
+	Field _Velocity, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate;
 	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms;;
 	Mat _InvVol, _B, _Bt; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
