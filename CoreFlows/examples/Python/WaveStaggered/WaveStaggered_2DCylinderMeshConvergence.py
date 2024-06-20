@@ -91,7 +91,7 @@ def WaveStaggered_2DCylinderDeflection(n):
 
 	# computation parameers
 	MaxNbOfTimeStep = 1000000
-	freqSave = 100000
+	freqSave = 2000
 	maxTime = 100000
 	cfl =0.4
 	precision = 1e-6;
@@ -104,7 +104,7 @@ def WaveStaggered_2DCylinderDeflection(n):
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(svl.VTK)
 	myProblem.saveVelocity();
-	myProblem.savePressure(False);
+	myProblem.savePressure(True);
 	myProblem.setVerbose(False);
 
 	# Run the computation
@@ -127,7 +127,7 @@ def WaveStaggered_2DCylinderDeflection(n):
 if __name__ == """__main__""":
 	NormL2 = []
 	sizeMesh = []
-	for i in range(5):
+	for i in range(4):
 		N = 2**i
 		result = WaveStaggered_2DCylinderDeflection(N)
 		sizeMesh.append(result[1])

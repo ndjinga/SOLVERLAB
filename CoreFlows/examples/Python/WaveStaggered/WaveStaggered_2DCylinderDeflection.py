@@ -95,10 +95,10 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# computation parameers
 	MaxNbOfTimeStep = 180000
-	freqSave = 10000
+	freqSave = 400
 	maxTime = 447
 	cfl =0.4
-	precision = 1e-6;
+	precision = 1e-14;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -120,7 +120,7 @@ def WaveStaggered_2DCylinderDeflection():
 			for k in range(spaceDim):
 				exa = ExactVelocity(rayon1, theta1, r1, r0)
 				ExactVelocityInftyAtCells[l,k] = exa[k]
-	myProblem.setExactVelocityField(ExactVelocityInftyAtCells)
+	myProblem.setExactVelocityFieldAtCells(ExactVelocityInftyAtCells)
 
 	# Run the computation
 	myProblem.initialize();

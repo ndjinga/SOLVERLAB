@@ -854,27 +854,6 @@ void WaveStaggered::save(){
 			}
 		}
 
-		double boundaryIntegral =0;
-		for (int j=0; j<_Nfaces;j++){
-			Face Fj = _mesh.getFace(j);
-			if (Fj.getNumberOfCells() == 1){ 
-				std::vector< int > idCells = Fj.getCellsId();
-				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-
-				double u;
-				int I = _Nmailles + j;
-				VecGetValues(_primitiveVars, 1, &I, &u);
-				double orien1 = getOrientation(j, Ctemp1);
-				boundaryIntegral += Fj.getMeasure() * orien1 * u;
-			}
-		}
-		double norm = 0;
-		for (int i = 0; i < _Nmailles; i++){
-			if (norm < fabs(_DivVelocity(i)))
-				norm = fabs(_DivVelocity(i));	
-		}
-		cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
-
 		_Velocity.setTime(_time,_nbTimeStep);
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 		_DivVelocity.setTime(_time,_nbTimeStep);
@@ -896,6 +875,29 @@ void WaveStaggered::save(){
 		case CSV :
 			_Velocity.writeCSV(prim+"_Velocity");
 			break;
+		}
+
+		if (_isStationary){
+			double boundaryIntegral =0;
+			for (int j=0; j<_Nfaces;j++){
+				Face Fj = _mesh.getFace(j);
+				if (Fj.getNumberOfCells() == 1){ 
+					std::vector< int > idCells = Fj.getCellsId();
+					Cell Ctemp1 = _mesh.getCell(idCells[0]);
+
+					double u;
+					int I = _Nmailles + j;
+					VecGetValues(_primitiveVars, 1, &I, &u);
+					double orien1 = getOrientation(j, Ctemp1);
+					boundaryIntegral += Fj.getMeasure() * orien1 * u;
+				}
+			}
+			double norm = 0;
+			for (int i = 0; i < _Nmailles; i++){
+				if (norm < fabs(_DivVelocity(i)))
+					norm = fabs(_DivVelocity(i));	
+			}
+			cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
 		}
 	}
 }
