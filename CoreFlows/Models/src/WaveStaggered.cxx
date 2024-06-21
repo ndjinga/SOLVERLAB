@@ -524,10 +524,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	}
 
 	ComputeEnergyAtTimeT();
-	if (_cfl > _d/2.0 && _Ndim > 1){
-		cout << "cfl = "<< _cfl <<" is to high, cfl is updated to _d/2 = "<< 0.99*_d/2 << endl; 
-		_cfl =  0.99 * _d/2.0; //WARNING : cfl = _d/2.0 theoretical but proof leads to think that it is the double (cfl = _d)
-	}
 	return _cfl * _minCell / (_maxPerim * _c);
 }
 
@@ -605,8 +601,9 @@ void WaveStaggered::validateTimeStep()
 		VecGetValues(_primitiveVars, 1, &j, &x);
 		if (fabs(x)< _precision)
 		{
-			if(_erreur_rel < fabs(dx))
+			if(_erreur_rel < fabs(dx)){
 				_erreur_rel = fabs(dx);
+			}
 		}
 		else if(_erreur_rel < fabs(dx/x))
 			_erreur_rel = fabs(dx/x);
@@ -801,7 +798,7 @@ void WaveStaggered::save(){
 			}
 		}
 	}
-	if(_saveVelocity  ){ //&& (_isStationary || _time == _timeMax)
+	if(_saveVelocity  ){ 
 		Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,3);
 		Field  _DivVelocity("velocity divergence", CELLS, _mesh, 1);
 
@@ -841,15 +838,15 @@ void WaveStaggered::save(){
 				Cell Ctemp2 = _mesh.getCell(idCells[1]); 
 				double orien2 = getOrientation(i,Ctemp2);
 				for (int k=0; k< _Ndim; k++){ 
-					_Velocity_at_Cells(idCells[0], k) += orien1 * _Velocity(i) * _vec_normal[k]/Ctemp1.getNumberOfFaces();
-					_Velocity_at_Cells(idCells[1], k) += orien2 * _Velocity(i) * _vec_normal[k]/Ctemp2.getNumberOfFaces(); 
+					_Velocity_at_Cells(idCells[0], k) += orien1 * Fj.getMeasure() *_Velocity(i) * _vec_normal[k]/_perimeters(idCells[0]);
+					_Velocity_at_Cells(idCells[1], k) += orien2 * Fj.getMeasure() *_Velocity(i) * _vec_normal[k]/_perimeters(idCells[1]); 
 				}
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 				_DivVelocity( idCells[1]) += Fj.getMeasure() * orien2 * _Velocity(i)/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
 			}
 			else if (Fj.getNumberOfCells() ==1 ){
 				for (int k=0; k< _Ndim; k++)
-					_Velocity_at_Cells(idCells[0], k) += orien1 * _Velocity(i) * _vec_normal[k]/Ctemp1.getNumberOfFaces();
+					_Velocity_at_Cells(idCells[0], k) += orien1 *Fj.getMeasure() *_Velocity(i) * _vec_normal[k]/_perimeters(idCells[0]);
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 			}
 		}
@@ -864,7 +861,6 @@ void WaveStaggered::save(){
 		switch(_saveFormat)
 		{
 		case VTK :
-			//_Velocity.writeVTK(prim+"_Velocity");
 			_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
 			_DivVelocity.writeVTK(prim+"Divergence Velocity");
 			_Velocity.writeVTK(prim+"_Velocity");
@@ -877,7 +873,7 @@ void WaveStaggered::save(){
 			break;
 		}
 
-		if (_isStationary){
+		if (_isStationary || _time == _timeMax){
 			double boundaryIntegral =0;
 			for (int j=0; j<_Nfaces;j++){
 				Face Fj = _mesh.getFace(j);
