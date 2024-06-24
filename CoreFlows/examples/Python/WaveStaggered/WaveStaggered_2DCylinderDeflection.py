@@ -66,9 +66,15 @@ def WaveStaggered_2DCylinderDeflection():
 			r =  np.sqrt( Fj.x()**2 + Fj.y()**2 )
 			theta = np.arctan(Fj.y()/Fj.x())
 			ExactVelocityInftyAtFaces[j] = np.dot(ExactVelocity(r, theta, r1, r0),vec_normal_sigma ) 
+			perimeter1 =0
+			for j in range(Ctemp1.getNumberOfFaces()):
+				perimeter1 += (M.getFace(Ctemp1.getFaceId(j))).getMeasure()
+			perimeter2 =0
+			for j in range(Ctemp2.getNumberOfFaces()):
+				perimeter2 += (M.getFace(Ctemp2.getFaceId(j))).getMeasure()
 			for k in range(spaceDim):
-					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
-					ExactVelocityInftyInterpolate[idCells[1], k] -= ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp2.getNumberOfFaces(); 
+					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] *Fj.getMeasure()* vec_normal_sigma[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
+					ExactVelocityInftyInterpolate[idCells[1], k] += ExactVelocityInftyAtFaces[j] *Fj.getMeasure()* vec_normal_sigma[k]/(Ctemp2.getMeasure()*Ctemp2.getNumberOfFaces()); 
 		elif (Fj.getNumberOfCells()==1):
 			# if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 			if ( np.sqrt( Fj.x()**2 + Fj.y()**2 )  ) <= (r0 +r1)/2.0:  
@@ -80,7 +86,7 @@ def WaveStaggered_2DCylinderDeflection():
 				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 				
 			ExactVelocityInftyAtFaces[j] = wallVelocityMap[j]
 			for k in range(spaceDim):
-					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
+				ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces())
 
 	myProblem.setExactVelocityInterpolate(ExactVelocityInftyInterpolate)
 	myProblem.setInitialField(Pressure0);
@@ -95,10 +101,10 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# computation parameers
 	MaxNbOfTimeStep = 180000
-	freqSave = 30	
+	freqSave = 800	
 	maxTime = 447
 	cfl =0.6	 #Computed CFL = d/2 = 0.12 in quad 
-	precision = 1e-13;
+	precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -134,7 +140,7 @@ def WaveStaggered_2DCylinderDeflection():
 
 	print( "------------ !!! End of calculation !!! -----------" );
 
-	
+	myProblem.ErrorRelativeVelocityInfty(ExactVelocityInftyAtFaces);
 	myProblem.terminate();
 	return ok
 

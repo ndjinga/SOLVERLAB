@@ -138,6 +138,21 @@ double WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInfty){
 	return error;
 }
 
+void WaveStaggered::ErrorRelativeVelocityInfty(const Field &ExactVelocityInfty){
+	double max = 0.1;
+	for (int j=0; j < _Nfaces; j++){
+		Face Fj = _mesh.getFace(j);
+		double error =0;
+		if ( abs(_Velocity(j) - ExactVelocityInfty(j)) > 1e-10)
+			error = abs(_Velocity(j) - ExactVelocityInfty(j))/abs(ExactVelocityInfty(j));
+		else 
+			error = abs(_Velocity(j) - ExactVelocityInfty(j));
+		if (max < error)
+			max = error;
+	}
+	cout << "max = " << max << endl;
+}
+
 void WaveStaggered::setInitialField(const Field &field)
 {
 	if(_Ndim != field.getSpaceDimension()){
@@ -834,19 +849,48 @@ void WaveStaggered::save(){
 				}
 			}
 			double orien1 = getOrientation(i,Ctemp1);
+			PetscScalar det, detL, detR, D_sigmaL, D_sigmaR;
 			if (Fj.getNumberOfCells() ==2 ){
 				Cell Ctemp2 = _mesh.getCell(idCells[1]); 
 				double orien2 = getOrientation(i,Ctemp2);
-				for (int k=0; k< _Ndim; k++){ 
-					_Velocity_at_Cells(idCells[0], k) += orien1 * Fj.getMeasure() *_Velocity(i) * _vec_normal[k]/_perimeters(idCells[0]);
-					_Velocity_at_Cells(idCells[1], k) += orien2 * Fj.getMeasure() *_Velocity(i) * _vec_normal[k]/_perimeters(idCells[1]); 
+				if (_Ndim ==2){
+					std::vector<int> nodes =  Fj.getNodesId();
+					Node vertex = _mesh.getNode( nodes[0] );
+					Node vertex2 = _mesh.getNode( nodes[1]);
+					// determinant of the vectors forming the diamond cell around the face sigma
+					detR = vertex.x()*(Ctemp2.y() - vertex2.y() ) + vertex2.x()*(Ctemp2.y() - vertex.y() ) + Ctemp2.x()*(vertex2.y() - vertex.y());
+					detL = vertex.x()*(Ctemp1.y() - vertex2.y() ) + vertex2.x()*(Ctemp1.y() - vertex.y() ) + Ctemp1.x()*(vertex2.y() - vertex.y());
 				}
+				D_sigmaL= PetscAbsReal(detL)/2.0;
+				D_sigmaR= PetscAbsReal(det) - D_sigmaL;
+				/* for (int k =0; k <_Ndim ; k++){
+					_Velocity_at_Cells(idCells[0], k) += detL *_Velocity(i) * _vec_normal[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces()); //(_perimeters(idCells[0])
+					_Velocity_at_Cells(idCells[1], k) -= detR*_Velocity(i) * _vec_normal[k]/(Ctemp2.getMeasure()*Ctemp2.getNumberOfFaces()); 
+				} */
+				D_sigmaL = Fj.getMeasure();
+				D_sigmaR = Fj.getMeasure();
+				_Velocity_at_Cells(idCells[0], 0) +=  D_sigmaL *_Velocity(i) * _vec_normal[0]/(Ctemp1.getMeasure()); 
+				_Velocity_at_Cells(idCells[1], 0) +=  D_sigmaR *_Velocity(i) * _vec_normal[0]/(Ctemp2.getMeasure()); 
+				_Velocity_at_Cells(idCells[0], 1) +=  D_sigmaL *_Velocity(i) * _vec_normal[1]/(Ctemp1.getMeasure()); 
+				_Velocity_at_Cells(idCells[1], 1) +=  D_sigmaR *_Velocity(i) * _vec_normal[1]/(Ctemp2.getMeasure()); 
+				
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 				_DivVelocity( idCells[1]) += Fj.getMeasure() * orien2 * _Velocity(i)/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
 			}
 			else if (Fj.getNumberOfCells() ==1 ){
-				for (int k=0; k< _Ndim; k++)
-					_Velocity_at_Cells(idCells[0], k) += orien1 *Fj.getMeasure() *_Velocity(i) * _vec_normal[k]/_perimeters(idCells[0]);
+				if (_Ndim ==2){
+					std::vector<int> nodes =  Fj.getNodesId();
+					Node vertex = _mesh.getNode( nodes[0] );
+					Node vertex2 = _mesh.getNode( nodes[1]);
+					// determinant of the vectors forming the diamond cell around the face sigma
+					detL = vertex.x()*(Ctemp1.y() - vertex2.y() ) + vertex2.x()*(Ctemp1.y() - vertex.y() ) + Ctemp1.x()*(vertex2.y() - vertex.y());
+				}
+				/* for (int k =0; k <_Ndim ; k++)
+					_Velocity_at_Cells(idCells[0], k) += detL *_Velocity(i) * _vec_normal[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());  */
+				D_sigmaL= PetscAbsReal(detL)/2.0;
+				D_sigmaL = Fj.getMeasure();
+				_Velocity_at_Cells(idCells[0], 0) += D_sigmaL *_Velocity(i) * _vec_normal[0]/(Ctemp1.getMeasure());
+				_Velocity_at_Cells(idCells[0], 1) += D_sigmaL *_Velocity(i) * _vec_normal[1]/(Ctemp1.getMeasure());
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 			}
 		}

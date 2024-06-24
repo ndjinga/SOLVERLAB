@@ -93,8 +93,8 @@ def WaveStaggered_2DCylinderDeflection(n):
 	MaxNbOfTimeStep = 1000000
 	freqSave = 2000
 	maxTime = 100000
-	cfl =0.4
-	precision = 1e-6;
+	cfl =0.6
+	precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

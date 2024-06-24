@@ -116,6 +116,7 @@ public :
 	void setExactVelocityFieldAtCells(const Field &atCells);
 	void setExactVelocityInterpolate(const Field &atFaces);
 	double ErrorL2VelocityInfty(const Field &ExactVelocityInfty);
+	void ErrorRelativeVelocityInfty(const Field &ExactVelocityInfty);
 
 
 protected :
