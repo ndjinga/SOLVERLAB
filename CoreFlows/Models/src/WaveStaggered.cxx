@@ -862,17 +862,14 @@ void WaveStaggered::save(){
 					detL = vertex.x()*(Ctemp1.y() - vertex2.y() ) + vertex2.x()*(Ctemp1.y() - vertex.y() ) + Ctemp1.x()*(vertex2.y() - vertex.y());
 				}
 				D_sigmaL= PetscAbsReal(detL)/2.0;
-				D_sigmaR= PetscAbsReal(det) - D_sigmaL;
-				/* for (int k =0; k <_Ndim ; k++){
-					_Velocity_at_Cells(idCells[0], k) += detL *_Velocity(i) * _vec_normal[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces()); //(_perimeters(idCells[0])
-					_Velocity_at_Cells(idCells[1], k) -= detR*_Velocity(i) * _vec_normal[k]/(Ctemp2.getMeasure()*Ctemp2.getNumberOfFaces()); 
-				} */
-				D_sigmaL = Fj.getMeasure();
-				D_sigmaR = Fj.getMeasure();
-				_Velocity_at_Cells(idCells[0], 0) +=  D_sigmaL *_Velocity(i) * _vec_normal[0]/(Ctemp1.getMeasure()); 
-				_Velocity_at_Cells(idCells[1], 0) +=  D_sigmaR *_Velocity(i) * _vec_normal[0]/(Ctemp2.getMeasure()); 
-				_Velocity_at_Cells(idCells[0], 1) +=  D_sigmaL *_Velocity(i) * _vec_normal[1]/(Ctemp1.getMeasure()); 
-				_Velocity_at_Cells(idCells[1], 1) +=  D_sigmaR *_Velocity(i) * _vec_normal[1]/(Ctemp2.getMeasure()); 
+				D_sigmaR= PetscAbsReal(detR)/2.0;
+				D_sigmaL= Fj.getMeasure();
+				D_sigmaR= Fj.getMeasure();
+		
+				_Velocity_at_Cells(idCells[0], 0) +=  D_sigmaL *_Velocity(i) * (Fj.x() - Ctemp1.x())/(Ctemp1.getMeasure()); 
+				_Velocity_at_Cells(idCells[1], 0) +=  D_sigmaR *_Velocity(i) * (Fj.x() - Ctemp2.x())/(Ctemp2.getMeasure()); 
+				_Velocity_at_Cells(idCells[0], 1) +=  D_sigmaL *_Velocity(i) * (Fj.y() - Ctemp1.y())/(Ctemp1.getMeasure()); 
+				_Velocity_at_Cells(idCells[1], 1) +=  D_sigmaR *_Velocity(i) * (Fj.y() - Ctemp2.y())/(Ctemp2.getMeasure()); 
 				
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 				_DivVelocity( idCells[1]) += Fj.getMeasure() * orien2 * _Velocity(i)/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
@@ -889,8 +886,8 @@ void WaveStaggered::save(){
 					_Velocity_at_Cells(idCells[0], k) += detL *_Velocity(i) * _vec_normal[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());  */
 				D_sigmaL= PetscAbsReal(detL)/2.0;
 				D_sigmaL = Fj.getMeasure();
-				_Velocity_at_Cells(idCells[0], 0) += D_sigmaL *_Velocity(i) * _vec_normal[0]/(Ctemp1.getMeasure());
-				_Velocity_at_Cells(idCells[0], 1) += D_sigmaL *_Velocity(i) * _vec_normal[1]/(Ctemp1.getMeasure());
+				_Velocity_at_Cells(idCells[0], 0) += D_sigmaL *_Velocity(i) * (Fj.x() - Ctemp1.x())/(Ctemp1.getMeasure());
+				_Velocity_at_Cells(idCells[0], 1) += D_sigmaL *_Velocity(i) * (Fj.y() - Ctemp1.y())/(Ctemp1.getMeasure());
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 			}
 		}
