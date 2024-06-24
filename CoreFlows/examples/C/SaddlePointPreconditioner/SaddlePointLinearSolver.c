@@ -41,6 +41,8 @@ int main( int argc, char **args ){
 	MPI_Comm_size(PETSC_COMM_WORLD,&size);
 	PetscErrorCode ierr=0;
 
+	PetscCheck( size == 1, PETSC_COMM_WORLD, ierr, "Incorrect number of procs nprocs = %d.\n !!! This is a sequential implementation !!! \n", size);
+
 //##### Load the matrix A in the file given in the command line
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
@@ -48,12 +50,13 @@ int main( int argc, char **args ){
 	PetscBool flg;
 
 	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);
-	PetscStrcpy(mat_type,MATAIJ);
+	PetscStrcpy(mat_type,MATAIJ);// Default value for PETSc Matrix type
 	PetscOptionsGetString(NULL,NULL,"-mat_type",mat_type,sizeof(mat_type),NULL);
 
 	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processor(s)...\n", mat_type, file[0], size);	
+
 	PetscViewerCreate(PETSC_COMM_WORLD, &viewer);	
-	PetscViewerSetType(viewer,PETSCVIEWERBINARY);//Use PETSCVIEWERHDF5 for better parallel performance
+	PetscViewerSetType(viewer,PETSCVIEWERBINARY);
 	PetscViewerFileSetMode(viewer,FILE_MODE_READ);
 	PetscViewerFileSetName(viewer,file[0]);
 	
@@ -61,16 +64,15 @@ int main( int argc, char **args ){
 	MatSetType(A_input,mat_type);
 	MatLoad(A_input,viewer);
 	PetscViewerDestroy(&viewer);
+
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	
 
 //####	Decompose the matrix A_input into 4 blocks M, G, D, C
 	Mat M, G, D, C;
 	PetscInt nrows, ncolumns;//Total number of rows and columns of A_input
-	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
 	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n = n_u+ n_p
 	IS is_U,is_P;
-	PC pc;
 
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
@@ -103,7 +105,6 @@ int main( int argc, char **args ){
 //##### Definition of the right hand side to test the preconditioner
 	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
 	Vec X_array[2];
-	KSP ksp;
 	PetscScalar y[n_p];
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
@@ -116,7 +117,6 @@ int main( int argc, char **args ){
 	VecDuplicate(b_input,&b_hat);// b_hat will store the right hand side of the transformed system
 	
 	VecSet(X_anal,0.0);
-
 	for (int i = n_u;i<n;i++){
 		y[i-n_u]=1.0/i;
 	}
@@ -128,7 +128,7 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
 	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on processed 0
 
-	//Swap the pressure and velocity components + change the sign of the pressure components of b_input
+	//Swap the pressure and velocity components + change the sign of the pressure components of b_input (this is due to the change in ordering of the variable in pierre-loic original script)
 	VecGetSubVector( b_input, is_P, &b_input_p);
 	VecGetSubVector( b_input, is_U, &b_input_u);
 	//VecScale(b_input_p, -1);
@@ -150,7 +150,8 @@ int main( int argc, char **args ){
 	//Extraction of the diagonal of M
 	MatCreateVecs(M,NULL,&v);//v has the size of M
 	MatGetDiagonal(M,v);
-	//Create the matrix 2*diag(M). Why not use MatCreateDiagonal ???
+
+	//Creation of matrix 2*diag(M). Why not use MatCreateDiagonal ???
 	MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
 	MatConvert(diag_2M,  MATAIJ, MAT_INPLACE_MATRIX, &diag_2M);
 	MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
@@ -174,8 +175,14 @@ int main( int argc, char **args ){
 	MatScale(D,-1.0);
 	Mat_array[1]=D;//Top right block of A_hat
 
-	// Creation of A_hat = transformed A_input
+	// Creation of A_hat = reordered A_input
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&A_hat);
+
+	// Creation of Pmat
+	Mat_array[3]=diag_2M;
+	Mat_array[1]=NULL;//Cancel top right block
+	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&Pmat);
+
 
 	// Finalisation of the preconditioner	
 	//ISCreateStride(PETSC_COMM_WORLD, n_u, n_p, 1, &is_U_hat);
@@ -193,30 +200,37 @@ int main( int argc, char **args ){
 	ISCreateGeneral(PETSC_COMM_WORLD,n_p,(const PetscInt *) i_p_hat,PETSC_OWN_POINTER,&is_P_hat);
 	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u_hat,PETSC_OWN_POINTER,&is_U_hat);
 
-	// Creation of Pmat
-	Mat_array[3]=diag_2M;
-	Mat_array[1]=NULL;//Cancel top right block
-	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&Pmat);
-
 //##### Calling KSP solver and monitor convergence
+	KSP ksp;
+	PC pc;
+	char pc_type[256];
+	PetscStrcpy(pc_type,PCFIELDSPLIT);
+	PCCompositeType pc_composite_type = PC_COMPOSITE_MULTIPLICATIVE;
+	
 	double residu, abstol, rtol=1e-7, dtol;
 	int iter, numberMaxOfIter;
 
-	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
+	PetscPrintf(PETSC_COMM_WORLD,"Definition of the solver ...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 	KSPSetType(ksp,KSPFGMRES);
 	KSPSetOperators(ksp,A_hat,Pmat);
 	KSPSetTolerances(ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT, PETSC_DEFAULT);
 	KSPGetPC(ksp,&pc);
-	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner...\n");
-	PCSetType(pc,PCFIELDSPLIT);
-	PCFieldSplitSetIS(pc, "0",is_P_hat);
-	PCFieldSplitSetIS(pc, "1",is_U_hat);
-	PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
-//	PCSetType(pc,PCILU);
+	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner %s...\n", pc_type);
+	PCSetType(pc,pc_type);
+	if( strcmp(pc_type , PCFIELDSPLIT)==0 ){
+		PCFieldSplitSetType(pc, pc_composite_type);
+		PCFieldSplitSetIS(pc, "0",is_P_hat);
+		PCFieldSplitSetIS(pc, "1",is_U_hat);
+	}
+	else{
+		PetscPrintf(PETSC_COMM_WORLD,"Using PCILU\n");
+		PCSetType(pc,PCILU);//This prec works fine in sequential
+	}
 	PCSetFromOptions(pc);
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
+	KSPSetUp(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
 	KSPSolve(ksp,b_hat,X_hat);
 
@@ -305,6 +319,8 @@ int main( int argc, char **args ){
 
 
 	// Cleaning of the code
+	MatDestroy(&A_hat);
+	MatDestroy(&Pmat);
 	MatDestroy(&M);
 	MatDestroy(&G_hat);
 	MatDestroy(&C_hat);
