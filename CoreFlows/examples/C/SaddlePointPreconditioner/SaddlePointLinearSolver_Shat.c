@@ -70,7 +70,7 @@ int main( int argc, char **args ){
 //####	Decompose the matrix A into 4 blocks M, G, D, C
 	Mat M, G, D, C;
 	PetscInt nrows, ncolumns;//Total number of rows and columns of A
-	PetscInt n_u,n_p,n;//Total number of velocity and pressure lines. n = n_u+ n_p
+	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n = n_u+ n_p
 	IS is_U,is_P;
 
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
@@ -125,7 +125,7 @@ int main( int argc, char **args ){
 	VecNormalize( X_anal, NULL);
 	MatMult( A, X_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
-	MatDestroy(&A);//Early destruction since A_input is a sequential matrix stored on processed 0
+	//MatDestroy(&A);//Early destruction since A_input is a sequential matrix stored on processed 0
 
 	//Swap the pressure and velocity components + change the sign of the pressure components of b_input (this is due to the change in ordering of the variable in pierre-loic original script)
 	VecGetSubVector( b_input, is_P, &b_input_p);
@@ -206,26 +206,30 @@ int main( int argc, char **args ){
 //##### Calling KSP solver and monitor convergence
 	KSP ksp;
 	PC pc;
+	KSPType ksp_type = KSPFGMRES;
 	char pc_type[256];
 	PetscStrcpy(pc_type,PCFIELDSPLIT);
-	PCCompositeType pc_composite_type = PC_COMPOSITE_SCHUR;
+	PCCompositeType pc_composite_type;
 
 	double residu, abstol, rtol=1e-7, dtol;
 	int iter, numberMaxOfIter;
 
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the solver ...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
-	KSPSetType(ksp,KSPFGMRES);
+	KSPSetType(ksp, ksp_type);
 	KSPSetOperators(ksp,A_hat,A_hat);
 	KSPSetTolerances(ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT, PETSC_DEFAULT);
 	KSPGetPC(ksp,&pc);
 	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner %s...\n", pc_type);
 	PCSetType(pc,pc_type);
 	if( strcmp(pc_type , PCFIELDSPLIT)==0 ){
-		PCFieldSplitSetType(pc, pc_composite_type);
 		PCFieldSplitSetIS(pc, "0",is_P_hat);
 		PCFieldSplitSetIS(pc, "1",is_U_hat);
 		PCFieldSplitSetSchurPre(pc,PC_FIELDSPLIT_SCHUR_PRE_USER,S_hat);
+	}
+	else{
+		PetscPrintf(PETSC_COMM_WORLD,"Using PCILU\n");
+		PCSetType(pc,PCILU);//This prec works fine in sequential
 	}
 	PCSetFromOptions(pc);
 	PCSetUp(pc);
@@ -233,6 +237,13 @@ int main( int argc, char **args ){
 	KSPSetUp(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
 	KSPSolve(ksp,b_hat,X_hat);
+
+	PCFieldSplitGetType(pc, &pc_composite_type);
+	KSPGetType(ksp,&ksp_type);
+	if(pc_composite_type==PC_COMPOSITE_SCHUR)
+		PetscPrintf(PETSC_COMM_WORLD,"... the linear system solved with ksp_type %s, pc_composite_type PC_COMPOSITE_SCHUR\n",ksp_type);
+	else
+		PetscPrintf(PETSC_COMM_WORLD,"... the linear system solved with ksp_type %s, pc_composite_type %d (different from PC_COMPOSITE_SCHUR)\n",ksp_type,pc_composite_type);
 
 	//Extract informations about the convergence
 	KSPConvergedReason reason;
@@ -315,22 +326,21 @@ int main( int argc, char **args ){
 
 	PetscCheck( error < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
 	
-//##### Compute X from X_hat
-
-
-	// Cleaning of the code
+//##### Cleaning of the memory
 	MatDestroy(&A);
-	MatDestroy(&M);
+	MatDestroy(&A_hat);
 	MatDestroy(&S_hat);
+	MatDestroy(&M);
 	MatDestroy(&G_hat);
 	MatDestroy(&C_hat);
 	MatDestroy(&D);	
 	MatDestroy(&G);
 	MatDestroy(&C);
 	MatDestroy(&D_M_inv_G);
-	MatDestroy(&A_hat);
 	VecDestroy(&b_input);
 	VecDestroy(&b_hat);
+	VecDestroy(&X_hat);
+	VecDestroy(&X_anal);
 	VecDestroy(&v);
 	KSPDestroy(&ksp);
 
