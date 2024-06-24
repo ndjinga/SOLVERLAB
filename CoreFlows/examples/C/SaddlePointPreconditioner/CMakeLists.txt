@@ -59,7 +59,7 @@ install(TARGETS SaddlePointLinearSolver_Shat.exe DESTINATION share/examples)
     SET(MATRIX_FILE  Matrices/Kershaw2D_PolyMAC_1.petsc  )
     SET(nu  612  )
     SET(np  289  )
-add_test(NAME SaddlePointLinearSolver_2DKershaw_Shat_schur.exe         COMMAND "./SaddlePointLinearSolver_Shat.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_0_ksp_type gmres -fieldsplit_0_pc_type gamg -fieldsplit_0_pc_gamg_type agg -fieldsplit_1_ksp_type preonly -fieldsplit_1_pc_type lu -on_error_attach_debugger)     
+add_test(NAME SaddlePointLinearSolver_2DKershaw_Shat_schur.exe         COMMAND "./SaddlePointLinearSolver_Shat.exe" -f0 ${MATRIX_FILE} -nU ${nu} -nP ${np} -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -fieldsplit_1_ksp_type gmres -fieldsplit_1_pc_type gamg -fieldsplit_1_pc_gamg_type agg -fieldsplit_0_ksp_type preonly -fieldsplit_0_pc_type lu -on_error_attach_debugger)     
 set_property (TEST SaddlePointLinearSolver_2DKershaw_Shat_schur.exe PROPERTY LABELS "C++ PETSC multigrid")     
  
     SET(MATRIX_FILE  Matrices/Cartesian_PolyMAC_1.petsc  )

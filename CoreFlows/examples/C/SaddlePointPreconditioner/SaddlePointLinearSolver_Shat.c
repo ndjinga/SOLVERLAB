@@ -206,7 +206,7 @@ int main( int argc, char **args ){
 //##### Calling KSP solver and monitor convergence
 	KSP ksp, *subksp;
 	PC pc, subpc0, subpc1;
-	KSPType ksp_type = KSPFGMRES;
+	KSPType ksp_type = KSPFGMRES, ksp_type0, ksp_type1;
 	PCType pc_type=PCFIELDSPLIT, pc_type0, pc_type1;
 	int nsplit = 2;
 	PCCompositeType pc_composite_type;
@@ -241,13 +241,15 @@ int main( int argc, char **args ){
 	PCFieldSplitGetType(pc, &pc_composite_type);
 	KSPGetType(ksp,&ksp_type);
 	PCGetType(pc,&pc_type);
-	PCFieldSplitGetSubKSP( pc, &nsplit, &subksp);
+	PCFieldSplitSchurGetSubKSP( pc, &nsplit, &subksp);
+	KSPGetType(subksp[0],&ksp_type0);
+	KSPGetType(subksp[1],&ksp_type1);
 	KSPGetPC(subksp[0], &subpc0);
 	KSPGetPC(subksp[1], &subpc1);
 	PCGetType( subpc0, &pc_type0);
 	PCGetType( subpc1, &pc_type1);
 	if(pc_composite_type==PC_COMPOSITE_SCHUR)
-		PetscPrintf(PETSC_COMM_WORLD,"... linear system solved with ksp_type %s, pc_composite_type PC_COMPOSITE_SCHUR, pc_type0 %s, pc_type1 %s\n",ksp_type, pc_type0, pc_type1);
+		PetscPrintf(PETSC_COMM_WORLD,"... linear system solved with ksp_type %s, pc_composite_type PC_COMPOSITE_SCHUR, ksp_type0 %s, pc_type0 %s, ksp_type1 %s, pc_type1 %s\n",ksp_type,ksp_type0, pc_type0,ksp_type1, pc_type1);
 	else
 		PetscPrintf(PETSC_COMM_WORLD,"... linear system solved with ksp_type %s, pc_composite_type %d (different from PC_COMPOSITE_SCHUR)\n",ksp_type,pc_composite_type);
 
@@ -349,7 +351,8 @@ int main( int argc, char **args ){
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
 	KSPDestroy(&ksp);
-
+	PetscFree(subksp);
+	
 	PetscFinalize();
 	return ierr;
 }

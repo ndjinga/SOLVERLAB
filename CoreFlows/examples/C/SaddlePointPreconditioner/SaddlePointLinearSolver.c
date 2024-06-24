@@ -201,12 +201,12 @@ int main( int argc, char **args ){
 	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u_hat,PETSC_OWN_POINTER,&is_U_hat);
 
 //##### Calling KSP solver and monitor convergence
-	KSP ksp;
-	PC pc;
-	KSPType ksp_type = KSPFGMRES;
-	char pc_type[256];
-	PetscStrcpy(pc_type,PCFIELDSPLIT);
-	PCCompositeType pc_composite_type = PC_COMPOSITE_MULTIPLICATIVE;
+	KSP ksp, *subksp;
+	PC pc, subpc0, subpc1;
+	KSPType ksp_type = KSPFGMRES, ksp_type0, ksp_type1;
+	PCType pc_type=PCFIELDSPLIT, pc_type0, pc_type1;
+	int nsplit = 2;
+	PCCompositeType pc_composite_type = PC_COMPOSITE_MULTIPLICATIVE;//or ADDITIVE ???
 
 	double residu, abstol, rtol=1e-7, dtol;
 	int iter, numberMaxOfIter;
@@ -237,10 +237,18 @@ int main( int argc, char **args ){
 
 	PCFieldSplitGetType(pc, &pc_composite_type);
 	KSPGetType(ksp,&ksp_type);
+		PCGetType(pc,&pc_type);
+	PCFieldSplitSchurGetSubKSP( pc, &nsplit, &subksp);
+	KSPGetType(subksp[0],&ksp_type0);
+	KSPGetType(subksp[1],&ksp_type1);
+	KSPGetPC(subksp[0], &subpc0);
+	KSPGetPC(subksp[1], &subpc1);
+	PCGetType( subpc0, &pc_type0);
+	PCGetType( subpc1, &pc_type1);
 	if(pc_composite_type==PC_COMPOSITE_MULTIPLICATIVE)
-		PetscPrintf(PETSC_COMM_WORLD,"... the linear system solved with ksp_type %s, pc_composite_type PC_COMPOSITE_MULTIPLICATIVE\n",ksp_type);
+		PetscPrintf(PETSC_COMM_WORLD,"... linear system solved with ksp_type %s, pc_composite_type PC_COMPOSITE_MULTIPLICATIVE\n",ksp_type);
 	else
-		PetscPrintf(PETSC_COMM_WORLD,"... the linear system solved with ksp_type %s, pc_composite_type %d (different from PC_COMPOSITE_MULTIPLICATIVE)\n",ksp_type,pc_composite_type);
+		PetscPrintf(PETSC_COMM_WORLD,"... linear system solved with ksp_type %s, pc_composite_type %d (different from PC_COMPOSITE_MULTIPLICATIVE)\n",ksp_type,pc_composite_type);
 
 	//Extract informations about the convergence
 	KSPConvergedReason reason;
@@ -341,7 +349,8 @@ int main( int argc, char **args ){
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
 	KSPDestroy(&ksp);
-
+	PetscFree(subksp);
+	
 	PetscFinalize();
 	return ierr;
 }
