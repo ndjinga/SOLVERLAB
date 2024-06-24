@@ -90,13 +90,6 @@ public :
         _saveVelocity=save_v;
     }
 
-	 /** \fn testConservation
-     * \brief Teste et affiche la conservation de masse et de la quantité de mouvement
-     * \Details la fonction est virtuelle pure, on la surcharge dans chacun des modèles
-     * @param void
-     * */
-	void testConservation();
-
 	void setVerticalPeriodicFaces();
 	void setHorizontalPeriodicFaces();
 

@@ -9,7 +9,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb10x32.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
 	r0 = 0.8
 	r1 = 6
 
@@ -38,7 +38,7 @@ def WaveStaggered_2DCylinderDeflection():
 	wallVelocityMap = {}; 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
-	ExactVelocityInftyAtCells = svl.Field("ExactVelocityInftyAtCells", svl.CELLS, M, 3); #TO DO : 3 components ?
+	ExactVelocityInftyAtCells = svl.Field("ExactVelocityInftyAtCells", svl.CELLS, M, 3); 
 	ExactVelocityInftyAtFaces = svl.Field("ExactVelocityInftyAtFaces", svl.FACES, M, 1)
 	ExactVelocityInftyInterpolate = svl.Field("ExactVelocityInftyAtInterpolate", svl.CELLS, M, 3);
 	for l in range(M.getNumberOfCells()):
@@ -101,10 +101,10 @@ def WaveStaggered_2DCylinderDeflection():
 
 	# computation parameers
 	MaxNbOfTimeStep = 180000
-	freqSave = 800	
+	freqSave = 400	
 	maxTime = 447
 	cfl =0.6	 #Computed CFL = d/2 = 0.12 in quad 
-	precision = 1e-8;
+	precision = 1e-7;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -128,6 +128,7 @@ def WaveStaggered_2DCylinderDeflection():
 				ExactVelocityInftyAtCells[l,k] = exa[k]
 	myProblem.setExactVelocityFieldAtCells(ExactVelocityInftyAtCells)
 
+	
 	# Run the computation
 	myProblem.initialize();
 
@@ -141,6 +142,9 @@ def WaveStaggered_2DCylinderDeflection():
 	print( "------------ !!! End of calculation !!! -----------" );
 
 	myProblem.ErrorRelativeVelocityInfty(ExactVelocityInftyAtFaces);
+	normL2 = myProblem.ErrorL2VelocityInfty(ExactVelocityInftyAtFaces)
+	sizeMesh = M.getNumberOfCells()
+	print("nbmailles =", sizeMesh, "norme L2 =", normL2)
 	myProblem.terminate();
 	return ok
 

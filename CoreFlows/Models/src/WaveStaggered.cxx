@@ -10,7 +10,7 @@ using namespace std;
 
 WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):ProblemCoreFlows(comm){
 	_Ndim=dim;
-	_nVar = 2; // 2 equations TODO : sure ?
+	_nVar = 2; 
 	_kappa = kappa;
 	_rho = rho;
 	_c = sqrt(kappa/rho);
@@ -662,28 +662,6 @@ void WaveStaggered::computeNewtonVariation()
 	}
 }
 
-void WaveStaggered::testConservation()
-{
-	double SUM, DELTA, x;
-	double InvcellMeasure;
-	SUM = 0;
-	DELTA = 0;
-	//TODO : seulement si Neumann au bord ?
-	for(int j=0; j<_globalNbUnknowns; j++)
-	{
-		VecGetValues(_primitiveVars, 1, &j, &x);//on recupere la valeur du champ
-		MatGetValues(_InvVol, 1, &j,1, &j, &InvcellMeasure);//on recupere la valeur du champ
-		SUM += x/InvcellMeasure;
-		VecGetValues(_newtonVariation, 1, &j, &x);//on recupere la variation du champ
-		DELTA += x/InvcellMeasure;
-	}
-	if(fabs(SUM)>_precision)
-		cout << SUM << ", variation relative: " << fabs(DELTA /SUM)  << endl;
-	else
-		cout << " a une somme quasi nulle,  variation absolue: " << fabs(DELTA) << endl;
-	
-}
-
 bool WaveStaggered::initTimeStep(double dt){
 	_dt = dt;
 	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
@@ -860,16 +838,16 @@ void WaveStaggered::save(){
 					// determinant of the vectors forming the diamond cell around the face sigma
 					detR = vertex.x()*(Ctemp2.y() - vertex2.y() ) + vertex2.x()*(Ctemp2.y() - vertex.y() ) + Ctemp2.x()*(vertex2.y() - vertex.y());
 					detL = vertex.x()*(Ctemp1.y() - vertex2.y() ) + vertex2.x()*(Ctemp1.y() - vertex.y() ) + Ctemp1.x()*(vertex2.y() - vertex.y());
+					D_sigmaL= PetscAbsReal(detL)/2.0;
+					D_sigmaR= PetscAbsReal(detR)/2.0;
 				}
-				D_sigmaL= PetscAbsReal(detL)/2.0;
-				D_sigmaR= PetscAbsReal(detR)/2.0;
-				D_sigmaL= Fj.getMeasure();
-				D_sigmaR= Fj.getMeasure();
-		
-				_Velocity_at_Cells(idCells[0], 0) +=  D_sigmaL *_Velocity(i) * (Fj.x() - Ctemp1.x())/(Ctemp1.getMeasure()); 
-				_Velocity_at_Cells(idCells[1], 0) +=  D_sigmaR *_Velocity(i) * (Fj.x() - Ctemp2.x())/(Ctemp2.getMeasure()); 
-				_Velocity_at_Cells(idCells[0], 1) +=  D_sigmaL *_Velocity(i) * (Fj.y() - Ctemp1.y())/(Ctemp1.getMeasure()); 
-				_Velocity_at_Cells(idCells[1], 1) +=  D_sigmaR *_Velocity(i) * (Fj.y() - Ctemp2.y())/(Ctemp2.getMeasure()); 
+				
+				D_sigmaL = Fj.getMeasure();
+				D_sigmaR = Fj.getMeasure();
+				_Velocity_at_Cells(idCells[0], 0) +=  D_sigmaL *_Velocity(i) * _vec_normal[0]/Ctemp1.getMeasure(); 
+				_Velocity_at_Cells(idCells[1], 0) +=  D_sigmaR *_Velocity(i) * _vec_normal[0]/Ctemp2.getMeasure(); 
+				_Velocity_at_Cells(idCells[0], 1) +=  D_sigmaL *_Velocity(i) * _vec_normal[1]/Ctemp1.getMeasure(); 
+				_Velocity_at_Cells(idCells[1], 1) +=  D_sigmaR *_Velocity(i) * _vec_normal[1]/Ctemp2.getMeasure(); 
 				
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 				_DivVelocity( idCells[1]) += Fj.getMeasure() * orien2 * _Velocity(i)/(Ctemp2.getNumberOfFaces()*Ctemp2.getMeasure());
@@ -879,15 +857,13 @@ void WaveStaggered::save(){
 					std::vector<int> nodes =  Fj.getNodesId();
 					Node vertex = _mesh.getNode( nodes[0] );
 					Node vertex2 = _mesh.getNode( nodes[1]);
-					// determinant of the vectors forming the diamond cell around the face sigma
 					detL = vertex.x()*(Ctemp1.y() - vertex2.y() ) + vertex2.x()*(Ctemp1.y() - vertex.y() ) + Ctemp1.x()*(vertex2.y() - vertex.y());
+					D_sigmaL= PetscAbsReal(detL)/2.0;
 				}
-				/* for (int k =0; k <_Ndim ; k++)
-					_Velocity_at_Cells(idCells[0], k) += detL *_Velocity(i) * _vec_normal[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());  */
-				D_sigmaL= PetscAbsReal(detL)/2.0;
+				
 				D_sigmaL = Fj.getMeasure();
-				_Velocity_at_Cells(idCells[0], 0) += D_sigmaL *_Velocity(i) * (Fj.x() - Ctemp1.x())/(Ctemp1.getMeasure());
-				_Velocity_at_Cells(idCells[0], 1) += D_sigmaL *_Velocity(i) * (Fj.y() - Ctemp1.y())/(Ctemp1.getMeasure());
+				_Velocity_at_Cells(idCells[0], 0) += D_sigmaL *_Velocity(i) * _vec_normal[0]/Ctemp1.getMeasure();
+				_Velocity_at_Cells(idCells[0], 1) += D_sigmaL *_Velocity(i) * _vec_normal[1]/Ctemp1.getMeasure();
 				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getNumberOfFaces()*Ctemp1.getMeasure());
 			}
 		}

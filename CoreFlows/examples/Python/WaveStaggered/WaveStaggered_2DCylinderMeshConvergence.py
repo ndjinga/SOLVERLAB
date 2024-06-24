@@ -13,8 +13,8 @@ def WaveStaggered_2DCylinderDeflection(n):
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	nr = 5*n
-	ntheta = 16*n
+	nr = 4*n
+	ntheta = 8*n
 	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb"+ str(nr)+"x" +str(ntheta)+".med"
 	r0 = 0.8
 	r1 = 6
@@ -90,9 +90,9 @@ def WaveStaggered_2DCylinderDeflection(n):
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameers
-	MaxNbOfTimeStep = 1000000
+	MaxNbOfTimeStep = 100000000
 	freqSave = 2000
-	maxTime = 100000
+	maxTime = 2000
 	cfl =0.6
 	precision = 1e-8;
 
@@ -130,6 +130,7 @@ if __name__ == """__main__""":
 	for i in range(4):
 		N = 2**i
 		result = WaveStaggered_2DCylinderDeflection(N)
+		print("mesh size = ", result[1], "L2 error on velocity at infinity = ", result[0])
 		sizeMesh.append(result[1])
 		NormL2.append(result[0])
 	plt.figure()

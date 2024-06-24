@@ -70,9 +70,10 @@ def drawPolarGrid(center_x, center_y, r0, r1, angle0, angle1, n_r, n_theta, name
 if __name__ == "__main__":
   Rmax = 6.
   Rmin = 0.8
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 5, 16,"Annulus")
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 10, 32,"Annulus")
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 20,64,"Annulus")
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 40, 128,"Annulus")
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 80, 256,"Annulus")
+  for i in range(5):
+    n = 2**i
+    nr = n*5
+    ntheta = n*16
+    drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., nr, ntheta,"Annulus")
+ 
  
