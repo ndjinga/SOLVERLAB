@@ -4,7 +4,11 @@
 
 import solverlab as svl
 import math
+from  matplotlib import pyplot as plt
+import pandas as pd
+import os 
 import numpy as np
+import sys
 def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
@@ -51,17 +55,22 @@ def WaveStaggered_2DCylinderDeflection():
 		vec_normal_sigma = np.zeros(2)
 		Ctemp1 = M.getCell(idCells[0]);
 		#set orientation
+		found = False
 		for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+			if (j == Ctemp1.getFacesId()[l]):
+				found = True
+				for idim in range(spaceDim):
+					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+		if (not found):
+			sys.exit()
+
 		myProblem.setOrientation(j,vec_normal_sigma)
 
 		if(Fj.getNumberOfCells()==2):
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y()) 
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y())	
-			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) 
+			Velocity0[j] = np.dot(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma )
 
 			r =  np.sqrt( Fj.x()**2 + Fj.y()**2 )
 			theta = np.arctan(Fj.y()/Fj.x())
@@ -79,7 +88,7 @@ def WaveStaggered_2DCylinderDeflection():
 			# if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 			if ( np.sqrt( Fj.x()**2 + Fj.y()**2 )  ) <= (r0 +r1)/2.0:  
 				myProblem.setWallBoundIndex(j) 
-				wallVelocityMap[j] = 0
+				wallVelocityMap[j] =  np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
 			# if face is on exterior (stegger condition) 
 			else : 											
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
@@ -94,17 +103,19 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
+	
+
     # set the numerical metho50
 	myProblem.setTimeScheme(svl.Explicit);
 	# name of result file
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameers
-	MaxNbOfTimeStep = 180000
-	freqSave = 400	
-	maxTime = 447
+	MaxNbOfTimeStep = 100000
+	freqSave = 49
+	maxTime = 10000
 	cfl =0.6	 #Computed CFL = d/2 = 0.12 in quad 
-	precision = 1e-7;
+	precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -113,7 +124,7 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(svl.VTK)
-	myProblem.saveVelocity();
+	myProblem.saveVelocity(True);
 	myProblem.savePressure(True);
 	myProblem.setVerbose(False);
 
@@ -145,6 +156,7 @@ def WaveStaggered_2DCylinderDeflection():
 	normL2 = myProblem.ErrorL2VelocityInfty(ExactVelocityInftyAtFaces)
 	sizeMesh = M.getNumberOfCells()
 	print("nbmailles =", sizeMesh, "norme L2 =", normL2)
+	
 	myProblem.terminate();
 	return ok
 

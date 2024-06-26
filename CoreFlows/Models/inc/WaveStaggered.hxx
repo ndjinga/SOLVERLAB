@@ -110,6 +110,7 @@ public :
 	void setExactVelocityInterpolate(const Field &atFaces);
 	double ErrorL2VelocityInfty(const Field &ExactVelocityInfty);
 	void ErrorRelativeVelocityInfty(const Field &ExactVelocityInfty);
+	void DisplayVelocity();
 
 
 protected :
