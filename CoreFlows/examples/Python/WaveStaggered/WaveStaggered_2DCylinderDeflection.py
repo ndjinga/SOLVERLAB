@@ -92,7 +92,7 @@ def WaveStaggered_2DCylinderDeflection():
 			for k in range(spaceDim):
 				ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces()
 
-	myProblem.setExactVelocityInterpolate(ExactVelocityInftyInterpolate)
+	
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
