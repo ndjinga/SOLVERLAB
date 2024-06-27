@@ -829,7 +829,6 @@ void WaveStaggered::save(){
 			Cell Ctemp1 = _mesh.getCell(idCells[0]);
 			Cell Ctemp;
 			
-		
 			if (_Ndim >1 ){
 				bool found = false;
 				for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
