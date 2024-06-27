@@ -850,11 +850,6 @@ void WaveStaggered::save(){
 				_DivVelocity( idCells[v]) += orien * Fj.getMeasure() * _Velocity(i)/(Ctemp.getMeasure());
 
 			}
-		
-			/* cout << " \n 2) Ctemp1.x() =  "<< Ctemp1.x() <<" Ctemp1.y() = "<< Ctemp1.y() <<" Fj.x()==" << Fj.x() << " Fj.y() ="<<Fj.y() <<endl;
-			cout << " Velocity( "<< i<< " )= " <<  _Velocity(i)  << endl;
-			for (int k=0; k< 2; k++)
-				cout << "normal ["<< k <<"] = " << _vec_normal[k] << endl; */
 		}
 
 		_Velocity.setTime(_time,_nbTimeStep);

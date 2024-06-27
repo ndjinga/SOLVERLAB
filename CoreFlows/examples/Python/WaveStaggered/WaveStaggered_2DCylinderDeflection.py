@@ -13,7 +13,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb3x4.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med"
 	r0 = 0.8
 	r1 = 6
 
@@ -32,7 +32,7 @@ def WaveStaggered_2DCylinderDeflection():
 	def initialBoundPressure(x,y):
 		return 0
 	def initialVelocity(x,y):
-		return [1,0] 
+		return [0,0] 
 	def initialBoundVelocity(x,y):
 		return [1,0]
 	
@@ -75,27 +75,22 @@ def WaveStaggered_2DCylinderDeflection():
 			r =  np.sqrt( Fj.x()**2 + Fj.y()**2 )
 			theta = np.arctan(Fj.y()/Fj.x())
 			ExactVelocityInftyAtFaces[j] = np.dot(ExactVelocity(r, theta, r1, r0),vec_normal_sigma ) 
-			perimeter1 =0
-			for j in range(Ctemp1.getNumberOfFaces()):
-				perimeter1 += (M.getFace(Ctemp1.getFaceId(j))).getMeasure()
-			perimeter2 =0
-			for j in range(Ctemp2.getNumberOfFaces()):
-				perimeter2 += (M.getFace(Ctemp2.getFaceId(j))).getMeasure()
 			for k in range(spaceDim):
-					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] *Fj.getMeasure()* vec_normal_sigma[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
-					ExactVelocityInftyInterpolate[idCells[1], k] += ExactVelocityInftyAtFaces[j] *Fj.getMeasure()* vec_normal_sigma[k]/(Ctemp2.getMeasure()*Ctemp2.getNumberOfFaces()); 
+					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces()
+					ExactVelocityInftyInterpolate[idCells[1], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp2.getNumberOfFaces() 
 		elif (Fj.getNumberOfCells()==1):
 			# if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 			if ( np.sqrt( Fj.x()**2 + Fj.y()**2 )  ) <= (r0 +r1)/2.0:  
 				myProblem.setWallBoundIndex(j) 
-				wallVelocityMap[j] =  np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
+				wallVelocityMap[j] =  0 # np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
 			# if face is on exterior (stegger condition) 
 			else : 											
 				wallVelocityMap[j] = np.dot(initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma)	
-				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 				
+				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y()) 	
+			# building exact solution at faces and its interpolation at cells			
 			ExactVelocityInftyAtFaces[j] = wallVelocityMap[j]
 			for k in range(spaceDim):
-				ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces())
+				ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces()
 
 	myProblem.setExactVelocityInterpolate(ExactVelocityInftyInterpolate)
 	myProblem.setInitialField(Pressure0);
@@ -103,16 +98,14 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
-	
-
     # set the numerical metho50
 	myProblem.setTimeScheme(svl.Explicit);
 	# name of result file
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameers
-	MaxNbOfTimeStep = 1
-	freqSave = 1
+	MaxNbOfTimeStep = 10000000
+	freqSave = 400
 	maxTime = 10000
 	cfl =0.6	 #Computed CFL = d/2 = 0.12 in quad 
 	precision = 1e-8;
@@ -128,15 +121,13 @@ def WaveStaggered_2DCylinderDeflection():
 	myProblem.savePressure(True);
 	myProblem.setVerbose(False);
 
-	testTempsLong = True
-	if testTempsLong == True :
-		for l in range(M.getNumberOfCells()):
-			Ctemp1 = M.getCell(l)
-			rayon1 =  np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 )
-			theta1 = np.arctan(Ctemp1.y()/Ctemp1.x())
-			for k in range(spaceDim):
-				exa = ExactVelocity(rayon1, theta1, r1, r0)
-				ExactVelocityInftyAtCells[l,k] = exa[k]
+	for l in range(M.getNumberOfCells()):
+		Ctemp1 = M.getCell(l)
+		rayon1 =  np.sqrt( Ctemp1.x()**2 + Ctemp1.y()**2 )
+		theta1 = np.arctan(Ctemp1.y()/Ctemp1.x())
+		for k in range(spaceDim):
+			exa = ExactVelocity(rayon1, theta1, r1, r0)
+			ExactVelocityInftyAtCells[l,k] = exa[k]
 	myProblem.setExactVelocityFieldAtCells(ExactVelocityInftyAtCells)
 
 	
