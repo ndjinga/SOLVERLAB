@@ -826,7 +826,9 @@ void WaveStaggered::save(){
 
 			Face Fj = _mesh.getFace(i);
 			std::vector< int > idCells = Fj.getCellsId();
-			Cell Ctemp1 = _mesh.getCell(idCells[0]); //origin of the normal vector
+			Cell Ctemp1 = _mesh.getCell(idCells[0]);
+			Cell Ctemp;
+			
 		
 			if (_Ndim >1 ){
 				bool found = false;
@@ -840,45 +842,19 @@ void WaveStaggered::save(){
 				assert(found);
 			}
 
-			double orien1 = getOrientation(i,Ctemp1);
-			PetscScalar det, detL, detR, D_sigmaL, D_sigmaR;
+			for (int v= 0; v < idCells.size(); v++){
+				Ctemp = _mesh.getCell(idCells[v]); //origin of the normal vector
+				double orien = getOrientation(i,Ctemp);
+				for (int k=0; k< _Ndim; k++) //TODO : cas _ndim = 1 !
+					_Velocity_at_Cells(idCells[v], k) +=  _Velocity(i) * _vec_normal[k]/Ctemp.getNumberOfFaces(); 
+				_DivVelocity( idCells[v]) += orien * Fj.getMeasure() * _Velocity(i)/(Ctemp.getMeasure());
+
+			}
+		
 			/* cout << " \n 2) Ctemp1.x() =  "<< Ctemp1.x() <<" Ctemp1.y() = "<< Ctemp1.y() <<" Fj.x()==" << Fj.x() << " Fj.y() ="<<Fj.y() <<endl;
 			cout << " Velocity( "<< i<< " )= " <<  _Velocity(i)  << endl;
 			for (int k=0; k< 2; k++)
 				cout << "normal ["<< k <<"] = " << _vec_normal[k] << endl; */
-
-			if (Fj.getNumberOfCells() ==2){
-				Cell Ctemp2 = _mesh.getCell(idCells[1]); 
-				/* if (_Ndim ==2){
-					std::vector<int> nodes =  Fj.getNodesId();
-					Node vertex = _mesh.getNode( nodes[0] );
-					Node vertex2 = _mesh.getNode( nodes[1]);
-					detL = (vertex.x()-vertex2.x())*(Ctemp1.y() - vertex2.y() ) - (vertex.y()-vertex2.y())*(Ctemp1.x() - vertex.x() ); 
-					detR = (vertex.x()-vertex2.x())*(Ctemp2.y() - vertex2.y() ) - (vertex.y()-vertex2.y())*(Ctemp2.x() - vertex.x() ) ;
-					D_sigmaL= PetscAbsReal(detL)/2.0;
-					D_sigmaR= PetscAbsReal(detR)/2.0;
-				} */
-				
-				for (int k=0; k< 2; k++){ //TODO : cas _ndim = 1 !
-					_Velocity_at_Cells(idCells[0], k) +=  _Velocity(i) * _vec_normal[k]/4.0; 
-					_Velocity_at_Cells(idCells[1], k) +=  _Velocity(i) * _vec_normal[k]/4.0; 
-				}
-				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getMeasure());
-				_DivVelocity( idCells[1]) -= Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp2.getMeasure());
-			}
-			else if (Fj.getNumberOfCells() ==1){
-				/* if (_Ndim ==2){	
-					std::vector<int> nodes =  Fj.getNodesId();
-					Node vertex = _mesh.getNode( nodes[0] );
-					Node vertex2 = _mesh.getNode( nodes[1]);
-					detL = (vertex.x()-vertex2.x())*(Ctemp1.y() - vertex2.y() ) - (vertex.y()-vertex2.y())*(Ctemp1.x() - vertex.x() );
-					D_sigmaL= PetscAbsReal(detL)/2.0;
-				} */
-				for (int k=0; k< 2; k++){ //TODO : cas _ndim = 1 !
-					_Velocity_at_Cells(idCells[0], k) +=  _Velocity(i) * _vec_normal[k]/4.0; 
-					} 
-				_DivVelocity( idCells[0]) += Fj.getMeasure() * orien1 * _Velocity(i)/(Ctemp1.getMeasure());
-			}
 		}
 
 		_Velocity.setTime(_time,_nbTimeStep);
