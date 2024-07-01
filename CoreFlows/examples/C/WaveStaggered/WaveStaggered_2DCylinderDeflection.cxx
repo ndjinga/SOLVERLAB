@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med";
+	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
-	/* Field Pressure0("pressure", CELLS, M, 1);
+	Field Pressure0("pressure", CELLS, M, 1);
 	Field Velocity0("velocity", FACES, M, 1);
 	Field ExactVelocityInftyAtCells("ExactVelocityInftyAtCells", CELLS, M, 3); 
 	Field ExactVelocityInftyAtFaces("ExactVelocityInftyAtFaces", FACES, M, 1);
@@ -122,9 +122,9 @@ int main(int argc, char** argv)
 				ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
 		}
 	
-	} */
+	}
 	
-/* 	myProblem.setInitialField(Pressure0);
+	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
@@ -136,11 +136,11 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1;
-	int freqSave = 1;
+	unsigned MaxNbOfTimeStep = 1000000;
+	int freqSave = 400;
 	double cfl = 0.6;
 	double maxTime = 500;
-	double precision = 1e-6;
+	double precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -165,6 +165,6 @@ int main(int argc, char** argv)
 	cout << "------------ End of calculation !!! -----------" << endl;
 	myProblem.terminate();
 	
- */
+
 	return EXIT_SUCCESS;
 }
