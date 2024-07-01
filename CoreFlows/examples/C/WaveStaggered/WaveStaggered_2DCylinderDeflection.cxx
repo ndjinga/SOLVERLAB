@@ -33,11 +33,11 @@ std::vector<double> initialBoundVelocity(double x, double y){
 int main(int argc, char** argv)
 {
 	//Preprocessing: mesh and group creation
-
+	PetscInitialize(&argc,&argv, NULL,NULL);
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med";
+	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb10x32.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
