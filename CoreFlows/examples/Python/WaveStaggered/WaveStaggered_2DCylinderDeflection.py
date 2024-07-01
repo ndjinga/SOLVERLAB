@@ -13,7 +13,7 @@ def WaveStaggered_2DCylinderDeflection():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med"
+	inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med"
 	r0 = 0.8
 	r1 = 6
 
@@ -104,8 +104,8 @@ def WaveStaggered_2DCylinderDeflection():
 	fileName = "WaveStaggered_2DCylinderDeflection";
 
 	# computation parameers
-	MaxNbOfTimeStep = 10000000
-	freqSave = 400
+	MaxNbOfTimeStep = 1
+	freqSave = 1
 	maxTime = 10000
 	cfl =0.6	 #Computed CFL = d/2 = 0.12 in quad 
 	precision = 1e-8;

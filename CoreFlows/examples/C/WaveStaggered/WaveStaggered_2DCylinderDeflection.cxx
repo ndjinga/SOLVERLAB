@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med";
+	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb5x16.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
-	Field Pressure0("pressure", CELLS, M, 1);
+	/* Field Pressure0("pressure", CELLS, M, 1);
 	Field Velocity0("velocity", FACES, M, 1);
 	Field ExactVelocityInftyAtCells("ExactVelocityInftyAtCells", CELLS, M, 3); 
 	Field ExactVelocityInftyAtFaces("ExactVelocityInftyAtFaces", FACES, M, 1);
@@ -70,7 +70,6 @@ int main(int argc, char** argv)
 		std::vector<int> idCells = Fj.getCellsId();
 		std::vector<double> vec_normal_sigma(2) ; //TODO = 0!!
 		Cell Ctemp1 = M.getCell(idCells[0]);
-		Cell Ctemp;
 		for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 			if (j == Ctemp1.getFacesId()[l]){
 				for (int idim = 0; idim < spaceDim; ++idim)
@@ -85,35 +84,47 @@ int main(int argc, char** argv)
 			dotprod += Exact[k] * vec_normal_sigma[k];
 		ExactVelocityInftyAtFaces[j] = dotprod; 
 
-		for (int v= 0; v < idCells.size(); v++){
-			Ctemp = M.getCell(idCells[v]); 
-			double orien =myProblem.getOrientation(j,Ctemp);
-			if ( Fj.getNumberOfCells() ==1){
-				if ( r<= (r0 + r1)/2.0){ 
-					myProblem.setWallBoundIndex(j);
-					wallVelocityMap[j] = 0;
-				}
-				else {
-					wallPressureMap[idCells[v]] = initialBoundPressure(Ctemp.x(),Ctemp1.y());
-					double dotprod = 0;
-					std::vector<double > BoundVelocity = initialBoundVelocity(Fj.x(),Fj.y());
-					for (int k = 0 ; k <BoundVelocity.size() ; k++)
-						dotprod += BoundVelocity[k] * vec_normal_sigma[k];
-					wallVelocityMap[j] =  dotprod;
-				}
-			}
-			else{
-				Pressure0[idCells[v]] = initialPressure(Ctemp.x(),Ctemp1.y());
-				std::vector<double > initialV = initialVelocity(Fj.x(),Fj.y());
-				double dotprod = 0;
-				for (int k = 0 ; k <initialV.size() ; k++)
-					dotprod += initialV[k] * vec_normal_sigma[k];
-				Velocity0[j] = dotprod;
+		myProblem.setOrientation(j,vec_normal_sigma);
+
+		if(Fj.getNumberOfCells()==2){
+			Cell Ctemp2 = M.getCell(idCells[1]);
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
+			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
+			std::vector<double > InitialVel = initialVelocity(Fj.x(),Fj.y());
+			double dotprod = 0;
+			for (int k = 0 ; k <Exact.size() ; k++)
+					dotprod += InitialVel[k] * vec_normal_sigma[k];
+			Velocity0[j] = dotprod;
+			for (int k = 0 ; k <spaceDim ; k++){
+					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
+					ExactVelocityInftyInterpolate[idCells[1], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp2.getNumberOfFaces();
 			}
 		}
-	}
+		else if (Fj.getNumberOfCells()==1){
+			// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
+			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){
+				myProblem.setWallBoundIndex(j);
+				wallVelocityMap[j] =  0;
+			}
+			// if face is on exterior (stegger condition) 
+			else {											
+				
+				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
+				double dotprod = 0;
+				for (int k = 0 ; k <BoundaryVel.size() ; k++)
+					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
+				wallVelocityMap[j] = dotprod;
+				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y());
+			} 	
+			// building exact solution at faces and its interpolation at cell	
+			ExactVelocityInftyAtFaces[j] = wallVelocityMap[j];
+			for (int k = 0 ; k <Exact.size() ; k++)
+				ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
+		}
 	
-	myProblem.setInitialField(Pressure0);
+	} */
+	
+/* 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
@@ -129,7 +140,7 @@ int main(int argc, char** argv)
 	int freqSave = 1;
 	double cfl = 0.6;
 	double maxTime = 500;
-	double precision = 1e-8;
+	double precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -154,6 +165,6 @@ int main(int argc, char** argv)
 	cout << "------------ End of calculation !!! -----------" << endl;
 	myProblem.terminate();
 	
-
+ */
 	return EXIT_SUCCESS;
 }
