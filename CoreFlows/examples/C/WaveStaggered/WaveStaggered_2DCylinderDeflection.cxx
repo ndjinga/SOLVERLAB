@@ -33,7 +33,7 @@ std::vector<double> initialBoundVelocity(double x, double y){
 int main(int argc, char** argv)
 {
 	//Preprocessing: mesh and group creation
-	PetscInitialize(&argc,&argv, NULL,NULL);
+	PetscInitialize(&argc,&argv, NULL,NULL); //TODO : à quoi sert cette commande ?
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
@@ -136,8 +136,8 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000;
-	int freqSave = 400;
+	unsigned MaxNbOfTimeStep = 3;
+	int freqSave = 1;
 	double cfl = 0.6;
 	double maxTime = 500;
 	double precision = 1e-8;

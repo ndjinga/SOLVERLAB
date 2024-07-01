@@ -135,16 +135,27 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 
 }
 
-double WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInfty){
-	double error =0;
+std::vector<double> WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells ){
+	double errorface =0;
+	double errorcell =0;
+	std::vector<double> Error(2);
 	for (int j=0; j < _Nfaces; j++){
 		PetscInt I = _Nmailles + j;
 		double InvD_sigma;
 		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
 		double Dsigma = 1/InvD_sigma;
-		error += Dsigma * (_Velocity(j) - ExactVelocityInfty(j))*(_Velocity(j) - ExactVelocityInfty(j));
+		errorface += Dsigma * (_Velocity(j) - ExactVelocityInftyAtFaces(j))*(_Velocity(j) - ExactVelocityInftyAtFaces(j));
 	}
-	return error;
+	for (int j=0; j < _Nmailles; j++){
+		double InvK;
+		MatGetValues(_InvVol, 1, &j,1, &j, &InvK);
+		double K = 1/InvK;
+		for (int k =0; k < _Ndim; k++)
+			errorcell += K * (_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k))*(_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k));
+	}
+	Error[0] = sqrt(errorface);
+	Error[1] = sqrt(errorcell);
+	return Error;
 }
 
 void WaveStaggered::ErrorRelativeVelocityInfty(const Field &ExactVelocityInfty){

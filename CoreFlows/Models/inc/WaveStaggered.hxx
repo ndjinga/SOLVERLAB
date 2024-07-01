@@ -108,7 +108,7 @@ public :
 	void ComputeEnergyAtTimeT();
 	void setExactVelocityFieldAtCells(const Field &atCells);
 	void setExactVelocityInterpolate(const Field &atFaces);
-	double ErrorL2VelocityInfty(const Field &ExactVelocityInfty);
+	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 	void ErrorRelativeVelocityInfty(const Field &ExactVelocityInfty);
 	void DisplayVelocity();
 
