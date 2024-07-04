@@ -60,8 +60,8 @@ def drawPolarGrid(center_x, center_y, r0, r1, angle0, angle1, n_r, n_theta, name
   meshMEDFile.addGroup(-1, arr_circle)
 
   filename = name+"SpiderWeb"+str(n_r)+"x"+str(n_theta)+".med"
-  # Write the result into a VTU file that can be read with ParaView
-  m.writeVTK(name+"SpiderWeb"+str(n_r)+"x"+str(n_theta)+".vtu")
+  """ # Write the result into a VTU file that can be read with ParaView
+  m.writeVTK(name+"SpiderWeb"+str(n_r)+"x"+str(n_theta)+".vtu") """
   # Write the result into a MED file that can be read with Salomé
   meshMEDFile.write(filename,2) # 2 stands for write from scratch
   
