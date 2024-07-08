@@ -80,12 +80,109 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 	return orien;
 }
 
-void WaveStaggered::setExactVelocityInterpolate(const Field &Interpolate){
-	_ExactVelocityInftyInterpolate = Interpolate;
+void WaveStaggered::setExactVelocityInterpolate(const Field &ExactVelocityInftyAtFaces){
+	Field _ExactVelocityInftyInterpolate("Exact Velocity at cells results", CELLS, _mesh,3);
+	for (int l=0; l < _Nmailles ; l++){
+		for (int k=0; k< 3; k++){
+			_ExactVelocityInftyInterpolate(l, k) =0;
+		}
+	}
+	
+	for (int i = 0 ; i < _Nfaces ; i++){
+		Face Fj = _mesh.getFace(i);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		double orien1 = getOrientation(i,Ctemp1);
+		
+		if (_Ndim >1 ){
+			bool found = false;
+			for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+				if (i == Ctemp1.getFacesId()[l]){
+					found = true;
+					for (int idim = 0; idim < _Ndim; ++idim)
+						_vec_normal[idim] = Ctemp1.getNormalVector(l,idim);
+				}
+			}
+			assert(found);
+		}
+
+		std::vector<double> M1(_Ndim), M2(_Ndim);
+		if (Ctemp1.getNumberOfFaces() == _Ndim*2){ //only quads or hexadrehals
+			Point xf= Fj.getBarryCenter();
+			std::vector< int > nodesFj = Fj.getNodesId();
+			std::vector<int> FacesId = Ctemp1.getFacesId();
+			Point xopp;
+			for (int nei=0; nei< FacesId.size(); nei++){
+				
+				if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
+					Face otherFace = _mesh.getFace(FacesId[nei]);
+					std::vector< int > nodesotherFace = otherFace.getNodesId();
+					int count =0;
+					for (int node =0; node< nodesotherFace.size(); node ++){
+						if (std::find(nodesFj.begin(), nodesFj.end(), nodesotherFace[node]) != nodesFj.end())
+							count +=1;
+					} //if Fj has no node in commun with otherFace (count == 0) then otherFace is the only opposed face
+					if (count == 0)
+						xopp = otherFace.getBarryCenter();
+				}	
+			}		
+			M1[0] = Fj.getMeasure()*(xf.x() - xopp.x())/2.0; 
+			if (_Ndim >1)
+				M1[1] = Fj.getMeasure()*(xf.y() - xopp.y())/2.0;
+			if (_Ndim >2)
+				M1[2] = Fj.getMeasure()*(xf.z() - xopp.z())/2.0;
+		}
+		else {
+			for (int k=0; k<_Ndim; k++) 
+				M1[k] = _vec_normal[k];
+		}	
+
+		if (Fj.getNumberOfCells() == 2){
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+
+			if (Ctemp2.getNumberOfFaces() == _Ndim*2){ //only quads
+			Point xf= Fj.getBarryCenter();
+			std::vector< int > nodesFj = Fj.getNodesId();
+			std::vector<int> FacesId = Ctemp2.getFacesId();
+			Point xopp;
+			//Search barycenter of face opposing Fj
+			for (int nei=0; nei< FacesId.size(); nei++){
+				if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
+					Face otherFace = _mesh.getFace(FacesId[nei]);
+					std::vector< int > nodesotherFace = otherFace.getNodesId();
+					int count =0;
+					for (int node =0; node< nodesotherFace.size(); node ++){
+						if (std::find(nodesFj.begin(), nodesFj.end(), nodesotherFace[node]) != nodesFj.end())
+							count +=1;
+					} //if Fj has no node in commun with otherFace then otherFace is the (only) opposing face
+					if (count == 0)
+						xopp = otherFace.getBarryCenter();
+				}	
+			}		
+			M2[0] = Fj.getMeasure()*(xf.x() - xopp.x())/2.0; 
+			if (_Ndim >1)
+				M2[1] = Fj.getMeasure()*(xf.y() - xopp.y())/2.0;
+			if (_Ndim >2)
+				M2[2] = Fj.getMeasure()*(xf.z() - xopp.z())/2.0;
+		}
+		else {
+			for (int k=0; k<_Ndim; k++) 
+				M2[k] = _vec_normal[k];
+		}
+			for (int k=0; k< _Ndim; k++){
+				_ExactVelocityInftyInterpolate(idCells[0], k) += ExactVelocityInftyAtFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+				_ExactVelocityInftyInterpolate(idCells[1], k) -= ExactVelocityInftyAtFaces(i) * M2[k]/Ctemp2.getMeasure(); 
+			}
+		}
+		else if  (Fj.getNumberOfCells() == 1){
+			for (int k=0; k< _Ndim; k++){
+				_ExactVelocityInftyInterpolate(idCells[0], k) += ExactVelocityInftyAtFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+			}
+
+		}
+	}
 
 	_ExactVelocityInftyInterpolate.setName("_ExactVelocityInftyInterpolate");
-	_time=_ExactVelocityInftyInterpolate.getTime();
-	_mesh=_ExactVelocityInftyInterpolate.getMesh();
 	_ExactVelocityInftyInterpolate.setInfoOnComponent(0,"_ExactVelocityInftyInterpolate_x(m/s)");
 	_ExactVelocityInftyInterpolate.setInfoOnComponent(1,"_ExactVelocityInftyInterpolate_y(m/s)");
 	string prim(_path+"/WaveStaggered_");///Results

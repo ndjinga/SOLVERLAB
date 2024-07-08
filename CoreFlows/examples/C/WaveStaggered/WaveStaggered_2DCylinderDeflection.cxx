@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb10x32.med";
+	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
@@ -78,6 +78,7 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
+		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
 		double theta = atan(Fj.y()/Fj.x());
 		std::vector<double > Exact = ExactVelocity(r, theta, r1, r0);
@@ -85,8 +86,7 @@ int main(int argc, char** argv)
 		for (int k = 0 ; k <Exact.size() ; k++)
 			dotprod += Exact[k] * vec_normal_sigma[k];
 		ExactVelocityInftyAtFaces[j] = dotprod; 
-
-		myProblem.setOrientation(j,vec_normal_sigma);
+		
 
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
@@ -94,45 +94,29 @@ int main(int argc, char** argv)
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
 			std::vector<double > InitialVel = initialVelocity(Fj.x(),Fj.y());
 			double dotprod = 0;
-			for (int k = 0 ; k <Exact.size() ; k++)
+			for (int k = 0 ; k <InitialVel.size() ; k++)
 					dotprod += InitialVel[k] * vec_normal_sigma[k];
 			Velocity0[j] = dotprod;
-			for (int k = 0 ; k <spaceDim ; k++){
-					ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
-					ExactVelocityInftyInterpolate[idCells[1], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp2.getNumberOfFaces();
-			}
 		}
 		else if (Fj.getNumberOfCells()==1){
-			// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
-			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){
+			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
-				/* std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
-				double dotprod = 0;
-				for (int k = 0 ; k <BoundaryVel.size() ; k++)
-					dotprod += BoundaryVel[k] * vec_normal_sigma[k]; */
-				wallVelocityMap[j] =  0; //TODO put back wall boundary conditions
+				wallVelocityMap[j] =  0;
 			}
-			// if face is on exterior (stegger condition) 
-			else {											
-				
+			else {// if face is on exterior (stegger condition) 											
 				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
 				double dotprod = 0;
 				for (int k = 0 ; k <BoundaryVel.size() ; k++)
 					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
 				wallVelocityMap[j] = dotprod;
 				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y());
-			} 	
-			// building exact solution at faces and its interpolation at cell	
+			} // building exact solution at faces and its interpolation at cell	
 			ExactVelocityInftyAtFaces[j] = wallVelocityMap[j];
-			for (int k = 0 ; k <Exact.size() ; k++)
-				ExactVelocityInftyInterpolate[idCells[0], k] += ExactVelocityInftyAtFaces[j] * vec_normal_sigma[k]/Ctemp1.getNumberOfFaces();
 		}
-	
 	}
 	
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
-	myProblem.setExactVelocityInterpolate(ExactVelocityInftyInterpolate);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
@@ -162,7 +146,7 @@ int main(int argc, char** argv)
 	
 	// evolution
 	myProblem.initialize();
-
+	myProblem.setExactVelocityInterpolate(ExactVelocityInftyAtFaces);
 	bool ok = myProblem.run();
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;
