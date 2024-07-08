@@ -10,23 +10,25 @@ std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	vec[1] =  r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * sin(2*theta));
 	return vec;
 }
+
 double initialPressure( double x, double y){
 	return 0;
 }
+
 double initialBoundPressure( double x, double y){
 	return 0;
 }
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 1;
-	vec[1]  =  0;
+	vec[0] = 0;
+	vec[1] = 0;
 	return vec;
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
 	vec[0] = 1;
-	vec[1] =  0;
+	vec[1] = 0;
 	return vec;
 }
 
@@ -37,7 +39,7 @@ int main(int argc, char** argv)
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb1x4.med";
+	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb10x32.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
@@ -104,11 +106,11 @@ int main(int argc, char** argv)
 			// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){
 				myProblem.setWallBoundIndex(j);
-				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
+				/* std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
 				double dotprod = 0;
 				for (int k = 0 ; k <BoundaryVel.size() ; k++)
-					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
-				wallVelocityMap[j] =  dotprod; // = 0 TODO put back wall boundary conditions
+					dotprod += BoundaryVel[k] * vec_normal_sigma[k]; */
+				wallVelocityMap[j] =  0; //TODO put back wall boundary conditions
 			}
 			// if face is on exterior (stegger condition) 
 			else {											
@@ -130,6 +132,7 @@ int main(int argc, char** argv)
 	
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
+	myProblem.setExactVelocityInterpolate(ExactVelocityInftyInterpolate);
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
@@ -140,8 +143,8 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1;
-	int freqSave = 1;
+	unsigned MaxNbOfTimeStep = 10000000;
+	int freqSave = 400;
 	double cfl = 0.5;
 	double maxTime = 500;
 	double precision = 1e-8;

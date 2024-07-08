@@ -870,7 +870,6 @@ void WaveStaggered::save(){
 					std::vector< int > nodesFj = Fj.getNodesId();
 					std::vector<int> FacesId = Ctemp1.getFacesId();
 					Point xopp;
-					cout <<"\n index cell ="<< idCells[0]<<endl;
 					for (int nei=0; nei< FacesId.size(); nei++){
 						
 						if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
@@ -881,7 +880,6 @@ void WaveStaggered::save(){
 								if (std::find(nodesFj.begin(), nodesFj.end(), nodesotherFace[node]) != nodesFj.end())
 									count +=1;
 							} //if Fj has no node in commun with otherFace (count == 0) then otherFace is the only opposed face
-							cout << "otherFace = "<< FacesId[nei]<< "count = " << count << endl;
 							if (count == 0)
 								xopp = otherFace.getBarryCenter();
 						}	
