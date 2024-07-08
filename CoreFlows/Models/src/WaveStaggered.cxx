@@ -28,7 +28,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 				
 }
 
-std::map<int,double>  WaveStaggered::getboundaryPressure(){
+std::map<int,double>  WaveStaggered::getboundaryPressure() const {
 		return _boundaryPressure;
 }
 
@@ -49,24 +49,14 @@ void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity
 void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure){
 	_boundaryPressure = BoundaryPressure;
 }
-
 void WaveStaggered::setWallBoundIndex(int j ){
 	_indexWallBoundFaceSet.push_back(j);
 	_isWall = true;
 }
-
-void WaveStaggered::DisplayVelocity(){
-for (int j = 0; j < _Velocity_at_Cells.getNumberOfElements(); j++) {
-	for (int i=0; i< _Velocity_at_Cells.getNumberOfComponents(); i++)
-		cout << "Velocity at Cells compenent["<< i<<", elem "<<j <<"]"<< _Velocity_at_Cells(j,i) <<endl;
-	}
-}
-
 void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 	for (int idim = 0; idim < _Ndim; ++idim)
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
 }
-
 double WaveStaggered::getOrientation(int j, Cell Cint){
 	std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(j);
 	double *vec =new double [_Ndim];
@@ -158,20 +148,8 @@ std::vector<double> WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVeloci
 	return Error;
 }
 
-void WaveStaggered::ErrorRelativeVelocityInfty(const Field &ExactVelocityInfty){
-	double max = 0.1;
-	for (int j=0; j < _Nfaces; j++){
-		Face Fj = _mesh.getFace(j);
-		double error =0;
-		if ( abs(_Velocity(j) - ExactVelocityInfty(j)) > 1e-10)
-			error = abs(_Velocity(j) - ExactVelocityInfty(j))/abs(ExactVelocityInfty(j));
-		else 
-			error = abs(_Velocity(j) - ExactVelocityInfty(j));
-		if (max < error)
-			max = error;
-	}
-	cout << "max = " << max << endl;
-}
+
+
 
 void WaveStaggered::setInitialField(const Field &field)
 {
@@ -862,8 +840,8 @@ void WaveStaggered::save(){
 				while ( ( i !=it2->second) && (it2 != _indexFacePeriodicMap.end() ) )
 					it2++;
 				periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
-				int k = (periodicFaceNotComputed ==true) && (_indexFacePeriodicSet == true) ? it2->first : i; // in periodic k stays i, if it has been computed by scheme and takes the value of its matched face 
-				int I= _Nmailles + k;
+				int j = (periodicFaceNotComputed ==true) && (_indexFacePeriodicSet == true) ? it2->first : i; // in periodic k stays i, if it has been computed by scheme and takes the value of its matched face 
+				int I= _Nmailles + j;
 				if (_mpi_size > 1)
 					VecGetValues(_primitiveVars_seq,1,&I,&_Velocity(i));
 				else
@@ -872,7 +850,7 @@ void WaveStaggered::save(){
 				Face Fj = _mesh.getFace(i);
 				std::vector< int > idCells = Fj.getCellsId();
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				Cell Ctemp;
+				double orien1 = getOrientation(i,Ctemp1);
 				
 				if (_Ndim >1 ){
 					bool found = false;
@@ -886,13 +864,84 @@ void WaveStaggered::save(){
 					assert(found);
 				}
 
-				for (int v= 0; v < idCells.size(); v++){
-					Ctemp = _mesh.getCell(idCells[v]); //origin of the normal vector
-					double orien = getOrientation(i,Ctemp);
-					for (int k=0; k< _Ndim; k++) //TODO : cas _ndim = 1 !
-						_Velocity_at_Cells(idCells[v], k) +=  _Velocity(i) * _vec_normal[k]/Ctemp.getNumberOfFaces(); 
-					_DivVelocity( idCells[v]) += orien * Fj.getMeasure() * _Velocity(i)/(Ctemp.getMeasure());
+				std::vector<double> M1(_Ndim), M2(_Ndim);
+				if (Ctemp1.getNumberOfFaces() == _Ndim*2){ //only quads or hexadrehals
+					Point xf= Fj.getBarryCenter();
+					std::vector< int > nodesFj = Fj.getNodesId();
+					std::vector<int> FacesId = Ctemp1.getFacesId();
+					Point xopp;
+					cout <<"\n index cell ="<< idCells[0]<<endl;
+					for (int nei=0; nei< FacesId.size(); nei++){
+						
+						if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
+							Face otherFace = _mesh.getFace(FacesId[nei]);
+							std::vector< int > nodesotherFace = otherFace.getNodesId();
+							int count =0;
+							for (int node =0; node< nodesotherFace.size(); node ++){
+								if (std::find(nodesFj.begin(), nodesFj.end(), nodesotherFace[node]) != nodesFj.end())
+									count +=1;
+							} //if Fj has no node in commun with otherFace (count == 0) then otherFace is the only opposed face
+							cout << "otherFace = "<< FacesId[nei]<< "count = " << count << endl;
+							if (count == 0)
+								xopp = otherFace.getBarryCenter();
+						}	
+					}		
+					M1[0] = Fj.getMeasure()*(xf.x() - xopp.x())/2.0; 
+					if (_Ndim >1)
+						M1[1] = Fj.getMeasure()*(xf.y() - xopp.y())/2.0;
+					if (_Ndim >2)
+						M1[2] = Fj.getMeasure()*(xf.z() - xopp.z())/2.0;
+				}
+				else {
+					for (int k=0; k<_Ndim; k++) 
+						M1[k] = _vec_normal[k];
+				}	
 
+				if (Fj.getNumberOfCells() == 2){
+					Cell Ctemp2 = _mesh.getCell(idCells[1]);
+
+					if (Ctemp2.getNumberOfFaces() == _Ndim*2){ //only quads
+					Point xf= Fj.getBarryCenter();
+					std::vector< int > nodesFj = Fj.getNodesId();
+					std::vector<int> FacesId = Ctemp2.getFacesId();
+					Point xopp;
+					//Search barycenter of face opposing Fj
+					for (int nei=0; nei< FacesId.size(); nei++){
+						if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
+							Face otherFace = _mesh.getFace(FacesId[nei]);
+							std::vector< int > nodesotherFace = otherFace.getNodesId();
+							int count =0;
+							for (int node =0; node< nodesotherFace.size(); node ++){
+								if (std::find(nodesFj.begin(), nodesFj.end(), nodesotherFace[node]) != nodesFj.end())
+									count +=1;
+							} //if Fj has no node in commun with otherFace then otherFace is the (only) opposing face
+							if (count == 0)
+								xopp = otherFace.getBarryCenter();
+						}	
+					}		
+					M2[0] = Fj.getMeasure()*(xf.x() - xopp.x())/2.0; 
+					if (_Ndim >1)
+						M2[1] = Fj.getMeasure()*(xf.y() - xopp.y())/2.0;
+					if (_Ndim >2)
+						M2[2] = Fj.getMeasure()*(xf.z() - xopp.z())/2.0;
+				}
+				else {
+					for (int k=0; k<_Ndim; k++) 
+						M2[k] = _vec_normal[k];
+				}
+					for (int k=0; k< _Ndim; k++){
+						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
+						_Velocity_at_Cells(idCells[1], k) -= _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
+					}
+					_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
+					_DivVelocity( idCells[1]) -= orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp2.getMeasure());
+
+				}
+				else if  (Fj.getNumberOfCells() == 1){
+					for (int k=0; k< _Ndim; k++){
+						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
+					}
+					_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
 				}
 			}
 

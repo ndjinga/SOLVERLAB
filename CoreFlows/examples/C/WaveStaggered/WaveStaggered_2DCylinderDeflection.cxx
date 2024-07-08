@@ -19,7 +19,7 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 0;
+	vec[0] = 1;
 	vec[1]  =  0;
 	return vec;
 }
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusTriangles60.med";
+	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb1x4.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
@@ -104,7 +104,11 @@ int main(int argc, char** argv)
 			// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){
 				myProblem.setWallBoundIndex(j);
-				wallVelocityMap[j] =  0;
+				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
+				double dotprod = 0;
+				for (int k = 0 ; k <BoundaryVel.size() ; k++)
+					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
+				wallVelocityMap[j] =  dotprod; // = 0 TODO put back wall boundary conditions
 			}
 			// if face is on exterior (stegger condition) 
 			else {											
@@ -136,8 +140,8 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10000000;
-	int freqSave = 400;
+	unsigned MaxNbOfTimeStep = 1;
+	int freqSave = 1;
 	double cfl = 0.5;
 	double maxTime = 500;
 	double precision = 1e-8;

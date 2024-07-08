@@ -97,7 +97,7 @@ public :
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
 	void setWallBoundIndex(int j );
 
-	std::map<int,double>  getboundaryPressure();
+	std::map<int,double>  getboundaryPressure() const;
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
 
@@ -105,12 +105,11 @@ public :
 	bool  initTimeStep( double dt);
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );
+
 	void ComputeEnergyAtTimeT();
 	void setExactVelocityFieldAtCells(const Field &atCells);
 	void setExactVelocityInterpolate(const Field &atFaces);
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
-	void ErrorRelativeVelocityInfty(const Field &ExactVelocityInfty);
-	void DisplayVelocity();
 
 
 protected :
