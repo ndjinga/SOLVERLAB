@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med";
+	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusTriangles100.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
@@ -102,6 +102,12 @@ int main(int argc, char** argv)
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
+
+				/* std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
+				double dotprod = 0;
+				for (int k = 0 ; k <BoundaryVel.size() ; k++)
+					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
+				wallVelocityMap[j] = dotprod; */
 			}
 			else {// if face is on exterior (stegger condition) 											
 				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
@@ -127,11 +133,11 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10000000;
+	unsigned MaxNbOfTimeStep = 100000000;
 	int freqSave = 400;
 	double cfl = 0.5;
 	double maxTime = 500;
-	double precision = 1e-8;
+	double precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

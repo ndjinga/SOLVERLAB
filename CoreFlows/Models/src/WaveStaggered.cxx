@@ -331,7 +331,7 @@ void WaveStaggered::initialize(){
 		cout << "mesh dimension = "<<_Ndim <<endl;
 		*_runLogFile << " spaceDim= "<<_Ndim <<endl;
 
-		_d = 1/(2* sqrt(_neibMaxNbCells) );
+		_d = 1/( sqrt(2*_neibMaxNbCells) );
 		_vec_normal = new double[_Ndim];
 
 		//Construction des champs primitifs initiaux comme avant dans ParaFlow
@@ -962,13 +962,19 @@ void WaveStaggered::save(){
 				}
 
 				std::vector<double> M1(_Ndim), M2(_Ndim);
+				std::vector< int > nodesFj = Fj.getNodesId();
+				Point p1, p2, p3, popp;
+				p1 = (_mesh.getNode(nodesFj[0])).getPoint();
+				if (_Ndim >1)
+					p2 = (_mesh.getNode(nodesFj[1])).getPoint();
+				if (_Ndim >2)
+					p3 = (_mesh.getNode(nodesFj[2])).getPoint();
+
 				if (Ctemp1.getNumberOfFaces() == _Ndim*2){ //only quads or hexadrehals
 					Point xf= Fj.getBarryCenter();
-					std::vector< int > nodesFj = Fj.getNodesId();
 					std::vector<int> FacesId = Ctemp1.getFacesId();
 					Point xopp;
 					for (int nei=0; nei< FacesId.size(); nei++){
-						
 						if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
 							Face otherFace = _mesh.getFace(FacesId[nei]);
 							std::vector< int > nodesotherFace = otherFace.getNodesId();
@@ -984,46 +990,59 @@ void WaveStaggered::save(){
 					M1[0] = Fj.getMeasure()*(xf.x() - xopp.x())/2.0; 
 					if (_Ndim >1)
 						M1[1] = Fj.getMeasure()*(xf.y() - xopp.y())/2.0;
-					if (_Ndim >2)
-						M1[2] = Fj.getMeasure()*(xf.z() - xopp.z())/2.0;
 				}
-				else {
-					for (int k=0; k<_Ndim; k++) 
-						M1[k] = _vec_normal[k];
-				}	
+				else if (Ctemp1.getNumberOfFaces() == _Ndim + 1){ //only triangles or tetrahedrals
+					std::vector< int > nodesCtemp1 = Ctemp1.getNodesId();
+					// in triangles or tetrahedral we search for the vertex opposing the face Fj
+					for (int nei =0; nei< nodesCtemp1.size(); nei++){
+						if (std::find(nodesFj.begin(), nodesFj.end(), nodesCtemp1[nei]) == nodesFj.end())
+							popp = (_mesh.getNode(nodesCtemp1[nei])).getPoint();
+					}
+					M1[0] = Fj.getMeasure()*(popp.x() - p1.x()); 
+					if (_Ndim >1){
+						M1[0] = Fj.getMeasure()*(popp.x() - p1.x() + popp.x() - p2.x());
+						M1[1] = Fj.getMeasure()*(popp.y() - p1.y() + popp.y() - p2.y() );
+					}
+				}
 
 				if (Fj.getNumberOfCells() == 2){
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);
-
 					if (Ctemp2.getNumberOfFaces() == _Ndim*2){ //only quads
-					Point xf= Fj.getBarryCenter();
-					std::vector< int > nodesFj = Fj.getNodesId();
-					std::vector<int> FacesId = Ctemp2.getFacesId();
-					Point xopp;
-					//Search barycenter of face opposing Fj
-					for (int nei=0; nei< FacesId.size(); nei++){
-						if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
-							Face otherFace = _mesh.getFace(FacesId[nei]);
-							std::vector< int > nodesotherFace = otherFace.getNodesId();
-							int count =0;
-							for (int node =0; node< nodesotherFace.size(); node ++){
-								if (std::find(nodesFj.begin(), nodesFj.end(), nodesotherFace[node]) != nodesFj.end())
-									count +=1;
-							} //if Fj has no node in commun with otherFace then otherFace is the (only) opposing face
-							if (count == 0)
-								xopp = otherFace.getBarryCenter();
-						}	
-					}		
-					M2[0] = Fj.getMeasure()*(xf.x() - xopp.x())/2.0; 
-					if (_Ndim >1)
-						M2[1] = Fj.getMeasure()*(xf.y() - xopp.y())/2.0;
-					if (_Ndim >2)
-						M2[2] = Fj.getMeasure()*(xf.z() - xopp.z())/2.0;
-				}
-				else {
-					for (int k=0; k<_Ndim; k++) 
-						M2[k] = _vec_normal[k];
-				}
+						Point xf= Fj.getBarryCenter();
+						std::vector<int> FacesId = Ctemp2.getFacesId();
+						Point xopp;
+						//Search barycenter of face opposing Fj
+						for (int nei=0; nei< FacesId.size(); nei++){
+							if (FacesId[nei] != i){ // don't look at the case where otherface is equal to Fj
+								Face otherFace = _mesh.getFace(FacesId[nei]);
+								std::vector< int > nodesotherFace = otherFace.getNodesId();
+								int count =0;
+								for (int node =0; node< nodesotherFace.size(); node ++){
+									if (std::find(nodesFj.begin(), nodesFj.end(), nodesotherFace[node]) != nodesFj.end())
+										count +=1;
+								} //if Fj has no node in commun with otherFace then otherFace is the (only) opposing face
+								if (count == 0)
+									xopp = otherFace.getBarryCenter();
+							}	
+						}		
+						M2[0] = Fj.getMeasure()*(xf.x() - xopp.x())/2.0; 
+						if (_Ndim >1)
+							M2[1] = Fj.getMeasure()*(xf.y() - xopp.y())/2.0;
+					}	
+					else if (Ctemp2.getNumberOfFaces() == _Ndim + 1){ //only triangles or tetrahedrals
+						std::vector< int > nodesCtemp2 = Ctemp2.getNodesId();
+						// in triangles or tetrahedral we search for the vertex opposing the face Fj
+						for (int nei =0; nei< nodesCtemp2.size(); nei++){
+							if (std::find(nodesFj.begin(), nodesFj.end(), nodesCtemp2[nei]) == nodesFj.end())
+								popp = (_mesh.getNode(nodesCtemp2[nei])).getPoint();
+						}
+						M2[0] = Fj.getMeasure()*(popp.x() - p1.x()); 
+						if (_Ndim >1){
+							M2[0] = Fj.getMeasure()*(popp.x() - p1.x() + popp.x() - p2.x());
+							M2[1] = Fj.getMeasure()*(popp.y() - p1.y() + popp.y() - p2.y() );
+						}
+					}
+				
 					for (int k=0; k< _Ndim; k++){
 						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
 						_Velocity_at_Cells(idCells[1], k) -= _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
