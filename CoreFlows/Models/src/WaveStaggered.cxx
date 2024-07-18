@@ -1000,8 +1000,8 @@ void WaveStaggered::save(){
 					}
 					M1[0] = Fj.getMeasure()*(popp.x() - p1.x()); 
 					if (_Ndim >1){
-						M1[0] = Fj.getMeasure()*(popp.x() - p1.x() + popp.x() - p2.x());
-						M1[1] = Fj.getMeasure()*(popp.y() - p1.y() + popp.y() - p2.y() );
+						M1[0] = Fj.getMeasure()*(popp.x() - p1.x() + popp.x() - p2.x())/6.0;
+						M1[1] = Fj.getMeasure()*(popp.y() - p1.y() + popp.y() - p2.y())/6.0;
 					}
 				}
 
@@ -1038,8 +1038,8 @@ void WaveStaggered::save(){
 						}
 						M2[0] = Fj.getMeasure()*(popp.x() - p1.x()); 
 						if (_Ndim >1){
-							M2[0] = Fj.getMeasure()*(popp.x() - p1.x() + popp.x() - p2.x());
-							M2[1] = Fj.getMeasure()*(popp.y() - p1.y() + popp.y() - p2.y() );
+							M2[0] = Fj.getMeasure()*(popp.x() - p1.x() + popp.x() - p2.x())/6.0;
+							M2[1] = Fj.getMeasure()*(popp.y() - p1.y() + popp.y() - p2.y())/6.0;
 						}
 					}
 				
