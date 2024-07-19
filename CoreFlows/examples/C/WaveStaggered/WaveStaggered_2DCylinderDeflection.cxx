@@ -35,15 +35,40 @@ std::vector<double> initialBoundVelocity(double x, double y){
 int main(int argc, char** argv)
 {
 	//Preprocessing: mesh and group creation
-	PetscInitialize(&argc,&argv, NULL,NULL); //TODO : à quoi sert cette commande ?
 	int spaceDim = 2;
+	
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catC/esteban/SOLVERLAB/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb40x128.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
-	Mesh M(inputfile);
+	Mesh M;
+	if(argc<2)
+	{
+		    cout << "- DOMAIN : SQUARE" << endl;
+		    cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
+		    cout << "Construction of a cartesian mesh" << endl;
+	    double xinf=-0.5;
+	    double xsup= 0.5;
+	    double yinf=-0.5;
+	    double ysup= 0.5;
+	    int nx=50;
+	    int ny=50;
+	    M=Mesh(xinf,xsup,nx,yinf,ysup,ny);
+	    double eps=1e-6;
+	    M.setGroupAtPlan(xsup,0,eps,"RightEdge");
+	    M.setGroupAtPlan(xinf,0,eps,"LeftEdge");
+	    M.setGroupAtPlan(yinf,1,eps,"BottomEdge");
+	    M.setGroupAtPlan(ysup,1,eps,"TopEdge");
+	}
+	else
+	{
+	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
+	    cout << "Loading of a mesh named "<<argv[1] << endl;
+	    string filename = argv[1];
+	    M=Mesh(filename);
+	}
+
 	double kappa = 1;
 	double rho = 1;
 	double c = sqrt(kappa/rho);
