@@ -81,7 +81,7 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 }
 
 void WaveStaggered::setExactVelocityInterpolate(const Field &ExactVelocityInftyAtFaces){
-	Field _ExactVelocityInftyInterpolate("Exact Velocity at cells results", CELLS, _mesh,3);
+	_ExactVelocityInftyInterpolate = Field("Exact Velocity at cells results", CELLS, _mesh,3);
 	for (int l=0; l < _Nmailles ; l++){
 		for (int k=0; k< 3; k++){
 			_ExactVelocityInftyInterpolate(l, k) =0;
@@ -309,7 +309,10 @@ void WaveStaggered::initialize(){
 		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
 		VecSetValues(_primitiveVars, _Nmailles , indices1, initialFieldPressure, INSERT_VALUES); 
 		VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES);
-		delete[] initialFieldVelocity, initialFieldPressure, indices1, indices2;
+		delete[] initialFieldVelocity;
+		delete[] initialFieldPressure;
+		delete[] indices1;
+		delete[] indices2;
 	} 
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
@@ -565,7 +568,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			VecMin(W, indices4, &minInvSurf);
 			_maxPerim = 1.0/minInvSurf;
 		
-			delete[] indices3, indices4;
+			delete[] indices3;
+			delete[] indices4;
 			VecDestroy(& V);
 			VecDestroy(& W); 
 			MatDestroy(& InvSurface);
@@ -868,8 +872,11 @@ void WaveStaggered::save(){
 			}
 		}
 		if(_saveVelocity  ){ 
-			Field _Velocity_at_Cells("Velocity at cells results", CELLS, _mesh,3);
-			Field  _DivVelocity("velocity divergence", CELLS, _mesh, 1);
+			if (_nbTimeStep == 0){
+				_Velocity_at_Cells = Field("Velocity at cells results", CELLS, _mesh,3);
+				_DivVelocity = Field("velocity divergence", CELLS, _mesh, 1);	 
+				cout << "bonjour"<< endl;	
+			}
 
 			_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 			_DivVelocity.setTime(_time,_nbTimeStep);
@@ -879,7 +886,7 @@ void WaveStaggered::save(){
 					_Velocity_at_Cells(l, k) =0;
 				}
 			}
-			
+
 			for (int i = 0 ; i < _Nfaces ; i++){
 				bool periodicFaceNotComputed;
 				std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();

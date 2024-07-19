@@ -21,14 +21,14 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = -1;
-	vec[1] = 4;
+	vec[0] = 0;
+	vec[1] = 0;
 	return vec;
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
-	vec[0] = -1;
-	vec[1] = 4;
+	vec[0] = 1;
+	vec[1] = 0;
 	return vec;
 }
 
@@ -103,11 +103,11 @@ int main(int argc, char** argv)
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
 
-				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
+				/* std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
 				double dotprod = 0;
 				for (int k = 0 ; k <BoundaryVel.size() ; k++)
 					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
-				wallVelocityMap[j] = dotprod;
+				wallVelocityMap[j] = dotprod; */
 			}
 			else {// if face is on exterior (stegger condition) 											
 				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
@@ -133,8 +133,8 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 100000000;
-	int freqSave = 400;
+	unsigned MaxNbOfTimeStep = 1;
+	int freqSave = 1;
 	double cfl = 0.5;
 	double maxTime = 500;
 	double precision = 1e-6;
