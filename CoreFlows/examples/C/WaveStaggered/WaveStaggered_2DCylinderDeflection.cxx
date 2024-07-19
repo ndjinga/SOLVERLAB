@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 	int spaceDim = 2;
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	std::string inputfile="/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb20x64.med";
+	std::string inputfile="/volatile/catC/esteban/SOLVERLAB/SOLVERLAB_SRC/CoreFlows/examples/resources/AnnulusSpiderWeb40x128.med";
 	double r0 = 0.8;
 	double r1 = 6;
 
@@ -133,10 +133,10 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1;
-	int freqSave = 1;
+	unsigned MaxNbOfTimeStep = 10000000;
+	int freqSave = 20000;
 	double cfl = 0.5;
-	double maxTime = 500;
+	double maxTime = 800;
 	double precision = 1e-6;
 
 	myProblem.setCFL(cfl);

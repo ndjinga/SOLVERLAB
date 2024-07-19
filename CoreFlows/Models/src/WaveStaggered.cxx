@@ -600,6 +600,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatMult(_InvVol, _BoundaryTerms, Prod2);  
 		MatMult(_A,_primitiveVars, _b); 
 		VecAXPY(_b,     1, Prod2);
+		VecDestroy(& Prod2); 
+
 	}
 
 	ComputeEnergyAtTimeT();
