@@ -70,7 +70,6 @@ int main( int argc, char **args ){
 	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
 	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n = n_u+ n_p
 	IS is_U,is_P;
-	PC pc;
 
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
@@ -111,7 +110,6 @@ int main( int argc, char **args ){
 //##### Definition of the right hand side to test the preconditioner
 	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
 	Vec X_array[2];
-	KSP ksp;
 	PetscScalar y[nb_pressure_lines];
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
@@ -211,8 +209,14 @@ int main( int argc, char **args ){
 
 //##### Call KSP solver and monitor convergence
 	double residu, abstol, rtol=1e-7, dtol;
-	int iter, numberMaxOfIter;
-
+	int iter, iter1, iter2, numberMaxOfIter;
+	int nblocks=2;
+	KSP ksp;
+	KSP * kspArray;
+	KSPType type, type1, type2;
+	PC pc, pc1,pc2;
+	PCType pctype, pctype1, pctype2;
+	
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
 	KSPSetType(ksp,KSPFGMRES);
@@ -246,14 +250,32 @@ int main( int argc, char **args ){
 	KSPConvergedReason reason;
 	KSPGetConvergedReason(ksp,&reason);
 	KSPGetIterationNumber(ksp,&iter);
-	KSPGetResidualNorm( ksp, &residu);
-	KSPGetTolerances( ksp, &rtol, &abstol, &dtol, &numberMaxOfIter);
-
+	
 	if (reason>0)
 		PetscPrintf(PETSC_COMM_WORLD, "Linear system converged in %d iterations \n", iter);
 	else
 		PetscPrintf(PETSC_COMM_WORLD, "!!!!!!!!!!!!!!!!!! Linear system diverged  after %d iterations !!!!!!!!!!!!!!\n", iter);
 		
+	KSPGetResidualNorm( ksp, &residu);
+	KSPGetTolerances( ksp, &rtol, &abstol, &dtol, &numberMaxOfIter);
+	PCFieldSplitGetSubKSP( pc, &nblocks, &kspArray);
+	KSPGetType( ksp, &type);
+	KSPGetType( kspArray[0], &type1);
+	KSPGetType( kspArray[1], &type2);
+	KSPGetIterationNumber(kspArray[0],&iter1);
+	KSPGetIterationNumber(kspArray[1],&iter2);
+	KSPGetPC(kspArray[0],&pc1);
+	KSPGetPC(kspArray[1],&pc2);
+	PCGetType( pc, &pctype);
+	PCGetType( pc1, &pctype1);
+	PCGetType( pc2, &pctype2);
+	PetscFree(kspArray);
+
+	PetscPrintf(PETSC_COMM_WORLD, "\n############ : monitoring of the linear solver \n");
+	PetscPrintf(PETSC_COMM_WORLD, "Linear solver name: %s, preconditioner %s, %d iterations \n", type, pctype, iter);
+	PetscPrintf(PETSC_COMM_WORLD, "    sub solver 1 name : %s, preconditioner %s, %d iterations \n", type1, pctype1, iter1);
+	PetscPrintf(PETSC_COMM_WORLD, "    sub solver 2 name: %s, preconditioner %s, %d iterations \n", type2, pctype2, iter2);
+
 	switch(reason){
 		case 2:
 		    PetscPrintf(PETSC_COMM_WORLD, "residual 2-norm < rtol*||RHS||_2 with rtol = %e, final residual = %e\n", rtol, residu);
