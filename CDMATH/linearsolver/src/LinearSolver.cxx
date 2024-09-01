@@ -648,7 +648,7 @@ LinearSolver::LinearSolver ( LinearSolver& LS )
 	_numberOfIter=LS.getNumberOfIter();
 	_isSingular=LS.isMatrixSingular();
 	_nameOfPc=LS.getNameOfPc();
-
+	_computeConditionNumber=false;
 	_secondMember=LS.getSndMember();
 	
 	MatDuplicate(LS.getPetscMatrix(),MAT_COPY_VALUES,&_mat);
