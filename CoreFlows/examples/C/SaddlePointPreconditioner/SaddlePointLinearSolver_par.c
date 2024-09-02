@@ -111,6 +111,7 @@ int main( int argc, char **args ){
 	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
 	Vec X_array[2];
 	PetscScalar y[nb_pressure_lines];
+	PetscInt i_p[nb_pressure_lines];
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
 	VecCreate(PETSC_COMM_WORLD,&b_input);
@@ -123,7 +124,6 @@ int main( int argc, char **args ){
 
 	VecSet(X_anal,0.0);
 
-	PetscInt i_p[nb_pressure_lines];
 	for (int i = min_pressure_lines;i<irow_max;i++){
 		y[i-n_u]=1.0/i;
 		i_p[i-n_u]=i;
@@ -359,6 +359,10 @@ int main( int argc, char **args ){
 	VecDestroy(&X_hat);
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
+
+	ISDestroy(&is_U);
+	ISDestroy(&is_P);
+
 	KSPDestroy(&ksp);
 	VecScatterDestroy(&scat);
 

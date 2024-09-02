@@ -78,7 +78,6 @@ int main( int argc, char **args ){
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
 	n=n_u+n_p;
 	MatGetSize( A_input, &nrows, &ncolumns);
-	PetscInt i_p[n_p],i_u[n_u];
 
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
 	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
@@ -86,16 +85,9 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_SELF,"Matrix size : %d x %d, n_u = %d, n_p = %d \n", nrows, ncolumns, n_u, n_p);
 	
 	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n");
-	//ISCreateStride(PETSC_COMM_WORLD, n_u,   0, 1, &is_U);
-	//ISCreateStride(PETSC_COMM_WORLD, n_p, n_u, 1, &is_P);
-	for (int i = n_u;i<n;i++){
-		i_p[i-n_u]=i;
-	}
-	for (int i=0;i<n_u;i++){
-		i_u[i]=i;
-	}
-	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u,PETSC_OWN_POINTER,&is_U);
-	ISCreateGeneral(PETSC_COMM_WORLD,n_p,(const PetscInt *) i_p,PETSC_OWN_POINTER,&is_P);
+	ISCreateStride(PETSC_COMM_WORLD, n_u, 0, 1, &is_U);
+	ISCreateStride(PETSC_COMM_WORLD, n_p, n_u, 1, &is_P);
+
 	MatCreateSubMatrix(A_input,is_U, is_U,MAT_INITIAL_MATRIX,&M);
 	MatCreateSubMatrix(A_input,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A_input,is_P, is_U,MAT_INITIAL_MATRIX,&D);
@@ -106,6 +98,7 @@ int main( int argc, char **args ){
 	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
 	Vec X_array[2];
 	PetscScalar y[n_p];
+	PetscInt i_p[n_p];
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
 	VecCreate(PETSC_COMM_WORLD,&b_input);
@@ -119,6 +112,7 @@ int main( int argc, char **args ){
 	VecSet(X_anal,0.0);
 	for (int i = n_u;i<n;i++){
 		y[i-n_u]=1.0/i;
+		i_p[i-n_u]=i;
 	}
 	VecSetValues(X_anal,n_p,i_p,y,INSERT_VALUES);
 	VecAssemblyBegin(X_anal);
@@ -333,11 +327,18 @@ int main( int argc, char **args ){
 	MatDestroy(&C);
 	MatDestroy(&D_M_inv_G);
 	MatDestroy(&diag_2M);
+
 	VecDestroy(&b_input);
 	VecDestroy(&b_hat);
 	VecDestroy(&X_hat);
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
+
+	ISDestroy(&is_U);
+	ISDestroy(&is_P);
+	ISDestroy(&is_U_hat);
+	ISDestroy(&is_P_hat);
+
 	KSPDestroy(&ksp);
 	PetscFree(subksp);
 	
