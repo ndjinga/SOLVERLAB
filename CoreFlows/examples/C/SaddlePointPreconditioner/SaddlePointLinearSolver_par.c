@@ -24,7 +24,7 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                        A_hat = *           *                                                  */
 /*                                 *-D  C_hat*                                                   */
 /*                                                                                               */
-/*                                 *M   G_hat*                                                   */
+/*                                 *2 diag(M)   G_hat*                                                   */
 /*                        Pmat  = *           *                                                  */
 /*                                 *0   C_hat*                                                   */
 /*                                                                                               */
@@ -48,7 +48,7 @@ int main( int argc, char **args ){
 	PetscBool flg;
 
 	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);
-	PetscStrcpy(mat_type,MATAIJ);
+	PetscStrcpy(mat_type,MATAIJ);// Default value for PETSc Matrix type
 	PetscOptionsGetString(NULL,NULL,"-mat_type",mat_type,sizeof(mat_type),NULL);
 
 	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processor(s)...\n", mat_type, file[0], size);	
@@ -118,7 +118,7 @@ int main( int argc, char **args ){
 	VecSetFromOptions(b_input);
 	
 	VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
-	VecDuplicate(b_input,&X_hat);//u will store the numerical solution
+	VecDuplicate(b_input,&X_hat);// X_hat will store the numerical solution of the transformed system
 	VecDuplicate(b_input,&b_hat);// b_hat will store the right hand side of the transformed system
 
 	VecSet(X_anal,0.0);
@@ -137,10 +137,9 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
 	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on processed 0
 
-	//Swap the pressure and velocity components + change the sign of the pressure components of b_input
+	//Swap the pressure and velocity components
 	VecGetSubVector( b_input, is_P, &b_input_p);
 	VecGetSubVector( b_input, is_U, &b_input_u);
-	//VecScale(b_input_p, -1);
 	X_array[0] = b_input_u;
 	X_array[1] = b_input_p;
 
@@ -167,7 +166,7 @@ int main( int argc, char **args ){
 	//MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
 	//MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
 	MatCreateDiagonal(v,&diag_2M);
-	MatScale(diag_2M,2);
+	MatScale(diag_2M,2);//store 2*diagonal part of M
 	MatConvert(diag_2M,  MATAIJ, MAT_INPLACE_MATRIX, &diag_2M);
 	VecReciprocal(v);
 	
@@ -198,7 +197,7 @@ int main( int argc, char **args ){
 	MatScale(D,-1.0);
 	Mat_array[2]=D;//Bottom left block of A_hat
 
-	// Creation of A_hat = transformed A_input
+	// Creation of A_hat = transformed+ reordered A_input
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&A_hat);
 
 	// Creation of Pmat
@@ -228,8 +227,7 @@ int main( int argc, char **args ){
 		PCSetType(pc,PCFIELDSPLIT);
 		PCFieldSplitSetIS(pc, "0",is_U);
 		PCFieldSplitSetIS(pc, "1",is_P);
-		//PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
-		//PCSetType(pc,PCILU);
+		PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
 	}
 	else{
 		//PCSetType(pc, PCBJACOBI);//Global preconditioner is block jacobi
@@ -278,13 +276,13 @@ int main( int argc, char **args ){
 
 	switch(reason){
 		case 2:
-		    PetscPrintf(PETSC_COMM_WORLD, "residual 2-norm < rtol*||RHS||_2 with rtol = %e, final residual = %e\n", rtol, residu);
+		    PetscPrintf(PETSC_COMM_WORLD, "Residual 2-norm < rtol*||RHS||_2 with rtol = %e, final residual = %e\n", rtol, residu);
 		    break;
 		case 3:
-		    PetscPrintf(PETSC_COMM_WORLD, "residual 2-norm < atol with atol = %e, final residual = %e\n", abstol, residu);
+		    PetscPrintf(PETSC_COMM_WORLD, "Residual 2-norm < atol with atol = %e, final residual = %e\n", abstol, residu);
 		    break;
 		case -4:
-		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! residual 2-norm > dtol*||RHS||_2 with dtol = %e, final residual = %e !!!!!!! \n", dtol, residu);
+		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! Residual 2-norm > dtol*||RHS||_2 with dtol = %e, final residual = %e !!!!!!! \n", dtol, residu);
 		    break;
 		case -3:
 		    PetscPrintf(PETSC_COMM_WORLD, "!!!!!!! Maximum number of iterations %d reached !!!!!!! \n", numberMaxOfIter);
@@ -339,8 +337,8 @@ int main( int argc, char **args ){
 	VecNorm(  X_u, NORM_2, &error_u);
 	PetscPrintf(PETSC_COMM_WORLD,"L2 Error u : ||X_anal_u - X_num_u|| = %e \n", error_u);
 
-	VecAXPY(  X_output, -1, X_anal);
-	VecNorm(  X_output, NORM_2, &error);
+	VecAXPY(X_output, -1, X_anal);
+	VecNorm( X_output, NORM_2, &error);
 	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||X_anal - X_num|| = %e, (remember ||X_anal||=1)\n", error);
 
 	PetscCheck( error < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
@@ -353,7 +351,11 @@ int main( int argc, char **args ){
 	MatDestroy(&G);
 	MatDestroy(&C);
 	MatDestroy(&diag_2M);
+	MatDestroy(&A_hat);
+	MatDestroy(&Pmat);
+	
 	VecDestroy(&b_input);
+	VecDestroy(&b_hat);
 	VecDestroy(&X_hat);
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
