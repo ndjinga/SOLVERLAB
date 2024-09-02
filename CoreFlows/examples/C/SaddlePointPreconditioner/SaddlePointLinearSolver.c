@@ -185,20 +185,10 @@ int main( int argc, char **args ){
 
 
 	// Finalisation of the preconditioner	
-	//ISCreateStride(PETSC_COMM_WORLD, n_u, n_p, 1, &is_U_hat);
-	//ISCreateStride(PETSC_COMM_WORLD, n_p, 0, 1, &is_P_hat);
-	PetscInt i_p_hat[n_p],i_u_hat[n_u];
 	IS is_U_hat,is_P_hat;
 	
-	for (int i=0;i<n_p;i++){
-		i_p_hat[i]=i;
-	}
-	for (int i=n_p;i<n;i++){
-		i_u_hat[i-n_p]=i;
-	}
-
-	ISCreateGeneral(PETSC_COMM_WORLD,n_p,(const PetscInt *) i_p_hat,PETSC_OWN_POINTER,&is_P_hat);
-	ISCreateGeneral(PETSC_COMM_WORLD,n_u,(const PetscInt *) i_u_hat,PETSC_OWN_POINTER,&is_U_hat);
+	ISCreateStride(PETSC_COMM_WORLD, n_u, n_p, 1, &is_U_hat);
+	ISCreateStride(PETSC_COMM_WORLD, n_p, 0, 1, &is_P_hat);
 
 //##### Calling KSP solver and monitor convergence
 	KSP ksp, *subksp;
