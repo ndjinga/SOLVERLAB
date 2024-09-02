@@ -229,13 +229,28 @@ int main( int argc, char **args ){
 	KSPSetTolerances(ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT, PETSC_DEFAULT);
 	KSPGetPC(ksp,&pc);
 	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner...\n");
-	if( size==1 ){
+	if( size==1 )
+	{
 		PCSetType(pc,PCFIELDSPLIT);
+		PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
 		PCFieldSplitSetIS(pc, "0",is_P_hat);
 		PCFieldSplitSetIS(pc, "1",is_U_hat);
-		PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
+		PCFieldSplitGetSubKSP( pc, &nblocks, &kspArray);
+		KSPSetType( kspArray[0], KSPGMRES);
+		KSPSetType( kspArray[1], KSPPREONLY);
+		KSPGetPC(kspArray[0],&pc1);
+		KSPGetPC(kspArray[1],&pc2);
+		PCSetType( pc1, PCGAMG);
+		PCSetType( pc2, PCLU);
+		PCGAMGSetType( pc1, PCGAMGAGG);
+		//PetscOptionsSetValue(NULL,"-fieldsplit_0_ksp_type","gmres");	
+		//PetscOptionsSetValue(NULL,"-fieldsplit_0_pc_type","gamg");
+		//PetscOptionsSetValue(NULL,"-fieldsplit_0_pc_gamg_type","agg");
+		//PetscOptionsSetValue(NULL,"-fieldsplit_1_pc_type","lu");
+		//PetscOptionsSetValue(NULL,"-fieldsplit_1_ksp_type","preonly");	
 	}
-	else{
+	else
+	{
 		//PCSetType(pc, PCBJACOBI);//Global preconditioner is block jacobi
 		//PetscOptionsSetValue(NULL,"-sub_pc_type ","lu");
 		//PetscOptionsSetValue(NULL,"-sub_ksp_type ","preonly");	
@@ -247,6 +262,7 @@ int main( int argc, char **args ){
 	PCSetFromOptions(pc);
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
+	KSPSetUp(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
 	KSPSolve(ksp,b_hat,X_hat);
 
