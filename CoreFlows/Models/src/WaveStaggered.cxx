@@ -418,6 +418,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 
 					//Is the face periodic face ? If yes will it be seen by the scheme or is it the "other" face ?
+					//IsPeriodicFace(periodicFaceComputed, periodicFaceComputed);
 					std::map<int,int>::iterator it;
 					bool periodicFaceComputed, periodicFaceNotComputed;
 					if (_indexFacePeriodicSet == true ){ // if periodic 
