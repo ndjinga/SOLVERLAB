@@ -8,6 +8,7 @@ SET(include_models_HXX
     TransportEquation.hxx
     DiffusionEquation.hxx
     WaveStaggered.hxx
+    EulerBarotropicStaggered.hxx
     StationaryDiffusionEquation.hxx
     LinearElasticityModel.hxx
     ProblemFluid.hxx

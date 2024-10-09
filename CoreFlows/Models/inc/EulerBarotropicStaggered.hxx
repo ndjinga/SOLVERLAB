@@ -16,18 +16,25 @@
 #define EULERBAROTROPICSTAGGERED_HXX_
 
 #include "ProblemCoreFlows.hxx"
+#include "StiffenedGas.hxx"
 #include "Node.hxx"
 #include "utilitaire_algebre.h"
 #include "Mesh.hxx"
 
+//! enumeration phaseType
+/*! The material phase can be Gas or liquid  */
+enum phaseType
+{
+    Liquid,/**< Material considered is Liquid */
+    Gas/**< Material considered is Gas */
+};
+
 class EulerBarotropicStaggered : public ProblemCoreFlows{
 public :
 	/** \fn EulerBarotropicStaggered
-	 * \brief Constructor for the Navier-Stokes system
 	 * \param [in] phaseType : \ref Liquid or \ref Gas
 	 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 	 * \param [in] int : mesh dimension
-	 * \param [in] bool : There are two possible equations of state for the fluid
 	 *  */
 	EulerBarotropicStaggered(phaseType fluid, pressureEstimate pEstimate, int dim);
 
@@ -90,6 +97,20 @@ public :
         _saveVelocity=save_v;
     }
 
+	/** \fn getStiffenedGasEOS
+     * \brief return the stiffened gas law associated to fluid i
+     * @param int i : the index of the fluid
+     * @return throws an exception if the fluid with index i does not follow a stiffened gas law.
+     * */
+    StiffenedGas getStiffenedGasEOS(int i)
+    {
+        StiffenedGas * result = dynamic_cast<StiffenedGas*>(_fluides[i]); 
+        if(result)
+             return *result;
+        else
+            throw CdmathException("ProblemFluid::getStiffenedGasEOS() : fluid EOS is not a stiffened gas law");
+    }
+
 	void setVerticalPeriodicFaces();
 	void setHorizontalPeriodicFaces();
 
@@ -106,13 +127,19 @@ public :
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );
 
-	void InterpolateFromFacestoCells(const Field &atFaces, Field &atCells);
+	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
 
 
 protected :
+ /** Fluid equation of state **/
+    vector<    Fluide* > _fluides;//
+	CompressibleFluid *_compressibleFluid;
+	double _Tref; //EOS reference temperature
+    double _Pref; //EOS reference pressure
+
 	Field _Velocity, _Density, _Velocity_at_Cells;
 	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq;
-	Mat _InvVol, _Div, _MinusGrad, _Conv, _Laplacian, _InvSurface;; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
+	Mat _InvVol,_InvSurface,  _Div,  _LaplacianDensity,_Conv, _MinusGrad,_LaplacianVelocity  ;
 	double _c, _maxPerim, _minCell ;
 	double *_vec_normal;
 	bool _saveDensity, _saveVelocity;

@@ -4,6 +4,7 @@
 
 #include "EulerBarotropicStaggered.hxx"
 #include "StiffenedGas.hxx"
+#include <cassert>
 #include <numeric>
 
 using namespace std;
@@ -11,22 +12,50 @@ using namespace std;
 EulerBarotropicStaggered::EulerBarotropicStaggered(phaseType fluid, pressureEstimate pEstimate, int dim){
 	_Ndim=dim;
 	_nVar = 2; 
-	__nbPhases = 1;
-	_dragCoeffs=vector<double>(1,0);
 	_fluides.resize(1);
-
 	_saveVelocity=false; 
 	_saveDensity=false; 
 	_facesBoundinit = false;
 	_indexFacePeriodicSet = false;
 	_vec_normal=NULL;
+
+	if(pEstimate==around1bar300K){//EOS at 1 bar and 300K
+		_Tref=300;
+		_Pref=1e5;
+		if(fluid==Gas){
+			cout<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
+			*_runLogFile<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
+			_compressibleFluid = new StiffenedGas(1.4,743,_Tref,2.22e5);  //ideal gas law for nitrogen at pressure 1 bar and temperature 27°C, e=2.22e5, c_v=743
+		}
+		else{
+			cout<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
+			*_runLogFile<<"Fluid is water around 1 bar and 300 K (27°C)"<<endl;
+			_compressibleFluid = new StiffenedGas(996,_Pref,_Tref,1.12e5,1501,4130);  //stiffened gas law for water at pressure 1 bar and temperature 27°C, e=1.12e5, c_v=4130
+		}
+	}
+	else{//EOS at 155 bars and 618K 
+		_Tref=618;
+		_Pref=155e5;
+		if(fluid==Gas){
+			cout<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
+			*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
+			_compressibleFluid = new StiffenedGas(102,_Pref,_Tref,2.44e6, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C
+		}
+		else{
+			cout<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
+			*_runLogFile<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
+			_compressibleFluid= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
+		}
+	}
+
+	//Save into the fluid list
+	_fluides.resize(1,_compressibleFluid);
 	if (_Ndim == 3){	
 		cout<<"!!!!!!!!!!!!!!!!!!!!!!!!EulerBarotropicStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 		*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!!EulerBarotropicStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 		_runLogFile->close();
 		throw CdmathException("EulerBarotropicStaggered pas dispo en 3D, arret de calcul");				
-	}
-				
+	}		
 }
 
 
@@ -79,16 +108,16 @@ double EulerBarotropicStaggered::getOrientation(int j, Cell Cint){
 		orien = 1;
 	else if (dotprod < 0)
 		orien = -1;
-	delete []vec;
+	delete []vec; //TODO à modifier 
 	return orien;
 }
 
-void EulerBarotropicStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){
-	assert atFaces.getTypeOfField() == FACES;
-	assert atCells.getTypeOfField() == CELLS;
+void EulerBarotropicStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ // TODO fonctionne ?
+	assert( atFaces.getTypeOfField() == FACES);
+	assert( atCells.getTypeOfField() == CELLS);
 	for (int l=0; l < _Nmailles ; l++){
 		for (int k=0; k< 3; k++){
-			_atCells(l, k) =0;
+			atCells(l, k) =0;
 		}
 	}
 	for (int i = 0 ; i < _Nfaces ; i++){
@@ -124,19 +153,19 @@ void EulerBarotropicStaggered::InterpolateFromFacesToCells(const Field &atFaces,
 				M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
 		
 			for (int k=0; k< _Ndim; k++){
-				_atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
-				_atCells(idCells[1], k) -= atFaces(i) * M2[k]/Ctemp2.getMeasure(); 
+				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+				atCells(idCells[1], k) -= atFaces(i) * M2[k]/Ctemp2.getMeasure(); 
 			}
 		}
 		else if  (Fj.getNumberOfCells() == 1){
 			for (int k=0; k< _Ndim; k++)
-				_atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
 		}
 	}
 	string prim(_path+"/EulerBarotropicStaggered_");///Results
 	prim+=_fileName;
 	string name = atCells.getName();
-	prim += name
+	prim += name;
 	switch(_saveFormat)
 	{
 	case VTK :
@@ -231,9 +260,7 @@ void EulerBarotropicStaggered::initialize(){
 		cout << "mesh dimension = "<<_Ndim <<endl;
 		*_runLogFile << " spaceDim= "<<_Ndim <<endl;
 
-		_d = 1/( sqrt(2*_neibMaxNbCells) );
 		_vec_normal = new double[_Ndim];
-
 		//Construction des champs primitifs initiaux comme avant dans ParaFlow
 		
 		for(int i =0; i<_Nfaces; i++)
@@ -304,10 +331,10 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetUp(_Div);
 
 	// matrix LAPLACIAN (without boundary terms)
-	MatCreate(PETSC_COMM_SELF, & _Laplacian); 
-	MatSetSizes(_Laplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
-	MatSetFromOptions(_Laplacian);
-	MatSetUp(_Laplacian);
+	MatCreate(PETSC_COMM_SELF, & _LaplacianDensity); 
+	MatSetSizes(_LaplacianDensity, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
+	MatSetFromOptions(_LaplacianDensity);
+	MatSetUp(_LaplacianDensity);
 	
 	// matrix GRADIENT (we will impose to _Be 0 on faces so that u^n+1 = u^n at the _Boundary)
 	MatCreate(PETSC_COMM_SELF, & _MinusGrad); 
@@ -320,6 +347,12 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetSizes(_Conv, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nfaces );
 	MatSetFromOptions(_Conv);
 	MatSetUp(_Conv);
+
+	// matrix LAPLACIAN (without boundary terms)
+	MatCreate(PETSC_COMM_SELF, & _LaplacianVelocity); 
+	MatSetSizes(_LaplacianVelocity, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nfaces ); 
+	MatSetFromOptions(_LaplacianVelocity);
+	MatSetUp(_LaplacianVelocity);
 
 	if(_system)
 	{
@@ -352,21 +385,21 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		cout << endl;
 		MatZeroEntries(_A);
 		MatZeroEntries(_Div);
-		MatZeroEntries(_Laplacian);
+		MatZeroEntries(_LaplacianDensity);
+		MatZeroEntries(_LaplacianVelocity);
 		MatZeroEntries(_Conv);
-		MatZeroEntries(_MinusGrad);
+		MatZeroEntries(_MinusGrad); //TODO : vérifier que cela remet bien à zéro les matrices
 		
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
 			for (int j=0; j<_Nfaces;j++){
 				Face Fj = _mesh.getFace(j);
-				bool _isBoundary=Fj.isBorder();
 				std::vector< int > idCells = Fj.getCellsId();
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				double orien = getOrientation(j,Ctemp1);
+				PetscScalar epsilon, ConvectiveFlux, rhoL, rhoR, u, absConvectiveFlux, MinusabsConvectiveFlux	;
 				
 				// Metrics
-				PetscScalar orientedFaceArea = orien * Fj.getMeasure();
+				PetscScalar orientedFaceArea = getOrientation(j,Ctemp1) * Fj.getMeasure();
 				PetscScalar orientedMinusFaceArea = -orientedFaceArea;
 				PetscScalar FaceArea = Fj.getMeasure();
 				PetscScalar MinusFaceArea = -FaceArea;
@@ -374,7 +407,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				PetscInt IndexFace = _Nmailles + j;
 				PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 
-				PetscScalar rhoL, rhoR, u;
 
 				//Is the face periodic face ? If yes will it be seen by the scheme or is it the "other" face ?
 				// TODO à factoriser 
@@ -418,30 +450,82 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 
-					// Density conservation equation
+					/****************** Density conservation equation *********************/
 					VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
 					VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
 					VecGetValues(_primitiveVars,1,&IndexFace,&u);
-					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rho_L + rho_R)/2.0;;
-					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceAre_densityMean;
+					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0;
+					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
 					PetscScalar FaceArea_upwinding = (abs(u) + _c) * FaceArea/2.0;
 					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_Div, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
-					MatSetValues(_Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES ); 
-					MatSetValues(_Laplacian, 1, &idCells[0], 1, &idCells[1], &FaceArea_upwinding, ADD_VALUES );  
-					MatSetValues(_Laplacian, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea_upwinding, ADD_VALUES ); 
-					MatSetValues(_Laplacian, 1, &idCells[1], 1, &idCells[0], &FaceArea_upwinding, ADD_VALUES );  
+					MatSetValues(_LaplacianDensity, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES ); 
+					MatSetValues(_LaplacianDensity, 1, &idCells[0], 1, &idCells[1], &FaceArea_upwinding, ADD_VALUES );  
+					MatSetValues(_LaplacianDensity, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea_upwinding, ADD_VALUES ); 
+					MatSetValues(_LaplacianDensity, 1, &idCells[1], 1, &idCells[0], &FaceArea_upwinding, ADD_VALUES );  
 
-					// Momentum conservation equation
+					/*************** Momentum conservation equation *****************/
 					MatSetValues(_MinusGrad, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
 					MatSetValues(_MinusGrad, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
 					MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
-					PetscSaclar ConvectiveFlux =0;
-					MatSetValues(_Conv, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(_MinusGrad, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
-
+					
+					// Convective term //
+					PetscInt jepsilon, L, I;
+					// Loop on half diamond cells
+					for (int nei =0; nei <Fj.getNumberOfCells(); nei ++){
+						Cell K = _mesh.getCell(Fj.getCellsId() [nei]);
+						Point xb =  K.getBarryCenter();
+						std::vector<int> idFaces = K.getFacesId();
+						VecGetValues(_primitiveVars,1,&Fj.getCellsId() [nei],&rhoL);
+						//Loop on epsilon the boundary of a dual cell in the fixed half diamond cell 
+						for (int Nbepsilon = 0; Nbepsilon < Fj.getNumberOfNodes() ;Nbepsilon ){ 
+							ConvectiveFlux = 0 ;		
+							Node xsigma = _mesh.getNode( Fj.getNodesId()[Nbepsilon] );
+							// For fixed epsilon (and thus the node on sigma defining it ) Loop on the faces that are in the boundary of the cell containing the fixed half diamond cell	
+							for (int f =0; f <K.getNumberOfFaces(); f ++){
+								// Compute the flux through epsilon
+								Face Facef = _mesh.getFace( idFaces[f] );
+								std::vector< int> idCellsOfFacef =  Facef.getCellsId();
+								I = _Nmailles + idFaces[f];
+								VecGetValues(_primitiveVars,1,&I	,&u);
+								PetscScalar psif = 1/K.getNumberOfFaces();               		//TODO à calculer
+								if (Facef.getNumberOfCells() ==2 )								//TODO tester périodicité de la face car sinon passe deux fois
+									VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoR);	
+								else if (Facef.getNumberOfCells() ==1){ 						//TODO PERIODIQUE 
+									if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){	//Is the face a wall boundarycondition face
+										rhoR =  rhoL;
+									}
+									else{ //Imposed boundaryconditions
+										std::map<int,double> boundaryDensity = getboundaryDensity(); 
+										std::map<int,double>::iterator it = boundaryDensity.find(j);
+										rhoR = boundaryDensity[it->first]; 
+									}
+								} 
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL) )* psif;
+								std::vector< int > idNodes = Facef.getNodesId();
+								if ( std::find(idNodes.begin(), idNodes.end(), Fj.getNodesId()[Nbepsilon])!=idNodes.end() && K.getFacesId()[f] != j) 	// -> Search for the unique face that is not sigma that has x_sigma has an extremity -> jepsilon will be the index of this cell
+									jepsilon =  K.getFacesId()[f];
+							}
+							
+							epsilon = (xb.x() - xsigma.x())*(xb.x() - xsigma.x());
+							if (_Ndim > 1){
+								epsilon += (xb.y() - xsigma.y() )*(xb.y() - xsigma.y());
+								if (_Ndim > 2)
+									epsilon += (xb.z() - xsigma.z())*(xb.z() - xsigma.z());
+							}
+							epsilon = sqrt(epsilon);
+							
+							ConvectiveFlux *= epsilon/2.0  ;
+							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		// TODO Should we pass twice ? 
+							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
+							absConvectiveFlux = abs(ConvectiveFlux);
+							MinusabsConvectiveFlux = -abs(ConvectiveFlux);
+							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
+							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
+						}
+					} 
 				}
 				else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 		
 					if (_Ndim == 1){
@@ -461,44 +545,47 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 					
-					PetscScalar rhoExt, rho_Int;
-					VecGetValues(_primitiveVars,1,&idCells[0],&rho_Int);
+					PetscScalar rhoExt, rhoInt;
+					VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
 					VecGetValues(_primitiveVars,1,&IndexFace,&u);
 					
 					//Is the face a wall boundarycondition face
 					if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){	
-						rhoExt =  rho_Int;
+						rhoExt =  rhoInt;
 					}
 					else{ //Imposed boundaryconditions
 						std::map<int,double> boundaryDensity = getboundaryDensity(); 
 						std::map<int,double>::iterator it = boundaryDensity.find(j);
-						rho_Ext = boundaryDensity[it->first]; 
+						rhoExt = boundaryDensity[it->first]; 
 					}
 					
-					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rho_Int + rho_Ext)/2.0;
+					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
 					PetscScalar MinusFaceArea_upwinding = -(abs(u) + _c) * FaceArea/2.0;
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
-					MatSetValues(_Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
-					PetscScalar boundterm = -rho_Ext*MinusFaceArea_upwinding;
-					VecSetValues(_BoundaryTerms, 1,&idCells[0], &rho_Ext, INSERT_VALUES );
+					MatSetValues(_LaplacianDensity, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
+					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
+					VecSetValues(_BoundaryTerms, 1,&idCells[0], &rhoExt, INSERT_VALUES );
 				}	
 			}
 		}
-		MatAssemblyBegin(_Div,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
-		MatAssemblyBegin(_MinusGrad, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_MinusGrad, MAT_FINAL_ASSEMBLY);
-
-		MatAssemblyBegin(_Laplacian,MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_Laplacian, MAT_FINAL_ASSEMBLY);
-		VecAssemblyBegin(_BoundaryTerms);
-		VecAssemblyEnd(_BoundaryTerms);
-		VecScale(_BoundaryTerms, _d * _c); // TODO ???
-
 		MatAssemblyBegin(_InvSurface, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
 		MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
+
+		MatAssemblyBegin(_Div,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_LaplacianDensity,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_LaplacianDensity, MAT_FINAL_ASSEMBLY);
+		VecAssemblyBegin(_BoundaryTerms);
+		VecAssemblyEnd(_BoundaryTerms);
+
+		MatAssemblyBegin(_MinusGrad, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_MinusGrad, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_Conv, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_Conv, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
 
 		Mat  GradDivTilde; 
 		MatScale(_MinusGrad, -1.0);
@@ -508,10 +595,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatScale(GradDivTilde, _c) ; //TODO : ajouter rho (u+c)
 		
 		
-		// _A = (dc _Laplacian  ;  -Div         )
+		// _A = (dc _LaplacianDensity  ;  -Div         )
 		//      (-Conv  ;  -MinusGrad (1/|dK| Div ) 
 		Mat G[4];
-		G[0] = _Laplacian;
+		G[0] = _LaplacianDensity;
 		G[1] = _Div;
 		G[2] = _MinusGrad;
 		G[3] = GradDivTilde;
@@ -624,7 +711,7 @@ void EulerBarotropicStaggered::computeNewtonVariation()
 		if (_timeScheme == Implicit)
 			cout << "Matrice du système linéaire avant contribution delta t" << endl;
 		if (_timeScheme == Explicit) {
-			cout << "Matrice _A tel que _A = V^-1(dc _Laplacian  ;  -1/rho B         )       "<<endl; 
+			cout << "Matrice _A tel que _A = V^-1(dc _LaplacianDensity  ;  -1/rho B         )       "<<endl; 
 			cout << "                            (kappa B^t     ;  dc -B^t(1/|dK|) B) : du second membre avant contribution delta t" << endl;
 		}
 		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
@@ -730,7 +817,8 @@ void EulerBarotropicStaggered::terminate(){
 	MatDestroy(&_InvVol); 
 	VecDestroy(& _BoundaryTerms);	
 	MatDestroy(& _InvSurface);
-	MatDestroy(& _Laplacian);
+	MatDestroy(& _LaplacianDensity);
+	MatDestroy(& _LaplacianVelocity);
 	// 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
 
