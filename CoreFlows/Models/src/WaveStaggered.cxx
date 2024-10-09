@@ -170,6 +170,67 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 	}
 
 }
+void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ // TODO fonctionne ?
+	assert( atFaces.getTypeOfField() == FACES);
+	assert( atCells.getTypeOfField() == CELLS);
+	for (int l=0; l < _Nmailles ; l++){
+		for (int k=0; k< 3; k++){
+			atCells(l, k) =0;
+		}
+	}
+	for (int i = 0 ; i < _Nfaces ; i++){
+		Face Fj = _mesh.getFace(i);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		double orien1 = getOrientation(i,Ctemp1);
+		
+		std::vector<double> M1(_Ndim), M2(_Ndim);
+		Point xK = Ctemp1.getBarryCenter();
+		Point xsigma = Fj.getBarryCenter();
+		double fac;
+
+		if (Ctemp1.getNumberOfFaces() == _Ndim*2)
+			fac = 1;
+		else if (Ctemp1.getNumberOfFaces() ==  _Ndim + 1)
+			fac = -1;
+
+		M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+		if (_Ndim >1)
+			M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+
+		if (Fj.getNumberOfCells() == 2){
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			xK = Ctemp2.getBarryCenter();
+			if (Ctemp2.getNumberOfFaces() == _Ndim*2)
+				fac = 1;
+			else if (Ctemp2.getNumberOfFaces() ==  _Ndim + 1)
+				fac = -1;
+
+			M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+			if (_Ndim >1)
+				M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+		
+			for (int k=0; k< _Ndim; k++){
+				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+				atCells(idCells[1], k) -= atFaces(i) * M2[k]/Ctemp2.getMeasure(); 
+			}
+		}
+		else if  (Fj.getNumberOfCells() == 1){
+			for (int k=0; k< _Ndim; k++)
+				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+		}
+	}
+	string prim(_path+"/EulerBarotropicStaggered_");///Results
+	prim+=_fileName;
+	string name = atCells.getName();
+	prim += name;
+	switch(_saveFormat)
+	{
+	case VTK :
+		atCells.writeVTK(prim);
+		break;
+	}
+}
 
 std::vector<double> WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells ){
 	double errorface =0;
@@ -607,6 +668,35 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 	ComputeEnergyAtTimeT();
 	return _cfl * _minCell / (_maxPerim * _c);
+}
+
+void WaveStaggered::ComputeMinCellMaxPerim(){
+	Vec V, W;
+	PetscScalar minInvSurf, maxInvVol;
+	// Minimum size of mesh volumes
+	VecCreate(PETSC_COMM_SELF, & V);
+	VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
+	int *indices3 = new int[_globalNbUnknowns]; //TODO peut-on utiliser cette formulation en parallèle ?
+	std::iota(indices3, indices3 +_globalNbUnknowns, 0);
+	VecSetFromOptions(V);
+	MatGetDiagonal(_InvVol,V);
+	VecMax(V, indices3, &maxInvVol);
+	_minCell = 1.0/maxInvVol;
+
+	//Maximum size of surfaces
+	VecCreate(PETSC_COMM_SELF, & W);
+	VecSetSizes(W, PETSC_DECIDE, _Nmailles);
+	VecSetFromOptions(W);
+	MatGetDiagonal(_InvSurface, W);
+	int *indices4 = new int[_Nmailles]; //TODO peut-on utiliser cette formulation en parallèle ?
+	std::iota(indices4, indices4 +_Nmailles, 0);
+	VecMin(W, indices4, &minInvSurf);
+	_maxPerim = 1.0/minInvSurf;
+
+	delete[] indices3;
+	delete[] indices4;
+	VecDestroy(& V);
+	VecDestroy(& W); 
 }
 
 void WaveStaggered::ComputeEnergyAtTimeT(){

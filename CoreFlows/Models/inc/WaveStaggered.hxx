@@ -34,15 +34,15 @@ public :
 	void setInitialField(const Field &field);
 
 	//! system initialisation
-	void initialize();
+	virtual void initialize();
 
 	/** \fn terminate
      * \brief empties the memory
      * @param void
      *  */
-    void terminate();
+    virtual void terminate();
 
-	double getTimeStep();
+
 
 	void save();
 
@@ -51,20 +51,20 @@ public :
      *  \return  double dt the proposed time step
      *  \return  bool stop, true if the calculation should not be continued (stationary state, maximum time or time step numer reached)
      *  */
-    double computeTimeStep(bool & stop);
+    virtual double computeTimeStep(bool & stop);
 
 	/** \fn computeNewtonVariation
 	 * \brief Builds and solves the linear system to obtain the variation Vkp1-Vk in a Newton scheme using primitive variables
 	 * @param
 	 * */
-	void computeNewtonVariation();
+	virtual void computeNewtonVariation(); //TODO ok ?
 
 	/** \fn iterateTimeStep
 	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence
 	 * @param
 	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
 	 * */
-	bool iterateTimeStep(bool &ok);
+	virtual bool iterateTimeStep(bool &ok);
 
 	 /** \fn validateTimeStep
      * \brief Validates the solution computed y solveTimeStep
@@ -72,12 +72,17 @@ public :
      * c It is a pure virtual function overloaded in each model
      * @param  void
      *  */
-    void validateTimeStep();
+    virtual void validateTimeStep();
 
 	 /** \fn savePressure
      * \brief saves the Pressure field in a separate file 
      * @param bool
      * */
+
+	double getTimeStep();
+	void  abortTimeStep();
+	bool  initTimeStep( double dt);
+
     void savePressure(bool save_p=true){
         _savePressure=save_p;
     }
@@ -101,8 +106,7 @@ public :
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
 
-	void  abortTimeStep();
-	bool  initTimeStep( double dt);
+
 	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );
 
@@ -111,11 +115,14 @@ public :
 	void setExactVelocityInterpolate(const Field &atFaces);
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 
+	void ComputeMinCellMaxPerim();
+	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
+
 
 protected :
 	Field _Velocity, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate;
-	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq;
-	Mat _InvVol, _B, _Bt; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
+	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq ;
+	Mat _InvVol,_InvSurface, _B, _Bt; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	double *_vec_normal;
 	bool _savePressure, _saveVelocity;
