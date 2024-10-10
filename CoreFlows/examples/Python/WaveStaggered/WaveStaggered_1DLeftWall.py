@@ -72,6 +72,7 @@ def WaveStaggered_1DRiemannProblem():
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 		
 		if(Fj.getNumberOfCells()==2):
+			myProblem.setInteriorIndex(j);
 			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
@@ -86,6 +87,7 @@ def WaveStaggered_1DRiemannProblem():
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
+				myProblem.setSteggerBoundIndex(j) 
 				wallVelocityMap[j] =initialVelocityForPb(Fj.x()) ;
 				wallPressureMap[j] = initialPressure(Fj.x()) ;
 			

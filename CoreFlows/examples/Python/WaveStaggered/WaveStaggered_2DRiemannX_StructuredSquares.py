@@ -51,7 +51,10 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	wallVelocityMap = {}; 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
-	
+
+	# Set periodicity on top/bottom faces
+	myProblem.setVerticalPeriodicFaces()
+
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
@@ -63,21 +66,23 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 
 		if(Fj.getNumberOfCells()==2):
+			myProblem.setInteriorIndex(j);
 			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
 			Velocity0[j] = initialVelocity(vec_normal_sigma,Fj.x()) ;
 		else:
-			wallPressureMap[j] = initialPressure(Ctemp1.x()) ;
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if (Fj.x() <(xsup - xinf)/(3*nx) ) : 
+			if (Fj.x() <(xsup - xinf)/(3*nx) ) : # TODO on left side ?
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
+				myProblem.setSteggerBoundIndex(j) #TODO trouver le moyen d'éviter la face de bord qui n'est pas calculée en périodique
+				wallPressureMap[j] = initialPressure(Ctemp1.x()) ;
 				wallVelocityMap[j] = initialVelocity(vec_normal_sigma,Fj.x()) ;
 
 	myProblem.setInitialField(Pressure0);
@@ -85,8 +90,6 @@ def WaveStaggered_2DRiemannX_StructuredSquares():
 	myProblem.setboundaryPressure(wallPressureMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
-	# Set periodicity on top/bottom faces
-	myProblem.setVerticalPeriodicFaces()
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);

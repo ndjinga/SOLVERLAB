@@ -85,7 +85,7 @@ def WaveStaggered_1DRiemannProblem():
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
-				wallVelocityMap[j] =initialVelocityForPb(Fj.x()) ;
+				wallVelocityMap[j] = initialVelocityForPb(Fj.x()) ;
 				wallPressureMap[j] = initialPressure(Fj.x()) ;
 			
 

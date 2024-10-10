@@ -201,20 +201,19 @@ void EulerBarotropicStaggered::initialize(){
 //TODO is it sufficient to put virtual in front of WaveStagg::Computetimestep
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
-	//The matrices are assembled only in the first time step since linear problem
+
+	VecZeroEntries(_BoundaryTerms);
+	MatZeroEntries(_A);
+	MatZeroEntries(_Div);
+	MatZeroEntries(_GradDivTilde);
+	MatZeroEntries(_LaplacianPressure);
+	MatZeroEntries(_LaplacianVelocity);
+	MatZeroEntries(_Conv);
+	MatZeroEntries(_MinusGrad); //TODO : vérifier que cela remet bien à zéro les matrices
 
 	if (_timeScheme == Explicit ){ 
 		cout << "EulerBarotropicStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
 		cout << endl;
-		
-		VecZeroEntries(_BoundaryTerms);
-		MatZeroEntries(_A);
-		MatZeroEntries(_Div);
-		MatZeroEntries(_GradDivTilde);
-		MatZeroEntries(_LaplacianPressure);
-		MatZeroEntries(_LaplacianVelocity);
-		MatZeroEntries(_Conv);
-		MatZeroEntries(_MinusGrad); //TODO : vérifier que cela remet bien à zéro les matrices
 		
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
@@ -239,12 +238,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				std::map<int,int>::iterator it;
 				bool periodicFaceComputed, periodicFaceNotComputed;
 				if (_indexFacePeriodicSet == true ){ // if periodic 
-					it = _indexFacePeriodicMap.find(j);
-					periodicFaceComputed = (it != _indexFacePeriodicMap.end());
-					std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
-					while ( ( j !=it2->second) && (it2 !=_indexFacePeriodicMap.end() ) )
+					it = _FacePeriodicMap.find(j);
+					periodicFaceComputed = (it != _FacePeriodicMap.end());
+					std::map<int,int>::iterator it2 = _FacePeriodicMap.begin();
+					while ( ( j !=it2->second) && (it2 !=_FacePeriodicMap.end() ) )
 						it2++;
-					periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
+					periodicFaceNotComputed = (it2 !=  _FacePeriodicMap.end());
 				}
 				else{
 					periodicFaceComputed = false;
@@ -257,6 +256,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						idCells.push_back( idCells_other_Fj[0]  );
 					}
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);
+
+					/*************** Matrices related to metrics ***************/
 					if (_Ndim == 1){
 						det = Ctemp2.x() - Ctemp1.x();
 						InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
@@ -275,6 +276,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
 					MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
+					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+					MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
 
 					/****************** Density conservation equation *********************/
 					VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
@@ -294,10 +297,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					/*************** Momentum conservation equation *****************/
 					MatSetValues(_MinusGrad, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
 					MatSetValues(_MinusGrad, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
-					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-					MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
+
 					
-					// Convective term //
+					// Convective terms //
 					PetscInt jepsilon, L, I;
 					// Loop on half diamond cells
 					for (int nei =0; nei <Fj.getNumberOfCells(); nei ++){
@@ -320,7 +322,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								if (Facef.getNumberOfCells() ==2 )								//TODO tester périodicité de la face car sinon passe deux fois
 									VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoR);	
 								else if (Facef.getNumberOfCells() ==1){ 						//TODO PERIODIQUE 
-									if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){	//Is the face a wall boundarycondition face
+									if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){	//Is the face a wall boundarycondition face
 										rhoR =  rhoL;
 									}
 									else{ //Imposed boundaryconditions
@@ -353,7 +355,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						}
 					} 
 				}
-				else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 		
+				else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 
+					/*************** Matrices related to metrics ***************/		
 					if (_Ndim == 1){
 						InvD_sigma = 2.0/Ctemp1.getMeasure() ;
 						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
@@ -371,12 +374,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 					
+					/****************** Density conservation equation *********************/
 					PetscScalar rhoExt, rhoInt;
 					VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
 					VecGetValues(_primitiveVars,1,&IndexFace,&u);
 					
 					//Is the face a wall boundarycondition face
-					if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){	
+					if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){	
 						rhoExt =  rhoInt;
 					}
 					else{ //Imposed boundaryconditions
@@ -386,8 +390,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					}
 					
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
-					PetscScalar MinusFaceArea_upwinding = -(abs(u) + _c) * FaceArea/2.0;
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
+					PetscScalar MinusFaceArea_upwinding = -(abs(u) + _c) * FaceArea/2.0;
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &rhoExt, INSERT_VALUES );
@@ -417,15 +421,15 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMatMatMult(_MinusGrad,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
 		MatScale(_Div, -1.0);
 		MatScale(_MinusGrad, -1.0);
-		MatScale(_GradDivTilde, _c) ; //TODO : ajouter rho (u+c)
+		MatScale(_GradDivTilde, _c) ; //TODO : ajouter  c ( tilde rho)
 		
 		
-		// _A = (dc _LaplacianPressure  ;  -Div         )
-		//      (-Conv  ;  -MinusGrad (1/|dK| Div ) 
+		// _A = ( (u+c) _Laplacian   ;  -Div(\rho .)         )
+		//      (-Conv  ;  -c (\tilde rho) MinusGrad (1/|dK| Div ) 
 		Mat G[4];
 		G[0] = _LaplacianPressure;
 		G[1] = _Div;
-		G[2] = _MinusGrad; //TODO sortir minus grad
+		G[2] = _Conv ;
 		G[3] = _GradDivTilde;
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
@@ -433,13 +437,15 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //Coment sortir les redondances avec Prod
 
+		//_MinusGrad; //TODO ajouter minus grad
+		// TODO ajouter Laplacian velocity
 		ComputeMinCellMaxPerim();
 		Vec Prod2;
 		VecDuplicate(_BoundaryTerms, &Prod2);
 		MatMult(_InvVol, _BoundaryTerms, Prod2);  
 		MatMult(_A,_primitiveVars, _b); 
 		VecAXPY(_b,     1, Prod2);
-		VecDestroy(& Prod2); 
+		VecDestroy(& Prod2); //Coment sortir les redondances avec Prod
 	}
 
 	return _cfl * _minCell / (_maxPerim * _c);
@@ -447,7 +453,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 
 
-void EulerBarotropicStaggered::computeNewtonVariation()
+void EulerBarotropicStaggered::computeNewtonVariation() //TODO  : identique à wave stagg ?
 {
 	if(_verbose)
 	{

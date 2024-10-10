@@ -28,9 +28,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 				
 }
 
-std::map<int,double>  WaveStaggered::getboundaryPressure() const {
-		return _boundaryPressure;
-}
+
 
 void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
 	if (_facesBoundinit == true){ 
@@ -45,14 +43,24 @@ void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity
 		throw CdmathException("WaveStaggered::setboundaryVelocity should be called after WaveStaggered::setInitialField(Velocity)");
 	}
 }
-
 void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure){
 	_boundaryPressure = BoundaryPressure;
 }
+std::map<int,double>  WaveStaggered::getboundaryPressure() const {
+		return _boundaryPressure;
+}
+
 void WaveStaggered::setWallBoundIndex(int j ){
-	_indexWallBoundFaceSet.push_back(j);
+	_WallBoundFaceSet.push_back(j);
 	_isWall = true;
 }
+void WaveStaggered::setSteggerBoundIndex(int j ){
+	_SteggerBoundFaceSet.push_back(j);
+}
+void WaveStaggered::setInteriorIndex(int j ){
+	_InteriorFaceSet.push_back(j);
+}
+
 void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 	for (int idim = 0; idim < _Ndim; ++idim)
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
@@ -483,23 +491,23 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					std::map<int,int>::iterator it;
 					bool periodicFaceComputed, periodicFaceNotComputed;
 					if (_indexFacePeriodicSet == true ){ // if periodic 
-						it = _indexFacePeriodicMap.find(j);
-						periodicFaceComputed = (it != _indexFacePeriodicMap.end());
-						std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
-						while ( ( j !=it2->second) && (it2 !=_indexFacePeriodicMap.end() ) )
+						it = _FacePeriodicMap.find(j);
+						periodicFaceComputed = (it != _FacePeriodicMap.end());
+						std::map<int,int>::iterator it2 = _FacePeriodicMap.begin();
+						while ( ( j !=it2->second) && (it2 !=_FacePeriodicMap.end() ) )
 							it2++;
-						periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
+						periodicFaceNotComputed = (it2 !=  _FacePeriodicMap.end());
 					}
 					else{
 						periodicFaceComputed = false;
 						periodicFaceNotComputed = false;
 					}			
 					
-					if (Fj.getNumberOfCells()==2 || (periodicFaceComputed == true) ){	// Fj is inside the domain or is a boundary periodic face (computed)
-						if ( periodicFaceComputed == true){ 
+					if (std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end()  ){	// || (periodicFaceComputed == true) Fj is inside the domain or is a boundary periodic face (computed)
+						/* if ( std::find(_FacePeriodicMap.begin(), _FacePeriodicMap.end(),j ) != _FacePeriodicMap.end()  ){ 
 							std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
 							idCells.push_back( idCells_other_Fj[0]  );
-						}
+						} */
 						Cell Ctemp2 = _mesh.getCell(idCells[1]);
 						if (_Ndim == 1){
 							det = Ctemp2.x() - Ctemp1.x();
@@ -514,9 +522,14 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 							InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
 							InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
 						}
-					
+						
 						InvD_sigma = 1.0/PetscAbsReal(det);
 						PetscScalar InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
+						MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+						MatSetValues(InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
+						MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
+						MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
+						MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
 
 						MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 						MatSetValues(_B, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES );  
@@ -528,13 +541,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						MatSetValues(Laplacian, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
 						MatSetValues(Laplacian, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES );  
 
-						MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-						MatSetValues(InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
-						MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
-						MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-						MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 				
+									
 					}
-					else if (Fj.getNumberOfCells()==1 && (periodicFaceNotComputed == false) ) { //if boundary face and face index is different from periodic faces not computed 		
+					else { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 		
 						if (_Ndim == 1){
 							InvD_sigma = 2.0/Ctemp1.getMeasure() ;
 							InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
@@ -548,15 +557,17 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 							InvD_sigma = 1.0/PetscAbsReal(det);	
 							InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
 						}
-						MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+						/***************** Metric related matrices ******************/
 						MatSetValues(InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
 						MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 						MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
+						/***************** Pressure equation related matrices ******************/
+						MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 						MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
 
 						//Is the face a wall boundarycondition face
 						PetscScalar pExt, pInt;
-						if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
+						if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){
 							VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
 							pExt =  Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
 						}
@@ -645,7 +656,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					if (Fj.getNumberOfCells()==1) { //if boundary face 
 						//Is the face a wall boundarycondition face
 						PetscScalar pExt, pInt;
-						if (std::find(_indexWallBoundFaceSet.begin(), _indexWallBoundFaceSet.end(), j)!=_indexWallBoundFaceSet.end()){
+						if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){
 							std::vector< int > idCells = Fj.getCellsId();
 							VecGetValues(_primitiveVars,1,&idCells[0],&pInt);
 							pExt = _d * _c * Fj.getMeasure()*pInt; //pExt = pin so (grad p)_j = 0
@@ -833,10 +844,11 @@ void WaveStaggered::abortTimeStep(){
 	_dt = 0;
 }
 
-void WaveStaggered::setVerticalPeriodicFaces(){
-    for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
-        Face my_face=_mesh.getFace(j);
-        int iface_perio=-1;
+void WaveStaggered::setVerticalPeriodicFaces(){ // string VerticalorHorizontal
+	// Rajouter un assert : maillage  carré [0,1]^2
+	//mettre en argument vertical ou horizontal
+	for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
+		Face my_face=_mesh.getFace(j);
 		double x=my_face.x();
 		if (my_face.getNumberOfCells() ==1 && my_face.x()>0 && my_face.x()<1){ //TODO : dim =1
 			if(_Ndim==2){
@@ -844,9 +856,12 @@ void WaveStaggered::setVerticalPeriodicFaces(){
 					Face face_i=_mesh.getFace(iface);
 					double xi =face_i.x();
 					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(x-xi)<1e-3) ){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
-						bool empty = (_indexFacePeriodicMap.find(iface) == _indexFacePeriodicMap.end()) ;
-						if (empty == true)
-							_indexFacePeriodicMap[j]=iface;
+						//if (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end()){
+						bool empty = (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end()) ;
+						if (empty == true){
+							_FacePeriodicMap[j]=iface;
+							setInteriorIndex(j);
+						}
 					}
 				}
 			}
@@ -860,7 +875,6 @@ void WaveStaggered::setVerticalPeriodicFaces(){
 void WaveStaggered::setHorizontalPeriodicFaces(){
     for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
         Face my_face=_mesh.getFace(j);
-        int iface_perio=-1;
 		double y=my_face.y();
 		if (my_face.getNumberOfCells() ==1 && my_face.y()>0 && my_face.y()<1){ //TODO : dim =1 & : pas générique ; quelle condition mettre pour ne pas compter face de bord
 			if(_Ndim==2){
@@ -868,9 +882,9 @@ void WaveStaggered::setHorizontalPeriodicFaces(){
 					Face face_i=_mesh.getFace(iface);
 					double yi =face_i.y();
 					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(y-yi)<1e-3) ){ 
-						bool empty = (_indexFacePeriodicMap.find(iface) == _indexFacePeriodicMap.end()) ;
+						bool empty = (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end()) ;
 						if (empty == true)
-							_indexFacePeriodicMap[j]=iface;
+							_FacePeriodicMap[j]=iface;
 					}
 				}
 			}
@@ -982,10 +996,10 @@ void WaveStaggered::save(){
 
 			for (int i = 0 ; i < _Nfaces ; i++){
 				bool periodicFaceNotComputed;
-				std::map<int,int>::iterator it2 = _indexFacePeriodicMap.begin();
-				while ( ( i !=it2->second) && (it2 != _indexFacePeriodicMap.end() ) )
+				std::map<int,int>::iterator it2 = _FacePeriodicMap.begin();
+				while ( ( i !=it2->second) && (it2 != _FacePeriodicMap.end() ) )
 					it2++;
-				periodicFaceNotComputed = (it2 !=  _indexFacePeriodicMap.end());
+				periodicFaceNotComputed = (it2 !=  _FacePeriodicMap.end());
 				int j = (periodicFaceNotComputed ==true) && (_indexFacePeriodicSet == true) ? it2->first : i; // in periodic k stays i, if it has been computed by scheme and takes the value of its matched face 
 				int I= _Nmailles + j;
 				if (_mpi_size > 1)
