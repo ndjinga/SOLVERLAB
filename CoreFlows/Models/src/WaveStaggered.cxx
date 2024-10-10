@@ -859,16 +859,24 @@ void WaveStaggered::abortTimeStep(){
 	_dt = 0;
 }
 
-void WaveStaggered::setVerticalPeriodicFaces(Mesh M){ // string VerticalorHorizonta// Rajouter un assert : maillage  carré [0,1]^2 //mettre en argument vertical ou horizontal
+void WaveStaggered::setVerticalPeriodicFaces(Mesh M, char Direction){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
 	for (int j=0;j<M.getNumberOfFaces() ; j++){
 		Face my_face=M.getFace(j);
-		double x=my_face.x();
-		if (my_face.getNumberOfCells() ==1 && my_face.x()>0 && my_face.x()<1){ 
+		double e;
+		if (Direction == 'x')
+			e=my_face.x();
+		else if (Direction == 'y')
+			e=my_face.y();
+		if (my_face.getNumberOfCells() ==1 && e>0 && e<1){ 
 			if(_Ndim==2){ //TODO : dim =1
 				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
 					Face face_i=M.getFace(iface);
-					double xi =face_i.x();
-					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(x-xi)<1e-3) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+					double ei;
+					if (Direction == 'x')
+						ei=face_i.x();
+					else if (Direction == 'y')
+						ei=face_i.y();
+					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(e-ei)<1e-3) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
 						_FacePeriodicMap[j]=iface;
 						setInteriorIndex(j);
 					}
