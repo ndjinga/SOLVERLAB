@@ -83,45 +83,41 @@ public :
 	void  abortTimeStep();
 	bool  initTimeStep( double dt);
 
+		vector<string> getInputFieldsNames();
+	void setInputField(const string& nameField, Field& inputField );
+
     void savePressure(bool save_p=true){
         _savePressure=save_p;
-    }
-
-    /** \fn saveVelocity
-     * \brief saves the velocity field in a separate 3D file so that paraview can display the streamlines
-     * @param bool
-     * */
+	}
     void saveVelocity(bool save_v=true){
         _saveVelocity=save_v;
     }
 
-	void setVerticalPeriodicFaces();
+	void setVerticalPeriodicFaces(Mesh M);
 	void setHorizontalPeriodicFaces();
-
 	void setWallBoundIndex(int j );
 	void setSteggerBoundIndex(int j ); //Imposed pressure and velocity
 	void setInteriorIndex(int j ); //To avoid complicated implementation in periodic
+	std::map<int,double>  getboundaryPressure() const;
+	void  setboundaryPressure(map< int, double> BoundaryPressure);
+	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
+	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
+	bool  IsFaceBoundaryComputedInPeriodic(int j );
+	std::map<int,int>  getFacePeriodicMap() const;
 
 
 	double getOrientation(int j, Cell Cint);
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
 	
-
-	std::map<int,double>  getboundaryPressure() const;
-	void  setboundaryPressure(map< int, double> BoundaryPressure);
-	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
-
-
-	vector<string> getInputFieldsNames();
-	void setInputField(const string& nameField, Field& inputField );
-
 	void ComputeEnergyAtTimeT();
+
 	void setExactVelocityFieldAtCells(const Field &atCells);
 	void setExactVelocityInterpolate(const Field &atFaces);
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 
 	void ComputeMinCellMaxPerim();
 	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
+	void AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell Ctemp2);
 
 
 protected :
@@ -130,6 +126,7 @@ protected :
 	Mat _InvVol,_InvSurface, _B, _Bt; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	double *_vec_normal;
+	PetscScalar _pExt, _pInt;
 	bool _savePressure, _saveVelocity;
 	std::map<int, double>  _boundaryPressure;
 	std::map<int, std::vector<double> > _vec_sigma; // arbitrary degree of liberty associated to a face
