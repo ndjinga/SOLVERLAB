@@ -115,15 +115,16 @@ public :
 	void setExactVelocityInterpolate(const Field &atFaces);
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 
-	void ComputeMinCellMaxPerim();
+	//void ComputeMinCellMaxPerim();
 	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
+
 	void AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell Ctemp2);
 
 
 protected :
 	Field _Velocity, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate;
 	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq ;
-	Mat _InvVol,_InvSurface, _B, _Bt; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
+	Mat _InvVol,_InvSurface, _Div, _LaplacianPressure, _DivTranspose,  _GradDivTilde ; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	double *_vec_normal;
 	PetscScalar _pExt, _pInt;

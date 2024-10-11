@@ -404,6 +404,7 @@ void WaveStaggered::initialize(){
 	MatSetUp(_A);
 	MatZeroEntries(_A);
 
+	/********* Metrics Related ********/
 	// matrice des Inverses Volumes V^{-1}
 	MatCreate(PETSC_COMM_SELF, &_InvVol); 
 	MatSetSizes(_InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
@@ -411,19 +412,49 @@ void WaveStaggered::initialize(){
 	MatSetUp(_InvVol);
 	MatZeroEntries(_InvVol);
 
+	// matrice des Inverses de Surfaces
+	MatCreate(PETSC_COMM_SELF, & _InvSurface); 
+	MatSetSizes(_InvSurface, PETSC_DECIDE, PETSC_DECIDE, _Nmailles , _Nmailles );
+	MatSetFromOptions(_InvSurface);
+	MatSetUp(_InvSurface);
+	MatZeroEntries(_InvSurface);
+
+	/********* Pressure Related ********/
 	// matrice DIVERGENCE (|K|div(u))
-	MatCreate(PETSC_COMM_SELF, & _B); 
-	MatSetSizes(_B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-	MatSetFromOptions(_B);
-	MatSetUp(_B);
-	MatZeroEntries(_B);
-	
+	MatCreate(PETSC_COMM_SELF, & _Div); 
+	MatSetSizes(_Div, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
+	MatSetFromOptions(_Div);
+	MatSetUp(_Div);
+	MatZeroEntries(_Div);
+
+	// matrix _LaplacianPressure (without boundary terms)
+	MatCreate(PETSC_COMM_SELF, & _LaplacianPressure); 
+	MatSetSizes(_LaplacianPressure, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
+	MatSetFromOptions(_LaplacianPressure);
+	MatSetUp(_LaplacianPressure);
+	MatZeroEntries(_LaplacianPressure);
+
+	// Vector BoundaryTerms for Pressure
+	VecCreate(PETSC_COMM_SELF, & _BoundaryTerms); 
+	VecSetSizes(_BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns); 
+	VecSetFromOptions(_BoundaryTerms);
+	VecSetUp(_BoundaryTerms);
+	VecZeroEntries(_BoundaryTerms);
+
+	/********* Velocity Related ********/
 	// matrix GRADIENT (we will impose to _Be 0 on faces so that u^n+1 = u^n at the _Boundary)
-	MatCreate(PETSC_COMM_SELF, & _Bt); 
-	MatSetSizes(_Bt, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
-	MatSetFromOptions(_Bt);
-	MatSetUp(_Bt);
-	MatZeroEntries(_Bt);
+	MatCreate(PETSC_COMM_SELF, & _DivTranspose); 
+	MatSetSizes(_DivTranspose, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
+	MatSetFromOptions(_DivTranspose);
+	MatSetUp(_DivTranspose);
+	MatZeroEntries(_DivTranspose);
+
+	// matrix GRAD DIV TILDE (we will impose to _Be 0 on faces so that u^n+1 = u^n at the _Boundary)
+	MatCreate(PETSC_COMM_SELF, & _GradDivTilde); 
+	MatSetSizes(_GradDivTilde, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nfaces );
+	MatSetFromOptions(_GradDivTilde);
+	MatSetUp(_GradDivTilde);
+	MatZeroEntries(_GradDivTilde);
 
 	if(_system)
 	{
@@ -454,30 +485,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	if (_timeScheme == Explicit ){ 
 		if ( _nbTimeStep == 0 ){
 			cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
-			cout << endl;
-			Mat Laplacian, InvSurface;
-			
-			// matrix LAPLACIAN (without boundary terms)
-			MatCreate(PETSC_COMM_SELF, & Laplacian); 
-			MatSetSizes(Laplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
-			MatSetFromOptions(Laplacian);
-			MatSetUp(Laplacian);
-			MatZeroEntries(Laplacian);
-
-			// Vector BoundaryTerms for Pressure
-			VecCreate(PETSC_COMM_SELF, & _BoundaryTerms); 
-			VecSetSizes(_BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns); 
-			VecSetFromOptions(_BoundaryTerms);
-			VecSetUp(_BoundaryTerms);
-			VecZeroEntries(_BoundaryTerms);
-
-			// matrice des Inverses de Surfaces
-			MatCreate(PETSC_COMM_SELF, & _InvSurface); 
-			MatSetSizes(_InvSurface, PETSC_DECIDE, PETSC_DECIDE, _Nmailles , _Nmailles );
-			MatSetFromOptions(_InvSurface);
-			MatSetUp(_InvSurface);
-			MatZeroEntries(_InvSurface);
-
 			if (_mpi_rank ==0){
 				// Assembly of matrices 
 				for (int j=0; j<_Nfaces;j++){
@@ -498,23 +505,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					PetscScalar det, InvPerimeter1, InvPerimeter2, InvD_sigma, InvVol1, InvVol2;
 					PetscInt IndexFace = _Nmailles + j;
 					InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
-
-					/* //Is the face periodic face ? If yes will it be seen by the scheme or is it the "other" face ?
-					//IsPeriodicFace(periodicFaceComputed, periodicFaceComputed);
-					std::map<int,int>::iterator it;
-					bool periodicFaceComputed, periodicFaceNotComputed;
-					if (_indexFacePeriodicSet == true ){ // if periodic 
-						
-						periodicFaceComputed = (it != _FacePeriodicMap.end());
-						std::map<int,int>::iterator it2 = _FacePeriodicMap.begin();
-						while ( ( j !=it2->second) && (it2 !=_FacePeriodicMap.end() ) )
-							it2++;
-						periodicFaceNotComputed = (it2 !=  _FacePeriodicMap.end());
-					}
-					else{
-						periodicFaceComputed = false;
-						periodicFaceNotComputed = false;
-					} */
 					
 					if ( IsInterior ){	// || (periodicFaceComputed == true) Fj is inside the domain or is a boundary periodic face (computed)
 						std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
@@ -546,16 +536,16 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 
 						/******************* Pressure equation ***********************/
-						MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-						MatSetValues(_B, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES );  
-						MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
-						MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
-						MatSetValues(Laplacian, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
-						MatSetValues(Laplacian, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES );  
+						MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+						MatSetValues(_Div, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES );  
+						MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
+						MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
+						MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
+						MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES );  
 
 						/******************* Velocity equation ***********************/
-						MatSetValues(_Bt, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
-						MatSetValues(_Bt, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
+						MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
+						MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 					
 					}
 					else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 		
@@ -578,8 +568,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 
 						/***************** Pressure equation related matrices ******************/
-						MatSetValues(_B, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-						MatSetValues(Laplacian, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
+						MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+						MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
 
 						//Is the face a wall boundarycondition face
 						if (IsWallBound ){
@@ -595,13 +585,13 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					}	
 				}
 			}
-			MatAssemblyBegin(_B,MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_B, MAT_FINAL_ASSEMBLY);
-			MatAssemblyBegin(_Bt, MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_Bt, MAT_FINAL_ASSEMBLY);
+			MatAssemblyBegin(_Div,MAT_FINAL_ASSEMBLY);
+			MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
+			MatAssemblyBegin(_DivTranspose, MAT_FINAL_ASSEMBLY);
+			MatAssemblyEnd(_DivTranspose, MAT_FINAL_ASSEMBLY);
 
-			MatAssemblyBegin(Laplacian,MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(Laplacian, MAT_FINAL_ASSEMBLY);
+			MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY);
+			MatAssemblyEnd(_LaplacianPressure, MAT_FINAL_ASSEMBLY);
 			VecAssemblyBegin(_BoundaryTerms);
 			VecAssemblyEnd(_BoundaryTerms);
 			VecScale(_BoundaryTerms, _d * _c);
@@ -611,22 +601,22 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
-			Mat  GradDivTilde; 
-			MatScale(_Bt, -1.0);
-			MatMatMatMult(_Bt,_InvSurface, _B , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &GradDivTilde); 
-			MatScale(Laplacian, _d*_c );
-			MatScale(_B, -1.0/_rho);
-			MatScale(_Bt, -1.0*_kappa);
-			MatScale(GradDivTilde, _d*_c);
+
+			MatScale(_DivTranspose, -1.0);
+			MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
+			MatScale(_LaplacianPressure, _d*_c );
+			MatScale(_Div, -1.0/_rho);
+			MatScale(_DivTranspose, -1.0*_kappa);
+			MatScale(_GradDivTilde, _d*_c);
 			
 			
-			// _A = (dc Laplacian  ;  -1/rho B         )
+			// _A = (dc _LaplacianPressure  ;  -1/rho B         )
 			//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 			Mat G[4];
-			G[0] = Laplacian;
-			G[1] = _B;
-			G[2] = _Bt;
-			G[3] = GradDivTilde;
+			G[0] = _LaplacianPressure;
+			G[1] = _Div;
+			G[2] = _DivTranspose;
+			G[3] = _GradDivTilde;
 			MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 			Mat Prod;
 			MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
@@ -634,9 +624,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
 
 			ComputeMinCellMaxPerim();
-			MatDestroy(& _InvSurface);
-			MatDestroy(& Laplacian);
-			MatDestroy(& GradDivTilde); 
+			
 		}
 		if (_isWall && _nbTimeStep >0 ){	
 			if (_mpi_rank ==0){
@@ -827,7 +815,7 @@ void WaveStaggered::computeNewtonVariation()
 		if (_timeScheme == Implicit)
 			cout << "Matrice du système linéaire avant contribution delta t" << endl;
 		if (_timeScheme == Explicit) {
-			cout << "Matrice _A tel que _A = V^-1(dc Laplacian  ;  -1/rho B         )       "<<endl; 
+			cout << "Matrice _A tel que _A = V^-1(dc _LaplacianPressure  ;  -1/rho B         )       "<<endl; 
 			cout << "                            (kappa B^t     ;  dc -B^t(1/|dK|) B) : du second membre avant contribution delta t" << endl;
 		}
 		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
@@ -930,13 +918,20 @@ double WaveStaggered::getTimeStep()
 void WaveStaggered::terminate(){ 
 	delete[]_vec_normal;
 	VecDestroy(&_newtonVariation);
-	VecDestroy(&_b);
 	VecDestroy(&_primitiveVars);
+	VecDestroy(&_b);
 	MatDestroy(& _A); 
-	MatDestroy(& _B); 
-	MatDestroy(& _Bt); 
+
 	MatDestroy(&_InvVol); 
+	MatDestroy(& _InvSurface);
+
+	MatDestroy(& _Div); 
+	MatDestroy(&_LaplacianPressure);
 	VecDestroy(& _BoundaryTerms);	
+
+	MatDestroy(& _DivTranspose); 
+	MatDestroy(& _GradDivTilde); 
+
 	// 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
 

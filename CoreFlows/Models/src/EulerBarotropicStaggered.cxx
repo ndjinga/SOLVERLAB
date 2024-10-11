@@ -140,6 +140,8 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetFromOptions(_Div);
 	MatSetUp(_Div);
 
+	//TODO créer : _divrhou et _div une autre matrice divergence pour calculer gradiv
+
 	// matrix LAPLACIAN Pressure (without boundary terms)
 	MatCreate(PETSC_COMM_SELF, & _LaplacianPressure); 
 	MatSetSizes(_LaplacianPressure, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
@@ -439,7 +441,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 		//_MinusGrad; //TODO ajouter minus grad
 		// TODO ajouter Laplacian velocity
-		ComputeMinCellMaxPerim();
+		//ComputeMinCellMaxPerim();
 		Vec Prod2;
 		VecDuplicate(_BoundaryTerms, &Prod2);
 		MatMult(_InvVol, _BoundaryTerms, Prod2);  
