@@ -93,26 +93,30 @@ public :
         _saveVelocity=save_v;
     }
 
-	void setPeriodicFaces(Mesh M, char Direction);
-	void setHorizontalPeriodicFaces();
+
+	void ComputeEnergyAtTimeT();
+	/*******Periodicity related ********/
+	void setPeriodicFaces(	Mesh &M, const char &Direction);
+	std::map<int,int>  getFacePeriodicMap() const;
+	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
+	bool  IsFaceBoundaryComputedInPeriodic(int j );
+
+	/*******Imposed boundary conditions related ********/
 	void setWallBoundIndex(int j );
 	void setSteggerBoundIndex(int j ); //Imposed pressure and velocity
 	void setInteriorIndex(int j ); //To avoid complicated implementation in periodic
+
 	std::map<int,double>  getboundaryPressure() const;
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
-	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
-	bool  IsFaceBoundaryComputedInPeriodic(int j );
-	std::map<int,int>  getFacePeriodicMap() const;
-
-
+	
+	/***********Orientation *************/
 	double getOrientation(int j, Cell Cint);
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
 	
-	void ComputeEnergyAtTimeT();
-
 	void setExactVelocityFieldAtCells(const Field &atCells);
 	void setExactVelocityInterpolate(const Field &atFaces);
+
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 
 	void ComputeMinCellMaxPerim();

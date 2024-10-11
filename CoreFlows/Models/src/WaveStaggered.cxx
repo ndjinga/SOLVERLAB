@@ -239,14 +239,15 @@ void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atC
 				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
 		}
 	}
-	string prim(_path+"/EulerBarotropicStaggered_");///Results
-	prim+=_fileName;
-	string name = atCells.getName();
-	prim += name;
+	string prim(_path+"/WaveStaggered_");///Results
+	string primCells = prim +_fileName + atCells.getName();
+	string primFaces = prim + _fileName +atFaces.getName();;
+
 	switch(_saveFormat)
 	{
 	case VTK :
-		atCells.writeVTK(prim);
+		atCells.writeVTK(primCells);
+		atFaces.writeVTK(primFaces);
 		break;
 	}
 }
@@ -847,16 +848,16 @@ void WaveStaggered::abortTimeStep(){
 	_dt = 0;
 }
 
-void WaveStaggered::setPeriodicFaces(Mesh M, char Direction){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
+void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
 	for (int j=0;j<M.getNumberOfFaces() ; j++){
 		Face my_face=M.getFace(j);
 		double e;
 		if (Direction == 'x')
 			e=my_face.x();
-		else if (Direction == 'y')
+		else if (Direction == 'y' && _Ndim ==2)
 			e=my_face.y();
-		if (my_face.getNumberOfCells() ==1 && e>0 && e<1){ 
-			if(_Ndim==2){ //TODO : dim =1
+		if (my_face.getNumberOfCells() ==1 ){ 
+			if(_Ndim==2 &&  e>0 && e<1){
 				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
 					Face face_i=M.getFace(iface);
 					double ei;
@@ -870,31 +871,15 @@ void WaveStaggered::setPeriodicFaces(Mesh M, char Direction){ // TODO : Rajouter
 					}
 				}
 			}
-			else
-				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 2");		
-		}
-	}
-	_indexFacePeriodicSet = true;
-}
-
-void WaveStaggered::setHorizontalPeriodicFaces(){
-    for (int j=0;j<_mesh.getNumberOfFaces() ; j++){
-        Face my_face=_mesh.getFace(j);
-		double y=my_face.y();
-		if (my_face.getNumberOfCells() ==1 && my_face.y()>0 && my_face.y()<1){ //TODO : dim =1 & : pas générique ; quelle condition mettre pour ne pas compter face de bord
-			if(_Ndim==2){
-				for (int iface=0;iface<_mesh.getNumberOfFaces() ; iface++){
-					Face face_i=_mesh.getFace(iface);
-					double yi =face_i.y();
-					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(y-yi)<1e-3) ){ 
-						bool empty = (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end()) ;
-						if (empty == true)
-							_FacePeriodicMap[j]=iface;
+			else if (_Ndim == 1){
+				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
+					Face face_i=M.getFace(iface);
+					if (face_i.getNumberOfCells() ==1 && iface !=j && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+						_FacePeriodicMap[j]=iface;
+						setInteriorIndex(j);
 					}
-				}
-			}
-			else
-				throw CdmathException("Mesh::setPeriodicFaces: Mesh dimension should be 2");		
+				}	
+			}	
 		}
 	}
 	_indexFacePeriodicSet = true;

@@ -85,13 +85,10 @@ int main(int argc, char** argv)
 	std::map<int ,double> wallVelocityMap ;
 	Field Pressure0("pressure", CELLS, M, 1);
 	Field Velocity0("velocity", FACES, M, 1);
-	Field ExactVelocityInftyAtCells("ExactVelocityInftyAtCells", CELLS, M, 3); 
-	Field ExactVelocityInftyAtFaces("ExactVelocityInftyAtFaces", FACES, M, 1);
-	Field ExactVelocityInftyInterpolate("ExactVelocityInftyAtInterpolate", CELLS, M, 3);
-	for (int l=0 ; l< M.getNumberOfCells(); l++){
-		for (int k =0; k< spaceDim ; k++)
-			ExactVelocityInftyInterpolate[l, k] =0;
-	}
+
+	Field ExactVelocityAtCells("ExactVelocityAtCells", CELLS, M, 3); //TODO not used ?
+	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
+	Field ExactVelocityInterpolate("ExactVelocityInterpolate", CELLS, M, 3);
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -111,8 +108,7 @@ int main(int argc, char** argv)
 		double dotprod = 0;
 		for (int k = 0 ; k <Exact.size() ; k++)
 			dotprod += Exact[k] * vec_normal_sigma[k];
-		ExactVelocityInftyAtFaces[j] = dotprod; 
-		
+		ExactVelocityAtFaces[j] = dotprod; 
 
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
@@ -129,12 +125,6 @@ int main(int argc, char** argv)
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
-
-				/* std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
-				double dotprod = 0;
-				for (int k = 0 ; k <BoundaryVel.size() ; k++)
-					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
-				wallVelocityMap[j] = dotprod; */
 			}
 			else {// if face is on exterior (stegger condition) 			
 				myProblem.setSteggerBoundIndex(j);								
@@ -145,7 +135,7 @@ int main(int argc, char** argv)
 				wallVelocityMap[j] = dotprod;
 				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y());
 			} // building exact solution at faces and its interpolation at cell	
-			ExactVelocityInftyAtFaces[j] = wallVelocityMap[j];
+			ExactVelocityAtFaces[j] = wallVelocityMap[j];
 		}
 	}
 	
@@ -180,7 +170,7 @@ int main(int argc, char** argv)
 	
 	// evolution
 	myProblem.initialize();
-	myProblem.setExactVelocityInterpolate(ExactVelocityInftyAtFaces);
+	myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces, ExactVelocityInterpolate);
 	bool ok = myProblem.run();
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;

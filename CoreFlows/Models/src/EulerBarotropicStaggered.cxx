@@ -391,15 +391,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						std::map<int,double>::iterator it = boundaryPressure.find(j);
 						rhoExt = boundaryPressure[it->first]; 
 					}
-					
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
-					PetscScalar MinusorientedFaceArea = -orientedFaceArea;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
-					MatSetValues(_Div, 1, &idCells[0], 1, &j, &MinusorientedFaceArea, ADD_VALUES ); 
+					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 					PetscScalar MinusFaceArea_upwinding = -(abs(u) + _c) * FaceArea/2.0;
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
-					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
-					VecSetValues(_BoundaryTerms, 1,&idCells[0], &rhoExt, INSERT_VALUES );
+					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding; // TODO ??
+					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
 				}	
 			}
 		}
@@ -436,21 +434,22 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		G[1] = _DivRhoU;
 		G[2] = _Conv ;
 		G[3] = _GradDivTilde;
+		//_DivTranspose; //TODO ajouter minus grad
+		// TODO ajouter Laplacian velocity
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //Coment sortir les redondances avec Prod
+		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //TODO Coment sortir les redondances avec Prod
 
-		//_DivTranspose; //TODO ajouter minus grad
-		// TODO ajouter Laplacian velocity
+
 		//ComputeMinCellMaxPerim();
 		Vec Prod2;
 		VecDuplicate(_BoundaryTerms, &Prod2);
 		MatMult(_InvVol, _BoundaryTerms, Prod2);  
 		MatMult(_A,_primitiveVars, _b); 
 		VecAXPY(_b,     1, Prod2);
-		VecDestroy(& Prod2); //Coment sortir les redondances avec Prod
+		VecDestroy(& Prod2); //TODO Coment sortir les redondances avec Prod
 	}
 
 	return _cfl * _minCell / (_maxPerim * _c);
