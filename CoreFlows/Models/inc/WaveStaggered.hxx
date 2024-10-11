@@ -93,7 +93,7 @@ public :
         _saveVelocity=save_v;
     }
 
-	void setVerticalPeriodicFaces(Mesh M, char Direction);
+	void setPeriodicFaces(Mesh M, char Direction);
 	void setHorizontalPeriodicFaces();
 	void setWallBoundIndex(int j );
 	void setSteggerBoundIndex(int j ); //Imposed pressure and velocity

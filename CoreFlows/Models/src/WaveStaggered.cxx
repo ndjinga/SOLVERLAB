@@ -859,7 +859,7 @@ void WaveStaggered::abortTimeStep(){
 	_dt = 0;
 }
 
-void WaveStaggered::setVerticalPeriodicFaces(Mesh M, char Direction){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
+void WaveStaggered::setPeriodicFaces(Mesh M, char Direction){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
 	for (int j=0;j<M.getNumberOfFaces() ; j++){
 		Face my_face=M.getFace(j);
 		double e;

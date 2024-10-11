@@ -39,42 +39,53 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 
 int main(int argc, char** argv)
 {
-	//Preprocessing: mesh and group creation
-	int spaceDim = 2;
 	
-	// Prepare for the mesh
-	cout << "Building mesh" << endl;
-	cout << "Construction of a cartesian mesh" << endl;
-	double xinf = 0.0;
-	double xsup = 1.0;
-	double yinf = 0.0;
-	double ysup = 1.0;
-	int nx=50;
-	int ny=50;
-	Mesh M=Mesh(xinf,xsup,nx,yinf,ysup,ny);
-	double discontinuity = (xinf + xsup)/2.0;
-	
-	double kappa = 1;
-	double rho = 1;
-	double c = sqrt(kappa/rho);
-	WaveStaggered myProblem(spaceDim,rho, kappa);
-
-	// Prepare for the initial condition
-	// set the boundary conditions
-	
-	//Initial field creation
-	cout << "Building initial data" << endl;
-	std::map<int ,double> wallPressureMap;
-	std::map<int ,double> wallVelocityMap ;
-	Field Pressure0("pressure", CELLS, M, 1);
-	Field Velocity0("velocity", FACES, M, 1);
-	char Direction;	
 	if (argc<2 || (*(argv[1]) != 'x' && *(argv[1]) != 'y') ){
 		cout << "ERROR : you have to give a direction for the pseudo 1d Riemann problem, either 'x' or 'y' ";
 	}
 	else{
-		Direction = *(argv[1]);
-		myProblem.setVerticalPeriodicFaces(M, Direction);
+		char Direction = *(argv[1]);
+		//Preprocessing: mesh and group creation
+		int spaceDim = 2;
+		
+		// Prepare for the mesh
+		cout << "Building mesh" << endl;
+		cout << "Construction of a cartesian mesh" << endl;
+		double inf = 0.0;
+		double sup = 1.0;
+		int nx, ny;
+		if (Direction == 'x'){
+			nx=50;
+			if (nx%2 !=0)
+				cout << "ERROR the number of cells should be even" <<endl;
+			ny=3;
+		}
+		else if (Direction == 'y'){
+			nx=3;
+			ny=50;
+			if (ny%2 !=0)
+				cout << "ERROR the number of cells should be even" <<endl;
+		}
+
+		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
+		double discontinuity = (inf + sup)/2.0;
+		
+		double kappa = 1;
+		double rho = 1;
+		double c = sqrt(kappa/rho);
+		WaveStaggered myProblem(spaceDim,rho, kappa);
+
+		// Prepare for the initial condition
+		// set the boundary conditions
+		
+		//Initial field creation
+		cout << "Building initial data" << endl;
+		std::map<int ,double> wallPressureMap;
+		std::map<int ,double> wallVelocityMap ;
+		Field Pressure0("pressure", CELLS, M, 1);
+		Field Velocity0("velocity", FACES, M, 1);
+		
+		myProblem.setPeriodicFaces(M, Direction);
 		std::map<int,int> FacePeriodicMap = myProblem.getFacePeriodicMap();
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
@@ -148,7 +159,7 @@ int main(int argc, char** argv)
 		string fileName = "WaveStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 3000;
+		unsigned MaxNbOfTimeStep = 1000;
 		int freqSave = 20;
 		double cfl = 0.5;
 		double maxTime = 800;
