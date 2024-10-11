@@ -63,6 +63,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
+		// ./resources/AnnulusSpiderWeb5x16med
 	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
 	    cout << "Loading of a mesh named "<<argv[1] << endl;
 	    string filename = argv[1];

@@ -85,7 +85,7 @@ protected :
 	double _Tref; //EOS reference temperature
     double _Pref; //EOS reference pressure
 
-	Mat _Div,  _LaplacianPressure,_Conv, _MinusGrad, _LaplacianVelocity, _GradDivTilde  ;
+	Mat _Conv, _DivRhoU, _LaplacianVelocity  ;
 	double _c;
 	std::vector<double> _Entropy;
 				

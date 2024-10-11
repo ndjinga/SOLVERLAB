@@ -115,7 +115,7 @@ public :
 	void setExactVelocityInterpolate(const Field &atFaces);
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 
-	//void ComputeMinCellMaxPerim();
+	void ComputeMinCellMaxPerim();
 	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
 
 	void AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell Ctemp2);
