@@ -57,14 +57,14 @@ public :
 	 * \brief Builds and solves the linear system to obtain the variation Vkp1-Vk in a Newton scheme using primitive variables
 	 * @param
 	 * */
-	virtual void computeNewtonVariation(); //TODO ok ?
+	void computeNewtonVariation(); //TODO ok ?
 
 	/** \fn iterateTimeStep
 	 * \brief calls computeNewtonVariation to perform one Newton iteration and tests the convergence
 	 * @param
 	 * @return boolean ok is true is the newton iteration gave a physically acceptable result
 	 * */
-	virtual bool iterateTimeStep(bool &ok);
+	bool iterateTimeStep(bool &ok);
 
 	 /** \fn validateTimeStep
      * \brief Validates the solution computed y solveTimeStep
@@ -72,7 +72,7 @@ public :
      * c It is a pure virtual function overloaded in each model
      * @param  void
      *  */
-    virtual void validateTimeStep();
+    void validateTimeStep();
 
 	 /** \fn savePressure
      * \brief saves the Pressure field in a separate file 
@@ -113,15 +113,14 @@ public :
 	/***********Orientation *************/
 	double getOrientation(int j, Cell Cint);
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
-	
-	void setExactVelocityFieldAtCells(const Field &atCells);
-	void setExactVelocityInterpolate(const Field &atFaces);
 
+	/***********Post Pro *************/
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
-
-	void ComputeMinCellMaxPerim();
 	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
 
+	//TODO à supprimer ?
+	void setExactVelocityFieldAtCells(const Field &atCells);
+	void ComputeMinCellMaxPerim();
 	void AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell Ctemp2);
 
 

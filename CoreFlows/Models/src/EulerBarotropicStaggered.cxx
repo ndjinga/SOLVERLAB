@@ -336,7 +336,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								} 
 								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL) )* psif;
 								std::vector< int > idNodes = Facef.getNodesId();
-								if ( std::find(idNodes.begin(), idNodes.end(), Fj.getNodesId()[Nbepsilon])!=idNodes.end() && K.getFacesId()[f] != j) 	// -> Search for the unique face that is not sigma that has x_sigma has an extremity -> jepsilon will be the index of this cell
+								// -> Search for the unique face that is not sigma that has x_sigma has an extremity -> jepsilon will be the index of this cell
+								if ( std::find(idNodes.begin(), idNodes.end(), Fj.getNodesId()[Nbepsilon])!=idNodes.end() && K.getFacesId()[f] != j) 	
 									jepsilon =  K.getFacesId()[f];
 							}
 							
@@ -420,12 +421,22 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatAssemblyBegin(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
 
+
+		// Minimum size of mesh volumes
+		int *indices1 = new int[_Nmailles]; 
+		std::iota(indices1, indices1+_Nmailles, 0);
+		VecMax(_primitiveVars, indices1, &_rhoMax);
+		int *indices2 = new int[_Nfaces]; 
+		std::iota(indices2, indices2+_Nfaces, _Nmailles );
+		VecMax(_primitiveVars, indices2, &_uMax);
+		delete[] indices1;
+		delete[] indices2;
+
 		MatScale(_DivTranspose, -1.0);
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
-		MatScale(_Div, -1.0);
+		MatScale(_DivRhoU, -1.0);
 		MatScale(_DivTranspose, -1.0);
-		MatScale(_GradDivTilde, _c) ; //TODO : ajouter  c ( tilde rho)
-		
+		MatScale(_GradDivTilde, _c*_rhoMax) ; 
 		
 		// _A = ( (u+c) _Laplacian   ;  -Div(\rho .)         )
 		//      (-Conv  ;  -c (\tilde rho) MinusGrad (1/|dK| Div ) 
@@ -434,60 +445,28 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		G[1] = _DivRhoU;
 		G[2] = _Conv ;
 		G[3] = _GradDivTilde;
-		//_DivTranspose; //TODO ajouter minus grad
+		// TODO ajouter minus grad _DivTranspose _compressibleFluid->getPressure() ???
 		// TODO ajouter Laplacian velocity
+
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //TODO Coment sortir les redondances avec Prod
 
-
-		//ComputeMinCellMaxPerim();
 		Vec Prod2;
 		VecDuplicate(_BoundaryTerms, &Prod2);
 		MatMult(_InvVol, _BoundaryTerms, Prod2);  
 		MatMult(_A,_primitiveVars, _b); 
 		VecAXPY(_b,     1, Prod2);
-		VecDestroy(& Prod2); //TODO Coment sortir les redondances avec Prod
+		VecDestroy(& Prod2);	
 	}
+	if (_nbTimeStep == 0)
+		ComputeMinCellMaxPerim();
 
-	return _cfl * _minCell / (_maxPerim * _c);
+	return _cfl * _minCell / (_maxPerim * max(_uMax,_c) );
 }
 
-
-
-void EulerBarotropicStaggered::computeNewtonVariation() //TODO  : identique à wave stagg ?
-{
-	if(_verbose)
-	{
-		cout<<"Vecteur courant Vk "<<endl;
-		VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
-		cout << endl;
-		if (_timeScheme == Implicit)
-			cout << "Matrice du système linéaire avant contribution delta t" << endl;
-		if (_timeScheme == Explicit) {
-			cout << "Matrice _A tel que _A = V^-1(dc _LaplacianPressure  ;  -1/rho B         )       "<<endl; 
-			cout << "                            (kappa B^t     ;  dc -B^t(1/|dK|) B) : du second membre avant contribution delta t" << endl;
-		}
-		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-		cout << endl;
-		cout << "Second membre du système linéaire avant contribution delta t" << endl;
-		VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-		cout << endl;
-	}
-	if(_timeScheme == Explicit)
-	{
-		VecCopy(_b,_newtonVariation);
-		VecScale(_newtonVariation, _dt);
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		{
-			cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
-			VecView(_newtonVariation,PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-		}
-	}
-}
 
 void EulerBarotropicStaggered::terminate(){ 
 	delete[]_vec_normal;

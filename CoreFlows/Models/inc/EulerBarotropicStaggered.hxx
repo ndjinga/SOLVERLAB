@@ -56,12 +56,6 @@ public :
      *  */
     double computeTimeStep(bool & stop);
 
-	/** \fn computeNewtonVariation
-	 * \brief Builds and solves the linear system to obtain the variation Vkp1-Vk in a Newton scheme using primitive variables
-	 * @param
-	 * */
-	void computeNewtonVariation();
-
 
 	/** \fn getStiffenedGasEOS
      * \brief return the stiffened gas law associated to fluid i
@@ -85,6 +79,7 @@ protected :
 	double _Tref; //EOS reference temperature
     double _Pref; //EOS reference pressure
 
+    PetscScalar _rhoMax, _uMax;
 	Mat _Conv, _DivRhoU, _LaplacianVelocity  ;
 	double _c;
 	std::vector<double> _Entropy;

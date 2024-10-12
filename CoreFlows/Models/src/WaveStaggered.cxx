@@ -99,69 +99,6 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 	return orien;
 }
 
-void WaveStaggered::setExactVelocityInterpolate(const Field &ExactVelocityInftyAtFaces){
-	_ExactVelocityInftyInterpolate = Field("Exact Velocity at cells results", CELLS, _mesh,3);
-	for (int l=0; l < _Nmailles ; l++){
-		for (int k=0; k< 3; k++){
-			_ExactVelocityInftyInterpolate(l, k) =0;
-		}
-	}
-	
-	for (int i = 0 ; i < _Nfaces ; i++){
-		Face Fj = _mesh.getFace(i);
-		std::vector< int > idCells = Fj.getCellsId();
-		Cell Ctemp1 = _mesh.getCell(idCells[0]);
-		double orien1 = getOrientation(i,Ctemp1);
-		
-		std::vector<double> M1(_Ndim), M2(_Ndim);
-		Point xK = Ctemp1.getBarryCenter();
-		Point xsigma = Fj.getBarryCenter();
-		double fac;
-
-		if (Ctemp1.getNumberOfFaces() == _Ndim*2)
-			fac = 1;
-		else if (Ctemp1.getNumberOfFaces() ==  _Ndim + 1)
-			fac = -1;
-
-		M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
-		if (_Ndim >1)
-			M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
-
-		if (Fj.getNumberOfCells() == 2){
-			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			xK = Ctemp2.getBarryCenter();
-			if (Ctemp2.getNumberOfFaces() == _Ndim*2)
-				fac = 1;
-			else if (Ctemp2.getNumberOfFaces() ==  _Ndim + 1)
-				fac = -1;
-
-			M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
-			if (_Ndim >1)
-				M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
-		
-			for (int k=0; k< _Ndim; k++){
-				_ExactVelocityInftyInterpolate(idCells[0], k) += ExactVelocityInftyAtFaces(i) * M1[k]/Ctemp1.getMeasure(); 
-				_ExactVelocityInftyInterpolate(idCells[1], k) -= ExactVelocityInftyAtFaces(i) * M2[k]/Ctemp2.getMeasure(); 
-			}
-		}
-		else if  (Fj.getNumberOfCells() == 1){
-			for (int k=0; k< _Ndim; k++)
-				_ExactVelocityInftyInterpolate(idCells[0], k) += ExactVelocityInftyAtFaces(i) * M1[k]/Ctemp1.getMeasure(); 
-		}
-	}
-
-	_ExactVelocityInftyInterpolate.setName("_ExactVelocityInftyInterpolate");
-	_ExactVelocityInftyInterpolate.setInfoOnComponent(0,"_ExactVelocityInftyInterpolate_x(m/s)");
-	_ExactVelocityInftyInterpolate.setInfoOnComponent(1,"_ExactVelocityInftyInterpolate_y(m/s)");
-	string prim(_path+"/WaveStaggered_");///Results
-	prim+=_fileName;
-	switch(_saveFormat)
-	{
-	case VTK :
-		_ExactVelocityInftyInterpolate.writeVTK(prim+"_ExactVelocityInftyInterpolate");
-		break;
-	}
-}
 
 
 void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
@@ -173,7 +110,7 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 	_mesh=_ExactVelocityInftyAtCells.getMesh();
 	_ExactVelocityInftyAtCells.setInfoOnComponent(0,"ExactVelocityInfty_x(m/s)");
 	_ExactVelocityInftyAtCells.setInfoOnComponent(1,"ExactVelocityInfty_y(m/s)");
-	string prim(_path+"/WaveStaggered_");///Results
+	string prim(_path+"/");///Results
 	prim+=_fileName;
 	switch(_saveFormat)
 	{
@@ -187,8 +124,9 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 		_ExactVelocityInftyAtCells.writeCSV(prim+"_ExactVelocityInftyAtCells	");
 		break;
 	}
-
 }
+
+//TODO Adapter au périodique ?
 void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ // TODO fonctionne ?
 	assert( atFaces.getTypeOfField() == FACES);
 	assert( atCells.getTypeOfField() == CELLS);
@@ -239,9 +177,11 @@ void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atC
 				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
 		}
 	}
-	string prim(_path+"/WaveStaggered_");///Results
+	string prim(_path+"/");///Results
 	string primCells = prim +_fileName + atCells.getName();
-	string primFaces = prim + _fileName +atFaces.getName();;
+	string primFaces = prim + _fileName  +atFaces.getName();
+	cout << primFaces <<endl;
+	cout << primCells <<endl;
 
 	switch(_saveFormat)
 	{
@@ -928,7 +868,7 @@ void WaveStaggered::save(){
     PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
     *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
 
-	string prim(_path+"/WaveStaggered_");///Results
+	string prim(_path+"/");///Results
 	prim+=_fileName;
 
 	if(_mpi_size>1){
