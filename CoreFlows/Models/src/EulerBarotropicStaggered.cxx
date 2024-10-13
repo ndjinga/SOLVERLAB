@@ -98,7 +98,7 @@ void EulerBarotropicStaggered::initialize(){
 
 	// transfer information de condition initial vers primitiveVars  
 	if (_mpi_rank == 0){
-		int *indices1 = new int[_Nmailles]; //TODO : peut-on faire cela en parallèle ?
+		int *indices1 = new int[_Nmailles];
 		int *indices2 = new int[_Nfaces];
 		std::iota(indices1, indices1 + _Nmailles, 0);
 		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
@@ -218,6 +218,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	MatZeroEntries(_LaplacianVelocity);
 	MatZeroEntries(_Conv);
 	MatZeroEntries(_DivTranspose); //TODO : vérifier que cela remet bien à zéro les matrices
+	// TODO ; si INSERT alors pas besoin de réinitialiser à zero 
 
 	if (_timeScheme == Explicit ){ 
 		cout << "EulerBarotropicStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
@@ -420,7 +421,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
 
 
-		// Minimum size of mesh volumes
+		// Max rho, Max u 
 		int *indices1 = new int[_Nmailles]; 
 		std::iota(indices1, indices1+_Nmailles, 0);
 		VecMax(_primitiveVars, indices1, &_rhoMax);
@@ -428,23 +429,21 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		std::iota(indices2, indices2+_Nfaces, _Nmailles );
 		VecMax(_primitiveVars, indices2, &_uMax);
 		delete[] indices1;
-		delete[] indices2;
-
+		
 		MatScale(_DivTranspose, -1.0);
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
 		MatScale(_DivRhoU, -1.0);
 		MatScale(_DivTranspose, -1.0);
 		MatScale(_GradDivTilde, _c*_rhoMax) ; 
-		
+		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
+
 		// _A = ( (u+c) _Laplacian   ;  -Div(\rho .)         )
-		//      (-Conv  ;  -c (\tilde rho) MinusGrad (1/|dK| Div ) 
+		//      (-Conv  ;  c (\tilde rho) MinusGrad (1/|dK| Div + LaplacianVelocity) 
 		Mat G[4];
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
 		G[2] = _Conv ;
 		G[3] = _GradDivTilde;
-		// TODO ajouter minus grad _DivTranspose _compressibleFluid->getPressure() ???
-		// TODO ajouter Laplacian velocity
 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
@@ -477,20 +476,19 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 			VecGetValues(Prod2,1,&i,&gradp);
 			Product[i] = gradp;
 		}
-
 		VecDuplicate(_primitiveVars, &GradPressure);
 		VecZeroEntries(GradPressure);
-		int *indices = new int[_Nfaces];
-		std::iota(indices, indices + _Nfaces, _Nmailles);
-		VecSetValues(GradPressure, _Nfaces, indices, Product, INSERT_VALUES);
+		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);
 		MatMult(_InvVol, GradPressure, Prod2); 
 		VecAXPY(_b,     1, Prod2);
 
-		delete[] indices;
+		//TODO : sont-ils tous supprimés ?
 		VecDestroy(& Prod2);
+		MatDestroy(& Prod);
 		VecDestroy(& GradPressure);
 		VecDestroy(& Pressure);	
-		//TODO : sont-ils tous supprimés ?
+		delete[] indices2;
+		
 
 	}
 	if (_nbTimeStep == 0)
@@ -501,16 +499,18 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 
 void EulerBarotropicStaggered::terminate(){ 
-	delete[]_vec_normal;
-	WaveStaggered::terminate();
 	MatDestroy(& _LaplacianVelocity);
 	MatDestroy(& _Conv); 
 	MatDestroy(& _DivRhoU); 
-	// 	PCDestroy(_pc);
+
+	/* // 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
 
 	if(_mpi_size>1 && _mpi_rank == 0)
-        VecDestroy(&_primitiveVars_seq);
+        VecDestroy(&_primitiveVars_seq); */
+	
+	WaveStaggered::terminate();
+	
 }
 
 
