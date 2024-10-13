@@ -228,14 +228,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				Face Fj = _mesh.getFace(j);
 				std::vector< int > idCells = Fj.getCellsId();
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				PetscScalar epsilon, ConvectiveFlux, rhoL, rhoR, u, absConvectiveFlux, MinusabsConvectiveFlux	;
+				PetscScalar epsilon, ConvectiveFlux, rhoL, rhoR, u, absConvectiveFlux, MinusabsConvectiveFlux,det, InvD_sigma, InvPerimeter1, InvPerimeter2;	;
 				
 				// Metrics
 				PetscScalar orientedFaceArea = getOrientation(j,Ctemp1) * Fj.getMeasure();
 				PetscScalar orientedMinusFaceArea = -orientedFaceArea;
 				PetscScalar FaceArea = Fj.getMeasure();
 				PetscScalar MinusFaceArea = -FaceArea;
-				PetscScalar det, InvD_sigma, InvPerimeter1, InvPerimeter2;
 				PetscInt IndexFace = _Nmailles + j;
 				PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 
@@ -279,7 +278,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					VecGetValues(_primitiveVars,1,&IndexFace,&u);
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0;
 					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-					PetscScalar MinusorientedFaceArea = - orientedFaceArea;
 					PetscScalar FaceArea_upwinding = (abs(u) + _c) * FaceArea/2.0;
 					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
@@ -293,7 +291,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(_Div, 1, &idCells[1], 1, &j, &MinusorientedFaceArea, ADD_VALUES ); 
+					MatSetValues(_Div, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES ); 
 					
 					// Convective terms //
 					PetscInt jepsilon, L, I;
@@ -454,12 +452,46 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //TODO Coment sortir les redondances avec Prod
 
-		Vec Prod2;
-		VecDuplicate(_BoundaryTerms, &Prod2);
-		MatMult(_InvVol, _BoundaryTerms, Prod2);  
+		Vec Prod2, Pressure, GradPressure;
+		PetscScalar rho,p;
+		VecCreate(PETSC_COMM_SELF, & Pressure); 
+		VecSetSizes(Pressure, PETSC_DECIDE, _Nmailles); 
+		VecSetFromOptions(Pressure);
+		VecSetUp(Pressure);
+		for (int i=0; i <_Nmailles; i++){
+			VecGetValues(_primitiveVars,1,&i,&rho);
+			p = _compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
+			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
+		}
+		/********add boundary terms to AU^n*********/
+		VecDuplicate(_BoundaryTerms, &Prod2); //TODO : vec copy ?
+		MatMult(_InvVol, _BoundaryTerms, Prod2); 
 		MatMult(_A,_primitiveVars, _b); 
 		VecAXPY(_b,     1, Prod2);
-		VecDestroy(& Prod2);	
+
+		/*****add pressure gradient to AU^n + Boundterms*****/
+		MatMult(_DivTranspose, Pressure, Prod2); //TODO times  -1 ? 
+		double *Product = new double[_Nfaces];
+		PetscScalar gradp;
+		for (int i=0; i <_Nmailles; i++){
+			VecGetValues(Prod2,1,&i,&gradp);
+			Product[i] = gradp;
+		}
+
+		VecDuplicate(_primitiveVars, &GradPressure);
+		VecZeroEntries(GradPressure);
+		int *indices = new int[_Nfaces];
+		std::iota(indices, indices + _Nfaces, _Nmailles);
+		VecSetValues(GradPressure, _Nfaces, indices, Product, INSERT_VALUES);
+		MatMult(_InvVol, GradPressure, Prod2); 
+		VecAXPY(_b,     1, Prod2);
+
+		delete[] indices;
+		VecDestroy(& Prod2);
+		VecDestroy(& GradPressure);
+		VecDestroy(& Pressure);	
+		//TODO : sont-ils tous supprimés ?
+
 	}
 	if (_nbTimeStep == 0)
 		ComputeMinCellMaxPerim();
