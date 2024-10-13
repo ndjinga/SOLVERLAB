@@ -4,6 +4,19 @@
 
 using namespace std;
 
+double initialPressure(double x){
+	if (x < 1/2.0)
+		return 155e5;
+	else
+		return 150e5;
+}
+
+double initialVelocity(double x){
+	if (x < 1/2.0)
+		return 1;
+	else
+		return 1;
+}
 int main(int argc, char** argv)
 {
 	//Preprocessing: mesh and group creation
@@ -22,45 +35,49 @@ int main(int argc, char** argv)
 
 	double initialVelocity_Right=1;
 	double initialPressure_Right=150e5;
-
-
-    // Prepare for the initial condition
-	Vector Pressure_Left(1);
-	Vector Pressure_Right(1);
-	Vector Velocity_Left(1);
-	Vector Velocity_Right(1);
-	
-	// left and right constant vectors		
-	Pressure_Left[0] = initialPressure_Left;
-	Pressure_Right[0] = initialPressure_Right;
-	Velocity_Left[0] = initialVelocity_Left;
-	Velocity_Right[0] = initialVelocity_Right;
+	std::map<int ,double> wallPressureMap;
+	std::map<int ,double> wallVelocityMap ;
+	Field Pressure0("pressure", CELLS, M, 1);
+	Field Velocity0("velocity", FACES, M, 1);
 
     //Initial field creation
 	cout << "Building initial data " <<endl; 
-	int direction =0; // TODO : what is it ?
-	myProblem.setInitialFieldStepFunction(M,Pressure_Left,Pressure_Right,discontinuity, direction, CELLS);
-	myProblem.setInitialFieldStepFunction(M,Velocity_Left,Velocity_Right,discontinuity, direction, FACES);
-	std::map<int ,double> wallPressureMap;
-	std::map<int ,double> wallVelocityMap ;
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
-		bool isBoundary = Fj.isBorder();
-		if (Fj.getNumberOfCells()==1){
-			if (Fj.x() < discontinuity) {
-				wallPressureMap[j] = initialPressure_Left ;
-				wallVelocityMap[j] = initialVelocity_Left ;
-			}
-			else{
-				wallPressureMap[j] = initialPressure_Right;
-				wallVelocityMap[j] = initialVelocity_Right ;
+		std::vector<int> idCells = Fj.getCellsId();
+		std::vector<double> vec_normal_sigma(2) ; //TODO = 0!!
+		Cell Ctemp1 = M.getCell(idCells[0]);
+		for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+			if (j == Ctemp1.getFacesId()[l]){
+				for (int idim = 0; idim < spaceDim; ++idim)
+					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
+		myProblem.setOrientation(j,vec_normal_sigma);
+		if(Fj.getNumberOfCells()==2 ){ // myProblem.IsFaceBoundaryComputedInPeriodic(j)
+			myProblem.setInteriorIndex(j);
+			Cell Ctemp2 = M.getCell(idCells[1]);
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x());
+			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
+			Velocity0[j] = initialVelocity(Fj.x());
+		}
+		else if (Fj.getNumberOfCells()==1  ){ 
+			for (int idim = 0; idim <spaceDim; idim ++){
+					if (vec_normal_sigma[idim] < 0)
+						vec_normal_sigma[idim] = -vec_normal_sigma[idim];
+			}
+			myProblem.setOrientation(j,vec_normal_sigma);
+			myProblem.setSteggerBoundIndex(j);								
+			wallVelocityMap[j] =initialVelocity(Fj.x());
+			wallPressureMap[j] = initialPressure(Fj.x());
+		}
 	}
+		
+		myProblem.setInitialField(Pressure0);
+		myProblem.setInitialField(Velocity0);
+		myProblem.setboundaryPressure(wallPressureMap);
+		myProblem.setboundaryVelocity(wallVelocityMap);
 
-	
-	myProblem.setboundaryPressure(wallPressureMap);
-	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
 	myProblem.setTimeScheme(Explicit);

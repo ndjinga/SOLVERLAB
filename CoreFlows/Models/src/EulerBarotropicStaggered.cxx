@@ -159,13 +159,13 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetUp(_DivTranspose);
 
 	// matrix CONVECTION 
-	MatCreate(PETSC_COMM_SELF, & _DivTranspose); 
+	MatCreate(PETSC_COMM_SELF, & _Conv); 
 	MatSetSizes(_Conv, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nfaces );
 	MatSetFromOptions(_Conv);
 	MatSetUp(_Conv);
 
 	// matrice Grad Div
-	MatCreate(PETSC_COMM_SELF, & _InvSurface); 
+	MatCreate(PETSC_COMM_SELF, & _GradDivTilde); 
 	MatSetSizes(_GradDivTilde, PETSC_DECIDE, PETSC_DECIDE, _Nfaces , _Nfaces );
 	MatSetFromOptions(_GradDivTilde);
 	MatSetUp(_GradDivTilde);
@@ -508,7 +508,7 @@ void EulerBarotropicStaggered::terminate(){
 
 	if(_mpi_size>1 && _mpi_rank == 0)
         VecDestroy(&_primitiveVars_seq); */
-	
+
 	WaveStaggered::terminate();
 	
 }
