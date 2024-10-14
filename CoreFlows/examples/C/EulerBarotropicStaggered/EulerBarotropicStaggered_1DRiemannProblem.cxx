@@ -47,9 +47,10 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		myProblem.setOrientation(j,vec_normal_sigma);
-		if(Fj.getNumberOfCells()==2 ){ // myProblem.IsFaceBoundaryComputedInPeriodic(j)
+		
+		if(Fj.getNumberOfCells()==2 ){ 
 			myProblem.setInteriorIndex(j);
+			myProblem.setOrientation(j,vec_normal_sigma);
 			Cell Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x());
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
@@ -66,7 +67,6 @@ int main(int argc, char** argv)
 			wallPressureMap[j] = initialPressure(Fj.x());
 		}
 	}
-		
 		myProblem.setInitialField(Pressure0);
 		myProblem.setInitialField(Velocity0);
 		myProblem.setboundaryPressure(wallPressureMap);

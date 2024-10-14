@@ -32,6 +32,15 @@ std::vector<double> initialBoundVelocity(double x, double y){
 	return vec;
 }
 
+double dotprod(std::vector<double> vector, std::vector<double> normal){
+	assert(vector.size() == normal.size());
+	double dotprod =0;
+	for (int n =0; n< vector.size(); n++){
+		dotprod += vector[n] * normal[n];
+	}
+	return dotprod;
+}
+
 int main(int argc, char** argv)
 {
 	//Preprocessing: mesh and group creation
@@ -133,12 +142,11 @@ int main(int argc, char** argv)
 				for (int k = 0 ; k <BoundaryVel.size() ; k++)
 					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
 				wallVelocityMap[j] = dotprod;
-				wallPressureMap[j] = initialBoundPressure(Ctemp1.x(),Ctemp1.y());
+				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
 			} // building exact solution at faces and its interpolation at cell	
 			ExactVelocityAtFaces[j] = wallVelocityMap[j];
 		}
 	}
-	
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);

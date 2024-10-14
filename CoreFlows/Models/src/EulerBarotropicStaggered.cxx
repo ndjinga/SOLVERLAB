@@ -430,7 +430,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatAssemblyBegin(_Conv, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_Conv, MAT_FINAL_ASSEMBLY);
 		MatAssemblyBegin(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);		
 
 		/************ Max rho, Max u *******************/
 		int *indices1 = new int[_Nmailles];
@@ -463,7 +463,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatAssemblyEnd(ZeroNcells_Nfaces, MAT_FINAL_ASSEMBLY); //TODO ; fonction Petsc qui créer des matirces nulle de la bonne taille ?
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
-		G[2] = ZeroNcells_Nfaces ;//TODO n'a pas la bonne taille;
+		G[2] = ZeroNcells_Nfaces ;
 		G[3] = _GradDivTilde;
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
@@ -507,7 +507,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecZeroEntries(GradPressure);
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
 		MatMult(_InvVol, GradPressure, Temporary1); 
-		VecAXPY(_b,     1, Temporary1);
+		VecAXPY(_b,     1, Temporary1); // TOdo vérfier 
 
 		//TODO : sont-ils tous supprimés ?
 		VecDestroy(& Temporary1);

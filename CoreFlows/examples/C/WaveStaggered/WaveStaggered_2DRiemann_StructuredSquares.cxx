@@ -36,10 +36,17 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	return vec;
 }
 
+double dotprod(std::vector<double> vector, std::vector<double> normal){
+	assert(vector.size() == normal.size());
+	double dotprod =0;
+	for (int n =0; n< vector.size(); n++){
+		dotprod += vector[n] * normal[n];
+	}
+	return dotprod;
+}
 
-int main(int argc, char** argv)
-{
-	
+
+int main(int argc, char** argv){
 	if (argc<2 || (*(argv[1]) != 'x' && *(argv[1]) != 'y') ){
 		cout << "ERROR : you have to give a direction for the pseudo 1d Riemann problem, either 'x' or 'y' ";
 	}
@@ -99,9 +106,10 @@ int main(int argc, char** argv)
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 				}
 			}
-			myProblem.setOrientation(j,vec_normal_sigma);
+			
 			double coordLeft, coordRight, coordFace; 
 			if(Fj.getNumberOfCells()==2 ){ // myProblem.IsFaceBoundaryComputedInPeriodic(j)
+				myProblem.setOrientation(j,vec_normal_sigma);
 				myProblem.setInteriorIndex(j);
 				Cell Ctemp2 = M.getCell(idCells[1]);
 				if (Direction == 'x'){
