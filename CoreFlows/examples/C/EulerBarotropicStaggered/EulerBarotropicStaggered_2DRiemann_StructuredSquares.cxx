@@ -1,4 +1,4 @@
-#include "WaveStaggered.hxx"
+#include "EulerBarotropicStaggered.hxx"
 #include "math.h"
 #include <cassert>
 
@@ -6,17 +6,17 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 2;
+		return 155e10;
 	else
-		return 1;
+		return 150e10;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
 	if (z < discontinuity){
 		if (Direction == 'x'){
-			vec[0] = 0;
-			vec[1] = 0;
+			vec[0] = 1;
+			vec[1] = 1;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
@@ -26,11 +26,11 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	else{
 		if (Direction == 'x'){
 			vec[0] = 1;
-			vec[1] = 0;
+			vec[1] = 1;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 1;
+			vec[1] = 0;
 		}
 	}
 	return vec;
@@ -55,10 +55,10 @@ int main(int argc, char** argv)
 		double sup = 1.0;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=50;
+			nx=2;
 			if (nx%2 !=0)
 				cout << "ERROR the number of cells should be even" <<endl;
-			ny=3;
+			ny=2;
 		}
 		else if (Direction == 'y'){
 			nx=3;
@@ -69,11 +69,7 @@ int main(int argc, char** argv)
 
 		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
 		double discontinuity = (inf + sup)/2.0;
-		
-		double kappa = 1;
-		double rho = 1;
-		double c = sqrt(kappa/rho);
-		WaveStaggered myProblem(spaceDim,rho, kappa);
+		EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(Gas, around1bar300K, spaceDim );
 
 		// Prepare for the initial condition
 		// set the boundary conditions
@@ -99,9 +95,10 @@ int main(int argc, char** argv)
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 				}
 			}
-			myProblem.setOrientation(j,vec_normal_sigma);
+			
 			double coordLeft, coordRight, coordFace; 
-			if(Fj.getNumberOfCells()==2 ){ // myProblem.IsFaceBoundaryComputedInPeriodic(j)
+			if(Fj.getNumberOfCells()==2 ){ 
+				myProblem.setOrientation(j,vec_normal_sigma);
 				myProblem.setInteriorIndex(j);
 				Cell Ctemp2 = M.getCell(idCells[1]);
 				if (Direction == 'x'){
@@ -156,14 +153,14 @@ int main(int argc, char** argv)
 		myProblem.setTimeScheme(Explicit);
 		
 		// name of result file
-		string fileName = "WaveStaggered_2DRiemann_StructuredSquares";
+		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
 		unsigned MaxNbOfTimeStep = 1000;
-		int freqSave = 20;
-		double cfl = 0.5;
+		int freqSave = 1;
+		double cfl = 0.1;
 		double maxTime = 800;
-		double precision = 1e-6;
+		double precision = 1e-14;
 
 		myProblem.setCFL(cfl);
 		myProblem.setPrecision(precision);

@@ -47,7 +47,7 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseType fluid, pressureEsti
 			_compressibleFluid= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
 	}
-	_c = 1; //_Todo _c = \partialp/\partial \rho_max !!
+	_c = 100; //_Todo _c = \partialp/\partial \rho_max !!
 	//Save into the fluid list
 	_fluides.resize(1,_compressibleFluid);
 	if (_Ndim == 3){	
@@ -179,8 +179,6 @@ void EulerBarotropicStaggered::initialize(){
 	VecZeroEntries(_BoundaryTerms);
 	MatZeroEntries(_A);
 	MatZeroEntries(_Div);
-
-	cout << "Bonjour Euler staggered" << endl;
 	
 	if(_system)
 	{
@@ -214,7 +212,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	// TODO ; si INSERT alors pas besoin de réinitialiser à zero 
 
 	if (_timeScheme == Explicit ){ 
-		cout << "EulerBarotropicStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+		//cout << "EulerBarotropicStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+		//TODO : pourquoi affiché plusieurs fois
 		
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
@@ -357,7 +356,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									epsilon += (xb.z() - xsigma.z())*(xb.z() - xsigma.z());
 							}
 							epsilon = sqrt(epsilon);
-							cout << "jepsilon ="<<jepsilon <<endl;
 							ConvectiveFlux *= epsilon/2.0  ;
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		// TODO Should we pass twice ? 
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
@@ -470,6 +468,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //TODO Coment sortir les redondances avec Prod
+		MatView(_A,  PETSC_VIEWER_STDOUT_WORLD);
 		MatMult(_A,_primitiveVars, _b); 
 		MatDestroy(&ZeroNcells_Nfaces);
 		
@@ -508,6 +507,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
 		MatMult(_InvVol, GradPressure, Temporary1); 
 		VecAXPY(_b,     1, Temporary1); // TOdo vérfier 
+		VecView(_b,  PETSC_VIEWER_STDOUT_WORLD);
 
 		//TODO : sont-ils tous supprimés ?
 		VecDestroy(& Temporary1);
@@ -522,7 +522,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	if (_nbTimeStep == 0)
 		ComputeMinCellMaxPerim();
 
-	return _cfl * _minCell / (_maxPerim * max(_uMax,_c) );
+	
+
+	return _cfl * _minCell / (_maxPerim * _c);//max(_uMax,_c) );
 }
 
 

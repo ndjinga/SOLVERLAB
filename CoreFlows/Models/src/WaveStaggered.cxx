@@ -637,6 +637,7 @@ void WaveStaggered::ComputeMinCellMaxPerim(){
 	MatGetDiagonal(_InvVol,V);
 	VecMax(V, indices3, &maxInvVol);
 	_minCell = 1.0/maxInvVol;
+	//TODO : CORRUGER VECMAX
 
 	//Maximum size of surfaces
 	VecCreate(PETSC_COMM_SELF, & W);
@@ -725,7 +726,7 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 void WaveStaggered::computeNewtonVariation()
 {
 	if(_timeScheme == Explicit)
-	{
+	{	
 		VecCopy(_b,_newtonVariation);
 		VecScale(_newtonVariation, _dt);
 		if(_verbose && (_nbTimeStep-1)%_freqSave ==0){

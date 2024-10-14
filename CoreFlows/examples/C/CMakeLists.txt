@@ -150,6 +150,7 @@ CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DRiemann_StructuredSquares
 
 ################### Euler Barotropic staggered
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
+CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DRiemann_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
 
 if( SOLVERLAB_WITH_MPI )#Tests parallèles
   add_executable(MEDCouplingSendRecvFieldSameMesh_MPI.exe MEDCouplingSendRecvFieldSameMesh_MPI.cxx)

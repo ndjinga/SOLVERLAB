@@ -6,7 +6,7 @@ using namespace std;
 
 double initialPressure(double x){
 	if (x < 1/2.0)
-		return 150e5;//155e5;
+		return 155e5;//155e5;
 	else
 		return 150e5;
 }
@@ -80,11 +80,11 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10;
+	unsigned MaxNbOfTimeStep = 100;
 	int freqSave = 1;
-	double cfl = 0.2;
+	double cfl = 0.4;
 	double maxTime = 30;
-	double precision = 1e-6;
+	double precision = 1e-13;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
