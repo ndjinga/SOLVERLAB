@@ -6,7 +6,7 @@ using namespace std;
 
 double initialPressure(double x){
 	if (x < 1/2.0)
-		return 155e5;
+		return 150e5;//155e5;
 	else
 		return 150e5;
 }
@@ -24,17 +24,11 @@ int main(int argc, char** argv)
 	double xinf=0.0;
 	double xsup=1.0;
 	double discontinuity = (xinf+xsup)/2.;
-	int nx=4;
+	int nx=2;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(Gas, around1bar300K, spaceDim );
-
-	double initialVelocity_Left=1;
-	double initialPressure_Left=155e5;
-
-	double initialVelocity_Right=1;
-	double initialPressure_Right=150e5;
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
 	Field Pressure0("pressure", CELLS, M, 1);
@@ -86,7 +80,7 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 4;
+	unsigned MaxNbOfTimeStep = 10;
 	int freqSave = 1;
 	double cfl = 0.2;
 	double maxTime = 30;
@@ -98,8 +92,11 @@ int main(int argc, char** argv)
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(CSV);
-	myProblem.setVerbose(false); //TODO _A n'est pas initalisée or le code demande tout de meme à l'afficher en mode verbose
+	myProblem.setSaveFileFormat(VTK);
+	myProblem.saveVelocity(true);
+	myProblem.savePressure(true);
+	myProblem.setVerbose(false);
+		
 	
 	// evolution
 	myProblem.initialize();

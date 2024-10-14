@@ -79,7 +79,7 @@ protected :
 	double _Tref; //EOS reference temperature
     double _Pref; //EOS reference pressure
 
-    PetscScalar _rhoMax, _uMax;
+    PetscReal _rhoMax, _uMax;
 	Mat _Conv, _DivRhoU, _LaplacianVelocity  ;
 	double _c;
 	std::vector<double> _Entropy;

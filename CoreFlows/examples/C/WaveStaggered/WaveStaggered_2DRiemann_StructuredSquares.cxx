@@ -159,8 +159,8 @@ int main(int argc, char** argv)
 		string fileName = "WaveStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1000;
-		int freqSave = 20;
+		unsigned MaxNbOfTimeStep = 2;
+		int freqSave = 1;
 		double cfl = 0.5;
 		double maxTime = 800;
 		double precision = 1e-6;

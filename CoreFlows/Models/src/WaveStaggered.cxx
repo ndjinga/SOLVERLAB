@@ -19,6 +19,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_facesBoundinit = false;
 	_indexFacePeriodicSet = false;
 	_vec_normal=NULL;
+	_isWall =false ;
 	if (_Ndim == 3){	
 		cout<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 		*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
@@ -542,17 +543,14 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
-
+			// _A = (dc _LaplacianPressure  ;  -1/rho B         )
+			//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 			MatScale(_DivTranspose, -1.0);
 			MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
 			MatScale(_LaplacianPressure, _d*_c );
 			MatScale(_Div, -1.0/_rho);
 			MatScale(_DivTranspose, -1.0*_kappa);
 			MatScale(_GradDivTilde, _d*_c);
-			
-			
-			// _A = (dc _LaplacianPressure  ;  -1/rho B         )
-			//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 			Mat G[4];
 			G[0] = _LaplacianPressure;
 			G[1] = _Div;
@@ -597,6 +595,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	ComputeEnergyAtTimeT();
 	return _cfl * _minCell / (_maxPerim * _c);
 }
+
 void WaveStaggered::AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell Ctemp2){
 	/******************* Metrics related matrices ***********************/
 	PetscScalar det, InvPerimeter1, InvPerimeter2, InvD_sigma, InvVol1, InvVol2;
@@ -625,13 +624,14 @@ void WaveStaggered::AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell
 	MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
 	MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 }
+
 void WaveStaggered::ComputeMinCellMaxPerim(){
 	Vec V, W;
 	PetscScalar minInvSurf, maxInvVol;
 	// Minimum size of mesh volumes
 	VecCreate(PETSC_COMM_SELF, & V);
 	VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
-	int *indices3 = new int[_globalNbUnknowns]; //TODO peut-on utiliser cette formulation en parallèle ?
+	int *indices3 = new int[_globalNbUnknowns]; 
 	std::iota(indices3, indices3 +_globalNbUnknowns, 0);
 	VecSetFromOptions(V);
 	MatGetDiagonal(_InvVol,V);
@@ -643,7 +643,7 @@ void WaveStaggered::ComputeMinCellMaxPerim(){
 	VecSetSizes(W, PETSC_DECIDE, _Nmailles);
 	VecSetFromOptions(W);
 	MatGetDiagonal(_InvSurface, W);
-	int *indices4 = new int[_Nmailles]; //TODO peut-on utiliser cette formulation en parallèle ?
+	int *indices4 = new int[_Nmailles]; 
 	std::iota(indices4, indices4 +_Nmailles, 0);
 	VecMin(W, indices4, &minInvSurf);
 	_maxPerim = 1.0/minInvSurf;
@@ -694,6 +694,8 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 	}
 }
 
+//TODO que faire de mpirank ?
+
 bool WaveStaggered::iterateTimeStep(bool &converged)
 {
 	bool stop=false;
@@ -713,70 +715,54 @@ bool WaveStaggered::iterateTimeStep(bool &converged)
 	if(_timeScheme == Explicit)
 		converged=true;
 
-	//Change the relaxation coefficient to ease convergence
-	double relaxation=1;
-	VecAXPY(_primitiveVars, relaxation, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+	
 
-	return true;
-}
-
-void WaveStaggered::validateTimeStep()
-{
-	//Calcul de la variation Un+1-Un
-	if (_mpi_rank ==0){
-		_erreur_rel= 0;
-		double x, dx;
-		for(int j=0; j<_globalNbUnknowns; j++){
-			VecGetValues(_newtonVariation, 1, &j, &dx);
-			VecGetValues(_primitiveVars, 1, &j, &x);
-			if (fabs(x)< _precision)
-			{
-				if(_erreur_rel < fabs(dx)){
-					_erreur_rel = fabs(dx);
-				}
-			}
-			else if(_erreur_rel < fabs(dx/x))
-				_erreur_rel = fabs(dx/x);
-		}
-		_isStationary =_erreur_rel <_precision;
-		_time+=_dt;
-		_nbTimeStep++;
-	}
-	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
-		save();
+	return converged;
+	
 }
 
 void WaveStaggered::computeNewtonVariation()
 {
-	if(_verbose)
-	{
-		cout<<"Vecteur courant Vk "<<endl;
-		VecView(_primitiveVars,PETSC_VIEWER_STDOUT_SELF);
-		cout << endl;
-		if (_timeScheme == Implicit)
-			cout << "Matrice du système linéaire avant contribution delta t" << endl;
-		if (_timeScheme == Explicit) {
-			cout << "Matrice _A tel que _A = V^-1(dc _LaplacianPressure  ;  -1/rho B         )       "<<endl; 
-			cout << "                            (kappa B^t     ;  dc -B^t(1/|dK|) B) : du second membre avant contribution delta t" << endl;
-		}
-		MatView(_A,PETSC_VIEWER_STDOUT_SELF);
-		cout << endl;
-		cout << "Second membre du système linéaire avant contribution delta t" << endl;
-		VecView(_b, PETSC_VIEWER_STDOUT_SELF);
-		cout << endl;
-	}
 	if(_timeScheme == Explicit)
 	{
 		VecCopy(_b,_newtonVariation);
 		VecScale(_newtonVariation, _dt);
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0)
-		{
+		if(_verbose && (_nbTimeStep-1)%_freqSave ==0){
 			cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
 			VecView(_newtonVariation,PETSC_VIEWER_STDOUT_SELF);
 			cout << endl;
 		}
 	}
+	
 }
+
+void WaveStaggered::validateTimeStep()
+{
+	//Calcul de la variation Un+1-Un
+	_erreur_rel= 0;
+	double x, dx;
+	for(int j=0; j<_globalNbUnknowns; j++){
+		VecGetValues(_newtonVariation, 1, &j, &dx);
+		VecGetValues(_primitiveVars, 1, &j, &x);
+		if (fabs(x)< _precision){
+			if(_erreur_rel < fabs(dx)){
+				_erreur_rel = fabs(dx);
+			}
+		}
+		else if(_erreur_rel < fabs(dx/x))
+			_erreur_rel = fabs(dx/x);
+	}
+	_isStationary =_erreur_rel <_precision;
+	_time+=_dt;
+	_nbTimeStep++;
+	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
+		save();
+
+}
+
+
+
 
 
 bool WaveStaggered::initTimeStep(double dt){
