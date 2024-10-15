@@ -6,9 +6,9 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 155e10;
+		return 1;
 	else
-		return 150e10;
+		return 0;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 		double sup = 1.0;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=2;
+			nx=40;
 			if (nx%2 !=0)
 				cout << "ERROR the number of cells should be even" <<endl;
 			ny=2;

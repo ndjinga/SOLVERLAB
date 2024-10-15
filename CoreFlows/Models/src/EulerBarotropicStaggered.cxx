@@ -47,7 +47,7 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseType fluid, pressureEsti
 			_compressibleFluid= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
 	}
-	_c = 100; //_Todo _c = \partialp/\partial \rho_max !!
+	_c = 1; //_Todo _c = \partialp/\partial \rho_max !!
 	//Save into the fluid list
 	_fluides.resize(1,_compressibleFluid);
 	if (_Ndim == 3){	
@@ -208,7 +208,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	MatZeroEntries(_LaplacianPressure);
 	MatZeroEntries(_LaplacianVelocity);
 	MatZeroEntries(_Conv);
-	MatZeroEntries(_DivTranspose); //TODO : vérifier que cela remet bien à zéro les matrices
+
+	MatZeroEntries(_Div); 
+	MatZeroEntries(_DivTranspose); 
+	MatZeroEntries(_InvVol); 
+	MatZeroEntries(_InvSurface);
+	//TODO : vérifier que cela remet bien à zéro les matrices
 	// TODO ; si INSERT alors pas besoin de réinitialiser à zero 
 
 	if (_timeScheme == Explicit ){ 
@@ -431,26 +436,37 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);		
 
 		/************ Max rho, Max u *******************/
-		int *indices1 = new int[_Nmailles];
-		int *indices2 = new int[_Nfaces];
-		std::iota(indices1, indices1 + _Nmailles, 0);
-		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
-		VecMax(_primitiveVars, indices1, &_rhoMax);
-		VecMax(_primitiveVars, indices2, &_uMax);
-		delete[] indices1;
-		cout << "_rhomax="<<_rhoMax <<endl;
-		cout << "_umax="<<_uMax <<endl; //TODO pb sur uMax
-		
+		PetscScalar rho,p, u;
+		PetscInt zero=0;
+		VecGetValues(_primitiveVars,1,&zero,&rho);
+		VecGetValues(_primitiveVars,1,&_Nmailles,&u);
+		_uMax = u;
+		_rhoMax = rho;
+		for (int n=0; n <_Nmailles; n++){
+			VecGetValues(_primitiveVars,1,&n,&rho);
+			_rhoMax = max(_rhoMax, rho);
+		}
+		for (int n=0; n <_Nfaces; n++){
+			PetscInt I = _Nmailles + n;
+			VecGetValues(_primitiveVars,1,&I,&u);
+			_uMax = max(_uMax, u);
+		}
+
 		/***********Assembling the matrix _A such that : *************/
 		// _A = ( (u+c) _Laplacian   ;  -Div(\rho .)         )
 		//      (-Conv  ;  c (\tilde rho) MinusGrad (1/|dK| Div + LaplacianVelocity) 
-		MatScale(_DivTranspose, -1.0);
+		MatScale(_DivTranspose, -1.0);  //Div^t = -grad so -Div^t = grad 
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
 		MatScale(_DivRhoU, -1.0);
 		MatScale(_DivTranspose, -1.0);
-		MatScale(_GradDivTilde, _c*_rhoMax) ;
+
+		//cout << "Gradidiv" << endl;
+		//MatView(_GradDivTilde ,  PETSC_VIEWER_STDOUT_WORLD); //GradDiv ok ?
+
+		MatScale(_GradDivTilde, _c*_rhoMax) ; 
 		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
-		MatAXPY(_GradDivTilde, 1, _Conv, UNKNOWN_NONZERO_PATTERN);
+		MatAXPY(_GradDivTilde, 1, _Conv, UNKNOWN_NONZERO_PATTERN); 
+
 		Mat G[4], ZeroNcells_Nfaces;
 		MatCreate(PETSC_COMM_SELF, &ZeroNcells_Nfaces); 
 		MatSetSizes(ZeroNcells_Nfaces, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
@@ -466,9 +482,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
+
+		//cout << "_A before gradient and boundary terms" << endl;
+		//MatView(_A,  PETSC_VIEWER_STDOUT_WORLD);
+
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //TODO Coment sortir les redondances avec Prod
-		MatView(_A,  PETSC_VIEWER_STDOUT_WORLD);
 		MatMult(_A,_primitiveVars, _b); 
 		MatDestroy(&ZeroNcells_Nfaces);
 		
@@ -484,16 +503,17 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMult(_InvVol, _BoundaryTerms, Temporary1); 
 		VecAXPY(_b,     1, Temporary1);
 		//Extract pressure to multiply by _DivTranspose //
-		PetscScalar rho,p;
+	
 		VecCreate(PETSC_COMM_SELF, & Pressure); 
 		VecSetSizes(Pressure, PETSC_DECIDE, _Nmailles); 
 		VecSetFromOptions(Pressure);
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p = _compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
+			p = rho*rho; //TODO : rho^gamma_compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
 		}
+		//TODO pb ave div transpose ?
 		//add pressure gradient to AU^n + Boundterms//
 		MatMult(_DivTranspose, Pressure, Temporary2); //TODO times  -1 ? 
 		double *Product = new double[_Nfaces]; //TODO can we avoid creating a pointer only to insert in the bigger Vector ?
@@ -504,11 +524,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		}
 		VecDuplicate(_primitiveVars, &GradPressure);
 		VecZeroEntries(GradPressure);
+		int *indices2 = new int[_Nfaces];
+		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
-		MatMult(_InvVol, GradPressure, Temporary1); 
+		MatMult(_InvVol, GradPressure, Temporary1);
 		VecAXPY(_b,     1, Temporary1); // TOdo vérfier 
-		VecView(_b,  PETSC_VIEWER_STDOUT_WORLD);
-
+	
 		//TODO : sont-ils tous supprimés ?
 		VecDestroy(& Temporary1);
 		VecDestroy(& Temporary2);

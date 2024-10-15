@@ -6,9 +6,9 @@ using namespace std;
 
 double initialPressure(double x){
 	if (x < 1/2.0)
-		return 155e5;//155e5;
+		return 1;//155e5;
 	else
-		return 150e5;
+		return 2;
 }
 
 double initialVelocity(double x){
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 	double xinf=0.0;
 	double xsup=1.0;
 	double discontinuity = (xinf+xsup)/2.;
-	int nx=2;
+	int nx=4;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 100;
 	int freqSave = 1;
-	double cfl = 0.4;
+	double cfl = 0.1;
 	double maxTime = 30;
 	double precision = 1e-13;
 
