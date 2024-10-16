@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 100;
 	int freqSave = 1;
-	double cfl = 0.1;
+	double cfl = 0.2;
 	double maxTime = 30;
 	double precision = 1e-13;
 

@@ -55,14 +55,14 @@ int main(int argc, char** argv)
 		double sup = 1.0;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=40;
+			nx=80;
 			if (nx%2 !=0)
 				cout << "ERROR the number of cells should be even" <<endl;
-			ny=2;
+			ny=3;
 		}
 		else if (Direction == 'y'){
 			nx=3;
-			ny=50;
+			ny=80;
 			if (ny%2 !=0)
 				cout << "ERROR the number of cells should be even" <<endl;
 		}
@@ -156,8 +156,8 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1000;
-		int freqSave = 1;
+		unsigned MaxNbOfTimeStep = 5000;
+		int freqSave = 20;
 		double cfl = 0.1;
 		double maxTime = 800;
 		double precision = 1e-14;

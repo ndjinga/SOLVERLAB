@@ -142,12 +142,12 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.terminate();
 	time = 0
 	i=0
-	if not os.path.exists("WaveStaggered_"+fileName):
-		os.mkdir("WaveStaggered_"+fileName)
+	if not os.path.exists(fileName):
+		os.mkdir(fileName)
 	while time < Tmax:
-		velocitydata = pd.read_csv("WaveStaggered_"+fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
+		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
-		pressuredata = pd.read_csv("WaveStaggered_"+fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
+		pressuredata = pd.read_csv(fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
 		pressuredata.columns =['x','pressure', 'index']
 		
 		pressure = np.zeros(nx)
@@ -167,7 +167,7 @@ def WaveStaggered_1DRiemannProblem():
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))
-		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))
+		plt.savefig(fileName + "/Data at time step"+str(i))
 		i+=freqSave
 		time += freqSave*dt
 

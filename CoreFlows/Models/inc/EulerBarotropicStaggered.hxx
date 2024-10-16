@@ -56,6 +56,8 @@ public :
      *  */
     double computeTimeStep(bool & stop);
 
+    std::vector<double>  getTimeEvol();
+
 
 	/** \fn getStiffenedGasEOS
      * \brief return the stiffened gas law associated to fluid i
@@ -82,7 +84,7 @@ protected :
     PetscReal _rhoMax, _uMax;
 	Mat _Conv, _DivRhoU, _LaplacianVelocity  ;
 	double _c;
-	std::vector<double> _Entropy;
+	std::vector<double> _Entropy, _Time;
 				
 
 };

@@ -18,6 +18,7 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseType fluid, pressureEsti
 	_facesBoundinit = false;
 	_indexFacePeriodicSet = false;
 	_vec_normal=NULL;
+	_Time.push_back(0);
 
 	if(pEstimate==around1bar300K){//EOS at 1 bar and 300K
 		_Tref=300;
@@ -133,6 +134,7 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetSizes(_A, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 	MatSetFromOptions(_A);
 	MatSetUp(_A);
+	MatZeroEntries(_A);
 
 	// matrice DIVERGENCE (|K|div(u))
 	MatCreate(PETSC_COMM_SELF, & _Div); 
@@ -175,10 +177,8 @@ void EulerBarotropicStaggered::initialize(){
 	VecSetSizes(_BoundaryTerms, PETSC_DECIDE, _globalNbUnknowns); 
 	VecSetFromOptions(_BoundaryTerms);
 	VecSetUp(_BoundaryTerms);
-
 	VecZeroEntries(_BoundaryTerms);
-	MatZeroEntries(_A);
-	MatZeroEntries(_Div);
+	
 	
 	if(_system)
 	{
@@ -201,25 +201,27 @@ void EulerBarotropicStaggered::initialize(){
 	save();//save initial data
 }
 
+std::vector<double>  EulerBarotropicStaggered::getTimeEvol(){
+	return _Time;
+}
+
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 
-	MatZeroEntries(_DivRhoU);
-	MatZeroEntries(_LaplacianPressure);
-	MatZeroEntries(_LaplacianVelocity);
-	MatZeroEntries(_Conv);
-
-	MatZeroEntries(_Div); 
-	MatZeroEntries(_DivTranspose); 
 	MatZeroEntries(_InvVol); 
 	MatZeroEntries(_InvSurface);
+
+	MatZeroEntries(_DivRhoU);
+	MatZeroEntries(_LaplacianPressure);
+
+	MatZeroEntries(_Conv);
+	MatZeroEntries(_Div); 
+	MatZeroEntries(_DivTranspose); 
+	MatZeroEntries(_LaplacianVelocity);
+	
 	//TODO : vérifier que cela remet bien à zéro les matrices
-	// TODO ; si INSERT alors pas besoin de réinitialiser à zero 
 
 	if (_timeScheme == Explicit ){ 
-		//cout << "EulerBarotropicStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
-		//TODO : pourquoi affiché plusieurs fois
-		
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
 			for (int j=0; j<_Nfaces;j++){
@@ -301,15 +303,15 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						std::vector<int> idFaces = K.getFacesId();
 						VecGetValues(_primitiveVars,1,&Fj.getCellsId() [nei],&rhoL);
 						//Loop on epsilon the boundary of a dual cell in the fixed half diamond cell 
-						for (int Nbepsilon = 0; Nbepsilon < Fj.getNumberOfNodes() ;Nbepsilon ++){ 
+						for (int Nbepsilon = 0; Nbepsilon < Fj.getNumberOfNodes() ;Nbepsilon ++){ //TODO : works in 1D but is not clean
 							ConvectiveFlux = 0 ;		
 							Node xsigma = _mesh.getNode( Fj.getNodesId()[Nbepsilon] ); //TODO DIMENSION DEPENDANT
 							// For fixed epsilon (and thus the node on sigma defining it ) Loop on the faces that are in the boundary of the cell containing the fixed half diamond cell	
+							// Compute the flux through epsilon
 							for (int f =0; f <K.getNumberOfFaces(); f ++){
 								bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
 								bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
 								bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end() ;			
-								// Compute the flux through epsilon
 								Face Facef = _mesh.getFace( idFaces[f] );
 								std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 								I = _Nmailles + idFaces[f];
@@ -330,7 +332,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 										std::map<int,double>::iterator it = boundaryPressure.find(j);
 										rhoR = boundaryPressure[it->first]; 
 								} 
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL) )* psif;
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL)/2.0 )* psif;
 
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -409,7 +411,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 					PetscScalar MinusFaceArea_upwinding = -(abs(u) + _c) * FaceArea/2.0;
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
-					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding; // TODO ??
+					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding; 
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
 				}	
 			}
@@ -455,13 +457,15 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		/***********Assembling the matrix _A such that : *************/
 		// _A = ( (u+c) _Laplacian   ;  -Div(\rho .)         )
 		//      (-Conv  ;  c (\tilde rho) MinusGrad (1/|dK| Div + LaplacianVelocity) 
-		MatScale(_DivTranspose, -1.0);  //Div^t = -grad so -Div^t = grad 
-		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
+		//Up to here Div^t = -grad so -Div^t = grad 
+		MatScale(_DivTranspose, -1.0);  																		
+		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 	// grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);
-		MatScale(_DivTranspose, -1.0);
+		MatScale(_Conv, -1.0); 														//TODO -1 for Laplacian  ?
+		MatScale(_DivTranspose, -1.0);												//-(-Div^t) = -grad  
 
 		//cout << "Gradidiv" << endl;
-		//MatView(_GradDivTilde ,  PETSC_VIEWER_STDOUT_WORLD); //GradDiv ok ?
+		//MatView(_GradDivTilde ,  PETSC_VIEWER_STDOUT_WORLD); 						//TODO GradDiv ok ?
 
 		MatScale(_GradDivTilde, _c*_rhoMax) ; 
 		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
@@ -474,7 +478,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatSetUp(ZeroNcells_Nfaces);
 		MatZeroEntries(ZeroNcells_Nfaces);
 		MatAssemblyBegin(ZeroNcells_Nfaces, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(ZeroNcells_Nfaces, MAT_FINAL_ASSEMBLY); //TODO ; fonction Petsc qui créer des matirces nulle de la bonne taille ?
+		MatAssemblyEnd(ZeroNcells_Nfaces, MAT_FINAL_ASSEMBLY);				 //TODO ; fonction Petsc qui créer des matirces nulle de la bonne taille ?
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
 		G[2] = ZeroNcells_Nfaces ;
@@ -482,12 +486,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
-
-		//cout << "_A before gradient and boundary terms" << endl;
-		//MatView(_A,  PETSC_VIEWER_STDOUT_WORLD);
-
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); //TODO Coment sortir les redondances avec Prod
+		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 							//TODO Coment sortir les redondances avec Prod
 		MatMult(_A,_primitiveVars, _b); 
 		MatDestroy(&ZeroNcells_Nfaces);
 		
@@ -510,13 +510,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p = rho*rho; //TODO : rho^gamma_compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
+			p = rho*rho; 													//TODO : rho^gamma_compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
 		}
 		//TODO pb ave div transpose ?
 		//add pressure gradient to AU^n + Boundterms//
-		MatMult(_DivTranspose, Pressure, Temporary2); //TODO times  -1 ? 
-		double *Product = new double[_Nfaces]; //TODO can we avoid creating a pointer only to insert in the bigger Vector ?
+		MatMult(_DivTranspose, Pressure, Temporary2); 						//TODO times  -1 ? 
+		double *Product = new double[_Nfaces]; 									//TODO can we avoid creating a pointer only to insert in the bigger Vector ?
 		PetscScalar gradp;
 		for (int i=0; i <_Nfaces; i++){
 			VecGetValues(Temporary2,1,&i,&gradp);
@@ -528,9 +528,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
 		MatMult(_InvVol, GradPressure, Temporary1);
-		VecAXPY(_b,     1, Temporary1); // TOdo vérfier 
+		VecAXPY(_b,     1, Temporary1); 									// TOdo vérfier 
 	
-		//TODO : sont-ils tous supprimés ?
+																			//TODO : sont-ils tous supprimés ?
 		VecDestroy(& Temporary1);
 		VecDestroy(& Temporary2);
 		MatDestroy(& Prod);
@@ -541,11 +541,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 	}
 	if (_nbTimeStep == 0)
-		ComputeMinCellMaxPerim();
+		ComputeMinCellMaxPerim(); //TODO : pas bon _minCell et _maxPerim
 
 	
-
-	return _cfl * _minCell / (_maxPerim * _c);//max(_uMax,_c) );
+	double dt = _cfl * _minCell / (_maxPerim * max(_uMax,_c) );
+	double PreviousTime = _Time.back();
+	_Time.push_back(PreviousTime+ dt);
+	return dt; 
 }
 
 
