@@ -468,7 +468,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		//MatView(_GradDivTilde ,  PETSC_VIEWER_STDOUT_WORLD); 						//TODO GradDiv ok ?
 
 		MatScale(_GradDivTilde, _c*_rhoMax) ; 
-		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
+		//MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
 		MatAXPY(_GradDivTilde, 1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
 		Mat G[4], ZeroNcells_Nfaces;
@@ -510,7 +510,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p = rho*rho; 													//TODO : rho^gamma_compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
+			p = rho*rho; 													//TODO : rho^gamma = _compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
 		}
 		//TODO pb ave div transpose ?

@@ -131,15 +131,15 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	freqSave = 1
 	xinf = 0 ;
 	xsup=1
-	nx=200;
+	nx=300;
 	initialPressure_Left =1
 	initialPressure_Right = 2
 	initialVelocity_Left = 1
 	initialVelocity_Right = 1
 
 
-	dt =  2.50e-04
-	Tmax = 500*dt  #myProblem.getTime();
+	dt =  4.17e-04
+	Tmax = 300*dt  #myProblem.getTime();
 	time = dt    #myProblem.getTimeEvol();
 	
 	#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
@@ -179,7 +179,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		plt.title("Data at time step"+str(i))
 		plt.savefig(fileName + "/Data at time step"+str(i))
 		i+=freqSave  #TODO freq save ??
-		time += i*dt
+		time = i*dt
 
 	ok = True
 	return ok
