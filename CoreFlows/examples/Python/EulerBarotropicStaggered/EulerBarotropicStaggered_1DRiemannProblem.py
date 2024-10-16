@@ -7,12 +7,12 @@ from  matplotlib import pyplot as plt
 import pandas as pd
 import os 
 import numpy as np
-#import exact_rs_stiffenedgas
+import exact_rs_stiffenedgas
 
 
 def EulerBarotropicStaggered_1DRiemannProblem():
 
-	spaceDim = 1;
+	""" spaceDim = 1;
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
@@ -91,7 +91,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	myProblem.setTimeScheme(svl.Explicit);
     
     # name of result file
-	fileName = "1DRiemannProblem";
+	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
 	MaxNbOfTimeStep = 200;
@@ -124,31 +124,48 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		print( "Simulation python " + fileName + "  failed ! " );
 		pass
 
-	print( "------------ End of calculation !!! -----------" );
+	print( "------------ End of calculation !!! -----------" ); """
 
-	Tmax = myProblem.getTime();
-	time = myProblem.getTimeEvol();
-	myProblem.terminate();
+	
+	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
+	freqSave = 1
+	xinf = 0 ;
+	xsup=1
+	nx=200;
+	initialPressure_Left =1
+	initialPressure_Right = 2
+	initialVelocity_Left = 1
+	initialVelocity_Right = 1
+
+
+	dt =  2.50e-04
+	Tmax = 500*dt  #myProblem.getTime();
+	time = dt    #myProblem.getTimeEvol();
+	
+	#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
+	initialDensity_Left  = initialPressure_Left
+	initialDensity_Right = initialPressure_Right
+	initialPressure_Left = initialDensity_Left*initialDensity_Left
+	initialPressure_Right = initialDensity_Right*initialDensity_Right 
+
+	#myProblem.terminate();
 	if not os.path.exists(fileName):
 		os.mkdir(fileName)
-	i=0
-	while time[i] < Tmax:
+	i=freqSave
+	while time < Tmax:
 		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
 		pressuredata = pd.read_csv(fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
 		pressuredata.columns =['x','pressure', 'index']
 		
 		#Determine exact solution
-		myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+		#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
+		""" myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
 		initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
-		initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
-		initialDensity_Left  = initialPressure_Left
-		initialDensity_Right = initialPressure_Right
+		initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() ) """
+		
 
-		initialPressure_Left = initialDensity_Left*initialDensity_Left
-		initialPressure_Right = initialDensity_Right*initialDensity_Right #TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
-
-		exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, time[i], 2 , 1, [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
+		exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, time, 2 , 0, [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
 
 		plt.figure()
 		plt.subplot(121)
@@ -156,14 +173,15 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		plt.plot(velocitydata['x'], exactVelocity,label = "exact velocity")
+		plt.plot(pressuredata['x'], exactVelocity,label = "exact velocity")
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig(fileName + "/Data at time step"+str(i))
 		i+=freqSave  #TODO freq save ??
+		time += i*dt
 
-
+	ok = True
 	return ok
 
 if __name__ == """__main__""":

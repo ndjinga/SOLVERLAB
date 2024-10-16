@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 	double xinf=0.0;
 	double xsup=1.0;
 	double discontinuity = (xinf+xsup)/2.;
-	int nx=4;
+	int nx=200;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 100;
+	unsigned MaxNbOfTimeStep = 500;
 	int freqSave = 1;
 	double cfl = 0.2;
 	double maxTime = 30;
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setFileName(fileName);
-	myProblem.setSaveFileFormat(VTK);
+	myProblem.setSaveFileFormat(CSV);
 	myProblem.saveVelocity(true);
 	myProblem.savePressure(true);
 	myProblem.setVerbose(false);
