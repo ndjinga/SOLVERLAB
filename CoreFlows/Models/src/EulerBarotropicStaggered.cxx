@@ -219,8 +219,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	MatZeroEntries(_DivTranspose); 
 	MatZeroEntries(_LaplacianVelocity);
 	
-	//TODO : vérifier que cela remet bien à zéro les matrices
-
 	if (_timeScheme == Explicit ){ 
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
@@ -261,11 +259,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						Node vertex = _mesh.getNode( nodes[0] );
 						// determinant of the vectors forming the diamond cell around the face sigma
 						det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
-						InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
-						InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
+						InvPerimeter1 = 1.0/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
+						InvPerimeter2 = 1.0/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
 					}
 					InvD_sigma = 1.0/PetscAbsReal(det);
-					PetscScalar InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
+					PetscScalar InvVol2 = 1.0/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
 					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
 					MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 	
@@ -316,7 +314,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 								I = _Nmailles + idFaces[f];
 								VecGetValues(_primitiveVars,1,&I	,&u);
-								PetscScalar psif = 1/K.getNumberOfFaces();               		//TODO à calculer
+								double psif = 1.0/K.getNumberOfFaces();   //TODO à calculer           		
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -332,7 +330,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 										std::map<int,double>::iterator it = boundaryPressure.find(j);
 										rhoR = boundaryPressure[it->first]; 
 								} 
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL)/2.0 )* psif;
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL)/2.0 )* psif; //TODO : pb de signe sur rhoR - rhoL ? 
 
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -356,6 +354,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								}
 							}
 							
+							
 							epsilon = 1.0;
 							if (_Ndim > 1){
 								epsilon = (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y());
@@ -377,7 +376,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					/*************** Matrices related to metrics ***************/		
 					if (_Ndim == 1){
 						InvD_sigma = 2.0/Ctemp1.getMeasure() ;
-						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
+						InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
 					} 
 					if (_Ndim == 2){
 						std::vector< int > nodes =  Fj.getNodesId();
@@ -386,7 +385,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
 						// determinant of the vectors forming the interior half diamond cell around the face sigma
 						InvD_sigma = 1.0/PetscAbsReal(det);	
-						InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces() ); //TODO ?? pourquoi pas pareil que face intérieure ?InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
+						InvPerimeter1 = 1.0/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces() ); 
 					}
 					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
 					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
@@ -453,43 +452,42 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 			VecGetValues(_primitiveVars,1,&I,&u);
 			_uMax = max(_uMax, u);
 		}
-
+		
 		/***********Assembling the matrix _A such that : *************/
-		// _A = ( (u+c) _Laplacian   ;  -Div(\rho .)         )
-		//      (-Conv  ;  c (\tilde rho) MinusGrad (1/|dK| Div + LaplacianVelocity) 
-		//Up to here Div^t = -grad so -Div^t = grad 
-		MatScale(_DivTranspose, -1.0);  																		
-		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 	// grad (inv_Surf) Div
+		// _A = ( (u+c) _Laplacian   ;                 -Div(\rho .)                               )
+		//      (0_FacesxCells   ; -Conv+ c (\tilde rho) MinusGrad 1/|dK| Div + LaplacianVelocity ) 
+		MatScale(_DivTranspose, -1.0);  //Up to here Div^t = -grad so -Div^t = grad 												
+		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);
-		MatScale(_Conv, -1.0); 														//TODO -1 for Laplacian  ?
-		MatScale(_DivTranspose, -1.0);												//-(-Div^t) = -grad  
+		MatScale(_Conv, -1.0); 														
+		MatScale(_DivTranspose, -1.0); //-(-Div^t) = -grad  
 
-		//cout << "Gradidiv" << endl;
-		//MatView(_GradDivTilde ,  PETSC_VIEWER_STDOUT_WORLD); 						//TODO GradDiv ok ?
-
+		cout << "-_Conv" << endl;
+		MatView(_Conv ,  PETSC_VIEWER_STDOUT_WORLD); 	
+			
 		MatScale(_GradDivTilde, _c*_rhoMax) ; 
-		//MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
+		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
 		MatAXPY(_GradDivTilde, 1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
-		Mat G[4], ZeroNcells_Nfaces;
-		MatCreate(PETSC_COMM_SELF, &ZeroNcells_Nfaces); 
-		MatSetSizes(ZeroNcells_Nfaces, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
-		MatSetFromOptions(ZeroNcells_Nfaces);
-		MatSetUp(ZeroNcells_Nfaces);
-		MatZeroEntries(ZeroNcells_Nfaces);
-		MatAssemblyBegin(ZeroNcells_Nfaces, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(ZeroNcells_Nfaces, MAT_FINAL_ASSEMBLY);				 //TODO ; fonction Petsc qui créer des matirces nulle de la bonne taille ?
+		Mat G[4], ZeroNfaces_Ncells;
+		MatCreate(PETSC_COMM_SELF, &ZeroNfaces_Ncells); 
+		MatSetSizes(ZeroNfaces_Ncells, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
+		MatSetFromOptions(ZeroNfaces_Ncells);
+		MatSetUp(ZeroNfaces_Ncells);
+		MatZeroEntries(ZeroNfaces_Ncells);
+		MatAssemblyBegin(ZeroNfaces_Ncells, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(ZeroNfaces_Ncells, MAT_FINAL_ASSEMBLY);				 //TODO ; fonction Petsc qui créer des matirces nulle de la bonne taille ? & Coment sortir les redondances avec Prod
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
-		G[2] = ZeroNcells_Nfaces ;
+		G[2] = ZeroNfaces_Ncells ;
 		G[3] = _GradDivTilde;
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 							//TODO Coment sortir les redondances avec Prod
+		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 						
 		MatMult(_A,_primitiveVars, _b); 
-		MatDestroy(&ZeroNcells_Nfaces);
+		MatDestroy(&ZeroNfaces_Ncells);
 		
 		/***********Adding boundary terms and pressure gradient**************/
 		Vec Temporary1,Temporary2, Pressure, GradPressure;
@@ -513,14 +511,14 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 			p = rho*rho; 													//TODO : rho^gamma = _compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
 		}
-		//TODO pb ave div transpose ?
+																			
 		//add pressure gradient to AU^n + Boundterms//
 		MatMult(_DivTranspose, Pressure, Temporary2); 						//TODO times  -1 ? 
-		double *Product = new double[_Nfaces]; 									//TODO can we avoid creating a pointer only to insert in the bigger Vector ?
+		double *Product = new double[_Nfaces]; 								//TODO can we avoid creating a pointer only to insert in the bigger Vector ?
 		PetscScalar gradp;
 		for (int i=0; i <_Nfaces; i++){
 			VecGetValues(Temporary2,1,&i,&gradp);
-			Product[i] = gradp;
+			Product[i] = 0; // TODO gradp;
 		}
 		VecDuplicate(_primitiveVars, &GradPressure);
 		VecZeroEntries(GradPressure);
@@ -528,7 +526,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
 		MatMult(_InvVol, GradPressure, Temporary1);
-		VecAXPY(_b,     1, Temporary1); 									// TOdo vérfier 
+		VecAXPY(_b,     1, Temporary1); 									// TOdO vérfier 
 	
 																			//TODO : sont-ils tous supprimés ?
 		VecDestroy(& Temporary1);
@@ -541,7 +539,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 	}
 	if (_nbTimeStep == 0)
-		ComputeMinCellMaxPerim(); //TODO : pas bon _minCell et _maxPerim
+		ComputeMinCellMaxPerim(); 
 
 	
 	double dt = _cfl * _minCell / (_maxPerim * max(_uMax,_c) );

@@ -5,26 +5,26 @@
 using namespace std;
 
 double initialPressure(double x){
-	if (x < 1/2.0)
+	if (x < 0)
 		return 1;//155e5;
 	else
 		return 2;
 }
 
 double initialVelocity(double x){
-	if (x < 1/2.0)
-		return 1;
+	if (x < 0)
+		return -4;
 	else
-		return 1;
+		return 2;
 }
 int main(int argc, char** argv)
 {
 	//Preprocessing: mesh and group creation
 	cout << "Building Cartesian mesh" << endl;
-	double xinf=0.0;
+	double xinf=-1.0;
 	double xsup=1.0;
 	double discontinuity = (xinf+xsup)/2.;
-	int nx=300;
+	int nx=5;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -80,8 +80,8 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 300;
-	int freqSave = 1;
+	unsigned MaxNbOfTimeStep = 1;
+	int freqSave = 10;
 	double cfl = 0.5;
 	double maxTime = 30;
 	double precision = 1e-13;

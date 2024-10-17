@@ -628,29 +628,23 @@ void WaveStaggered::AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell
 void WaveStaggered::ComputeMinCellMaxPerim(){
 	Vec V, W;
 	PetscScalar minInvSurf, maxInvVol;
-	// Minimum size of mesh volumes
+	
 	VecCreate(PETSC_COMM_SELF, & V);
-	VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
-	int *indices3 = new int[_globalNbUnknowns]; 
-	std::iota(indices3, indices3 +_globalNbUnknowns, 0);
-	VecSetFromOptions(V);
-	MatGetDiagonal(_InvVol,V);
-	VecMax(V, indices3, &maxInvVol);
-	_minCell = 1.0/maxInvVol;
-	//TODO : CORRUGER VECMAX
-
-	//Maximum size of surfaces
 	VecCreate(PETSC_COMM_SELF, & W);
+	VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
 	VecSetSizes(W, PETSC_DECIDE, _Nmailles);
+	VecSetFromOptions(V);
 	VecSetFromOptions(W);
+
+	// Minimum size of mesh volumes
+	MatGetDiagonal(_InvVol,V);
+	VecMax(V, NULL, &maxInvVol);
+	_minCell = 1.0/maxInvVol;
+	//Maximum size of surfaces
 	MatGetDiagonal(_InvSurface, W);
-	int *indices4 = new int[_Nmailles]; 
-	std::iota(indices4, indices4 +_Nmailles, 0);
-	VecMin(W, indices4, &minInvSurf);
+	VecMin(W, NULL, &minInvSurf);
 	_maxPerim = 1.0/minInvSurf;
 
-	delete[] indices3;
-	delete[] indices4;
 	VecDestroy(& V);
 	VecDestroy(& W); 
 }

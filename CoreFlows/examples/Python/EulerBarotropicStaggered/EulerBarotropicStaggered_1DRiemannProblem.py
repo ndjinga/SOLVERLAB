@@ -127,26 +127,56 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print( "------------ End of calculation !!! -----------" ); """
 
 	
+	
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
-	freqSave = 1
-	xinf = 0 ;
+	freqSave = 10
+	xinf = -1 ;
 	xsup=1
-	nx=300;
+	nx=200;
 	initialPressure_Left =1
 	initialPressure_Right = 2
-	initialVelocity_Left = 1
-	initialVelocity_Right = 1
+	initialVelocity_Left = -4
+	initialVelocity_Right = 2
+
+	# Define the exact solution of the 1d Problem 
+	def initialPressure(x):
+		if x <0:
+			return initialPressure_Left
+		else :
+			return initialPressure_Right
+
+	def ExactPressure(x,t, velocity):
+		return initialPressure(x - velocity * t) 
+
+	def ExactVelocityFromRiemannProblem(u1,u2):
+		def u(x,t):
+			if u1 <= u2:
+				if  x/t <= u1:
+					return u1
+				elif u1 <= x/t <= u2:
+					return x/t
+				elif u2 <= x/t: 
+					return u2
+			if u2 < u1:
+				if x/t<(u1+u2)/2.0:
+					return u1
+				elif (u1+u2)/2.0 < x/t:
+					return u2
+		return u
+		
+
+		
 
 
-	dt =  4.17e-04
-	Tmax = 300*dt  #myProblem.getTime();
+	dt =  6.25e-04
+	Tmax = 500*dt  #myProblem.getTime();
 	time = dt    #myProblem.getTimeEvol();
 	
 	#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
 	initialDensity_Left  = initialPressure_Left
 	initialDensity_Right = initialPressure_Right
-	initialPressure_Left = initialDensity_Left*initialDensity_Left
-	initialPressure_Right = initialDensity_Right*initialDensity_Right 
+	#initialPressure_Left = initialDensity_Left*initialDensity_Left
+	#initialPressure_Right = initialDensity_Right*initialDensity_Right 
 
 	#myProblem.terminate();
 	if not os.path.exists(fileName):
@@ -165,8 +195,17 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() ) """
 		
 
-		exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, time, 2 , 0, [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
+		#exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, time, 2 , 0, [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
 
+		exactDensity = np.zeros(nx)
+		exactVelocity = np.zeros(nx)
+		ExactVelocity = ExactVelocityFromRiemannProblem(initialVelocity_Left,initialVelocity_Right)
+		for j in range(nx):
+			exactVelocity[j] = ExactVelocity(xinf + j*(xsup - xinf)/nx,time)
+		for j in range(nx):
+			exactDensity[j] = ExactPressure(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time, exactVelocity[j])
+		
+			
 		plt.figure()
 		plt.subplot(121)
 		plt.plot(pressuredata['x'], exactDensity,  label = "exact pressure")
@@ -178,7 +217,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig(fileName + "/Data at time step"+str(i))
-		i+=freqSave  #TODO freq save ??
+		i+=freqSave  
 		time = i*dt
 
 	ok = True
