@@ -35,6 +35,7 @@ namespace std {
 #include "Fluide.h"
 #include "StiffenedGas.hxx"
 #include "WaveStaggered.hxx"
+#include "EulerBarotropicStaggered.hxx"
 
 
 %}
@@ -52,4 +53,5 @@ namespace std {
 %include "Fluide.h"
 %include "StiffenedGas.hxx"
 %include "WaveStaggered.hxx"
+%include "EulerBarotropicStaggered.hxx"
 

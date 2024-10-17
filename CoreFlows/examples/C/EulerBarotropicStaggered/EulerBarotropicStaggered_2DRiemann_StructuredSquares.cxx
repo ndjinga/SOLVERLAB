@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 
 		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
 		double discontinuity = (inf + sup)/2.0;
-		EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(Gas, around1bar300K, spaceDim );
+		EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, spaceDim );
 
 		// Prepare for the initial condition
 		// set the boundary conditions

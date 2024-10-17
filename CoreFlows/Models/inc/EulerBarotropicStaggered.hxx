@@ -23,10 +23,10 @@
 
 //! enumeration phaseType
 /*! The material phase can be Gas or liquid  */
-enum phaseType
+enum phaseTypeStaggered
 {
-    Liquid,/**< Material considered is Liquid */
-    Gas/**< Material considered is Gas */
+    LiquidStaggered,
+    GasStaggered
 };
 
 class EulerBarotropicStaggered : public WaveStaggered{
@@ -36,7 +36,7 @@ public :
 	 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 	 * \param [in] int : mesh dimension
 	 *  */
-	EulerBarotropicStaggered(phaseType fluid, pressureEstimate pEstimate, int dim);
+	EulerBarotropicStaggered(phaseTypeStaggered fluid, pressureEstimate pEstimate, int dim);
 
 
 	//! system initialisation

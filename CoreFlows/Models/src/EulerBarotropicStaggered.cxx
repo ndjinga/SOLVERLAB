@@ -9,7 +9,7 @@
 
 using namespace std;
 
-EulerBarotropicStaggered::EulerBarotropicStaggered(phaseType fluid, pressureEstimate pEstimate, int dim):WaveStaggered( dim, 1.0 ,1.0, MPI_COMM_WORLD ){
+EulerBarotropicStaggered::EulerBarotropicStaggered(phaseTypeStaggered fluid, pressureEstimate pEstimate, int dim):WaveStaggered( dim, 1.0 ,1.0, MPI_COMM_WORLD ){
 ;	_Ndim=dim;
 	_nVar = 2; 
 	_fluides.resize(1);
@@ -23,7 +23,7 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseType fluid, pressureEsti
 	if(pEstimate==around1bar300K){//EOS at 1 bar and 300K
 		_Tref=300;
 		_Pref=1e5;
-		if(fluid==Gas){
+		if(fluid==GasStaggered){
 			cout<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
 			*_runLogFile<<"Fluid is air around 1 bar and 300 K (27°C)"<<endl;
 			_compressibleFluid = new StiffenedGas(1.4,743,_Tref,2.22e5);  //ideal gas law for nitrogen at pressure 1 bar and temperature 27°C, e=2.22e5, c_v=743
@@ -37,7 +37,7 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseType fluid, pressureEsti
 	else{//EOS at 155 bars and 618K 
 		_Tref=618;
 		_Pref=155e5;
-		if(fluid==Gas){
+		if(fluid==GasStaggered){
 			cout<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
 			*_runLogFile<<"Fluid is Gas around saturation point 155 bars and 618 K (345°C)"<<endl;
 			_compressibleFluid = new StiffenedGas(102,_Pref,_Tref,2.44e6, 433,3633);  //stiffened gas law for Gas at pressure 155 bar and temperature 345°C
@@ -219,6 +219,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	MatZeroEntries(_DivTranspose); 
 	MatZeroEntries(_LaplacianVelocity);
 	
+	//TODO  momentum equation = u\rho !!!!!! et non pas \rho
 	if (_timeScheme == Explicit ){ 
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
@@ -353,8 +354,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									}
 								}
 							}
-							
-							
 							epsilon = 1.0;
 							if (_Ndim > 1){
 								epsilon = (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y());
@@ -462,12 +461,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatScale(_Conv, -1.0); 														
 		MatScale(_DivTranspose, -1.0); //-(-Div^t) = -grad  
 
-		cout << "-_Conv" << endl;
-		MatView(_Conv ,  PETSC_VIEWER_STDOUT_WORLD); 	
+		//cout << "-_Conv" << endl;
+		//MatView(_Conv ,  PETSC_VIEWER_STDOUT_WORLD); 	
 			
 		MatScale(_GradDivTilde, _c*_rhoMax) ; 
-		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
-		MatAXPY(_GradDivTilde, 1, _Conv, UNKNOWN_NONZERO_PATTERN); 
+		/* MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
+		MatAXPY(_GradDivTilde, 1, _Conv, UNKNOWN_NONZERO_PATTERN); */ 
 
 		Mat G[4], ZeroNfaces_Ncells;
 		MatCreate(PETSC_COMM_SELF, &ZeroNfaces_Ncells); 
@@ -508,8 +507,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p = rho*rho; 													//TODO : rho^gamma = _compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
+			p = _compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho);											//TODO : rho^gamma = _compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
+			//cout << "p = " << p <<" Tref = "<< _Tref<< " rho =" << rho<< endl; 
 		}
 																			
 		//add pressure gradient to AU^n + Boundterms//
@@ -541,7 +541,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	if (_nbTimeStep == 0)
 		ComputeMinCellMaxPerim(); 
 
-	
 	double dt = _cfl * _minCell / (_maxPerim * max(_uMax,_c) );
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);

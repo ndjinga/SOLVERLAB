@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
-	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(Gas, around1bar300K, spaceDim );
+	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, spaceDim );
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
 	Field Pressure0("pressure", CELLS, M, 1);
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1;
+	unsigned MaxNbOfTimeStep = 100;
 	int freqSave = 10;
 	double cfl = 0.5;
 	double maxTime = 30;

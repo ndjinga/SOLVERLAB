@@ -12,26 +12,26 @@ import exact_rs_stiffenedgas
 
 def EulerBarotropicStaggered_1DRiemannProblem():
 
-	""" spaceDim = 1;
+	spaceDim = 1;
     # Prepare for the mesh
 	print("Building mesh " );
-	xinf = 0 ;
+	xinf = -1 ;
 	xsup=1
-	nx=200;
+	nx=100;
 	M=svl.Mesh(xinf,xsup,nx)
-	discontinuity=(xinf+xsup)/2 + 0.75/nx
+	discontinuity=(xinf+xsup)/2 #+ 0.75/nx
 
     # set the limit field for each boundary
-	myProblem = svl.EulerBarotropicStaggered(svl.Gas, svl.around1bar300K, spaceDim ); 
+	myProblem = svl.EulerBarotropicStaggered(svl.GasStaggered, svl.around1bar300K, spaceDim ); 
 
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
 	initialPressure_Left = 6
-	initialPressure_Right =6
+	initialPressure_Right =4
 
-	initialVelocity_Left = 2
-	initialVelocity_Right = 3
+	initialVelocity_Left = -2
+	initialVelocity_Right = 1
 
 	
 	def initialPressure(x):
@@ -73,13 +73,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if ( j== 0 ): 
-				myProblem.setWallBoundIndex(j) 
-				wallVelocityMap[j] = 0
-			else :
-				myProblem.setSteggerBoundIndex(j) 
-				wallVelocityMap[j] =initialVelocityForPb(Fj.x()) ;
-				wallPressureMap[j] = initialPressure(Fj.x()) ;
+			myProblem.setSteggerBoundIndex(j) 
+			wallVelocityMap[j] =initialVelocityForPb(Fj.x()) ;
+			wallPressureMap[j] = initialPressure(Fj.x()) ;
 			
 
 	myProblem.setInitialField(Pressure0);
@@ -96,9 +92,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # simulation parameters 
 	MaxNbOfTimeStep = 200;
 	freqSave = 5;
-	cfl = 0.4 
+	cfl = 0.5
 	maxTime = 20;
-	precision = 1e-6;
+	precision = 1e-10;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -111,8 +107,6 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	myProblem.savePressure();
 	myProblem.setVerbose(False);
 
- 
- 
     # evolution
 	myProblem.initialize();
 
@@ -124,19 +118,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		print( "Simulation python " + fileName + "  failed ! " );
 		pass
 
-	print( "------------ End of calculation !!! -----------" ); """
+	print( "------------ End of calculation !!! -----------" );
 
-	
-	
-	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
-	freqSave = 10
-	xinf = -1 ;
-	xsup=1
-	nx=200;
-	initialPressure_Left =1
-	initialPressure_Right = 2
-	initialVelocity_Left = -4
-	initialVelocity_Right = 2
 
 	# Define the exact solution of the 1d Problem 
 	def initialPressure(x):
@@ -150,39 +133,36 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 	def ExactVelocityFromRiemannProblem(u1,u2):
 		def u(x,t):
-			if u1 <= u2:
-				if  x/t <= u1:
-					return u1
-				elif u1 <= x/t <= u2:
-					return x/t
-				elif u2 <= x/t: 
-					return u2
-			if u2 < u1:
-				if x/t<(u1+u2)/2.0:
-					return u1
-				elif (u1+u2)/2.0 < x/t:
-					return u2
+			if t== 0:
+					if x <0:
+						return u1
+					else :
+						return u2
+			else :
+				if u1 <= u2:
+					if  x/t <= u1:
+						return u1
+					elif u1 <= x/t <= u2:
+						return x/t
+					elif u2 <= x/t: 
+						return u2
+				if u2 < u1:
+					if x/t<(u1+u2)/2.0:
+						return u1
+					elif (u1+u2)/2.0 < x/t:
+						return u2
 		return u
 		
-
-		
-
-
 	dt =  6.25e-04
-	Tmax = 500*dt  #myProblem.getTime();
-	time = dt    #myProblem.getTimeEvol();
+	Tmax = myProblem.getTime();
+	time = myProblem.getTimeEvol();
 	
 	#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
-	initialDensity_Left  = initialPressure_Left
-	initialDensity_Right = initialPressure_Right
-	#initialPressure_Left = initialDensity_Left*initialDensity_Left
-	#initialPressure_Right = initialDensity_Right*initialDensity_Right 
-
-	#myProblem.terminate();
+	myProblem.terminate();
 	if not os.path.exists(fileName):
 		os.mkdir(fileName)
-	i=freqSave
-	while time < Tmax:
+	i=0
+	while time[i] < Tmax:
 		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
 		pressuredata = pd.read_csv(fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
@@ -190,20 +170,18 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		
 		#Determine exact solution
 		#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
-		""" myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
-		initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
-		initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() ) """
-		
-
+		#myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
+		#initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
+		#initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
 		#exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, time, 2 , 0, [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
 
 		exactDensity = np.zeros(nx)
 		exactVelocity = np.zeros(nx)
 		ExactVelocity = ExactVelocityFromRiemannProblem(initialVelocity_Left,initialVelocity_Right)
 		for j in range(nx):
-			exactVelocity[j] = ExactVelocity(xinf + j*(xsup - xinf)/nx,time)
+			exactVelocity[j] = ExactVelocity(xinf + j*(xsup - xinf)/nx,time[i])
 		for j in range(nx):
-			exactDensity[j] = ExactPressure(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time, exactVelocity[j])
+			exactDensity[j] = ExactPressure(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time[i], exactVelocity[j])
 		
 			
 		plt.figure()
@@ -217,10 +195,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		plt.legend()
 		plt.title("Data at time step"+str(i))
 		plt.savefig(fileName + "/Data at time step"+str(i))
-		i+=freqSave  
-		time = i*dt
-
-	ok = True
+		i+= freqSave
 	return ok
 
 if __name__ == """__main__""":
