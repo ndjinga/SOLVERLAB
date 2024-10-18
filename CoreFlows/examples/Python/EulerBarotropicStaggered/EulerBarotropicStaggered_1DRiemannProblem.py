@@ -17,7 +17,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = -1 ;
 	xsup=1
-	nx=100;
+	nx=30;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 #+ 0.75/nx
 
@@ -27,11 +27,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialPressure_Left = 6
-	initialPressure_Right =4
+	initialPressure_Left = 2
+	initialPressure_Right =10
 
-	initialVelocity_Left = -2
-	initialVelocity_Right = 1
+	initialVelocity_Left = -3
+	initialVelocity_Right = 8
 
 	
 	def initialPressure(x):
@@ -90,8 +90,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 200;
-	freqSave = 5;
+	MaxNbOfTimeStep = 120;
+	freqSave = 2;
 	cfl = 0.5
 	maxTime = 20;
 	precision = 1e-10;
@@ -153,7 +153,6 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 						return u2
 		return u
 		
-	dt =  6.25e-04
 	Tmax = myProblem.getTime();
 	time = myProblem.getTimeEvol();
 	
@@ -169,7 +168,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		pressuredata.columns =['x','pressure', 'index']
 		
 		#Determine exact solution
-		#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
+		#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 0 by myEOS.constante("p0")
 		#myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
 		#initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
 		#initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )

@@ -113,6 +113,11 @@ void EulerBarotropicStaggered::initialize(){
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
 
+	VecCreate(PETSC_COMM_SELF, & _DualDensity);//Current primitive variables at Newton iteration k between time steps n and n+1
+	VecSetSizes(_DualDensity, PETSC_DECIDE, _Nfaces);
+	VecSetFromOptions(_DualDensity);
+
+
 	//************ Time independent matrices ********** //
 	// matrice des Inverses Volumes V^{-1}
 	MatCreate(PETSC_COMM_SELF, &_InvVol); 
@@ -121,12 +126,28 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetUp(_InvVol);
 	MatZeroEntries(_InvVol);
 
+	// matrice des Inverses Volumes Primaux V^{-1}
+	MatCreate(PETSC_COMM_SELF, &_InvVolPrim); 
+	MatSetSizes(_InvVolPrim, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles );
+	MatSetFromOptions(_InvVolPrim);
+	MatSetUp(_InvVolPrim);
+	MatZeroEntries(_InvVolPrim);
+
+	// matrice des Inverses Duaux V^{-1}
+	MatCreate(PETSC_COMM_SELF, &_InvVolDual); 
+	MatSetSizes(_InvVolDual, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nfaces );
+	MatSetFromOptions(_InvVolDual);
+	MatSetUp(_InvVolDual);
+	MatZeroEntries(_InvVolDual);
+
 	// matrice des Inverses de Surfaces
 	MatCreate(PETSC_COMM_SELF, & _InvSurface); 
 	MatSetSizes(_InvSurface, PETSC_DECIDE, PETSC_DECIDE, _Nmailles , _Nmailles );
 	MatSetFromOptions(_InvSurface);
 	MatSetUp(_InvSurface);
 	MatZeroEntries(_InvSurface);
+
+	AssembleMetricsMatrices();
 	
 	// *************** Time dependent matrices ************ //
 	// Création matrice Q tq U^n+1 - U^n = dt V^{-1} _A U^n pour schéma explicite
@@ -179,7 +200,8 @@ void EulerBarotropicStaggered::initialize(){
 	VecSetUp(_BoundaryTerms);
 	VecZeroEntries(_BoundaryTerms);
 	
-	
+
+
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
@@ -205,14 +227,146 @@ std::vector<double>  EulerBarotropicStaggered::getTimeEvol(){
 	return _Time;
 }
 
+void EulerBarotropicStaggered::AssembleMetricsMatrices(){
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		PetscScalar det, InvD_sigma, InvPerimeter1, InvPerimeter2;	;
+		PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
+
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
+		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;		
+
+		if (IsInterior){
+			std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
+			if ( it != _FacePeriodicMap.end()  ){ 
+				std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
+				idCells.push_back( idCells_other_Fj[0]  );
+			}
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			PetscScalar InvVol2 = 1.0/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
+			if (_Ndim == 1){
+				det = Ctemp2.x() - Ctemp1.x();
+				InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
+				InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
+			} 
+			if (_Ndim ==2){
+				std::vector<int> nodes =  Fj.getNodesId();
+				Node vertex = _mesh.getNode( nodes[0] );
+				// determinant of the vectors forming the diamond cell around the face sigma
+				det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
+				InvPerimeter1 = 1.0/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
+				InvPerimeter2 = 1.0/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
+			}
+			InvD_sigma = 1.0/PetscAbsReal(det);
+			MatSetValues(_InvVolPrim, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
+			MatSetValues(_InvVolPrim, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
+			MatSetValues(_InvVolDual, 1, &j, 1, &j,  &InvD_sigma, ADD_VALUES); 	
+			MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+			MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
+		}
+		else if (IsWallBound || IsSteggerBound ) { 
+			if (_Ndim == 1){
+				InvD_sigma = 2.0/Ctemp1.getMeasure() ;
+				InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
+			} 
+			if (_Ndim == 2){
+				std::vector< int > nodes =  Fj.getNodesId();
+				Node vertex1 = _mesh.getNode( nodes[0] );
+				Node vertex2 = _mesh.getNode( nodes[1] );
+				det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+				// determinant of the vectors forming the interior half diamond cell around the face sigma
+				InvD_sigma = 1.0/PetscAbsReal(det);	
+				InvPerimeter1 = 1.0/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces() ); 
+			}
+			MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+			MatSetValues(_InvVolPrim, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
+			MatSetValues(_InvVolDual, 1, &j, 1, &j,  &InvD_sigma, ADD_VALUES); 
+		}
+	}
+	MatAssemblyBegin(_InvVolPrim,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvVolPrim, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(_InvVolDual,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvVolDual, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
+}
+
+double EulerBarotropicStaggered::UpdateDualDensity(){
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		PetscScalar detL, detR, D_sigmaL, D_sigmaR, rho_sigma, rhoL, rhoR;
+
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
+		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;		
+
+		if (IsInterior){
+			std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
+			if ( it != _FacePeriodicMap.end()  ){ 
+				std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
+				idCells.push_back( idCells_other_Fj[0]  );
+			}
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			if (_Ndim == 1){
+				det = Ctemp2.x() - Ctemp1.x();
+			} 
+			if (_Ndim ==2){
+				std::vector<int> nodes =  Fj.getNodesId();
+				Node vertex = _mesh.getNode( nodes[0] );
+				// determinant of the vectors forming the diamond cell around the face sigma
+				detL = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
+
+				std::vector< int > nodes =  Fj.getNodesId();
+				Node vertex1 = _mesh.getNode( nodes[0] );
+				Node vertex2 = _mesh.getNode( nodes[1] );
+				detL = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() )/2.0;
+				detR = (Ctemp2.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() )/2.0;
+			}
+			D_sigmaL = PetscAbsReal(detL);
+			D_sigmaR = PetscAbsReal(detR);
+			rho_sigma = (rhoL * D_sigmaL + rhoR*D_sigmaR)/(D_sigmaL +  D_sigmaR)
+			MatSetValues(_DualDensity,&j, &rho_sigma , INSERT_VALUES );
+	
+		}
+		else if (IsWallBound || IsSteggerBound ) { 
+			if (_Ndim == 1){
+				InvD_sigma = 2.0/Ctemp1.getMeasure() ;
+				InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
+			} 
+			if (_Ndim == 2){
+				std::vector< int > nodes =  Fj.getNodesId();
+				Node vertex1 = _mesh.getNode( nodes[0] );
+				Node vertex2 = _mesh.getNode( nodes[1] );
+				det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+				// determinant of the vectors forming the interior half diamond cell around the face sigma
+				InvD_sigma = 1.0/PetscAbsReal(det);	
+			}
+			D_sigmaL = PetscAbsReal(detL);
+			D_sigmaR = D_sigmaR;
+			rho_sigma = (rhoL * D_sigmaL + rhoR*D_sigmaR)/(D_sigmaL +  D_sigmaR)
+			MatSetValues(_DualDensity,&j, &rho_sigma , INSERT_VALUES );
+		}
+	}
+	MatAssemblyBegin(_InvVolPrim,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvVolPrim, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(_InvVolDual,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvVolDual, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
+}
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
-
-	MatZeroEntries(_InvVol); 
-	MatZeroEntries(_InvSurface);
+	UpdateDualDensity();
 
 	MatZeroEntries(_DivRhoU);
 	MatZeroEntries(_LaplacianPressure);
+	MatZeroEntries(_InvSurface);
+	MatZeroEntries(_InvVol);
 
 	MatZeroEntries(_Conv);
 	MatZeroEntries(_Div); 
@@ -227,7 +381,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				Face Fj = _mesh.getFace(j);
 				std::vector< int > idCells = Fj.getCellsId();
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				PetscScalar epsilon, ConvectiveFlux, rhoL, rhoR, u, absConvectiveFlux, MinusabsConvectiveFlux,det, InvD_sigma, InvPerimeter1, InvPerimeter2;	;
+				PetscScalar epsilon, ConvectiveFlux, rhoL, rhoR, u, absConvectiveFlux, MinusabsConvectiveFlux,det, InvD_sigma, InvPerimeter1, InvPerimeter2;	
 				
 				// Metrics
 				PetscScalar orientedFaceArea = getOrientation(j,Ctemp1) * Fj.getMeasure();
@@ -277,7 +431,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					VecGetValues(_primitiveVars,1,&IndexFace,&u);
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0;
 					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-					PetscScalar FaceArea_upwinding = (abs(u) + _c) * FaceArea/2.0;
+					PetscScalar FaceArea_upwinding = (abs(u)) * FaceArea/2.0; //  + _cTODO
 					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_DivRhoU, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
@@ -315,7 +469,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 								I = _Nmailles + idFaces[f];
 								VecGetValues(_primitiveVars,1,&I	,&u);
-								double psif = 1.0/K.getNumberOfFaces();   //TODO à calculer           		
+								double psif;
+								if (Facef.x() < K.getBarryCenter().x())
+									psif = -1.0/K.getNumberOfFaces();   //TODO à calculer      
+								else      		
+									psif = 1.0/K.getNumberOfFaces();
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -331,7 +489,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 										std::map<int,double>::iterator it = boundaryPressure.find(j);
 										rhoR = boundaryPressure[it->first]; 
 								} 
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL)/2.0 )* psif; //TODO : pb de signe sur rhoR - rhoL ? 
+								rhoL =1.0; //TODO Découplage
+								rhoR =1.0;
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0 - (abs(u) + _c)* (rhoR - rhoL)/2.0* getOrientation(idFaces[f], K)  )* psif ; //TODO : pb de signe sur rhoR - rhoL ?| Pb de signe sur \int w.nd\gamma 
 
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -358,11 +518,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							if (_Ndim > 1){
 								epsilon = (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y());
 								if (_Ndim > 2)
-									epsilon += (xb.z() - xsigma.z())*(xb.z() - xsigma.z());
+									epsilon += (xb.z() - xsigma.z())*(xb.z() - xsigma.z()); //TODO ->NOT GOOD : it is a AREA in 3D
 							}
 							epsilon = sqrt(epsilon);
 							ConvectiveFlux *= epsilon/2.0  ;
-							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		// TODO Should we pass twice ? 
+							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
 							absConvectiveFlux = abs(ConvectiveFlux);
 							MinusabsConvectiveFlux = -abs(ConvectiveFlux);
@@ -407,15 +567,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-					PetscScalar MinusFaceArea_upwinding = -(abs(u) + _c) * FaceArea/2.0;
+					PetscScalar MinusFaceArea_upwinding = -(abs(u) ) * FaceArea/2.0; // + _c TODO
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding; 
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
 				}	
 			}
 		}
-		MatAssemblyBegin(_InvSurface, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
 		MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
@@ -428,6 +586,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 		MatAssemblyBegin(_DivTranspose, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_DivTranspose, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_InvSurface, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
 		MatAssemblyBegin(_Div, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
 		MatAssemblyBegin(_Conv, MAT_FINAL_ASSEMBLY);
@@ -453,20 +613,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		}
 		
 		/***********Assembling the matrix _A such that : *************/
-		// _A = ( (u+c) _Laplacian   ;                 -Div(\rho .)                               )
+		// _A = ( (u+c) _Laplacian   ;                 -Div(\rhomean/\rho_sigma .)                               )
 		//      (0_FacesxCells   ; -Conv+ c (\tilde rho) MinusGrad 1/|dK| Div + LaplacianVelocity ) 
-		MatScale(_DivTranspose, -1.0);  //Up to here Div^t = -grad so -Div^t = grad 												
-		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // grad (inv_Surf) Div
-		MatScale(_DivRhoU, -1.0);
-		MatScale(_Conv, -1.0); 														
-		MatScale(_DivTranspose, -1.0); //-(-Div^t) = -grad  
-
-		//cout << "-_Conv" << endl;
-		//MatView(_Conv ,  PETSC_VIEWER_STDOUT_WORLD); 	
-			
-		MatScale(_GradDivTilde, _c*_rhoMax) ; 
-		/* MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
-		MatAXPY(_GradDivTilde, 1, _Conv, UNKNOWN_NONZERO_PATTERN); */ 
+		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div													
+		MatScale(_GradDivTilde, -1.0 * _c) ; //TODO Découplage *_rhoMax // -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
+		MatScale(_DivRhoU, -1.0);	
+		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
+		MatAXPY(_GradDivTilde, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
 		Mat G[4], ZeroNfaces_Ncells;
 		MatCreate(PETSC_COMM_SELF, &ZeroNfaces_Ncells); 
@@ -500,25 +653,23 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMult(_InvVol, _BoundaryTerms, Temporary1); 
 		VecAXPY(_b,     1, Temporary1);
 		//Extract pressure to multiply by _DivTranspose //
-	
 		VecCreate(PETSC_COMM_SELF, & Pressure); 
 		VecSetSizes(Pressure, PETSC_DECIDE, _Nmailles); 
 		VecSetFromOptions(Pressure);
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p = _compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho);											//TODO : rho^gamma = _compressibleFluid->getPressure( _compressibleFluid->getEnthalpy(_Tref,rho) ,rho);
+			p = _compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho);											
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
-			//cout << "p = " << p <<" Tref = "<< _Tref<< " rho =" << rho<< endl; 
 		}
 																			
 		//add pressure gradient to AU^n + Boundterms//
-		MatMult(_DivTranspose, Pressure, Temporary2); 						//TODO times  -1 ? 
+		MatMult(_DivTranspose, Pressure, Temporary2); 						
 		double *Product = new double[_Nfaces]; 								//TODO can we avoid creating a pointer only to insert in the bigger Vector ?
 		PetscScalar gradp;
 		for (int i=0; i <_Nfaces; i++){
 			VecGetValues(Temporary2,1,&i,&gradp);
-			Product[i] = 0; // TODO gradp;
+			Product[i] = 0; // TODO Découplage gradp;
 		}
 		VecDuplicate(_primitiveVars, &GradPressure);
 		VecZeroEntries(GradPressure);

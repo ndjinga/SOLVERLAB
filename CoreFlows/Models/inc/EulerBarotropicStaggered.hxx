@@ -73,6 +73,7 @@ public :
             throw CdmathException("ProblemFluid::getStiffenedGasEOS() : fluid EOS is not a stiffened gas law");
     }
 
+    void AssembleMetricsMatrices();
 
 protected :
  /** Fluid equation of state **/
@@ -82,7 +83,8 @@ protected :
     double _Pref; //EOS reference pressure
 
     PetscReal _rhoMax, _uMax;
-	Mat _Conv, _DivRhoU, _LaplacianVelocity  ;
+    Vec _DualDensity ;
+	Mat _InvVolPrim, _InvVolDual,_Conv, _DivRhoU, _LaplacianVelocity  ;
 	double _c;
 	std::vector<double> _Entropy, _Time;
 				

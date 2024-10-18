@@ -625,6 +625,7 @@ void WaveStaggered::AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell
 	MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 }
 
+
 void WaveStaggered::ComputeMinCellMaxPerim(){
 	Vec V, W;
 	PetscScalar minInvSurf, maxInvVol;
