@@ -17,7 +17,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = -1 ;
 	xsup=1
-	nx=30;
+	nx=5;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 #+ 0.75/nx
 
@@ -28,10 +28,10 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 	print("Building initial data " ); 
 	initialPressure_Left = 2
-	initialPressure_Right =10
+	initialPressure_Right =2
 
 	initialVelocity_Left = -3
-	initialVelocity_Right = 8
+	initialVelocity_Right = 4
 
 	
 	def initialPressure(x):
@@ -90,8 +90,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 120;
-	freqSave = 2;
+	MaxNbOfTimeStep = 3;
+	freqSave = 1;
 	cfl = 0.5
 	maxTime = 20;
 	precision = 1e-10;

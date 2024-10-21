@@ -294,7 +294,7 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
 }
 
-double EulerBarotropicStaggered::UpdateDualDensity(){
+/* double EulerBarotropicStaggered::UpdateDualDensity(){
 	for (int j=0; j<_Nfaces;j++){
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
@@ -358,12 +358,15 @@ double EulerBarotropicStaggered::UpdateDualDensity(){
 	MatAssemblyEnd(_InvVolDual, MAT_FINAL_ASSEMBLY);
 	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
-}
+} */
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
-	UpdateDualDensity();
+	//UpdateDualDensity();
 
 	MatZeroEntries(_DivRhoU);
+	MatAssemblyBegin(_DivRhoU,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_DivRhoU, MAT_FINAL_ASSEMBLY);
+	MatView(_DivRhoU,PETSC_VIEWER_STDOUT_SELF);
 	MatZeroEntries(_LaplacianPressure);
 	MatZeroEntries(_InvSurface);
 	MatZeroEntries(_InvVol);
@@ -431,7 +434,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					VecGetValues(_primitiveVars,1,&IndexFace,&u);
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0;
 					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-					PetscScalar FaceArea_upwinding = (abs(u)) * FaceArea/2.0; //  + _cTODO
+					PetscScalar FaceArea_upwinding = (abs(u) + _c ) * FaceArea/2.0; 
 					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_DivRhoU, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
@@ -579,6 +582,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 		MatAssemblyBegin(_DivRhoU,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_DivRhoU, MAT_FINAL_ASSEMBLY);
+
+		MatView(_DivRhoU,PETSC_VIEWER_STDOUT_SELF);
+		
 		MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_LaplacianPressure, MAT_FINAL_ASSEMBLY);
 		VecAssemblyBegin(_BoundaryTerms);
