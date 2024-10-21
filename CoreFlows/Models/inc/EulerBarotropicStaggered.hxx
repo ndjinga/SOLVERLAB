@@ -74,6 +74,7 @@ public :
     }
 
     void AssembleMetricsMatrices();
+    void UpdateDualDensity();
 
 protected :
  /** Fluid equation of state **/
@@ -84,7 +85,7 @@ protected :
 
     PetscReal _rhoMax, _uMax;
     Vec _DualDensity ;
-	Mat _InvVolPrim, _InvVolDual,_Conv, _DivRhoU, _LaplacianVelocity  ;
+	Mat _InvVolPrim, _InvVolDual,_Conv, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
 	double _c;
 	std::vector<double> _Entropy, _Time;
 				

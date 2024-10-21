@@ -147,6 +147,12 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetUp(_InvSurface);
 	MatZeroEntries(_InvSurface);
 
+	// matrice that transform (rho q) to (rho, u)
+	MatCreate(PETSC_COMM_SELF, & _InvDualDensity); 
+	MatSetSizes(_InvDualDensity, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+	MatSetFromOptions(_InvDualDensity);
+	MatSetUp(_InvDualDensity);
+
 	AssembleMetricsMatrices();
 	
 	// *************** Time dependent matrices ************ //
@@ -294,17 +300,22 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
 }
 
-/* double EulerBarotropicStaggered::UpdateDualDensity(){
+
+
+
+void EulerBarotropicStaggered::UpdateDualDensity(){
+	VecZeroEntries(_DualDensity);
+	MatZeroEntries(_InvDualDensity);
 	for (int j=0; j<_Nfaces;j++){
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
 		Cell Ctemp1 = _mesh.getCell(idCells[0]);
-		PetscScalar detL, detR, D_sigmaL, D_sigmaR, rho_sigma, rhoL, rhoR;
+		PetscScalar detL, detR, D_sigmaL, D_sigmaR, rho_sigma,inv_rho_sigma, rhoL, rhoR;
 
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
 		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
 		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;		
-
+		PetscInt I = _globalNbUnknowns + j;
 		if (IsInterior){
 			std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
 			if ( it != _FacePeriodicMap.end()  ){ 
@@ -313,14 +324,10 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 			}
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 			if (_Ndim == 1){
-				det = Ctemp2.x() - Ctemp1.x();
-			} 
+				detL = Ctemp2.x() - Ctemp1.x()/2.0;
+				detR = Ctemp2.x() - Ctemp1.x()/2.0;
+			}
 			if (_Ndim ==2){
-				std::vector<int> nodes =  Fj.getNodesId();
-				Node vertex = _mesh.getNode( nodes[0] );
-				// determinant of the vectors forming the diamond cell around the face sigma
-				detL = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
-
 				std::vector< int > nodes =  Fj.getNodesId();
 				Node vertex1 = _mesh.getNode( nodes[0] );
 				Node vertex2 = _mesh.getNode( nodes[1] );
@@ -329,39 +336,56 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 			}
 			D_sigmaL = PetscAbsReal(detL);
 			D_sigmaR = PetscAbsReal(detR);
-			rho_sigma = (rhoL * D_sigmaL + rhoR*D_sigmaR)/(D_sigmaL +  D_sigmaR)
-			MatSetValues(_DualDensity,&j, &rho_sigma , INSERT_VALUES );
-	
+			VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
+			VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
 		}
-		else if (IsWallBound || IsSteggerBound ) { 
-			if (_Ndim == 1){
-				InvD_sigma = 2.0/Ctemp1.getMeasure() ;
-				InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
-			} 
+		else if (IsWallBound  ) { 
+			if (_Ndim == 1)
+				detL= Ctemp1.getMeasure()/2.0 ;
 			if (_Ndim == 2){
 				std::vector< int > nodes =  Fj.getNodesId();
 				Node vertex1 = _mesh.getNode( nodes[0] );
 				Node vertex2 = _mesh.getNode( nodes[1] );
-				det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
-				// determinant of the vectors forming the interior half diamond cell around the face sigma
-				InvD_sigma = 1.0/PetscAbsReal(det);	
+				detL = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() )/2.0;
 			}
 			D_sigmaL = PetscAbsReal(detL);
 			D_sigmaR = D_sigmaR;
-			rho_sigma = (rhoL * D_sigmaL + rhoR*D_sigmaR)/(D_sigmaL +  D_sigmaR)
-			MatSetValues(_DualDensity,&j, &rho_sigma , INSERT_VALUES );
+			VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
+			rhoR = rhoL;
 		}
+		else if (IsSteggerBound) { 
+			if (_Ndim == 1){
+				detL =Fj.x() - Ctemp1.x()/2.0;
+				detR = Fj.x() - Ctemp1.x()/2.0;
+			}
+			if (_Ndim ==2){
+				std::vector< int > nodes =  Fj.getNodesId();
+				Node vertex1 = _mesh.getNode( nodes[0] );
+				Node vertex2 = _mesh.getNode( nodes[1] );
+				detL = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() )/2.0;
+				detR = detL;
+			}
+			D_sigmaL = PetscAbsReal(detL);
+			D_sigmaR = PetscAbsReal(detR); //TODO modifier flux
+			VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
+			VecGetValues(_BoundaryTerms,1,&idCells[1],&rhoR);
+		}
+		rho_sigma = (rhoL * D_sigmaL + rhoR*D_sigmaR)/(D_sigmaL +  D_sigmaR) ;
+		rho_sigma = 1.0; //TODO Découlpage
+		inv_rho_sigma = 1.0/rho_sigma;
+		VecSetValues(_DualDensity, 1, &j, &rho_sigma, INSERT_VALUES );
+		MatSetValues( _InvDualDensity,1, &I,1, &I, &inv_rho_sigma,INSERT_VALUES);
+
 	}
-	MatAssemblyBegin(_InvVolPrim,MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_InvVolPrim, MAT_FINAL_ASSEMBLY);
-	MatAssemblyBegin(_InvVolDual,MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_InvVolDual, MAT_FINAL_ASSEMBLY);
-	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
-	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
-} */
+	VecAssemblyBegin(_DualDensity);
+	VecAssemblyEnd(_DualDensity);
+	MatAssemblyBegin(_InvDualDensity,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvDualDensity,MAT_FINAL_ASSEMBLY);
+	
+}
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
-	//UpdateDualDensity();
+	UpdateDualDensity();
 
 	MatZeroEntries(_DivRhoU);
 	MatAssemblyBegin(_DivRhoU,MAT_FINAL_ASSEMBLY);
@@ -376,7 +400,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	MatZeroEntries(_DivTranspose); 
 	MatZeroEntries(_LaplacianVelocity);
 	
-	//TODO  momentum equation = u\rho !!!!!! et non pas \rho
 	if (_timeScheme == Explicit ){ 
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
@@ -642,10 +665,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod;
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
-		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatMatMatMult(_InvVol, _A,_InvDualDensity, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 						
 		MatMult(_A,_primitiveVars, _b); 
-		MatDestroy(&ZeroNfaces_Ncells);
+		
 		
 		/***********Adding boundary terms and pressure gradient**************/
 		Vec Temporary1,Temporary2, Pressure, GradPressure;
@@ -689,6 +712,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecDestroy(& Temporary1);
 		VecDestroy(& Temporary2);
 		MatDestroy(& Prod);
+		MatDestroy(&ZeroNfaces_Ncells);
 		VecDestroy(& GradPressure);
 		VecDestroy(& Pressure);	
 		delete[] indices2;
@@ -709,6 +733,7 @@ void EulerBarotropicStaggered::terminate(){
 	MatDestroy(& _LaplacianVelocity);
 	MatDestroy(& _Conv); 
 	MatDestroy(& _DivRhoU); 
+	MatDestroy(& _InvDualDensity);
 
 	/* // 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);

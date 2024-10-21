@@ -27,18 +27,18 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialPressure_Left = 2
-	initialPressure_Right =2
+	initialDensity_Left = 2
+	initialDensity_Right =2
 
 	initialVelocity_Left = -3
 	initialVelocity_Right = 4
 
 	
-	def initialPressure(x):
+	def initialDensity(x):
 		if x < discontinuity:
-			return initialPressure_Left
+			return initialDensity_Left
 		elif discontinuity < x:
-			return initialPressure_Right
+			return initialDensity_Right
 
 	def initialVelocityForPb(x): # in order to test th wall boundary cond
 		if x < discontinuity:
@@ -46,9 +46,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		elif discontinuity <= x:
 			return initialVelocity_Right
 
-	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
+	Density0 = svl.Field("Density", svl.CELLS, M, 1);
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1); 
-	wallPressureMap = {};
+	wallDensityMap = {};
 	wallVelocityMap = {}; 
 	
 	for j in range( M.getNumberOfFaces() ):
@@ -65,8 +65,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			myProblem.setInteriorIndex(j);
 			myProblem.setOrientation(j,vec_normal_sigma)
 			Ctemp2 = M.getCell(idCells[1]);
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
-			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
+			Density0[idCells[0]] = initialDensity(Ctemp1.x()) ;
+			Density0[idCells[1]] = initialDensity(Ctemp2.x());
 			Velocity0[j] = initialVelocityForPb(Fj.x())
 		elif (Fj.getNumberOfCells()==1):
 			for idim in range(spaceDim):
@@ -75,12 +75,12 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			myProblem.setOrientation(j,vec_normal_sigma)
 			myProblem.setSteggerBoundIndex(j) 
 			wallVelocityMap[j] =initialVelocityForPb(Fj.x()) ;
-			wallPressureMap[j] = initialPressure(Fj.x()) ;
+			wallDensityMap[j] = initialDensity(Fj.x()) ;
 			
 
-	myProblem.setInitialField(Pressure0);
+	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Velocity0);
-	myProblem.setboundaryPressure(wallPressureMap);
+	myProblem.setboundaryPressure(wallDensityMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
@@ -104,7 +104,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(svl.CSV)
 	myProblem.saveVelocity();
-	myProblem.savePressure();
+	myProblem.saveDensity();
 	myProblem.setVerbose(False);
 
     # evolution
@@ -122,14 +122,14 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 
 	# Define the exact solution of the 1d Problem 
-	def initialPressure(x):
+	def initialDensity(x):
 		if x <0:
-			return initialPressure_Left
+			return initialDensity_Left
 		else :
-			return initialPressure_Right
+			return initialDensity_Right
 
-	def ExactPressure(x,t, velocity):
-		return initialPressure(x - velocity * t) 
+	def ExactDensity(x,t, velocity):
+		return initialDensity(x - velocity * t) 
 
 	def ExactVelocityFromRiemannProblem(u1,u2):
 		def u(x,t):
@@ -164,8 +164,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	while time[i] < Tmax:
 		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
-		pressuredata = pd.read_csv(fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
-		pressuredata.columns =['x','pressure', 'index']
+		Densitydata = pd.read_csv(fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
+		Densitydata.columns =['x','pressure', 'index']
 		
 		#Determine exact solution
 		#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 0 by myEOS.constante("p0")
@@ -180,16 +180,16 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		for j in range(nx):
 			exactVelocity[j] = ExactVelocity(xinf + j*(xsup - xinf)/nx,time[i])
 		for j in range(nx):
-			exactDensity[j] = ExactPressure(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time[i], exactVelocity[j])
+			exactDensity[j] = ExactDensity(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time[i], exactVelocity[j])
 		
 			
 		plt.figure()
 		plt.subplot(121)
-		plt.plot(pressuredata['x'], exactDensity,  label = "exact pressure")
-		plt.plot(pressuredata['x'], pressuredata['pressure'],  label = "pressure results")
+		plt.plot(Densitydata['x'], exactDensity,  label = "exact Density")
+		plt.plot(Densitydata['x'], Densitydata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		plt.plot(pressuredata['x'], exactVelocity,label = "exact velocity")
+		plt.plot(Densitydata['x'], exactVelocity,label = "exact velocity")
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))
