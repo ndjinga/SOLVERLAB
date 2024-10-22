@@ -72,10 +72,10 @@ public :
         else
             throw CdmathException("ProblemFluid::getStiffenedGasEOS() : fluid EOS is not a stiffened gas law");
     }
-
+    double getReferenceTemperature() { return _Tref; };
     void AssembleMetricsMatrices();
     void UpdateDualDensity();
-
+    
 protected :
  /** Fluid equation of state **/
     vector<    Fluide* > _fluides;//

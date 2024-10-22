@@ -17,7 +17,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = -1 ;
 	xsup=1
-	nx=5;
+	nx=60;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 #+ 0.75/nx
 
@@ -27,11 +27,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialDensity_Left = 2
-	initialDensity_Right =2
+	initialDensity_Left = 5
+	initialDensity_Right =1
 
-	initialVelocity_Left = -3
-	initialVelocity_Right = 4
+	initialVelocity_Left = 2
+	initialVelocity_Right = -6
 
 	
 	def initialDensity(x):
@@ -50,7 +50,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	Velocity0 = svl.Field("velocity", svl.FACES, M, 1); 
 	wallDensityMap = {};
 	wallVelocityMap = {}; 
-	
+
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
@@ -67,17 +67,16 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			Ctemp2 = M.getCell(idCells[1]);
 			Density0[idCells[0]] = initialDensity(Ctemp1.x()) ;
 			Density0[idCells[1]] = initialDensity(Ctemp2.x());
-			Velocity0[j] = initialVelocityForPb(Fj.x())
+			Velocity0[j] = initialVelocityForPb(Fj.x())*( Density0[idCells[0]] + Density0[idCells[1]] )/2.0
 		elif (Fj.getNumberOfCells()==1):
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
 			myProblem.setSteggerBoundIndex(j) 
-			wallVelocityMap[j] =initialVelocityForPb(Fj.x()) ;
+			wallVelocityMap[j] =initialVelocityForPb(Fj.x())*( initialDensity(Ctemp1.x())+ initialDensity(Fj.x()))/2.0
 			wallDensityMap[j] = initialDensity(Fj.x()) ;
 			
-
 	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallDensityMap);
@@ -90,9 +89,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 3;
+	MaxNbOfTimeStep = 200;
 	freqSave = 1;
-	cfl = 0.5
+	cfl = 0.2
 	maxTime = 20;
 	precision = 1e-10;
 
@@ -104,7 +103,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(svl.CSV)
 	myProblem.saveVelocity();
-	myProblem.saveDensity();
+	myProblem.savePressure();
 	myProblem.setVerbose(False);
 
     # evolution
@@ -155,8 +154,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		
 	Tmax = myProblem.getTime();
 	time = myProblem.getTimeEvol();
-	
-	#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 1 by myEOS.constante("p0")
+
 	myProblem.terminate();
 	if not os.path.exists(fileName):
 		os.mkdir(fileName)
@@ -168,28 +166,31 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		Densitydata.columns =['x','pressure', 'index']
 		
 		#Determine exact solution
-		#TODO for now pressure law is rho^2 for more general case replac underneath 2 by myEOS.constante("gamma") and 0 by myEOS.constante("p0")
-		#myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature
-		#initialDensity_Left  = myEOS.getDensity( initialPressure_Left,  myProblem.getReferenceTemperature() )
-		#initialDensity_Right = myEOS.getDensity( initialPressure_Right, myProblem.getReferenceTemperature() )
-		#exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, time, 2 , 0, [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], (xinf+xsup)/2, nx)
 
+		""" myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature	
+		initialPressure_Left  = myEOS.getPressureFromEnthalpy(myEOS.getEnthalpy(myProblem.getReferenceTemperature(), initialDensity_Left), initialDensity_Left)
+		initialPressure_Right  = myEOS.getPressureFromEnthalpy(myEOS.getEnthalpy(myProblem.getReferenceTemperature(), initialDensity_Right), initialDensity_Right)
+		exactDensity, exactVelocity, exactPressure = exact_rs_stiffenedgas.exact_sol_Riemann_problem(xinf, xsup, time[i], myEOS.constante("gamma") , myEOS.constante("p0"), [ initialDensity_Left, initialVelocity_Left, initialPressure_Left ], [ initialDensity_Right, initialVelocity_Right, initialPressure_Right ], 0, nx) #(xinf+xsup)/2
+ 		"""
 		exactDensity = np.zeros(nx)
 		exactVelocity = np.zeros(nx)
 		ExactVelocity = ExactVelocityFromRiemannProblem(initialVelocity_Left,initialVelocity_Right)
 		for j in range(nx):
 			exactVelocity[j] = ExactVelocity(xinf + j*(xsup - xinf)/nx,time[i])
 		for j in range(nx):
-			exactDensity[j] = ExactDensity(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time[i], exactVelocity[j])
+			exactDensity[j] = ExactDensity(xinf + j*(xsup - xinf)/nx + (xsup - xinf)/(2*nx),time[i], exactVelocity[j]) 
 		
-			
+		exactMomutum =  np.zeros(nx)
+		for j in range(nx):
+			exactMomutum[j] = exactDensity[j] * exactVelocity[j]
+	
 		plt.figure()
 		plt.subplot(121)
 		plt.plot(Densitydata['x'], exactDensity,  label = "exact Density")
 		plt.plot(Densitydata['x'], Densitydata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		plt.plot(Densitydata['x'], exactVelocity,label = "exact velocity")
+		plt.plot(Densitydata['x'], exactMomutum,label = "exact velocity")
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))

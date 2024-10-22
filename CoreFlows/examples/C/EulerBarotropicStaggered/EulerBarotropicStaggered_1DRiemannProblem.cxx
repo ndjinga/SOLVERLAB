@@ -13,7 +13,7 @@ double initialPressure(double x){
 
 double initialVelocity(double x){
 	if (x < 0)
-		return -4;
+		return 2;
 	else
 		return 2;
 }
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 100;
+	unsigned MaxNbOfTimeStep = 1;
 	int freqSave = 10;
 	double cfl = 0.5;
 	double maxTime = 30;
