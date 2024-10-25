@@ -89,7 +89,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 120;
+	MaxNbOfTimeStep = 700;
 	freqSave = 1;
 	cfl = 0.5
 	maxTime = 0.001;
@@ -145,7 +145,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		plt.plot(Densitydata['x'], Densitydata['pressure'],  label = "pressure results")
 		plt.legend()
 		plt.subplot(122)
-		plt.plot(Densitydata['x'], exactMomutum,label = "exact velocity")
+		plt.plot(Densitydata['x'], exactVelocity,label = "exact velocity")
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i)+"t ="+str(time[i]))

@@ -47,8 +47,8 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseTypeStaggered fluid, pre
 			_compressibleFluid= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
 	}
-	_c = 0; //_compressibleFluid->vitesseSonEnthalpie(_compressibleFluid->getEnthalpy(_Tref, _compressibleFluid->getDensity(_Pref, _Tref)));
-	//TODO découplage burgers
+	_c = _compressibleFluid->vitesseSonEnthalpie(_compressibleFluid->getEnthalpy(_Tref, _compressibleFluid->getDensity(_Pref, _Tref)));
+	//TODO découplage burgers _c=0
 	//Save into the fluid list
 	_fluides.resize(0);
 	_fluides.push_back(_compressibleFluid);
@@ -609,7 +609,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div													
 		MatScale(_GradDivTilde, -1.0 * _c*_rhoMax) ; 										// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
-		MatScale(_DivRhoU, 0);	//TODO découplage burgers
+		//MatScale(_DivRhoU, 0);	//TODO découplage burgers
 		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
 		MatAXPY(_GradDivTilde, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
@@ -650,7 +650,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p = rho*rho;// _compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho);											
+			p =  _compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho);											
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
 		}														
 		//add pressure gradient to AU^n + Boundterms//
@@ -659,7 +659,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		PetscScalar gradp;
 		for (int i=0; i <_Nfaces; i++){
 			VecGetValues(Temporary2,1,&i,&gradp);
-			Product[i] = 0; //gradp; // TODO Découplage gradp;
+			Product[i] = gradp; // TODO Découplage gradp;
 		}
 		VecDuplicate(_primitiveVars, &GradPressure);
 		VecZeroEntries(GradPressure);
