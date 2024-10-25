@@ -75,18 +75,18 @@ public :
     double getReferenceTemperature() { return _Tref; };
     void AssembleMetricsMatrices();
     void UpdateDualDensity();
+    bool iterateTimeStep(bool &converged);
     
 protected :
  /** Fluid equation of state **/
     vector<    Fluide* > _fluides;//
 	CompressibleFluid *_compressibleFluid;
-	double _Tref; //EOS reference temperature
-    double _Pref; //EOS reference pressure
+	double _Tref, _Pref; //EOS reference temperature &pressure
 
     PetscReal _rhoMax, _uMax;
     Vec _DualDensity ;
 	Mat _InvVolPrim, _InvVolDual,_Conv, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
-	double _c;
+	double _c, _ConvectiveMax;
 	std::vector<double> _Entropy, _Time;
 				
 

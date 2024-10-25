@@ -26,7 +26,7 @@ def exact_sol_Riemann_problem(xmin, xmax, t, gamma, p0, WL, WR, offset, numsampl
 	pressure = [0.]*numsamples
 
 	for i in range(numsamples):
-		S = i*delx/t;
+		S = (xmin +i*delx)/t;
 		soln = RS.sample_solution(WL, WR, S - offset/t);
 		density[i] = soln[0]
 		velocity[i]= soln[1]
