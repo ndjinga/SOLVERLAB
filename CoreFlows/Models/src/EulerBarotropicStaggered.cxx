@@ -682,7 +682,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	if (_nbTimeStep == 0)
 		ComputeMinCellMaxPerim(); 
 	double numax = _Ndim*2;	//TODO triangles ?
-	cout << "_umax ="<< _uMax <<endl;
 	double dt = _cfl * _minCell / (_maxPerim * max(_uMax,_c) ) ;//max(_uMax,_c)* 8 ); //* numax TODO
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);

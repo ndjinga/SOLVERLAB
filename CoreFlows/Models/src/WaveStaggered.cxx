@@ -974,13 +974,9 @@ void WaveStaggered::save(){
 				else if  (Fj.getNumberOfCells() == 1){
 					for (int k=0; k< _Ndim; k++){
 						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
-						cout << "face ="<< i << "idCells[0] = "<< idCells[0] << "u =" << _Velocity_at_Cells(idCells[0], k) <<endl;
 					}
 					_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
 				}
-			}
-			for (int l=0; l < _Nmailles ; l++){
-				cout << "VElocity at cell "<< l << " = "<< _Velocity_at_Cells(l, 0)<< endl;
 			}
 
 			_Velocity.setTime(_time,_nbTimeStep);
