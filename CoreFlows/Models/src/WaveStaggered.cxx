@@ -145,28 +145,28 @@ void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atC
 		std::vector<double> M1(_Ndim), M2(_Ndim);
 		Point xK = Ctemp1.getBarryCenter();
 		Point xsigma = Fj.getBarryCenter();
-		double fac;
+		double fac = 1.0;
 
-		if (Ctemp1.getNumberOfFaces() == _Ndim*2)
+		/* if (Ctemp1.getNumberOfFaces() == _Ndim*2)
 			fac = 1;
 		else if (Ctemp1.getNumberOfFaces() ==  _Ndim + 1)
-			fac = -1;
+			fac = -1; */
 
-		M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+		M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x()) * getOrientation(i,Ctemp1);
 		if (_Ndim >1)
-			M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+			M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y()) * getOrientation(i,Ctemp1);
 
 		if (Fj.getNumberOfCells() == 2){
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 			xK = Ctemp2.getBarryCenter();
-			if (Ctemp2.getNumberOfFaces() == _Ndim*2)
+			/* if (Ctemp2.getNumberOfFaces() == _Ndim*2)
 				fac = 1;
 			else if (Ctemp2.getNumberOfFaces() ==  _Ndim + 1)
-				fac = -1;
+				fac = -1; */
 
-			M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+			M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x()) * getOrientation(i,Ctemp1);
 			if (_Ndim >1)
-				M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+				M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y()) * getOrientation(i,Ctemp1);
 		
 			for (int k=0; k< _Ndim; k++){
 				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
@@ -935,7 +935,7 @@ void WaveStaggered::save(){
 				Point xsigma = Fj.getBarryCenter();
 				double fac =1.0;
 
-				if (_Ndim ==2){
+				/* if (_Ndim ==2){
 					if (Ctemp1.getNumberOfFaces() == _Ndim*2)
 						fac = 1;
 					else if (Ctemp1.getNumberOfFaces() ==  _Ndim + 1)
@@ -944,24 +944,26 @@ void WaveStaggered::save(){
 				else if (_Ndim ==1 && j==0){
 					fac = -1;
 				}
+				fac =1.0; */
 
-				M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+				M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x()) * getOrientation(j,Ctemp1);
 				if (_Ndim >1)
-					M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+					M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y()) * getOrientation(j,Ctemp1);
 
 				if (Fj.getNumberOfCells() == 2){
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);
 					Point xK = Ctemp2.getBarryCenter();
-					if (_Ndim ==2){
+					/* if (_Ndim ==2){
 						if (Ctemp2.getNumberOfFaces() == _Ndim*2)
 							fac = 1;
 						else if (Ctemp2.getNumberOfFaces() ==  _Ndim + 1)
 							fac = -1;
 					}
+					fac=1; */
 
-					M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+					M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x()) * getOrientation(j,Ctemp1);
 					if (_Ndim >1)
-						M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+						M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y()) * getOrientation(j,Ctemp1);
 				
 					for (int k=0; k< _Ndim; k++){
 						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 

@@ -47,7 +47,7 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseTypeStaggered fluid, pre
 			_compressibleFluid= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
 	}
-	_c = _compressibleFluid->vitesseSonEnthalpie(_compressibleFluid->getEnthalpy(_Tref, _compressibleFluid->getDensity(_Pref, _Tref)));
+	_c = _compressibleFluid->vitesseSonEnthalpie(_compressibleFluid->getEnthalpy(_Tref, _compressibleFluid->getDensity(_Pref, _Tref))) ;//1.2;//; //TODO pressure la
 	//TODO découplage burgers _c=0
 	//Save into the fluid list
 	_fluides.resize(0);
@@ -363,7 +363,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecGetValues(_primitiveVars,1,&I,&u);
 		_uMax = max(_uMax, abs(u));
 	}
-
+	_c = sqrt(2*_rhoMax ); //TODO pressure law
 	MatZeroEntries(_DivRhoU);
 	MatZeroEntries(_LaplacianPressure);
 	MatZeroEntries(_InvSurface);
@@ -432,7 +432,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0;
 					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-					PetscScalar FaceArea_upwinding = (abs(u) + _c ) * FaceArea/2.0; 
+					PetscScalar FaceArea_upwinding = ( abs(u)+_c ) * FaceArea/8.0; //TODO /4.0 ?  +_c 
 					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_DivRhoU, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
@@ -477,7 +477,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									else      		
 										psif = 1.0/K.getNumberOfFaces();
 								}
-								//TODO : calculer 2d
+								//TODO : calculer 2d psif
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -497,7 +497,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								/* rhoL =1.0; //TODO Découplage advection 
 								rhoR =1.0;  */
 								
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  - (abs(u) + _c)* (rhoR - rhoL)/2.0* getOrientation(idFaces[f], K) )* psif ; // TODO  
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0    - (abs(u) +_c )* (rhoR - rhoL)/8.0* getOrientation(idFaces[f], K))* psif ; //TODO /4.0 ?+ _c
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -572,7 +572,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 					
-					PetscScalar MinusFaceArea_upwinding = -((abs(u) + _c ) * FaceArea)/2.0; 
+					PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/8.0; //TODO /4.0 ? 
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
@@ -607,11 +607,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		//      (0_FacesxCells   ; -Conv+ c (\tilde rho) MinusGrad 1/|dK| Div + LaplacianVelocity	)
 
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div													
-		MatScale(_GradDivTilde, -1.0 * _c*_rhoMax) ; 										// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
+		MatScale(_GradDivTilde, -1.0 * _c*_rhoMax/2.0) ; 										// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
+		MatZeroEntries(_GradDivTilde);
 		//MatScale(_DivRhoU, 0);	//TODO découplage burgers
 		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
-		MatAXPY(_GradDivTilde, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
+		MatAXPY(_LaplacianVelocity, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
 		Mat G[4], ZeroNfaces_Ncells;
 		MatCreate(PETSC_COMM_SELF, &ZeroNfaces_Ncells); 
@@ -624,7 +625,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
 		G[2] = ZeroNfaces_Ncells ;
-		G[3] = _GradDivTilde;
+		G[3] = _LaplacianVelocity;
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod; 
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
@@ -650,7 +651,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p =  _compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho);											
+			p =  rho*rho ; ///_compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho); //	TODO pressure law 			rho*rho ;//								
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
 		}														
 		//add pressure gradient to AU^n + Boundterms//
@@ -682,7 +683,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	if (_nbTimeStep == 0)
 		ComputeMinCellMaxPerim(); 
 	double numax = _Ndim*2;	//TODO triangles ?
-	double dt = _cfl * _minCell / (_maxPerim * max(_uMax,_c) ) ;//max(_uMax,_c)* 8 ); //* numax TODO
+	double dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) ) ;//max(_uMax,_c) ); //* numax TODO
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);
 	return dt; 
@@ -707,7 +708,7 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 	if(_timeScheme == Explicit)
 		converged=true;
 
-	UpdateDualDensity();
+	UpdateDualDensity(); // \rho^n_K -> \rho^n_\sigma
 	PetscScalar rhou, rho_sigma, u;
 	for (int f=0; f< _Nfaces; f++){
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),f) != _InteriorFaceSet.end() ;
@@ -716,11 +717,11 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 			VecGetValues(_primitiveVars,1,&I,&u);
 			VecGetValues(_DualDensity,1,&f, &rho_sigma);
 			rhou = rho_sigma * u;
-			VecSetValues(_primitiveVars,1,&I, &rhou, INSERT_VALUES);
+			VecSetValues(_primitiveVars,1,&I, &rhou, INSERT_VALUES); // (\rho^n, u^n) -> (\rho^n, \rho u^n)
 		}
 	}
-	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
-	UpdateDualDensity();
+	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV : (\rho^{n+1}, \rho u^{n+1}) =  Delta(q) + \rho^n u^n
+	UpdateDualDensity(); // \rho^{n+1}_K -> \rho^{n+1}_\sigma
 	for (int f=0; f< _Nfaces; f++){
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),f) != _InteriorFaceSet.end() ;
 		if (IsInterior){
@@ -728,7 +729,7 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 			VecGetValues(_primitiveVars, 1,&I, &rhou);
 			VecGetValues(_DualDensity, 1,&f, &rho_sigma);
 			u = rhou / rho_sigma ;
-			VecSetValues(_primitiveVars,1,&I, &u, INSERT_VALUES);
+			VecSetValues(_primitiveVars,1,&I, &u, INSERT_VALUES); // (\rho^{n+1}, \rho^{n+1}u^{n+1}) ->(\rho^{n+1}, u^{n+1})
 		}
 	}
 	return converged;

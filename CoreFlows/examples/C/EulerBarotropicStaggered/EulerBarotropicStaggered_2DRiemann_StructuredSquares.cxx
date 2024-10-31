@@ -8,29 +8,29 @@ double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
 		return 1;
 	else
-		return 0;
+		return 1;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
 	if (z < discontinuity){
 		if (Direction == 'x'){
-			vec[0] = 1;
-			vec[1] = 1;
+			vec[0] = 0.001;
+			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 0;
+			vec[1] = 0.001;
 		}
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = 1;
-			vec[1] = 1;
+			vec[0] = 0.005;
+			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 0;
+			vec[1] = 0.005;
 		}
 	}
 	return vec;
@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 		// parameters calculation
 		unsigned MaxNbOfTimeStep = 5000;
 		int freqSave = 20;
-		double cfl = 0.1;
+		double cfl = 0.99;
 		double maxTime = 800;
 		double precision = 1e-14;
 
