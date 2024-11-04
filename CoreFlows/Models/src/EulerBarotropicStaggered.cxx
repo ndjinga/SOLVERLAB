@@ -432,7 +432,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0;
 					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-					PetscScalar FaceArea_upwinding = ( abs(u)+_c ) * FaceArea/8.0; //TODO /4.0 ?  +_c 
+					PetscScalar FaceArea_upwinding = ( abs(u)+_c ) * FaceArea/2.0; 
 					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_DivRhoU, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
@@ -496,8 +496,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								} 
 								/* rhoL =1.0; //TODO Découplage advection 
 								rhoR =1.0;  */
-								
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0    - (abs(u) +_c )* (rhoR - rhoL)/8.0* getOrientation(idFaces[f], K))* psif ; //TODO /4.0 ?+ _c
+								//TODO  - (abs(u) +_c )* (rhoR - rhoL)/40.0* getOrientation(idFaces[f], K)
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0   )* psif ; 
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -572,7 +572,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 					
-					PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/8.0; //TODO /4.0 ? 
+					PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/2.0; //TODO /4.0 ? 
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
