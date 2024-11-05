@@ -36,7 +36,7 @@ def exact_sol_Riemann_problem(xmin, xmax, t, gamma, c1, WL, WR, offset, numsampl
 
 class exact_rs_stiffenedgas_isentropic :
 
-	def __init__(self, gamma=2., c1=1.0, tol=1.e-9, max_iter=200):
+	def __init__(self, gamma=2., c1=1.0, tol=1.e-6, max_iter=200):
 		self.TOL = tol
 		self.MAX_NB_ITER = max_iter
 	
@@ -71,7 +71,7 @@ class exact_rs_stiffenedgas_isentropic :
 		
 		# Calculate p_star, u_star
 		self.P_STAR = self.find_p_star_newtonraphson(W_L[0], W_L[1], W_R[0], W_R[1])		
-		self.S_STAR = 0.5*(W_L[1]+W_R[1]) + 0.5*(self.f_R(self.P_STAR,W_R[0]) - self.f_L(self.P_STAR,W_L[0]))
+		self.S_STAR = 0.5*(W_L[1]+W_R[1]) + 0.5*(self.f(self.P_STAR,W_R[0]) - self.f(self.P_STAR,W_L[0]))
 	
 		# Solution now depends on character of 1st and 2nd waves
 		if (self.P_STAR > W_L[0]):
@@ -153,51 +153,25 @@ class exact_rs_stiffenedgas_isentropic :
 
 
 	def total_pressure_function (self, p_star, p_L, u_L, p_R, u_R):
-		return	self.f_L(p_star, p_L)	+ self.f_R(p_star, p_R) + u_R - u_L
+		return	self.f(p_star, p_L)	+ self.f(p_star, p_R) + u_R - u_L
 
 	def total_pressure_function_deriv (self, p_star, p_L, p_R ): 
-		return 	self.f_L_deriv (p_star, p_L) + self.f_R_deriv (p_star, p_R)
+		return 	self.f_deriv (p_star, p_L) + self.f_deriv (p_star, p_R)
 
 
-
-	def f_L (self, p_star, p):
+	def f (self, p_star, p):
 		if (p_star > p):
-			return self.RankineHugoniot(p_star, p) 
+			return self.Jump(p_star, p) 
 		else:
 			if (self.gamma>1):
 				return (2.0*self.a(p)/(self.gamma-1.0))*(pow((p_star)/p,  (self.gamma-1.0)/(2.0*self.gamma)) -1.0 ) 
 			else:
 				return sqrt(self.c1)*log( p_star/p  )
 		
-	def f_L_deriv (self, p_star, p):
+	def f_deriv (self, p_star, p):
 		rho = pow(p_star/self.c1, 1/self.gamma)
 		if (p_star > p):
-			""" A = 2.0/((self.gamma+1.0)*rho)
-			B = (p)*(self.gamma-1.0)/(self.gamma+1.0)
-			return sqrt(A/(B+p_star))*(1.0 - ((p_star-p)/(2.0*(B+p_star)))) # To Do : à vérif """
-			return (  -1/(self.gamma * pow(self.c1,1/self.gamma))*(p - p_star) * pow(p_star, -(self.gamma+1))   + (1.0/self.rho(p)- 1.0/self.rho(p_star)) )/( 2.0*  self.f_L(p_star, p) )
-		else:
-			if (self.gamma>1):
-				return (1.0/(rho*self.a(p)))*pow(p_star/p, -(self.gamma+1.0)/(2.0*self.gamma) ) 
-			else:
-				return sqrt(self.c1)/(p_star)
-
-	def f_R (self, p_star, p):
-		if (p_star > p):
-			return self.RankineHugoniot(p_star, p) 
-		else:
-			if (self.gamma>1):
-				return (2.0*self.a(p)/(self.gamma-1.0))*(pow((p_star)/p,  (self.gamma-1.0)/(2.0*self.gamma)) -1.0 ) 
-			else:
-				return sqrt(self.c1)*log( p_star/p  )
-		
-	def f_R_deriv (self, p_star, p):
-		rho = pow(p_star/self.c1, 1/self.gamma)
-		if (p_star > p):
-			""" A = 2.0/((self.gamma+1.0)*rho)
-			B = (p)*(self.gamma-1.0)/(self.gamma+1.0)
-			return sqrt(A/(B+p_star))*(1.0 - ((p_star-p)/(2.0*(B+p_star)))) # To Do : à vérif """
-			return (  -1/(self.gamma * pow(self.c1,1/self.gamma))*(p - p_star) * pow(p_star, -(self.gamma+1))   + (1.0/self.rho(p)- 1.0/self.rho(p_star)) )/( 2.0*  self.f_R(p_star, p) )
+			return (  -1/(self.gamma * pow(self.c1,1/self.gamma))*(p - p_star) * pow(p_star, -(self.gamma+1))   + (1.0/self.rho(p)- 1.0/self.rho(p_star)) )/( 2.0 * pow(  -(p_star - p) * (1/self.rho(p_star) - 1/self.rho(p) ) , 1/2.0 )	 ) #TODO à recacluler 
 		else:
 			if (self.gamma>1):
 				return (1.0/(rho*self.a(p)))*pow(p_star/p, -(self.gamma+1.0)/(2.0*self.gamma) ) 
@@ -223,7 +197,7 @@ class exact_rs_stiffenedgas_isentropic :
 
 
 	# Misc functions
-	def RankineHugoniot(self, p_star, p):
+	def Jump(self, p_star, p):
 		return pow(  -(p_star - p) * (1/self.rho(p_star) - 1/self.rho(p) ) , 1/2.0 ) 
 
 	def Q_K (self, p_star, p): # To Do : à vérif

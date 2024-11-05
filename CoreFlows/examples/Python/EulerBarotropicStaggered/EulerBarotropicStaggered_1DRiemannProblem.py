@@ -27,11 +27,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialDensity_Left = 1
+	initialDensity_Left = 2
 	initialDensity_Right = 1
 
-	initialVelocity_Left = -0.3
-	initialVelocity_Right = 0.3
+	initialVelocity_Left = 1
+	initialVelocity_Right = -1
 
 	
 	def initialDensity(x):
@@ -95,7 +95,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # simulation parameters 
 	MaxNbOfTimeStep = 150;
 	freqSave = 5;
-	cfl = 0.9
+	cfl = 0.5
 	maxTime = 0.2;
 	precision = 1e-10;
 
@@ -160,6 +160,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		plt.title("Data at time step"+str(i)+"t ="+str(time[i]))
 		plt.savefig(fileName + "/Data at time step"+str(i))
 		i+= freqSave
+	print(exactDensity)
+	print("\n	")
+	print(exactVelocity)
 	return ok
 
 if __name__ == """__main__""":

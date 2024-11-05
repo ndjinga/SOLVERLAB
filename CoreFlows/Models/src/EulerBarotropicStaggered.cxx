@@ -338,7 +338,6 @@ void EulerBarotropicStaggered::UpdateDualDensity(){
 			VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
 			rho_sigma = (rhoL * D_sigmaL + rhoR*D_sigmaR)/(D_sigmaL +  D_sigmaR) ;
 			//rho_sigma = 1.0; //TODO découplage advection
-			inv_rho_sigma = 1.0/rho_sigma;
 			VecSetValues(_DualDensity, 1, &j, &rho_sigma, INSERT_VALUES );
 		}
 	}
@@ -432,7 +431,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0;
 					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-					PetscScalar FaceArea_upwinding = ( abs(u)+_c ) * FaceArea/2.0; 
+					PetscScalar FaceArea_upwinding = (abs(u)+ _c ) * FaceArea/2.0; 
 					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_DivRhoU, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
@@ -496,8 +495,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								} 
 								/* rhoL =1.0; //TODO Découplage advection 
 								rhoR =1.0;  */
-								//TODO  - (abs(u) +_c )* (rhoR - rhoL)/2.0* getOrientation(idFaces[f], K) 
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  )* psif ; 
+								//TODO - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) 
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0   )* psif ; 
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -572,7 +571,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 					
-					PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/2.0; //TODO /4.0 ? 
+					PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/2.0; 
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
@@ -609,10 +608,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div													
 		MatScale(_GradDivTilde, -1.0 * _c*_rhoMax/2.0) ; 										// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
-		MatZeroEntries(_GradDivTilde);
 		//MatScale(_DivRhoU, 0);	//TODO découplage burgers
 		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
-		MatAXPY(_LaplacianVelocity, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
+		MatAXPY(_GradDivTilde, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
 		Mat G[4], ZeroNfaces_Ncells;
 		MatCreate(PETSC_COMM_SELF, &ZeroNfaces_Ncells); 
@@ -625,7 +623,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
 		G[2] = ZeroNfaces_Ncells ;
-		G[3] = _LaplacianVelocity;
+		G[3] = _GradDivTilde;
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		Mat Prod; 
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
@@ -667,6 +665,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		int *indices2 = new int[_Nfaces];
 		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
+
 		MatMult(_InvVol, GradPressure, Temporary1);
 		VecAXPY(_b,     1, Temporary1); 									
 																			
