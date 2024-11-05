@@ -496,8 +496,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								} 
 								/* rhoL =1.0; //TODO Découplage advection 
 								rhoR =1.0;  */
-								//TODO  - (abs(u) +_c )* (rhoR - rhoL)/40.0* getOrientation(idFaces[f], K)
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0   )* psif ; 
+								//TODO  - (abs(u) +_c )* (rhoR - rhoL)/2.0* getOrientation(idFaces[f], K) 
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  )* psif ; 
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -528,8 +528,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							ConvectiveFlux *= epsilon/2.0  ;
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
-							absConvectiveFlux = epsilon *_rhoMax * _uMax/2.0; //abs(ConvectiveFlux); TODO que faire des ces termes  ?
-							MinusabsConvectiveFlux = -epsilon * _rhoMax * _uMax/2.0; //-abs(ConvectiveFlux);
+							absConvectiveFlux = abs(ConvectiveFlux) + epsilon *_rhoMax * _uMax/2.0; //; TODO que faire des ces termes  ?
+							MinusabsConvectiveFlux = -abs(ConvectiveFlux) - epsilon * _rhoMax * _uMax/2.0; //
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
 						}
