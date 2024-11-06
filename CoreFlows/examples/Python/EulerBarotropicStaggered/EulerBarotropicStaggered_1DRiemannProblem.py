@@ -17,9 +17,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=100;
+	nx=6;
 	M=svl.Mesh(xinf,xsup,nx)
-	discontinuity=(xinf+xsup)/2 #+ 0.75/nx
+	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
     # set the limit field for each boundary
 	myProblem = svl.EulerBarotropicStaggered(svl.GasStaggered, svl.around1bar300K, spaceDim ); 
@@ -27,11 +27,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialDensity_Left = 2
+	initialDensity_Left = 1.5
 	initialDensity_Right = 1
 
-	initialVelocity_Left = 1
-	initialVelocity_Right = -1
+	initialVelocity_Left = 1.6
+	initialVelocity_Right = 0.5
 
 	
 	def initialDensity(x):
@@ -93,9 +93,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 150;
-	freqSave = 5;
-	cfl = 0.5
+	MaxNbOfTimeStep = 2;
+	freqSave = 1;
+	cfl = 0.9
 	maxTime = 0.2;
 	precision = 1e-10;
 
