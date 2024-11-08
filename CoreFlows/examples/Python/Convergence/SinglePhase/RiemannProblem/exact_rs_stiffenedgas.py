@@ -14,7 +14,7 @@ from math import pow, fabs, sqrt
 
 def exact_sol_Riemann_problem(xmin, xmax, t, gamma, p0, WL, WR, offset, numsamples = 100):#offset= position of the initial discontinuity
 	print("")
-	print("Determination of the exact solution of the Riemann problem for the Euler equations, gamma=", gamma, ", p0= ", p0)
+	print("Determination of the exact solution of the Riemann problem for the Euler equations, gamma = ", gamma, ", p0 = ", p0, ", t = ", t)
 
 	RS = exact_rs_stiffenedgas(gamma, gamma, p0, p0);
 	RS.solve_RP(WL,WR);
