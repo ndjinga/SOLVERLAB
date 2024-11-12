@@ -348,6 +348,10 @@ void EulerBarotropicStaggered::UpdateDualDensity(){
 }
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
+
+	cout << "(rho^n, q^n) = "<<endl;
+	VecView(_primitiveVars, PETSC_VIEWER_STDOUT_SELF);
+
 	/************ Max rho, Max u *******************/
 	PetscScalar rho,p, u;
 	PetscInt zero=0;
@@ -364,7 +368,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecGetValues(_primitiveVars,1,&I,&u);
 		_uMax = max(_uMax, abs(u));
 	}
-	_c = sqrt(2*_rhoMax ); //TODO pressure law
+	_c = 2;//sqrt(2*_rhoMax ); //TODO pressure law
 	MatZeroEntries(_DivRhoU);
 	MatZeroEntries(_LaplacianPressure);
 	MatZeroEntries(_InvSurface);
@@ -499,7 +503,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								/* rhoL =1.0; //TODO Découplage advection 
 								rhoR =1.0;  */
 								//TODO - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) 
+								cout << "cell = "<<  Fj.getCellsId() [nei] << " face = "<< idFaces[f] << " umean rho =" << u *(rhoL + rhoR)/2.0  <<endl; 
 								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0   )* psif ; 
+								
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -522,16 +528,16 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									}
 								}
 							}
+							cout <<" cell = "<< Fj.getCellsId() [nei] <<"convective flux = " << ConvectiveFlux << endl;
 							epsilon = 1.0;
 							if (_Ndim > 1)
-								epsilon = (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y());
-							epsilon = sqrt(epsilon);
+								epsilon = sqrt( (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y()) );
 							_ConvectiveMax = max(abs(ConvectiveFlux), abs(_ConvectiveMax));
 							ConvectiveFlux *= epsilon/2.0  ;
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
-							absConvectiveFlux =2* abs(ConvectiveFlux) + epsilon *_rhoMax * _uMax; //; TODO que faire des ces termes  ?
-							MinusabsConvectiveFlux = -2*abs(ConvectiveFlux) - epsilon * _rhoMax * _uMax; //
+							absConvectiveFlux =epsilon *_rhoMax * _uMax; //; TODO que faire des ces termes  ? 2* abs(ConvectiveFlux) + 
+							MinusabsConvectiveFlux = - epsilon * _rhoMax * _uMax; //-2*abs(ConvectiveFlux) 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
 						}
@@ -612,6 +618,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatScale(_GradDivTilde, -1.0 * _c*_rhoMax/2.0) ; 										// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
 		//MatScale(_DivRhoU, 0);	//TODO découplage burgers
+		MatScale(_GradDivTilde, 0);
 		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
 		MatAXPY(_LaplacianVelocity, -1, _Conv, UNKNOWN_NONZERO_PATTERN);  //TODO
 
@@ -668,10 +675,15 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		int *indices2 = new int[_Nfaces];
 		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
+		cout << "-GradPressure =" << endl;
+		VecView(GradPressure,PETSC_VIEWER_STDOUT_SELF);
 
 		MatMult(_InvVol, GradPressure, Temporary1);
 		VecAXPY(_b,     1, Temporary1); 									
-																			
+
+		cout << "(U^n+1 - U^n)/dt = " <<endl;
+		VecView(_b, PETSC_VIEWER_STDOUT_SELF);
+
 		VecDestroy(& Temporary1);
 		VecDestroy(& Temporary2);
 		MatDestroy(& Prod); 
@@ -688,7 +700,32 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	double dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) ) ;//max(_uMax,_c) ); //* numax TODO
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);
+	
 	return dt; 
+}
+
+void EulerBarotropicStaggered::testConservation()
+{
+	double SUM, DELTArho, DELTAq, x, InvD_sigma;
+	SUM = 0;
+	DELTArho = 0;
+	DELTAq = 0;
+	int I;
+	for(int j=0; j<_Nmailles; j++)
+	{
+		VecGetValues(_newtonVariation, 1, &j, &x);
+		DELTArho  += x*_mesh.getCell(j).getMeasure() ;
+	}
+	for(int f=0; f<_Nfaces; f++)
+	{
+		I = _Nmailles + f;
+		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
+		VecGetValues(_newtonVariation, 1, &I, &x);
+		DELTAq += x/InvD_sigma;
+	}
+	cout << "Density variation: " << fabs(DELTArho) << endl;
+	cout << "Momentum variation: " << fabs(DELTAq) << endl;
+
 }
 
 bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
@@ -704,7 +741,10 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 		converged=false;
 		return false;
 	}
+
+	testConservation();
 	computeNewtonVariation();
+	testConservation();
 
 	//converged=convergence des iterations
 	if(_timeScheme == Explicit)
@@ -728,15 +768,10 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 			VecSetValues(_primitiveVars,1,&I, &rhou, INSERT_VALUES); // (\rho^n, u^n) -> (\rho^n, \rho u^n)
 		}
 	}
-	cout << "(rho^n, q^n) = "<<endl;
-	VecView(_primitiveVars, PETSC_VIEWER_STDOUT_SELF);
-
 	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV : (\rho^{n+1}, \rho u^{n+1}) =  Delta(q) + \rho^n u^n
 
 	cout << " (rho^n+1, q^n+1) = "<<endl;
 	VecView(_primitiveVars, PETSC_VIEWER_STDOUT_SELF);
-
-	
 
 	UpdateDualDensity(); // \rho^{n+1}_K -> \rho^{n+1}_\sigma
 	cout << " rho^n+1_sigma = "<<endl;

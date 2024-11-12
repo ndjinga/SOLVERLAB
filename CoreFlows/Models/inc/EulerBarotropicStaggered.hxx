@@ -76,6 +76,7 @@ public :
     void AssembleMetricsMatrices();
     void UpdateDualDensity();
     bool iterateTimeStep(bool &converged);
+    void testConservation();
     
 protected :
  /** Fluid equation of state **/
