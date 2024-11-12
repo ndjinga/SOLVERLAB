@@ -7,7 +7,7 @@ from  matplotlib import pyplot as plt
 import pandas as pd
 import os 
 import numpy as np
-import exact_rs_stiffenedgas_isentropic
+import exact_rs_euler_barotropic
 
 
 def EulerBarotropicStaggered_1DRiemannProblem():
@@ -94,7 +94,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
     # simulation parameters 
 	MaxNbOfTimeStep = 20000;
-	freqSave = 200;
+	freqSave = 400;
 	cfl = 0.5
 	maxTime = 0.1;
 	precision = 1e-10;
@@ -144,7 +144,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	initialPressureLeft = initialDensity_Left*initialDensity_Left
 	initialPressureRight = initialDensity_Right*initialDensity_Right
 	initalVelocityWall = -initialVelocity_Left
-	exactDensity, exactVelocity = exact_rs_stiffenedgas_isentropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, 2.0, 1.0 , [initialPressureLeft , initialVelocity_Left ], [ initialPressureLeft, initalVelocityWall ], xsup, nx)
+	exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, 2.0, 1.0 , [initialPressureLeft , initialVelocity_Left ], [ initialPressureLeft, initalVelocityWall ], xsup, nx)
 	
 	plt.figure()
 	plt.subplot(121)

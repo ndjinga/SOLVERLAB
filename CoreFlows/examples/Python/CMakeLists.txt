@@ -169,7 +169,7 @@ CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRiemannProb
 CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DLeftWall.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRightWall.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(EulerBarotropicStaggered/exact_rs_stiffenedgas.py "Python fv Wave staggered 2D Riemann X structured coreflows")
-CreatePythonTest(EulerBarotropicStaggered/exact_rs_stiffenedgas_isentropic.py "Python fv Wave staggered 2D Riemann X structured coreflows")
+CreatePythonTest(EulerBarotropicStaggered/exact_rs_euler_barotropic.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 
 
 if( SOLVERLAB_WITH_MPI )

@@ -6,31 +6,31 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 1;
+		return 2;
 	else
-		return 1;
+		return 2;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
 	if (z < discontinuity){
 		if (Direction == 'x'){
-			vec[0] = 0.001;
+			vec[0] = -1;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 0.001;
+			vec[1] = -1;
 		}
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = 0.005;
+			vec[0] = 2;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 0.005;
+			vec[1] = 2;
 		}
 	}
 	return vec;
@@ -56,19 +56,15 @@ int main(int argc, char** argv)
 		int nx, ny;
 		if (Direction == 'x'){
 			nx=80;
-			if (nx%2 !=0)
-				cout << "ERROR the number of cells should be even" <<endl;
 			ny=3;
 		}
 		else if (Direction == 'y'){
 			nx=3;
 			ny=80;
-			if (ny%2 !=0)
-				cout << "ERROR the number of cells should be even" <<endl;
 		}
 
 		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
-		double discontinuity = (inf + sup)/2.0;
+		double discontinuity = (inf + sup)/2.0 +  0.75/nx;
 		EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, spaceDim );
 
 		// Prepare for the initial condition
@@ -156,10 +152,10 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 5000;
-		int freqSave = 20;
-		double cfl = 0.99;
-		double maxTime = 800;
+		unsigned MaxNbOfTimeStep = 10000;
+		int freqSave = 200;
+		double cfl = 0.5;
+		double maxTime = 0.1;
 		double precision = 1e-14;
 
 		myProblem.setCFL(cfl);
