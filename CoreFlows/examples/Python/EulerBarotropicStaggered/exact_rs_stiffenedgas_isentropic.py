@@ -90,9 +90,6 @@ class exact_rs_stiffenedgas_isentropic :
 			self.S_HR = W_R[1] + self.a(W_R[0])
 			self.S_TR = self.S_STAR + self.a(self.P_STAR)
 		
-		print("self.S_L =",self.S_L, "self.S_R = ", self.S_R, "self.S_STAR = ", self.S_STAR)
-		print("P_Star = ", self.P_STAR)
-
 	
 	def sample_solution (self, W_L, W_R, S):
 		W = [0.]*2
@@ -181,7 +178,7 @@ class exact_rs_stiffenedgas_isentropic :
 
 	# Functions to find the state inside a rarefaction fan
 
-	def set_left_rarefaction_fan_state (self, W_L, S): # To Do : à vérif
+	def set_left_rarefaction_fan_state (self, W_L, S): 
 		W = [0.]*2
 		a_L = self.a(W_L[0])
 		W[1] = (2.0/(self.gamma+1.0))*(a_L + S + ((self.gamma-1.0)/2.0)*W_L[1])
@@ -200,12 +197,13 @@ class exact_rs_stiffenedgas_isentropic :
 	def Jump(self, p_star, p):
 		return pow(  -(p_star - p) * (1/self.rho(p_star) - 1/self.rho(p) ) , 1/2.0 ) 
 
-	def Q_K (self, p_star, p): # To Do : à vérif
-		return (p_star - p)/(1/self.rho(p) - 1/self.rho(p_star)) 
 
 	# Equation of state functions
 	def a (self, p):#sound speed
 		return sqrt(self.gamma*( p/ self.rho(p) )) 
+
+	""" def Q_K (self, p_star, p):
+		return (p_star - p)/(1/self.rho(p) - 1/self.rho(p_star))  """	
 
 
 

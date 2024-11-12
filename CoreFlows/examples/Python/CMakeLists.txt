@@ -166,6 +166,8 @@ CreatePythonTest(WaveStaggered/WaveStaggered_2DCylinderMeshConvergence.py "Pytho
 
 CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DDecoupledTransport.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRiemannProblem.py "Python fv Wave staggered 2D Riemann X structured coreflows")
+CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DLeftWall.py "Python fv Wave staggered 2D Riemann X structured coreflows")
+CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRightWall.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(EulerBarotropicStaggered/exact_rs_stiffenedgas.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(EulerBarotropicStaggered/exact_rs_stiffenedgas_isentropic.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 

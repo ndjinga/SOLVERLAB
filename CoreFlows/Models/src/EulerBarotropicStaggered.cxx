@@ -431,7 +431,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
 					VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
 					VecGetValues(_primitiveVars,1,&IndexFace,&u);
-					//cout << "face = "<< j << " u = "<< u << " rhoL = "<< rhoL << " rhoR = " << rhoR << endl;
 
 					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0 ;
 					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
@@ -450,8 +449,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 					
-					
-					// Convective terms //
+					// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
 					PetscInt jepsilon, L, I;
 					// Loop on half diamond cells
 					for (int nei =0; nei <Fj.getNumberOfCells(); nei ++){
@@ -473,6 +471,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 								I = _Nmailles + idFaces[f];
 								VecGetValues(_primitiveVars,1,&I	,&u);
+								//TODO : calculer 2d psif
 								double psif;
 								if (_Ndim==1){
 									if (Facef.x() < K.getBarryCenter().x())
@@ -480,7 +479,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									else      		
 										psif = 1.0/K.getNumberOfFaces();
 								}
-								//TODO : calculer 2d psif
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -500,9 +498,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								/* rhoL =1.0; //TODO Découplage advection 
 								rhoR =1.0;  */
 
-								//cout << "cell = "<<  Fj.getCellsId() [nei] << " face = "<< idFaces[f] << " umean rho =" << u *(rhoL + rhoR)/2.0  <<endl;  
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  )* psif *2.0  ; // TODO - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K)
-								
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0    )* psif   ; // TODO - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K)
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -525,16 +521,15 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									}
 								}
 							}
-							//cout <<" cell = "<< Fj.getCellsId() [nei] <<"convective flux = " << ConvectiveFlux << endl;
 							epsilon = 1.0;
 							if (_Ndim > 1)
 								epsilon = sqrt( (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y()) );
 							_ConvectiveMax = max(abs(ConvectiveFlux), abs(_ConvectiveMax));
-							ConvectiveFlux *= epsilon/2.0  ;
+							ConvectiveFlux *= epsilon ;
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
-							absConvectiveFlux = 2* abs(ConvectiveFlux) +  epsilon *_rhoMax * _uMax; //; TODO que faire des ces termes  ?
-							MinusabsConvectiveFlux = -2*abs(ConvectiveFlux) - epsilon * _rhoMax * _uMax; //
+							absConvectiveFlux =  abs(ConvectiveFlux)/2.0 +  epsilon *_rhoMax * _uMax; 
+							MinusabsConvectiveFlux = -abs(ConvectiveFlux)/2.0 - epsilon * _rhoMax * _uMax; 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
 						}
