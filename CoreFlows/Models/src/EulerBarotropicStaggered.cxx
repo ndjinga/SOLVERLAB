@@ -473,11 +473,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								VecGetValues(_primitiveVars,1,&I	,&u);
 								//TODO : calculer 2d psif
 								double psif;
-								if (_Ndim==1){
+								if (_Ndim==1 ){
 									if (Facef.x() < K.getBarryCenter().x())
-										psif = -1.0/K.getNumberOfFaces();        
+										psif = -1.0/2.0;        
 									else      		
-										psif = 1.0/K.getNumberOfFaces();
+										psif = 1.0/2.0;
 								}
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
@@ -524,10 +524,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							epsilon = 1.0;
 							if (_Ndim > 1)
 								epsilon = sqrt( (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y()) );
-							_ConvectiveMax = max(abs(ConvectiveFlux), abs(_ConvectiveMax));
-							ConvectiveFlux *= epsilon ;
+							ConvectiveFlux *= epsilon ; //TODO SHOULD BE DEVIDED BY 2.0 BUT NOT GOOD FOR NOW
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
+
 							absConvectiveFlux =  abs(ConvectiveFlux)/2.0 +  epsilon *_rhoMax * _uMax; 
 							MinusabsConvectiveFlux = -abs(ConvectiveFlux)/2.0 - epsilon * _rhoMax * _uMax; 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
@@ -610,7 +610,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatScale(_GradDivTilde, -1.0 * _c*_rhoMax/2.0) ; 										// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
 		//MatScale(_DivRhoU, 0);	//TODO découplage burgers
-		MatScale(_GradDivTilde, 0);
 		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
 		MatAXPY(_GradDivTilde, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
