@@ -409,6 +409,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
 					PetscInt jepsilon, L, I;
 					int nbDualFaces ;
+					double orien, psif;
 					// Loop on half diamond cells
 					for (int nei =0; nei <Fj.getNumberOfCells(); nei ++){
 						Cell K = _mesh.getCell(Fj.getCellsId() [nei]);
@@ -420,7 +421,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							nbDualFaces = 1;
 						else if (_Ndim == 2)
 							nbDualFaces = Fj.getNumberOfNodes();
-							
+
 						for (int Nbepsilon = 0; Nbepsilon < nbDualFaces ;Nbepsilon ++){ 
 							ConvectiveFlux = 0 ;		
 							// For fixed epsilon (and thus the node on sigma defining it ) Loop on the faces that are in the boundary of the cell containing the fixed half diamond cell	
@@ -433,14 +434,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 								I = _Nmailles + idFaces[f];
 								VecGetValues(_primitiveVars,1,&I	,&u);
-								//TODO : calculer 2d psif
-								double psif;
-								if (_Ndim==1 ){
-									if (Facef.x() < K.getBarryCenter().x())
-										psif = -1.0/2.0;        
-									else      		
-										psif = 1.0/2.0;
-								}
+								if (_Ndim==1 )
+									psif = 1.0/2.0;        
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -459,7 +454,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								} 
 								/* rhoL =1.0; // Découplage advection 
 								rhoR =1.0;  */
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0    )* psif   ; // TODO - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K)
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0   - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) )* psif   ; 
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -482,13 +477,19 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									}
 								}
 							}
-							epsilon = 1.0;
+							if (_Ndim ==1){
+								epsilon = 1.0;
+								if (Fj.x() < K.getBarryCenter().x())
+									orien = 1; 
+								else 
+									orien = -1;
+							}
 							if (_Ndim == 2){
 								Node xsigma = _mesh.getNode( Fj.getNodesId()[Nbepsilon] ); 
 								epsilon = sqrt( (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y()) );
 							}
-								
-							ConvectiveFlux *= epsilon ; //TODO SHOULD BE DEVIDED BY 2.0 BUT NOT GOOD FOR NOW
+							
+							ConvectiveFlux *= epsilon/2.0 * orien ; 
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
 

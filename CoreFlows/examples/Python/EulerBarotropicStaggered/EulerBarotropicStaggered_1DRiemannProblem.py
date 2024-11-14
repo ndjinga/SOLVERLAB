@@ -29,11 +29,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialDensity_Left = 1
+	initialDensity_Left = 1	
 	initialDensity_Right = 5
 
-	initialVelocity_Left = -1
-	initialVelocity_Right = -2
+	initialVelocity_Left = 0
+	initialVelocity_Right = 0
 
 	def initialDensity(x):
 		if x < discontinuity:
