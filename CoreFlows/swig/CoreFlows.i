@@ -34,6 +34,7 @@ namespace std {
 #include "SinglePhase.hxx"
 #include "Fluide.h"
 #include "StiffenedGas.hxx"
+#include "BarotropicLaw.hxx"
 #include "WaveStaggered.hxx"
 #include "EulerBarotropicStaggered.hxx"
 
@@ -52,6 +53,7 @@ namespace std {
 %include "SinglePhase.hxx"
 %include "Fluide.h"
 %include "StiffenedGas.hxx"
+%include "BarotropicLaw.hxx"
 %include "WaveStaggered.hxx"
 %include "EulerBarotropicStaggered.hxx"
 

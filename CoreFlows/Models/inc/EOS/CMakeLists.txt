@@ -2,6 +2,7 @@ SET(include_eos_HXX
     EosException.hxx
     Fluide.h
     StiffenedGas.hxx
+    BarotropicLaw.hxx
 #   IAPWS97.hxx
 )
 

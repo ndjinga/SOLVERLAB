@@ -22,7 +22,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
     # set the limit field for each boundary
-	myProblem = svl.EulerBarotropicStaggered(svl.GasStaggered, svl.around1bar300K, spaceDim ); 
+	a=1.0
+	gamma = 2.0
+	myProblem = svl.EulerBarotropicStaggered(svl.GasStaggered, svl.around1bar300K, a, gamma, spaceDim ); 
 
     # Prepare for the initial condition
 
@@ -138,13 +140,12 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	Densitydata = pd.read_csv(fileName + "_Pressure_" + str(len(time) -1)+ ".csv", sep='\s+')
 	Densitydata.columns =['x','pressure', 'index']
 	
-	myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature	
-	""" initialPressure_Left  = myEOS.getPressureFromEnthalpy(myEOS.getEnthalpy(myProblem.getReferenceTemperature(), initialDensity_Left), initialDensity_Left)
-	initialPressure_Right  = myEOS.getPressureFromEnthalpy(myEOS.getEnthalpy(myProblem.getReferenceTemperature(), initialDensity_Right), initialDensity_Right)  """
-	initialPressureLeft = initialDensity_Left*initialDensity_Left
-	initialPressureRight = initialDensity_Right*initialDensity_Right
+	myEOS = myProblem.getBarotropicEOS(0)	
+	initialPressure_Left  = myEOS.getPressure(initialDensity_Left)
+	a = myEOS.constante("a");
+	gamma = myEOS.constante("gamma");
 	initalVelocityWall = -initialVelocity_Right
-	exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, 2.0, 1.0 , [initialPressureLeft , initalVelocityWall ], [ initialPressureLeft, initialVelocity_Right ], xinf, nx)
+	exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, gamma, a , [initialPressure_Left , initalVelocityWall ], [ initialPressure_Left, initialVelocity_Right ], xinf, nx)
 	
 	plt.figure()
 	plt.subplot(121)

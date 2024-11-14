@@ -17,6 +17,7 @@
 
 #include "WaveStaggered.hxx"
 #include "StiffenedGas.hxx"
+#include "BarotropicLaw.hxx"
 #include "Node.hxx"
 #include "utilitaire_algebre.h"
 #include "Mesh.hxx"
@@ -36,7 +37,7 @@ public :
 	 * \param [in] pressureEstimate : \ref around1bar or \ref around155bars
 	 * \param [in] int : mesh dimension
 	 *  */
-	EulerBarotropicStaggered(phaseTypeStaggered fluid, pressureEstimate pEstimate, int dim);
+	EulerBarotropicStaggered(phaseTypeStaggered fluid, pressureEstimate pEstimate, double a, double gamma, int dim);
 
 
 	//! system initialisation
@@ -47,41 +48,26 @@ public :
      * @param void
      *  */
     void terminate();
-
-
-	/** \fn computeTimeStep
-     * \brief Proposes a value for the next time step to be solved using mesh data and cfl coefficient
-     *  \return  double dt the proposed time step
-     *  \return  bool stop, true if the calculation should not be continued (stationary state, maximum time or time step numer reached)
-     *  */
     double computeTimeStep(bool & stop);
 
-    std::vector<double>  getTimeEvol();
-
-
-	/** \fn getStiffenedGasEOS
-     * \brief return the stiffened gas law associated to fluid i
-     * @param int i : the index of the fluid
-     * @return throws an exception if the fluid with index i does not follow a stiffened gas law.
-     * */
-    StiffenedGas getStiffenedGasEOS(int i)
-    {
-        StiffenedGas * result = dynamic_cast<StiffenedGas*>(_fluides[i]); 
+    BarotropicLaw getBarotropicEOS(int i){
+        BarotropicLaw * result = dynamic_cast<BarotropicLaw*>(_fluides[i]); 
         if(result)
              return *result;
         else
-            throw CdmathException("ProblemFluid::getStiffenedGasEOS() : fluid EOS is not a stiffened gas law");
+            throw CdmathException("Fluid EOS is not barotropic");
     }
-    double getReferenceTemperature() { return _Tref; };
+
     void AssembleMetricsMatrices();
     void UpdateDualDensity();
     bool iterateTimeStep(bool &converged);
     void testConservation();
+     std::vector<double>  getTimeEvol();
     
 protected :
  /** Fluid equation of state **/
     vector<    Fluide* > _fluides;//
-	CompressibleFluid *_compressibleFluid;
+	BarotropicLaw   *_compressibleFluid;
 	double _Tref, _Pref; //EOS reference temperature &pressure
 
     PetscReal _rhoMax, _uMax;

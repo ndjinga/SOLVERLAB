@@ -4,12 +4,13 @@
 
 #include "EulerBarotropicStaggered.hxx"
 #include "StiffenedGas.hxx"
+#include "BarotropicLaw.hxx"
 #include <cassert>
 #include <numeric>
 
 using namespace std;
 
-EulerBarotropicStaggered::EulerBarotropicStaggered(phaseTypeStaggered fluid, pressureEstimate pEstimate, int dim):WaveStaggered( dim, 1.0 ,1.0, MPI_COMM_WORLD ){
+EulerBarotropicStaggered::EulerBarotropicStaggered(phaseTypeStaggered fluid, pressureEstimate pEstimate, double a, double gamma, int dim):WaveStaggered( dim, 1.0 ,1.0, MPI_COMM_WORLD ){
 ;	_Ndim=dim;
 	_nVar = 2; 
 	_saveVelocity=false; 
@@ -19,7 +20,7 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseTypeStaggered fluid, pre
 	_vec_normal=NULL;
 	_Time.push_back(0);
 
-	if(pEstimate==around1bar300K){//EOS at 1 bar and 300K
+	/* if(pEstimate==around1bar300K){//EOS at 1 bar and 300K
 		_Tref=300;
 		_Pref=1e5;
 		if(fluid==GasStaggered){
@@ -46,8 +47,8 @@ EulerBarotropicStaggered::EulerBarotropicStaggered(phaseTypeStaggered fluid, pre
 			*_runLogFile<<"Fluid is water around saturation point 155 bars and 573 K (300°C)"<<endl;
 			_compressibleFluid= new StiffenedGas(726.82,_Pref,_Tref,1.3e6, 971.,5454.);  //stiffened gas law for water at pressure 155 bar, and temperature 345°C
 		}
-	}
-	//Save into the fluid list
+	} */
+	_compressibleFluid = new BarotropicLaw(a, gamma);
 	_fluides.resize(0);
 	_fluides.push_back(_compressibleFluid);
 	if (_Ndim == 3){	
@@ -346,8 +347,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecGetValues(_primitiveVars,1,&I,&u);
 		_uMax = max(_uMax, abs(u));
 	}
-	_c = sqrt(2*_rhoMax ); //TODO pressure law, Découplage Burgers : c =0
-
+	_c = _compressibleFluid->vitesseSon(_rhoMax); 	 //TODO  Découplage Burgers : c =0
+	
 	MatZeroEntries(_DivRhoU);
 	MatZeroEntries(_LaplacianPressure);
 	MatZeroEntries(_Conv);
@@ -533,19 +534,17 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatAssemblyEnd(_Conv, MAT_FINAL_ASSEMBLY);
 		MatAssemblyBegin(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);		
-
-		
 		
 		/***********Assembling the matrix _A such that : *************/
 		// _A = ( (u+c) _Laplacian   ;                 -Div(\rhomean .)                  )
 		//      (0_FacesxCells   ; -Conv+ c (\tilde rho) MinusGrad 1/|dK| Div + LaplacianVelocity	)
 
-		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div													
-		MatScale(_GradDivTilde, -1.0 * _c*_rhoMax/2.0) ; 										// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
+		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div																							// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
+		MatScale(_Conv, -1.0);
+		MatAXPY(_Conv, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
+		MatAXPY(_Conv, -1.0 * _c*_rhoMax/2.0, _GradDivTilde, UNKNOWN_NONZERO_PATTERN); 
 		//MatScale(_DivRhoU, 0);	// Découplage burgers
-		MatAXPY(_GradDivTilde, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
-		MatAXPY(_GradDivTilde, -1, _Conv, UNKNOWN_NONZERO_PATTERN); 
 
 		Mat G[4], ZeroNfaces_Ncells, Prod;
 		MatDuplicate(_DivTranspose, MAT_DO_NOT_COPY_VALUES, &ZeroNfaces_Ncells); 	
@@ -553,7 +552,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
 		G[2] = ZeroNfaces_Ncells ;
-		G[3] = _GradDivTilde; 
+		G[3] = _Conv; 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
@@ -578,7 +577,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetUp(Pressure);
 		for (int i=0; i <_Nmailles; i++){
 			VecGetValues(_primitiveVars,1,&i,&rho);
-			p =  rho*rho ; ///_compressibleFluid->getPressureFromEnthalpy(_compressibleFluid->getEnthalpy(_Tref,rho) ,rho); //	TODO pressure law 							
+			p =  _compressibleFluid->getPressure(rho); 				
 			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
 		}														
 		//add pressure gradient to AU^n + Boundterms//
@@ -664,7 +663,6 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 		converged=true;
 
 	UpdateDualDensity(); // \rho^n_K -> \rho^n_\sigma
-
 	PetscScalar rhou, rho_sigma, u;
 	for (int f=0; f< _Nfaces; f++){
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),f) != _InteriorFaceSet.end() ;
@@ -677,8 +675,6 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 		}
 	}
 	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV : (\rho^{n+1}, \rho u^{n+1}) =  Delta(q) + \rho^n u^n
-
-
 	UpdateDualDensity(); // \rho^{n+1}_K -> \rho^{n+1}_\sigma
 	for (int f=0; f< _Nfaces; f++){
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),f) != _InteriorFaceSet.end() ;
@@ -690,7 +686,6 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 			VecSetValues(_primitiveVars,1,&I, &u, INSERT_VALUES); // (\rho^{n+1}, \rho^{n+1}u^{n+1}) ->(\rho^{n+1}, u^{n+1})
 		}
 	}
-	
 	return converged;
 }
 

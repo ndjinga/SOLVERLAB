@@ -7,6 +7,7 @@ INCLUDE_DIRECTORIES(
 SET(src_eos_CXX
     EosException.cxx
     StiffenedGas.cxx
+    BarotropicLaw.cxx
 #   IAPWS97.cxx
   )
 

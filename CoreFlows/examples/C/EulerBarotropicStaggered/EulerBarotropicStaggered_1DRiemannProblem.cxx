@@ -28,7 +28,9 @@ int main(int argc, char** argv)
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
-	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, spaceDim );
+	double a = 1.0;
+	double gamma = 2.0;
+	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
 	Field Pressure0("pressure", CELLS, M, 1);

@@ -23,7 +23,9 @@ def EulerBarotropicStaggered_1DDecoupledTransport():
 	discontinuity=(xinf+xsup)/2 #+ 0.75/nx
 
     # set the limit field for each boundary
-	myProblem = svl.EulerBarotropicStaggered(svl.GasStaggered, svl.around1bar300K, spaceDim ); 
+	a=1.0
+	gamma = 2.0
+	myProblem = svl.EulerBarotropicStaggered(svl.GasStaggered, svl.around1bar300K, a, gamma, spaceDim ); 
 
     # Prepare for the initial condition
 
