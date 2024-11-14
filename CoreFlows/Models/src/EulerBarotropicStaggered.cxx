@@ -408,6 +408,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					
 					// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
 					PetscInt jepsilon, L, I;
+					int nbDualFaces ;
 					// Loop on half diamond cells
 					for (int nei =0; nei <Fj.getNumberOfCells(); nei ++){
 						Cell K = _mesh.getCell(Fj.getCellsId() [nei]);
@@ -415,9 +416,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						std::vector<int> idFaces = K.getFacesId();
 						VecGetValues(_primitiveVars,1,&Fj.getCellsId() [nei],&rhoL);
 						//Loop on epsilon the boundary of a dual cell in the fixed half diamond cell 
-						for (int Nbepsilon = 0; Nbepsilon < Fj.getNumberOfNodes() ;Nbepsilon ++){ //TODO : works in 1D but is not clean
+						if (_Ndim == 1  )
+							nbDualFaces = 1;
+						else if (_Ndim == 2)
+							nbDualFaces = Fj.getNumberOfNodes();
+							
+						for (int Nbepsilon = 0; Nbepsilon < nbDualFaces ;Nbepsilon ++){ 
 							ConvectiveFlux = 0 ;		
-							Node xsigma = _mesh.getNode( Fj.getNodesId()[Nbepsilon] ); //TODO DIMENSION DEPENDANT
 							// For fixed epsilon (and thus the node on sigma defining it ) Loop on the faces that are in the boundary of the cell containing the fixed half diamond cell	
 							// Compute the flux through epsilon
 							for (int f =0; f <K.getNumberOfFaces(); f ++){
@@ -478,8 +483,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								}
 							}
 							epsilon = 1.0;
-							if (_Ndim > 1)
+							if (_Ndim == 2){
+								Node xsigma = _mesh.getNode( Fj.getNodesId()[Nbepsilon] ); 
 								epsilon = sqrt( (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y()) );
+							}
+								
 							ConvectiveFlux *= epsilon ; //TODO SHOULD BE DEVIDED BY 2.0 BUT NOT GOOD FOR NOW
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 

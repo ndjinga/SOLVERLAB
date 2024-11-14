@@ -32,8 +32,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	initialDensity_Left = 1
 	initialDensity_Right = 5
 
-	initialVelocity_Left = 1
-	initialVelocity_Right = 1
+	initialVelocity_Left = -1
+	initialVelocity_Right = -2
 
 	def initialDensity(x):
 		if x < discontinuity:
@@ -90,7 +90,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 1;
+	MaxNbOfTimeStep = 100000000;
 	freqSave = 200;
 	cfl = 0.5
 	maxTime = 0.07;
