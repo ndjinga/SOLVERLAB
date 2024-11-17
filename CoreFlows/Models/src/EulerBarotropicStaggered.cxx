@@ -493,8 +493,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
 
-							absConvectiveFlux =  abs(ConvectiveFlux)/2.0 +  epsilon *_rhoMax * _uMax; 
-							MinusabsConvectiveFlux = -abs(ConvectiveFlux)/2.0 - epsilon * _rhoMax * _uMax; 
+							absConvectiveFlux =  abs(ConvectiveFlux) ; //+  epsilon *_rhoMax * _uMax; 
+							MinusabsConvectiveFlux = -abs(ConvectiveFlux);// - epsilon * _rhoMax * _uMax; 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
 						}
