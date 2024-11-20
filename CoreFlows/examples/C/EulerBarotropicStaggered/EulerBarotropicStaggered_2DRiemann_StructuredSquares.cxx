@@ -55,8 +55,8 @@ int main(int argc, char** argv)
 		double sup = 1.0;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=6;
-			ny=6;
+			nx=4;
+			ny=4;
 		}
 		else if (Direction == 'y'){
 			nx=3;

@@ -556,9 +556,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				}
 			}
 			if (vec[0] == 0){
-				cout << "vertical  face "<< j<<"u = "<< u	 <<endl;
 				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
-					cout << "vertical PERIODIC face "<< j<<"u = "<< u <<endl;
+					cout << "vertical PERIODIC face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
+				else
+					cout << "vertical  face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
 
 			}
 			delete []vec;
