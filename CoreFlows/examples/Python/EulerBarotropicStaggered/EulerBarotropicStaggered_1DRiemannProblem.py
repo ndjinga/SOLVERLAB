@@ -23,17 +23,17 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
     # set the limit field for each boundary
 	a=1.0
-	gamma = 3
+	gamma = 2
 	myProblem = svl.EulerBarotropicStaggered(svl.GasStaggered, svl.around1bar300K, a, gamma, spaceDim ); 
 
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
 	initialDensity_Left = 1
-	initialDensity_Right = 1
+	initialDensity_Right = 4
 
-	initialVelocity_Left = 1
-	initialVelocity_Right = -1
+	initialVelocity_Left = 0
+	initialVelocity_Right = 0
 
 	def initialDensity(x):
 		if x < discontinuity:

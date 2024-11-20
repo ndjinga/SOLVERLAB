@@ -411,19 +411,49 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					int nbDualFaces ;
 					double orien, psif;
 					// Loop on half diamond cells
-					for (int nei =0; nei <Fj.getNumberOfCells(); nei ++){
-						Cell K = _mesh.getCell(Fj.getCellsId() [nei]);
-						Point xb =  K.getBarryCenter();
+					for (int nei =0; nei <2; nei ++){ // we are in the case where an interior face has two neighbours
+						Cell K = _mesh.getCell(idCells[nei]); 
+						Point BarycenterK =  K.getBarryCenter();
 						std::vector<int> idFaces = K.getFacesId();
-						VecGetValues(_primitiveVars,1,&Fj.getCellsId() [nei],&rhoL);
+						VecGetValues(_primitiveVars,1,&idCells[nei],&rhoL);
 						//Loop on epsilon the boundary of a dual cell in the fixed half diamond cell 
 						if (_Ndim == 1  )
 							nbDualFaces = 1;
 						else if (_Ndim == 2)
 							nbDualFaces = Fj.getNumberOfNodes();
-
+						//If  the face is periodic, recover the geometric informations of the associated periodic cell needed for the computation of the dual cell  
+						std::vector< int > NodesFj = ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei]    ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getNodesId() :  Fj.getNodesId(); 
+						Point BarycenterFj =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] 	 ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getBarryCenter() :  Fj.getBarryCenter();
 						for (int Nbepsilon = 0; Nbepsilon < nbDualFaces ;Nbepsilon ++){ 
 							ConvectiveFlux = 0 ;		
+							Node xsigma = _mesh.getNode( NodesFj[Nbepsilon] ); 
+							std::vector<double> normal_epsilon;
+							if (_Ndim ==1){
+								epsilon = 1.0;
+								if (Fj.x() < K.getBarryCenter().x())
+									normal_epsilon.push_back(1);
+								else
+									normal_epsilon.push_back(-1);
+							}
+							else if (_Ndim == 2){
+								std::vector<double> barycenter_vector, tangent_epsilon, temporary;
+								temporary.resize(2);
+								epsilon = sqrt( (BarycenterK.x() - xsigma.x())*(BarycenterK.x() - xsigma.x()) + (BarycenterK.y() - xsigma.y() )*(BarycenterK.y() - xsigma.y()) );
+								tangent_epsilon.push_back((BarycenterK.x() - xsigma.x())/epsilon);
+								tangent_epsilon.push_back((BarycenterK.y() - xsigma.y())/epsilon);
+								barycenter_vector.push_back(BarycenterFj.x() - xsigma.x());
+								barycenter_vector.push_back(BarycenterFj.y() - xsigma.y());
+								double cdot = 0, norm =0;
+								for (int idim=0; idim <_Ndim; idim++)
+									cdot += barycenter_vector[idim] * tangent_epsilon[idim];
+								for (int idim=0; idim <_Ndim; idim++){
+									temporary[idim] = barycenter_vector[idim] - cdot * tangent_epsilon[idim];
+									norm += temporary[idim]*temporary[idim];	
+								}									
+								for (int idim=0; idim <_Ndim; idim++)
+									normal_epsilon.push_back(-temporary[idim]/sqrt(norm));
+								//cout << "facej = "<< j <<"cell K = "<<idCells[nei]<<" BarycenterK = (" <<BarycenterK.x()<<","<< BarycenterK.y()<<") Xsigma = ("<<xsigma.x()<<","<<xsigma.y() <<") and tangent = ("<<tangent_epsilon[0]<<", "<< tangent_epsilon[1] <<") normal = ("<< normal_epsilon[0]<<", "<< normal_epsilon[1]<< ")"<< endl;
+							}
 							// For fixed epsilon (and thus the node on sigma defining it ) Loop on the faces that are in the boundary of the cell containing the fixed half diamond cell	
 							// Compute the flux through epsilon
 							for (int f =0; f <K.getNumberOfFaces(); f ++){
@@ -434,8 +464,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 								I = _Nmailles + idFaces[f];
 								VecGetValues(_primitiveVars,1,&I	,&u);
-								if (_Ndim==1 )
-									psif = 1.0/2.0;        
+							
+								psif = 0;
+								for (int idim=0; idim< _Ndim ; idim++)
+									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]/K.getNumberOfFaces();
+							       
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -477,24 +510,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									}
 								}
 							}
-							if (_Ndim ==1){
-								epsilon = 1.0;
-								if (Fj.x() < K.getBarryCenter().x())
-									orien = 1; 
-								else 
-									orien = -1;
-							}
-							if (_Ndim == 2){
-								Node xsigma = _mesh.getNode( Fj.getNodesId()[Nbepsilon] ); 
-								epsilon = sqrt( (xb.x() - xsigma.x())*(xb.x() - xsigma.x()) + (xb.y() - xsigma.y() )*(xb.y() - xsigma.y()) );
-							}
-							
-							ConvectiveFlux *= epsilon/2.0 * orien ; 
+
+							ConvectiveFlux *= epsilon/2.0  ; 
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
-
-							absConvectiveFlux =  abs(ConvectiveFlux) ; //+  epsilon *_rhoMax * _uMax; 
-							MinusabsConvectiveFlux = -abs(ConvectiveFlux);// - epsilon * _rhoMax * _uMax; 
+							
+							absConvectiveFlux =  abs(ConvectiveFlux) ; 
+							MinusabsConvectiveFlux = -abs(ConvectiveFlux);
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
 						}
@@ -524,7 +546,24 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
 				}	
+			VecGetValues(_primitiveVars,1,&IndexFace	,&u);
+			Cell Cint = _mesh.getCell(Fj.getCellsId()[0]);
+			double *vec =new double [_Ndim];
+			for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+				if (j == Cint.getFacesId()[l]){
+					for (int idim = 0; idim < _Ndim; ++idim)
+						vec[idim] = Cint.getNormalVector(l,idim);
+				}
 			}
+			if (vec[0] == 0){
+				cout << "vertical  face "<< j<<"u = "<< u	 <<endl;
+				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
+					cout << "vertical PERIODIC face "<< j<<"u = "<< u <<endl;
+
+			}
+			delete []vec;
+			}
+			
 		}
 
 		MatAssemblyBegin(_DivRhoU,MAT_FINAL_ASSEMBLY);

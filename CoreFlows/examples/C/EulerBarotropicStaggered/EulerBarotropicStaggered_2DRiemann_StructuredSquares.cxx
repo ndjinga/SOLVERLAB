@@ -8,7 +8,7 @@ double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
 		return 1;
 	else
-		return 4;
+		return 5;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
@@ -55,8 +55,8 @@ int main(int argc, char** argv)
 		double sup = 1.0;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=60;
-			ny=10;
+			nx=6;
+			ny=6;
 		}
 		else if (Direction == 'y'){
 			nx=3;
@@ -154,11 +154,11 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 10000;
-		int freqSave = 30;
-		double cfl = 0.5;
-		double maxTime = 0.1;
-		double precision = 1e-14;
+		unsigned MaxNbOfTimeStep = 3;
+		int freqSave = 1;
+		double cfl = 0.95;
+		double maxTime = 0.07;
+		double precision = 1e-9;
 
 		myProblem.setCFL(cfl);
 		myProblem.setPrecision(precision);
