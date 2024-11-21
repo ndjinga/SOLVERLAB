@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*
 #===============================================================================================================================
-# Name        : Résolution VF de l'équation de Poisson 2D -\triangle T = f sur un carré avec conditions aux limites de Dirichlet T=0
+# Name        : Résolution VF de l'équation de Poisson 2D -\triangle T = f sur un carré avec conditions aux limites de Dirichlet variables
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2019
 # Description : Utilisation de la méthode des volumes finis avec champs T et f discrétisés aux cellules d'un maillage de triangules équilatéraux

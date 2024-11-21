@@ -10,7 +10,7 @@ import MEDLoader
 # Name        : Simulation of a 2D heat equation 
 # Description : Test solving the diffusion of the temperature T in a solid
 #               \rho cp dT/dt-\lambda\Delta T=\Phi + \lambda_{sf} (T_{fluid}-T_{solid}) 
-#               Neumann or Dirichlet boundary conditions
+#               Neumann or Dirichlet boundary conditions passed through boundary fields
 #               Finite elements or finite volumes
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2021
