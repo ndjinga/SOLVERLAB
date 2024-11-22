@@ -4,7 +4,7 @@
 # Name        : Résolution VF de l'équation de Poisson 2D -\triangle T = f sur un carré avec conditions aux limites de Dirichlet variables
 # Author      : Michaël Ndjinga
 # Copyright   : CEA Saclay 2019
-# Description : Utilisation de la méthode des volumes finis avec champs T et f discrétisés aux cellules d'un maillage de triangules équilatéraux
+# Description : Utilisation de la méthode des volumes finis avec champs T et f discrétisés aux cellules d'un maillage de triangles équilatéraux
 #				Création et sauvegarde du champ résultant ainsi que du champ second membre en utilisant CDMATH
 #               Comparaison de la solution numérique avec la solution exacte T=sin(pi*x)*sin(pi*y)
 #================================================================================================================================
