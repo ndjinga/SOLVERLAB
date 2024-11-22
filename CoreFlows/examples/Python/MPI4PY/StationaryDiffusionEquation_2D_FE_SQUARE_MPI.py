@@ -4,7 +4,7 @@
 #===============================================================================================================================
 # Name        : Test launching one simulation on several procs (stationary diffusion quation)
 # Author      : Michaël Ndjinga
-# Copyright   : CEA Saclay 2023
+# Copyright   : CEA Saclay 2023-2024
 # Description : Utilisation de la méthode des éléments finis avec champs T et f discrétisés aux noeuds d'un maillage triangulaire structurés
 #               -\lambda\Delta T=\Phi 
 #               Comparaison de la solution numérique avec la solution exacte T=sin(pi*x)*sin(pi*y)

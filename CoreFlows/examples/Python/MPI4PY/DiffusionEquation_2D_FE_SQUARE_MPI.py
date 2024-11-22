@@ -4,7 +4,7 @@
 #===============================================================================================================================
 # Name        : Test launching one simulation on several procs (diffusion quation)
 # Author      : Michaël Ndjinga
-# Copyright   : CEA Saclay 2023
+# Copyright   : CEA Saclay 2023-2024
 # Description : Test solving the diffusion of the temperature T in a solid subject to a heat source
 #               \rho cp dT/dt-\lambda\Delta T=\Phi 
 #               The heat source function is an eigenvector of the Laplacean, so the exact solution is known using separation of variables
