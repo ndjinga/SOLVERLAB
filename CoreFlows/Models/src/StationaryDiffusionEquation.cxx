@@ -167,9 +167,13 @@ void StationaryDiffusionEquation::initialize()
     
             for(int i=0; i<_NboundaryNodes; i++)
             {
-                std::map<int,double>::iterator it=_dirichletBoundaryValues.find(_boundaryNodeIds[i]);
-                if( it != _dirichletBoundaryValues.end() )
-                    _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
+                std::map<int,double>::iterator it_dirichlet=_dirichletBoundaryValues.find(_boundaryNodeIds[i]);
+                std::map<int,double>::iterator it_neumann=_neumannBoundaryValues.find(_boundaryNodeIds[i]);
+                if( it_dirichlet != _dirichletBoundaryValues.end() || it_neumann!=_neumannBoundaryValues.end())
+                {
+                    if( it_dirichlet != _dirichletBoundaryValues.end() )
+                        _dirichletNodeIds.push_back(_boundaryNodeIds[i]);
+                }
                 else if( _mesh.getNode(_boundaryNodeIds[i]).getGroupNames().size()==0 )
                 {
                     cout<<"!!! No boundary group set for boundary node" << _boundaryNodeIds[i]<< endl;
@@ -394,11 +398,11 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                             dirichletCell_treated=true;
                             for (int kdim=0; kdim<_Ndim+1;kdim++)
                             {
-                                std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
-                                if( it != _dirichletBoundaryValues.end() )
+                                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[kdim])!=_dirichletNodeIds.end())
                                 {
-                                    if( _dirichletValuesSet )//Une valeur limite est associée au noeud frontière
-                                        valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
+									std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
+									if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud
+										valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
                                     else//Une valeur limite est associée au groupe frontière    
                                         valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
                                 }
