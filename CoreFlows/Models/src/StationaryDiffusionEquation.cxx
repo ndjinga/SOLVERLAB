@@ -266,20 +266,20 @@ void StationaryDiffusionEquation::initialize()
         }
     }
 
-    //Checking on all procs whether all boundary conditions are Neumann boundary condition
-    //if(_FECalculation) _onlyNeumannBC = _NdirichletNodes==0;
-    if(!_neumannValuesSet)//Boundary conditions set via LimitField structure
+    //Checking whether at least one boundary conditions is imposed
+	if( _limitField.size()==0 && _neumannBoundaryValues.size()==0 && _dirichletBoundaryValues.size()==0 )
+		throw CdmathException("No boundary condition imposed. Cannot initialize simulation.");
+		
+    //Checking on all procs whether all boundary conditions are Neumann boundary condition ->singular system
+    if(_limitField.size()!=0)//Boundary conditions set via LimitField structure
     {
         map<string, LimitFieldStationaryDiffusion>::iterator it = _limitField.begin();
         while(it != _limitField.end() and (it->second).bcType == NeumannStationaryDiffusion)
             it++;
-        _onlyNeumannBC = (it == _limitField.end() && _limitField.size()>0);//what if _limitField.size()==0 ???
+        _onlyNeumannBC = (it == _limitField.end());
     }
-    else
-        if(_FECalculation)
-            _onlyNeumannBC = _neumannBoundaryValues.size()==_NboundaryNodes;
-        else
-            _onlyNeumannBC = _neumannBoundaryValues.size()==_mesh.getBoundaryFaceIds().size();
+    else//Boundary conditions set via boundary values
+        _onlyNeumannBC = _dirichletBoundaryValues.size()==0;
 
     //If only Neumann BC, then matrix is singular and solution should be sought in space of mean zero vectors
     if(_onlyNeumannBC)
@@ -397,9 +397,9 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                                 std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
                                 if( it != _dirichletBoundaryValues.end() )
                                 {
-                                    if( _dirichletValuesSet )
+                                    if( _dirichletValuesSet )//Une valeur limite est associée au noeud frontière
                                         valuesBorder[kdim]=_dirichletBoundaryValues[it->second];
-                                    else    
+                                    else//Une valeur limite est associée au groupe frontière    
                                         valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
                                 }
                                 else
@@ -427,9 +427,9 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is a Neumann BC node (not a Dirichlet BC node)
                     {
                         j_int=DiffusionEquation::unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
-                        if( _neumannValuesSet )
+                        if( _neumannValuesSet )//Une valeur limite est associée à chaque noeud frontière
                             coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
-                        else
+                        else//Une valeur limite est associée à chaque groupe frontière
                             coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
                         VecSetValue(_b, j_int, coeff, ADD_VALUES);
                     }
@@ -503,13 +503,13 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
                 }
     
                 std::map<int,double>::iterator it=_dirichletBoundaryValues.find(j);
-                if( it != _dirichletBoundaryValues.end() )
+                if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée à la face frontière
                 {
                     barycenterDistance=Cell1.getBarryCenter().distance(Fj.getBarryCenter());
                     MatSetValue(_A,idm,idm,dn*inv_dxi/barycenterDistance                                     , ADD_VALUES);
                     VecSetValue(_b,idm,    dn*inv_dxi/barycenterDistance*it->second, ADD_VALUES);
                 }
-                else
+                else//Une valeur limite est associée au groupe frontière
                 {
                     nameOfGroup = Fj.getGroupName();
         

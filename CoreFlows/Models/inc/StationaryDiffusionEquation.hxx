@@ -73,13 +73,13 @@ public :
     bool iterateNewtonStep(bool &ok);
     void save();
 
-    /* Boundary conditions */
-    void setBoundaryFields(map<string, LimitFieldStationaryDiffusion> boundaryFields){
+    /* option 1 : Boundary conditions via group name */
+    void setBoundaryFields(map<string, LimitFieldStationaryDiffusion> boundaryFields){//Almost never used
         _limitField = boundaryFields;
     };
     /** \fn setDirichletBoundaryCondition
              * \brief adds a new boundary condition of type Dirichlet
-             * \details
+             * \details specify the boundary type via the boundary name
              * \param [in] string : the name of the boundary
              * \param [in] double : the value of the temperature at the boundary
              * \param [out] void
@@ -87,6 +87,22 @@ public :
     void setDirichletBoundaryCondition(string groupName,double Temperature){
         _limitField[groupName]=LimitFieldStationaryDiffusion(DirichletStationaryDiffusion,Temperature,-1);
     };
+    /** \fn setNeumannBoundaryCondition
+             * \brief adds a new boundary condition of type Neumann
+             * \details specify the boundary type via the boundary name
+             * \param [in] string : the name of the boundary
+             * \param [in] double : outward normal flux
+             * \param [out] void
+             *  */
+    void setNeumannBoundaryCondition(string groupName, double normalFlux=0){
+        _limitField[groupName]=LimitFieldStationaryDiffusion(NeumannStationaryDiffusion,-1, normalFlux);
+    };
+
+    /* option 2 : Boundary conditions via list of values (do not mix with option 1) */
+    void setDirichletValues(map< int, double> dirichletBoundaryValues);
+    void setNeumannValues  (map< int, double>   neumannBoundaryValues);
+    
+    /* option 3 : Boundary conditions via boundary field */
     /** \fn setDirichletBoundaryCondition
              * \brief adds a new boundary condition of type Dirichlet
              * \details Reads the boundary field in a med file
@@ -104,16 +120,6 @@ public :
 
     /** \fn setNeumannBoundaryCondition
              * \brief adds a new boundary condition of type Neumann
-             * \details
-             * \param [in] string : the name of the boundary
-             * \param [in] double : outward normal flux
-             * \param [out] void
-             *  */
-    void setNeumannBoundaryCondition(string groupName, double normalFlux=0){
-        _limitField[groupName]=LimitFieldStationaryDiffusion(NeumannStationaryDiffusion,-1, normalFlux);
-    };
-    /** \fn setNeumannBoundaryCondition
-             * \brief adds a new boundary condition of type Neumann
              * \details Reads the boundary field in a med file
              * \param [in] string : the name of the boundary
              * \param [in] string : the file name
@@ -127,9 +133,6 @@ public :
         _limitField[groupName]=LimitFieldStationaryDiffusion(NeumannStationaryDiffusion,-1, 0);
     };
 
-    void setDirichletValues(map< int, double> dirichletBoundaryValues);
-    void setNeumannValues  (map< int, double>   neumannBoundaryValues);
-    
     void setConductivity(double conductivite){
         _conductivity=conductivite;
     };
@@ -265,7 +268,7 @@ protected :
     std::vector< int > _boundaryNodeIds;/* List of boundary nodes */
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
 
-    /********* Possibility to set a boundary field as DirichletNeumann boundary condition *********/
+    /********* Possibility to set a boundary field as Dirichlet/Neumann boundary condition *********/
     bool _dirichletValuesSet;
     bool _neumannValuesSet;
     std::map< int, double> _dirichletBoundaryValues;
