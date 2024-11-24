@@ -269,8 +269,6 @@ protected :
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
 
     /********* Possibility to set a boundary field as Dirichlet/Neumann boundary condition *********/
-    bool _dirichletValuesSet;
-    bool _neumannValuesSet;
     std::map< int, double> _dirichletBoundaryValues;
     std::map< int, double> _neumannBoundaryValues;
 

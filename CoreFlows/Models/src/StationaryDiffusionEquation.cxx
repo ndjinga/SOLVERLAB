@@ -68,8 +68,6 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
     _NboundaryNodes=0;
     _NdirichletNodes=0;
     _NunknownNodes=0;
-    _dirichletValuesSet=false;   
-    _neumannValuesSet=false;   
     
     //Linear solver data
     _precision=1.e-6;
@@ -431,7 +429,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is a Neumann BC node (not a Dirichlet BC node)
                     {
                         j_int=DiffusionEquation::unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
-                        if( _neumannValuesSet )//Une valeur limite est associée à chaque noeud frontière
+                        if( _neumannBoundaryValues.size()!=0 )//Une valeur limite est associée à chaque noeud frontière
                             coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
                         else//Une valeur limite est associée à chaque groupe frontière
                             coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
@@ -1020,14 +1018,12 @@ void StationaryDiffusionEquation::terminate()
 void 
 StationaryDiffusionEquation::setDirichletValues(map< int, double> dirichletBoundaryValues)
 {
-    _dirichletValuesSet=true;
     _dirichletBoundaryValues=dirichletBoundaryValues;
 }
 
 void 
 StationaryDiffusionEquation::setNeumannValues(map< int, double> neumannBoundaryValues)
 {
-    _neumannValuesSet=true;
     _neumannBoundaryValues=neumannBoundaryValues;
 }
 
