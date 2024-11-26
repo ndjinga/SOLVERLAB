@@ -102,7 +102,7 @@ public :
     void setDirichletValues(map< int, double> dirichletBoundaryValues);
     void setNeumannValues  (map< int, double>   neumannBoundaryValues);
     
-    /* option 3 : Boundary conditions via boundary field */
+    /* option 3 : Boundary conditions via boundary field. Motivation is code coupling with correct API */
     /** \fn setDirichletBoundaryCondition
              * \brief adds a new boundary condition of type Dirichlet
              * \details Reads the boundary field in a med file
@@ -115,7 +115,7 @@ public :
              *  */
     void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type);
     void setDirichletBoundaryCondition(string groupName, Field bc_field){
-        _limitField[groupName]=LimitFieldStationaryDiffusion(DirichletStationaryDiffusion, 0, -1);
+        _dirichletBoundaryField = bc_field;
     };
 
     /** \fn setNeumannBoundaryCondition
@@ -130,7 +130,7 @@ public :
              *  */
     void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type);
     void setNeumannBoundaryCondition(string groupName, Field bc_field){
-        _limitField[groupName]=LimitFieldStationaryDiffusion(NeumannStationaryDiffusion,-1, 0);
+        _neumannBoundaryField = bc_field;
     };
 
     void setConductivity(double conductivite){
@@ -268,9 +268,13 @@ protected :
     std::vector< int > _boundaryNodeIds;/* List of boundary nodes */
     std::vector< int > _dirichletNodeIds;/* List of boundary nodes with Dirichlet BC */
 
-    /********* Possibility to set a boundary field as Dirichlet/Neumann boundary condition *********/
+    /********* Possibility to set a Dirichlet/Neumann boundary conditions as a map *********/
     std::map< int, double> _dirichletBoundaryValues;
     std::map< int, double> _neumannBoundaryValues;
+
+    /********* Possibility to set a Dirichlet/Neumann boundary field *********/
+    Field _dirichletBoundaryField;
+    Field _neumannBoundaryField;
 
     /**** MPI related variables ***/
     PetscMPIInt    _mpi_size;        /* size of communicator */

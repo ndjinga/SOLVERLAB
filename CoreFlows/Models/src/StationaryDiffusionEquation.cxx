@@ -269,7 +269,7 @@ void StationaryDiffusionEquation::initialize()
     }
 
     //Checking whether at least one boundary conditions is imposed
-	if( _limitField.size()==0 && _neumannBoundaryValues.size()==0 && _dirichletBoundaryValues.size()==0 )
+	if( _limitField.size()==0 && _neumannBoundaryValues.size()==0 && _dirichletBoundaryValues.size()==0 && _dirichletBoundaryField.getMEDCouplingField()==NULL && _neumannBoundaryField.getMEDCouplingField()==NULL )
 		throw CdmathException("No boundary condition imposed. Cannot initialize simulation.");
 		
     //Checking on all procs whether all boundary conditions are Neumann boundary condition ->singular system
@@ -303,6 +303,11 @@ void StationaryDiffusionEquation::initialize()
         //PCFactorSetShiftType(_pc,MAT_SHIFT_NONZERO);
         //PCFactorSetShiftAmount(_pc,1e-10);
     }
+
+	if( _dirichletBoundaryField.getMEDCouplingField()!=NULL || _neumannBoundaryField.getMEDCouplingField()!=NULL )
+	{
+	
+	{
     _initializedMemory=true;
 }
 
@@ -1200,10 +1205,8 @@ StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, str
             *_runLogFile<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
     }
 
-    Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
 
-    /* For the moment the boundary value is taken constant equal to zero */
-    _limitField[groupName]=LimitFieldStationaryDiffusion(DirichletStationaryDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
+    _dirichletBoundaryField = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
 }
 
 void 
@@ -1221,8 +1224,6 @@ StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, strin
             *_runLogFile<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
     }
 
-    Field VV = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
+    _neumannBoundaryField = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
     
-    /* For the moment the boundary value is taken constant equal to zero */
-    _limitField[groupName]=LimitFieldStationaryDiffusion(NeumannStationaryDiffusion,0,-1);//This line will be deleted when variable BC are properly treated in solverlab 
 }
