@@ -304,10 +304,6 @@ void StationaryDiffusionEquation::initialize()
         //PCFactorSetShiftAmount(_pc,1e-10);
     }
 
-	if( _dirichletBoundaryField.getMEDCouplingField()!=NULL || _neumannBoundaryField.getMEDCouplingField()!=NULL )
-	{
-	
-	{
     _initializedMemory=true;
 }
 
@@ -1205,8 +1201,17 @@ StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, str
             *_runLogFile<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
     }
 
-
     _dirichletBoundaryField = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
+   	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> dirichletBoundaryMesh = _dirichletBoundaryField.getMesh().getMEDCouplingMesh();
+
+	//* Check that the boundary field is based on the correct boundary mesh */
+	if(!_FECalculation )
+	{
+		int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
+		MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
+		MEDCoupling::MEDCouplingUMesh* dirichletBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( dirichletBoundaryMesh.retn());
+		bool isBoundaryFieldCorrect = _mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(dirichletBoundaryUMesh, compType, arr);
+	}
 }
 
 void 
