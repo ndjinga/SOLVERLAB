@@ -1201,18 +1201,21 @@ StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, str
             *_runLogFile<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
     }
 
-    _dirichletBoundaryField = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
+	setDirichletBoundaryCondition( groupName, Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel));
+}
+
+void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, Field bc_field){
+    _dirichletBoundaryField = bc_field;
    	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> dirichletBoundaryMesh = _dirichletBoundaryField.getMesh().getMEDCouplingMesh();
 
 	//* Check that the boundary field is based on the correct boundary mesh */
-	if(!_FECalculation )
-	{
-		int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
-		MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
-		MEDCoupling::MEDCouplingUMesh* dirichletBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( dirichletBoundaryMesh.retn());
-		bool isBoundaryFieldCorrect = _mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(dirichletBoundaryUMesh, compType, arr);
-	}
-}
+	int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
+	MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
+	MEDCoupling::MEDCouplingUMesh* dirichletBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( dirichletBoundaryMesh.retn());
+	
+	if( !_mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(dirichletBoundaryUMesh, compType, arr) )
+	    throw CdmathException(" !!!!! StationaryDiffusionEquation::setDirichletBoundaryCondition : The boundary field is not based on the correct boundary mesh. Use mesh::getBoundaryMesh");
+};
 
 void 
 StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type){
@@ -1229,6 +1232,18 @@ StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, strin
             *_runLogFile<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
     }
 
-    _neumannBoundaryField = Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel);
-    
+	setNeumannBoundaryCondition( groupName, Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel) );    
 }
+
+void StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, Field bc_field){
+    _neumannBoundaryField = bc_field;
+   	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> neumannBoundaryMesh = _neumannBoundaryField.getMesh().getMEDCouplingMesh();
+
+	//* Check that the boundary field is based on the correct boundary mesh */
+	int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
+	MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
+	MEDCoupling::MEDCouplingUMesh* neumannBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( neumannBoundaryMesh.retn());
+
+	if( !_mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(neumannBoundaryUMesh, compType, arr) )
+	    throw CdmathException(" !!!!! StationaryDiffusionEquation::setNeumannBoundaryCondition : The boundary field is not based on the correct boundary mesh. Use mesh::getBoundaryMesh");
+};

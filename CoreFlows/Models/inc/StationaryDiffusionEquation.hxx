@@ -114,9 +114,7 @@ public :
              * \param [out] void
              *  */
     void setDirichletBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type);
-    void setDirichletBoundaryCondition(string groupName, Field bc_field){
-        _dirichletBoundaryField = bc_field;
-    };
+    void setDirichletBoundaryCondition(string groupName, Field bc_field);
 
     /** \fn setNeumannBoundaryCondition
              * \brief adds a new boundary condition of type Neumann
@@ -129,9 +127,7 @@ public :
              * \param [out] void
              *  */
     void setNeumannBoundaryCondition(string groupName, string fileName, string fieldName, int timeStepNumber, int order, int meshLevel, EntityType field_support_type);
-    void setNeumannBoundaryCondition(string groupName, Field bc_field){
-        _neumannBoundaryField = bc_field;
-    };
+    void setNeumannBoundaryCondition(string groupName, Field bc_field);
 
     void setConductivity(double conductivite){
         _conductivity=conductivite;
