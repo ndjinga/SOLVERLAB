@@ -962,6 +962,7 @@ void StationaryDiffusionEquation::save(){
                 }
         else
         {
+			/* Noeuds inconnus */
             int globalIndex;
             for(int i=0; i<_NunknownNodes; i++)
             {
@@ -973,13 +974,21 @@ void StationaryDiffusionEquation::save(){
                 _VV(globalIndex)=Ti;
             }
     
+			/* Noeuds connus (condition limite de Dirichlet */
             Node Ni;
             string nameOfGroup;
+			std::map<int,double>::iterator it;
             for(int i=0; i<_NdirichletNodes; i++)
             {
-                Ni=_mesh.getNode(_dirichletNodeIds[i]);
-                nameOfGroup = Ni.getGroupName();
-                _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
+				it=_dirichletBoundaryValues.find(_dirichletNodeIds[i]);
+				if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud
+					_VV(_dirichletNodeIds[i])=it->second;
+				else//Une valeur limite est associée au groupe frontière    
+				{
+	                Ni=_mesh.getNode(_dirichletNodeIds[i]);
+	                nameOfGroup = Ni.getGroupName();
+	                _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
+				}
             }
         }
     
