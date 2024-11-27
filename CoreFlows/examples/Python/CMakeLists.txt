@@ -187,6 +187,7 @@ CreatePythonTest(FiveEqsTwoFluid/FiveEqsTwoFluid_2DVidangeReservoir.py "Python f
 
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF.py "Python fe stationary diffusion 2D dirichlet unstructured triangles coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_Neumann.py "Python fe stationary diffusion 2D neumann unstructured triangles coreflows")
+CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_DelaunayTriangles.py "Python fe stationary diffusion 2D dirichlet structured equilateral triangles coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_EquilateralTriangles.py "Python fe stationary diffusion 2D dirichlet structured equilateral triangles coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DFV_StructuredTriangles.py "Python fv stationary diffusion 2D dirichlet structured triangles coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DFV_EquilateralTriangles.py "Python fv stationary diffusion 2D dirichlet structured equilateral triangles coreflows")
