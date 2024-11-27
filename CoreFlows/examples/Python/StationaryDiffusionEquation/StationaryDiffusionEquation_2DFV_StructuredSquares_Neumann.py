@@ -55,7 +55,7 @@ def StationaryDiffusionEquation_2DFV_StructuredSquares_Neumann():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
 	# name of result file
-	fileName = "StationnaryDiffusion_2DFV_StructuredSquares_Neumann";
+	fileName = "2DFV_StructuredSquares_Neumann";
 
 	# computation parameters
 	myProblem.setFileName(fileName);

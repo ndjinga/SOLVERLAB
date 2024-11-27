@@ -71,7 +71,7 @@ def StationaryDiffusionEquation_3DFV_StructuredTetrahedra():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
 	# name of result file
-	fileName = "StationaryDiffusion_3DFV_StructuredTetrahedra";
+	fileName = "3DFV_StructuredTetrahedra";
 
 	# computation parameters
 	myProblem.setFileName(fileName);

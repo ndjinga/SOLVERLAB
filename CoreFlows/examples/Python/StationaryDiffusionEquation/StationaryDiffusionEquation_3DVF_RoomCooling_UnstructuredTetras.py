@@ -37,7 +37,7 @@ def StationaryDiffusionEquation_3DVF_RoomCooling_UnstructuredTetras():
 	myProblem.setDirichletBoundaryCondition("Murs",Tmur)
 
     # name of result file
-	fileName = "StationnaryDiffusion_3DVF_UnstructuredTetras";
+	fileName = "3DVF_UnstructuredTetras";
 
     # computation parameters
 	myProblem.setFileName(fileName);

@@ -49,7 +49,7 @@ def StationaryDiffusionEquation_3DEF_BALL_Neumann():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
     # name of result file
-	fileName = "StationnaryDiffusion_3DEF_BALL_Neumann";
+	fileName = "3DEF_BALL_Neumann";
 
     # computation parameters
 	myProblem.setFileName(fileName);

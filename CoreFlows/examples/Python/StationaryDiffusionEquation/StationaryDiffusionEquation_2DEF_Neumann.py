@@ -56,7 +56,7 @@ def StationaryDiffusionEquation_2DEF_StructuredTriangles_Neumann():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
     # name of result file
-	fileName = "StationnaryDiffusion_2DEF_StructuredTriangles_Neumann";
+	fileName = "2DEF_StructuredTriangles_Neumann";
 
     # computation parameters
 	myProblem.setFileName(fileName);

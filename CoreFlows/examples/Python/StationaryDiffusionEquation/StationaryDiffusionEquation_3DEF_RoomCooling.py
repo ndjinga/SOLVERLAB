@@ -37,7 +37,7 @@ def StationaryDiffusionEquation_3DEF_RoomCooling():
 	myProblem.setDirichletBoundaryCondition("Murs",Tmur)
 
     # name of result file
-	fileName = "StationnaryDiffusion_3DEF_UnstructuredTetrahedra";
+	fileName = "3DEF_UnstructuredTetrahedra";
 
     # computation parameters
 	myProblem.setFileName(fileName);

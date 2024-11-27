@@ -37,7 +37,7 @@ def StationaryDiffusionEquation_3DVF_RoomCooling_StructuredCubes():
 	myProblem.setDirichletBoundaryCondition("Mur",Tmur)
 
     # name of result file
-	fileName = "StationnaryDiffusion_3DVF_StructuredCubes";
+	fileName = "3DVF_StructuredCubes";
 
     # computation parameters
 	myProblem.setFileName(fileName);

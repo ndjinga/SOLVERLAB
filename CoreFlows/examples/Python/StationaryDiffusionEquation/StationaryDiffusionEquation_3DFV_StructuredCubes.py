@@ -71,7 +71,7 @@ def StationaryDiffusionEquation_3DFV_StructuredCubes():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
 	# name of result file
-	fileName = "StationaryDiffusion_3DFV_StructuredCubes";
+	fileName = "3DFV_StructuredCubes";
 
 	# computation parameters
 	myProblem.setFileName(fileName);

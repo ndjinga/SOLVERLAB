@@ -18,7 +18,7 @@ def StationaryDiffusionEquation_2DFE_EquilateralTriangles_cosinus():
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Loading mesh " );
-	M=cm.Mesh('../resources/squareWithEquilateralTriangles20.med')#Delaunay triangular mesh
+	M=cm.Mesh('../resources/squareWithTriangles.med')#Delaunay triangular mesh
 	
 	print( "Loaded 2D equilateral triangle mesh with ", M.getNumberOfNodes(), " nodes")
 
@@ -50,7 +50,7 @@ def StationaryDiffusionEquation_2DFE_EquilateralTriangles_cosinus():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
 	# name of result file
-	fileName = "StationnaryDiffusion_2DFE_DelaunayTriangles";
+	fileName = "2DFE_DelaunayTriangles";
 
 	# computation parameters
 	myProblem.setFileName(fileName);

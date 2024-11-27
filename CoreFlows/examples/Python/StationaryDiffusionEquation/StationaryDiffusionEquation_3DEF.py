@@ -71,7 +71,7 @@ def StationaryDiffusionEquation_3DEF_StructuredTriangles():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
     # name of result file
-	fileName = "StationnaryDiffusion_3DEF_StructuredTriangles";
+	fileName = "3DEF_StructuredTriangles";
 
     # computation parameters
 	myProblem.setFileName(fileName);

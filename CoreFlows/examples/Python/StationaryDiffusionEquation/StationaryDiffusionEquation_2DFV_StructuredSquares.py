@@ -61,7 +61,7 @@ def StationaryDiffusionEquation_2DFV_StructuredSquares():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
 	# name of result file
-	fileName = "StationnaryDiffusion_2DFV_StructuredSquares";
+	fileName = "2DFV_StructuredSquares";
 
 	# computation parameters
 	myProblem.setFileName(fileName);

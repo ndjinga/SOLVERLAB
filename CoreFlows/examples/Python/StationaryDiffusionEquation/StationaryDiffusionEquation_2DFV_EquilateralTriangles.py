@@ -50,7 +50,7 @@ def StationaryDiffusionEquation_2DFV_EquilateralTriangles():
 	myProblem.setLinearSolver(cf.GMRES,cf.ILU);
 
 	# name of result file
-	fileName = "StationnaryDiffusion_2DFV_StructuredTriangles";
+	fileName = "2DFV_StructuredTriangles";
 
 	# computation parameters
 	myProblem.setFileName(fileName);
