@@ -962,7 +962,7 @@ void StationaryDiffusionEquation::save(){
                 }
         else
         {
-			/* Noeuds inconnus */
+        /* Noeuds inconnus */
             int globalIndex;
             for(int i=0; i<_NunknownNodes; i++)
             {
@@ -974,21 +974,21 @@ void StationaryDiffusionEquation::save(){
                 _VV(globalIndex)=Ti;
             }
     
-			/* Noeuds connus (condition limite de Dirichlet */
+            /* Noeuds connus (condition limite de Dirichlet */
             Node Ni;
             string nameOfGroup;
-			std::map<int,double>::iterator it;
+            std::map<int,double>::iterator it;
             for(int i=0; i<_NdirichletNodes; i++)
             {
-				it=_dirichletBoundaryValues.find(_dirichletNodeIds[i]);
-				if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud
-					_VV(_dirichletNodeIds[i])=it->second;
-				else//Une valeur limite est associée au groupe frontière    
-				{
-	                Ni=_mesh.getNode(_dirichletNodeIds[i]);
-	                nameOfGroup = Ni.getGroupName();
-	                _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
-				}
+                it=_dirichletBoundaryValues.find(_dirichletNodeIds[i]);
+                if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud
+                    _VV(_dirichletNodeIds[i])=it->second;
+                else//Une valeur limite est associée au groupe frontière    
+                {
+                    Ni=_mesh.getNode(_dirichletNodeIds[i]);
+                    nameOfGroup = Ni.getGroupName();
+                    _VV(_dirichletNodeIds[i])=_limitField[nameOfGroup].T;
+                }
             }
         }
     
@@ -1210,7 +1210,7 @@ StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, str
             *_runLogFile<<"Warning : StationaryDiffusionEquation::setDirichletBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
     }
 
-	setDirichletBoundaryCondition( groupName, Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel));
+    setDirichletBoundaryCondition( groupName, Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel));
 }
 
 void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName, Field bc_field){
@@ -1285,7 +1285,7 @@ StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, strin
             *_runLogFile<<"Warning : StationaryDiffusionEquation::setNeumannBoundaryCondition : finite volume simulation should not have boundary field on nodes!!! Change parameter field_support_type"<< endl;
     }
 
-	setNeumannBoundaryCondition( groupName, Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel) );    
+    setNeumannBoundaryCondition( groupName, Field(fileName, field_support_type, fieldName, timeStepNumber, order, meshLevel) );    
 }
 
 void StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, Field bc_field){
