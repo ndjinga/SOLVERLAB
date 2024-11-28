@@ -269,9 +269,9 @@ void StationaryDiffusionEquation::initialize()
     }
 
     //Checking whether at least one boundary conditions is imposed
-	if( _limitField.size()==0 && _neumannBoundaryValues.size()==0 && _dirichletBoundaryValues.size()==0 && _dirichletBoundaryField.getMEDCouplingField()==NULL && _neumannBoundaryField.getMEDCouplingField()==NULL )
-		throw CdmathException("No boundary condition imposed. Cannot initialize simulation.");
-		
+    if( _limitField.size()==0 && _neumannBoundaryValues.size()==0 && _dirichletBoundaryValues.size()==0 && _dirichletBoundaryField.getMEDCouplingField()==NULL && _neumannBoundaryField.getMEDCouplingField()==NULL )
+        throw CdmathException("No boundary condition imposed. Cannot initialize simulation.");
+        
     //Checking on all procs whether all boundary conditions are Neumann boundary condition ->singular system
     if(_limitField.size()!=0)//Boundary conditions set via LimitField structure
     {
@@ -363,6 +363,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         /* parameters for boundary treatment */
         vector< double > valuesBorder(_Ndim+1);
         Vector GradShapeFuncBorder(_Ndim+1);
+        std::map<int,double>::iterator it;
         
         for (int j=0; j<_Nmailles;j++)
         {
@@ -399,9 +400,9 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                             {
                                 if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[kdim])!=_dirichletNodeIds.end())
                                 {
-									std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
-									if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud
-										valuesBorder[kdim]=it->second;
+                                    it=_dirichletBoundaryValues.find(nodeIds[kdim]);
+                                    if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud
+                                        valuesBorder[kdim]=it->second;
                                     else//Une valeur limite est associée au groupe frontière    
                                         valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
                                 }
@@ -1228,45 +1229,45 @@ void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName
     }
     
     _dirichletBoundaryField = bc_field;
-   	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> dirichletBoundaryMesh = bc_field.getMesh().getMEDCouplingMesh();
+       MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> dirichletBoundaryMesh = bc_field.getMesh().getMEDCouplingMesh();
 
-	//* Check that the boundary field is based on the correct boundary mesh */
-	int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
-	MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
-	MEDCoupling::MEDCouplingUMesh* dirichletBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( dirichletBoundaryMesh.retn());
-	
-	if( !_mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(dirichletBoundaryUMesh, compType, arr) )
-	    throw CdmathException(" !!!!! StationaryDiffusionEquation::setDirichletBoundaryCondition : The boundary field is not based on the correct boundary mesh. Use mesh::getBoundaryMesh");
+    //* Check that the boundary field is based on the correct boundary mesh */
+    int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
+    MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
+    MEDCoupling::MEDCouplingUMesh* dirichletBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( dirichletBoundaryMesh.retn());
+    
+    if( !_mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(dirichletBoundaryUMesh, compType, arr) )
+        throw CdmathException(" !!!!! StationaryDiffusionEquation::setDirichletBoundaryCondition : The boundary field is not based on the correct boundary mesh. Use mesh::getBoundaryMesh");
 
-	int nBoundaryCells = dirichletBoundaryUMesh->getNumberOfCells();
-	std::map<int,double>::iterator it;
-	long int iCell_global;
+    int nBoundaryCells = dirichletBoundaryUMesh->getNumberOfCells();
+    std::map<int,double>::iterator it;
+    long int iCell_global;
     if(!_FECalculation)//Finite volume simulation
         for(int i=0; i<nBoundaryCells ; i++)
         {
-			arr->getTuple(i,&iCell_global);
-			it=_dirichletBoundaryValues.find(iCell_global);
-			if( it == _dirichletBoundaryValues.end() )//Aucune valeur limite est associée au noeud
-				it->second = bc_field[i];
-		}
-	long int inode, length;
+            arr->getTuple(i,&iCell_global);
+            it=_dirichletBoundaryValues.find(iCell_global);
+            if( it == _dirichletBoundaryValues.end() )//Aucune valeur limite est associée au noeud
+                it->second = bc_field[i];
+        }
+    long int inode, length;
     if(_FECalculation)
     {
-		const MEDCoupling::DataArrayIdType *nodal  = dirichletBoundaryUMesh->getNodalConnectivity() ;
-		const MEDCoupling::DataArrayIdType *nodalI = dirichletBoundaryUMesh->getNodalConnectivityIndex() ;
+        const MEDCoupling::DataArrayIdType *nodal  = dirichletBoundaryUMesh->getNodalConnectivity() ;
+        const MEDCoupling::DataArrayIdType *nodalI = dirichletBoundaryUMesh->getNodalConnectivityIndex() ;
 
-		/*longueur du tableau de connectivité */
-		nodalI->getTuple(nBoundaryCells,&length);
+        /*longueur du tableau de connectivité */
+        nodalI->getTuple(nBoundaryCells,&length);
         for(int i=0; i<length; i++)
         {
-			nodal->getTuple(i,&inode);
-			it=_neumannBoundaryValues.find(inode);
-			if( it == _neumannBoundaryValues.end() )//Aucune valeur limite est associée au noeud
-				it->second = bc_field[i];  
-		}
-		nodal->decrRef();
-		nodalI->decrRef();
-	}
+            nodal->getTuple(i,&inode);
+            it=_neumannBoundaryValues.find(inode);
+            if( it == _neumannBoundaryValues.end() )//Aucune valeur limite est associée au noeud
+                it->second = bc_field[i];  
+        }
+        nodal->decrRef();
+        nodalI->decrRef();
+    }
     arr->decrRef();
 };
 
@@ -1290,13 +1291,13 @@ StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, strin
 
 void StationaryDiffusionEquation::setNeumannBoundaryCondition(string groupName, Field bc_field){
     _neumannBoundaryField = bc_field;
-   	MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> neumannBoundaryMesh = _neumannBoundaryField.getMesh().getMEDCouplingMesh();
+       MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> neumannBoundaryMesh = _neumannBoundaryField.getMesh().getMEDCouplingMesh();
 
-	//* Check that the boundary field is based on the correct boundary mesh */
-	int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
-	MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
-	MEDCoupling::MEDCouplingUMesh* neumannBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( neumannBoundaryMesh.retn());
+    //* Check that the boundary field is based on the correct boundary mesh */
+    int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
+    MEDCoupling::DataArrayIdType * arr;//DataArrayIdType to contain the correspondence between cells of the two meshes
+    MEDCoupling::MEDCouplingUMesh* neumannBoundaryUMesh = dynamic_cast<MEDCoupling::MEDCouplingUMesh*> ( neumannBoundaryMesh.retn());
 
-	if( !_mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(neumannBoundaryUMesh, compType, arr) )
-	    throw CdmathException(" !!!!! StationaryDiffusionEquation::setNeumannBoundaryCondition : The boundary field is not based on the correct boundary mesh. Use mesh::getBoundaryMesh");
+    if( !_mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(neumannBoundaryUMesh, compType, arr) )
+        throw CdmathException(" !!!!! StationaryDiffusionEquation::setNeumannBoundaryCondition : The boundary field is not based on the correct boundary mesh. Use mesh::getBoundaryMesh");
 };
