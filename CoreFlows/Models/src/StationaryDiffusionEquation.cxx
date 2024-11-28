@@ -1229,7 +1229,7 @@ void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName
     }
     
     _dirichletBoundaryField = bc_field;
-       MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> dirichletBoundaryMesh = bc_field.getMesh().getMEDCouplingMesh();
+    MEDCoupling::MCAuto<MEDCoupling::MEDCouplingMesh> dirichletBoundaryMesh = bc_field.getMesh().getMEDCouplingMesh();
 
     //* Check that the boundary field is based on the correct boundary mesh */
     int compType=2;//This is the weakest comparison policy for medcoupling meshes. It can be used by users not sensitive to cell orientation
@@ -1239,7 +1239,7 @@ void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName
     if( !_mesh.getBoundaryMEDCouplingMesh()->areCellsIncludedIn(dirichletBoundaryUMesh, compType, arr) )
         throw CdmathException(" !!!!! StationaryDiffusionEquation::setDirichletBoundaryCondition : The boundary field is not based on the correct boundary mesh. Use mesh::getBoundaryMesh");
 
-    int nBoundaryCells = dirichletBoundaryUMesh->getNumberOfCells();
+    int nBoundaryCells = dirichletBoundaryUMesh->getNumberOfCells();//Boundary cells that support the boundary field (subpart of the total boundary)
     std::map<int,double>::iterator it;
     long int iCell_global;
     if(!_FECalculation)//Finite volume simulation
@@ -1250,23 +1250,18 @@ void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName
             if( it == _dirichletBoundaryValues.end() )//Aucune valeur limite est associée au noeud
                 it->second = bc_field[i];
         }
-    long int inode, length;
+    long int inode_global, length;
     if(_FECalculation)
     {
-        const MEDCoupling::DataArrayIdType *nodal  = dirichletBoundaryUMesh->getNodalConnectivity() ;
-        const MEDCoupling::DataArrayIdType *nodalI = dirichletBoundaryUMesh->getNodalConnectivityIndex() ;
-
-        /*longueur du tableau de connectivité */
-        nodalI->getTuple(nBoundaryCells,&length);
-        for(int i=0; i<length; i++)
+        const MEDCoupling::DataArrayIdType *globalNodeId  = dirichletBoundaryUMesh->computeFetchedNodeIds();
+        for(int i=0; i<bc_field.getNumberOfElements(); i++)
         {
-            nodal->getTuple(i,&inode);
-            it=_neumannBoundaryValues.find(inode);
-            if( it == _neumannBoundaryValues.end() )//Aucune valeur limite est associée au noeud
+            globalNodeId->getTuple(i,&inode_global);
+            it=_dirichletBoundaryValues.find(inode_global);
+            if( it != _dirichletBoundaryValues.end() )//Le noeud inode n'a pas encore été rencontré
                 it->second = bc_field[i];  
         }
-        nodal->decrRef();
-        nodalI->decrRef();
+        globalNodeId->decrRef();
     }
     arr->decrRef();
 };
