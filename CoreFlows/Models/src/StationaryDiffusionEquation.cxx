@@ -1247,7 +1247,7 @@ void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName
         {
             arr->getTuple(i,&iCell_global);
             it=_dirichletBoundaryValues.find(iCell_global);
-            if( it == _dirichletBoundaryValues.end() )//Aucune valeur limite est associée au noeud
+            if( it == _dirichletBoundaryValues.end() )//Aucune valeur limite n'est associée au noeud
                 it->second = bc_field[i];
         }
     long int inode_global, length;
@@ -1258,7 +1258,7 @@ void StationaryDiffusionEquation::setDirichletBoundaryCondition(string groupName
         {
             globalNodeId->getTuple(i,&inode_global);
             it=_dirichletBoundaryValues.find(inode_global);
-            if( it != _dirichletBoundaryValues.end() )//Le noeud inode n'a pas encore été rencontré
+            if( it == _dirichletBoundaryValues.end() )//Aucune valeur limite n'est associée au noeud
                 it->second = bc_field[i];  
         }
         globalNodeId->decrRef();
