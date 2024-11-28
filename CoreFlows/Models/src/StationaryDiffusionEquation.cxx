@@ -347,7 +347,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         {
         Cell Cj;
         string nameOfGroup;
-        double coeff;
+        double coeff;//Diffusion coefficients between nodes i and j
         
         Matrix M(_Ndim+1,_Ndim+1);//cell geometry matrix
         std::vector< Vector > GradShapeFuncs(_Ndim+1);//shape functions of cell nodes
@@ -398,16 +398,16 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                             dirichletCell_treated=true;
                             for (int kdim=0; kdim<_Ndim+1;kdim++)
                             {
-                                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[kdim])!=_dirichletNodeIds.end())
+                                if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[kdim])!=_dirichletNodeIds.end())//node kdim is a Dirichlet BC node
                                 {
                                     it=_dirichletBoundaryValues.find(nodeIds[kdim]);
-                                    if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud
+                                    if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud//BC set via setDirichletValues
                                         valuesBorder[kdim]=it->second;
-                                    else//Une valeur limite est associée au groupe frontière    
+                                    else//Une valeur limite est associée au groupe frontière//BC set via setDirichletBoundaryCondition    
                                         valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
                                 }
                                 else
-                                    valuesBorder[kdim]=0;                            
+                                    valuesBorder[kdim]=0;                      
                             }
                             GradShapeFuncBorder=DiffusionEquation::gradientNodal(M,valuesBorder)/DiffusionEquation::fact(_Ndim);
                             coeff =-1.*(_DiffusionTensor*GradShapeFuncBorder)*GradShapeFuncs[idim]/Cj.getMeasure();

@@ -100,8 +100,6 @@ DiffusionEquation::DiffusionEquation(int dim, bool FECalculation,double rho,doub
     _NboundaryNodes=0;
     _NdirichletNodes=0;
     _NunknownNodes=0;
-    _dirichletValuesSet=false;   
-    _neumannValuesSet=false;   
 
     /* Physical parameters */
     _conductivity=lambda;
@@ -328,7 +326,7 @@ double DiffusionEquation::computeDiffusionMatrix(bool & stop)
 double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
 
     if(_mpi_rank == 0)
-    {
+        {
         Cell Cj;
         string nameOfGroup;
         double coeff;//Diffusion coefficients between nodes i and j
@@ -347,6 +345,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         /* parameters for boundary treatment */
         vector< double > valuesBorder(_Ndim+1);
         Vector GradShapeFuncBorder(_Ndim+1);
+        std::map<int,double>::iterator it;
         
         for (int j=0; j<_Nmailles;j++)
         {
@@ -383,16 +382,11 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                             {
                                 if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[kdim])!=_dirichletNodeIds.end())//node kdim is a Dirichlet BC node
                                 {
-                                    if( _dirichletValuesSet )//BC set via setDirichletValues
-                                    {
-                                        std::map<int,double>::iterator it=_dirichletBoundaryValues.find(nodeIds[kdim]);
-                                        if( it != _dirichletBoundaryValues.end() )
-                                            valuesBorder[kdim]=_dirichletBoundaryValues[it->second]; 
-                                        else    
-                                            throw CdmathException("setDirichletValues has not given all Dirichlet values");
-                                    }
-                                    else//BC set via setDirichletBoundaryCondition
-                                            valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
+                                    it=_dirichletBoundaryValues.find(nodeIds[kdim]);
+                                    if( it != _dirichletBoundaryValues.end() )//Une valeur limite est associée au noeud//BC set via setDirichletValues
+                                        valuesBorder[kdim]=it->second;
+                                    else//Une valeur limite est associée au groupe frontière//BC set via setDirichletBoundaryCondition    
+                                        valuesBorder[kdim]=_limitField[_mesh.getNode(nodeIds[kdim]).getGroupName()].T;
                                 }
                                 else
                                     valuesBorder[kdim]=0;                      
@@ -419,9 +413,9 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),Fi.getNodeId(j))==_dirichletNodeIds.end())//node j is a Neumann BC node (not a Dirichlet BC node)
                     {
                         j_int=unknownNodeIndex(Fi.getNodeId(j), _dirichletNodeIds);//indice du noeud j en tant que noeud inconnu
-                        if( _neumannValuesSet )
+                        if( _neumannBoundaryValues.size()!=0 )//Une valeur limite est associée à chaque noeud frontière
                             coeff =Fi.getMeasure()/_Ndim*_neumannBoundaryValues[Fi.getNodeId(j)];
-                        else
+                        else//Une valeur limite est associée à chaque groupe frontière
                             coeff =Fi.getMeasure()/_Ndim*_limitField[_mesh.getNode(Fi.getNodeId(j)).getGroupName()].normalFlux;
                         VecSetValue(_b0, j_int, coeff, ADD_VALUES);
                     }
@@ -893,14 +887,12 @@ void DiffusionEquation::terminate(){
 void 
 DiffusionEquation::setDirichletValues(map< int, double> dirichletBoundaryValues)
 {
-    _dirichletValuesSet=true;
     _dirichletBoundaryValues=dirichletBoundaryValues;
 }
 
 void 
 DiffusionEquation::setNeumannValues(map< int, double> neumannBoundaryValues)
 {
-    _neumannValuesSet=true;
     _neumannBoundaryValues=neumannBoundaryValues;
 }
 
