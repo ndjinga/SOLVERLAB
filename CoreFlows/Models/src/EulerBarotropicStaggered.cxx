@@ -467,8 +467,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							
 								psif = 0;
 								for (int idim=0; idim< _Ndim ; idim++)
-									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]/K.getNumberOfFaces();
-							       
+									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]/26.0 ; //TODO K.getNumberOfFaces(); 
+							     
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -487,7 +487,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								} 
 								/* rhoL =1.0; // Découplage advection 
 								rhoR =1.0;  */
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0   - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) )* psif   ; 
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) )* psif   ; //TODO : ajouter  
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
@@ -510,13 +510,23 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									}
 								}
 							}
+							
+							ConvectiveFlux *= epsilon/2.0 ; 
+							std::map<int, std::vector<double>  >::iterator it_n_sigma_j = _vec_sigma.find(j);
+							std::map<int, std::vector<double>  >::iterator  it_n_sigma_jepsilon = _vec_sigma.find(jepsilon);	
 
-							ConvectiveFlux *= epsilon/2.0  ; 
+							double cdot = 0;
+							for (int idim = 0; idim < _Ndim; ++idim)
+								cdot += it_n_sigma_j->second[idim] * it_n_sigma_jepsilon->second[idim]; 
+							//cout << "n_sigma_j . n_sigma_jepsilon = " << cdot << " F_sigma = " << j << " F_jepsilon = "<< jepsilon <<endl;
+
+							double projection = (_vec_sigma[j][1] =! 0) ? 0 : 1;
+							double orientedConvectiveFlux = ConvectiveFlux* projection  ;//TODO supprimer projection 
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
-							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &ConvectiveFlux, ADD_VALUES ); 
+							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &orientedConvectiveFlux, ADD_VALUES ); 
 							
 							absConvectiveFlux =  abs(ConvectiveFlux) ; 
-							MinusabsConvectiveFlux = -abs(ConvectiveFlux);
+							MinusabsConvectiveFlux = -abs(ConvectiveFlux)* projection  ;//TODO supprimer projection 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
 						}
@@ -546,23 +556,26 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
 				}	
-			VecGetValues(_primitiveVars,1,&IndexFace	,&u);
-			Cell Cint = _mesh.getCell(Fj.getCellsId()[0]);
-			double *vec =new double [_Ndim];
-			for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-				if (j == Cint.getFacesId()[l]){
-					for (int idim = 0; idim < _Ndim; ++idim)
-						vec[idim] = Cint.getNormalVector(l,idim);
+			if (_nbTimeStep >0){
+				VecGetValues(_primitiveVars,1,&IndexFace	,&u);
+				Cell Cint = _mesh.getCell(Fj.getCellsId()[0]);
+				double *vec =new double [_Ndim];
+				for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+					if (j == Cint.getFacesId()[l]){
+						for (int idim = 0; idim < _Ndim; ++idim)
+							vec[idim] = Cint.getNormalVector(l,idim);
+					}
 				}
-			}
-			if (vec[0] == 0){
-				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
-					cout << "vertical PERIODIC face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
-				else
-					cout << "vertical  face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
+				if (vec[0] == 0){
+					//cout << "timestep ="<< _nbTimeStep  <<endl;
+					if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
+						cout << "vertical PERIODIC face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
+					else
+						cout << "vertical  face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
 
-			}
-			delete []vec;
+				}
+				delete []vec;
+				}
 			}
 			
 		}
