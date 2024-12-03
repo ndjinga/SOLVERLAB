@@ -8,29 +8,29 @@ double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
 		return 1;
 	else
-		return 5;
+		return 1;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
 	if (z < discontinuity){
 		if (Direction == 'x'){
-			vec[0] = 0;
+			vec[0] = 1;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 0;
+			vec[1] = 1;
 		}
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = 0;
+			vec[0] = -1;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 0;
+			vec[1] = -1;
 		}
 	}
 	return vec;
@@ -53,19 +53,22 @@ int main(int argc, char** argv)
 		cout << "Construction of a cartesian mesh" << endl;
 		double inf = 0.0;
 		double sup = 1.0;
+		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=4;
-			ny=4;
+			nx=200;
+			ny=3;
+			discontinuity = (inf + sup)/2.0 +  0.75/nx;
+			
 		}
 		else if (Direction == 'y'){
 			nx=3;
 			ny=80;
+			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 		}
 
 		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
-		double discontinuity = (inf + sup)/2.0 +  0.75/nx;
-		cout << "discontinuity = " << discontinuity <<endl;
+		
 		double a = 1.0;
 		double gamma = 2.0;
 		EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
@@ -86,7 +89,7 @@ int main(int argc, char** argv)
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);
 			std::vector<int> idCells = Fj.getCellsId();
-			std::vector<double> vec_normal_sigma(2) ; //TODO = 0!!
+			std::vector<double> vec_normal_sigma(2) ; 
 			Cell Ctemp1 = M.getCell(idCells[0]);
 			for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 				if (j == Ctemp1.getFacesId()[l]){
@@ -127,13 +130,10 @@ int main(int argc, char** argv)
 				myProblem.setOrientation(j,vec_normal_sigma);
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 					myProblem.setSteggerBoundIndex(j);	
-				if (Direction == 'x'){
+				if (Direction == 'x')
 					coordFace = Fj.x();
-					
-				}
-				else if (Direction == 'y'){
-					coordFace = Fj.y() ;
-				}							
+				else if (Direction == 'y')
+					coordFace = Fj.y() ;						
 				std::vector<double > BoundaryVel = initialVelocity(coordFace,discontinuity, Direction);
 				double dotprod = 0;
 				for (int k = 0 ; k <BoundaryVel.size() ; k++)
@@ -155,11 +155,11 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 3;
-		int freqSave = 1;
-		double cfl = 0.95;
-		double maxTime = 0.07;
-		double precision = 1e-9;
+		unsigned MaxNbOfTimeStep = 1000000;
+		int freqSave = 10;
+		double cfl = 0.99;
+		double maxTime = 0.1;
+		double precision = 1e-8;
 
 		myProblem.setCFL(cfl);
 		myProblem.setPrecision(precision);

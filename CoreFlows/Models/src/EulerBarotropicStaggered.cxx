@@ -359,7 +359,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	if (_timeScheme == Explicit ){ 
 		if (_mpi_rank ==0){
 			// Assembly of matrices 
-			for (int j=0; j<_Nfaces;j++){
+			for (int j=0; j<_Nfaces;j++){		
 				Face Fj = _mesh.getFace(j);
 				std::vector< int > idCells = Fj.getCellsId();
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);
@@ -407,7 +407,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 					
 					// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
-					PetscInt jepsilon, L, I;
+					PetscInt jepsilon, L, I, jopposed;
 					int nbDualFaces ;
 					double orien, psif;
 					// Loop on half diamond cells
@@ -467,7 +467,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							
 								psif = 0;
 								for (int idim=0; idim< _Ndim ; idim++)
-									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]/26.0 ; //TODO K.getNumberOfFaces(); 
+									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]; //K.getNumberOfFaces();
 							     
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
@@ -487,10 +487,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								} 
 								/* rhoL =1.0; // Découplage advection 
 								rhoR =1.0;  */
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  - (abs(u) +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) )* psif   ; //TODO : ajouter  
+								//cout << " c = " << _c << "rho_L - rho_R  ="<< rhoR-rhoL <<" c rhoR-rhoL = "<<(  +_c )* (rhoR - rhoL)/2.0 << " (abs(u)  +_c )* (rhoR - rhoL)/2.0 = "<<(abs(u)  +_c )* (rhoR - rhoL)/2.0 <<endl;
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  -(abs(u)  +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) )* psif   ; //TODO : ajouter   
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
-								if (_Ndim == 1 && K.getFacesId()[f] != j){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
+								
+								int PhysicalIndexOfFace = ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei]    ? _FacePeriodicMap.find(j)->second  :  j; 
+								if (_Ndim == 1 && K.getFacesId()[f] != PhysicalIndexOfFace){ // -> Search for the unique face that is not sigma that is in the boundary of K-> jepsilon will be the index of this cell
 									while (it->second != K.getFacesId()[f] &&  it != _FacePeriodicMap.end() )
 										it++;
 									if (it == _FacePeriodicMap.end())
@@ -498,9 +501,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									else 
 										jepsilon = it->first;
 								}
-								if (_Ndim == 2){ // -> Search for the unique face that is not sigma that has x_sigma has an extremity -> jepsilon will be the index of this cell
+								if (_Ndim == 2){ 
 									std::vector< int > idNodes = Facef.getNodesId(); 
-									if ( std::find(idNodes.begin(), idNodes.end(), Fj.getNodesId()[Nbepsilon])!=idNodes.end() && K.getFacesId()[f] != j){
+									if ( std::find(idNodes.begin(), idNodes.end(), NodesFj[Nbepsilon])!=idNodes.end() && K.getFacesId()[f] != PhysicalIndexOfFace){ // -> Search for the unique face that is not sigma that has x_sigma has an extremity -> jepsilon will be the index of this cell
 										while (it->second != K.getFacesId()[f] &&  it != _FacePeriodicMap.end() )
 											it++;
 										if (it == _FacePeriodicMap.end())
@@ -508,27 +511,34 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 										else 
 											jepsilon = it->first;
 									}
+									if ( std::find(idNodes.begin(), idNodes.end(), NodesFj[0])==idNodes.end() && std::find(idNodes.begin(), idNodes.end(), NodesFj[1])==idNodes.end()){ // -> Search for face facing j
+											jopposed =  K.getFacesId()[f];
+									}
 								}
 							}
-							
-							ConvectiveFlux *= epsilon/2.0 ; 
 							std::map<int, std::vector<double>  >::iterator it_n_sigma_j = _vec_sigma.find(j);
 							std::map<int, std::vector<double>  >::iterator  it_n_sigma_jepsilon = _vec_sigma.find(jepsilon);	
-
 							double cdot = 0;
-							for (int idim = 0; idim < _Ndim; ++idim)
+							for (int idim = 0; idim < _Ndim; ++idim){
 								cdot += it_n_sigma_j->second[idim] * it_n_sigma_jepsilon->second[idim]; 
-							//cout << "n_sigma_j . n_sigma_jepsilon = " << cdot << " F_sigma = " << j << " F_jepsilon = "<< jepsilon <<endl;
+							}
+							//cout <<"F_j =" << j <<", n_sigma = ("<<   it_n_sigma_j->second[0] << ", "<< it_n_sigma_j->second[1] <<"), F_jepsilon =" << jepsilon <<", n_sigma_epsilon =("<<   it_n_sigma_jepsilon->second[0] << ", "<<  it_n_sigma_jepsilon->second[1] <<" ) so n_sigma_j . n_sigma_jepsilon = " << cdot  << " opposed = "<< jopposed<<endl;
 
-							double projection = (_vec_sigma[j][1] =! 0) ? 0 : 1;
-							double orientedConvectiveFlux = ConvectiveFlux* projection  ;//TODO supprimer projection 
+							ConvectiveFlux *= epsilon/2.0  ; 
+							double orientedConvectiveFlux = ConvectiveFlux *cdot  ;
 							MatSetValues(_Conv, 1, &j, 1, &j, &ConvectiveFlux, ADD_VALUES );  		
 							MatSetValues(_Conv, 1, &j, 1, &jepsilon, &orientedConvectiveFlux, ADD_VALUES ); 
 							
-							absConvectiveFlux =  abs(ConvectiveFlux) ; 
-							MinusabsConvectiveFlux = -abs(ConvectiveFlux)* projection  ;//TODO supprimer projection 
+							absConvectiveFlux =  abs(ConvectiveFlux)* cdot   ; 
+							MinusabsConvectiveFlux = -abs(ConvectiveFlux);
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &j, &MinusabsConvectiveFlux, ADD_VALUES ); 
 							MatSetValues(_LaplacianVelocity, 1, &j, 1, &jepsilon, &absConvectiveFlux, ADD_VALUES ); 
+							if (_Ndim ==2){
+								MatSetValues(_Conv, 1, &j, 1, &jopposed, &ConvectiveFlux, ADD_VALUES ); 
+								absConvectiveFlux =  abs(ConvectiveFlux);
+								MatSetValues(_LaplacianVelocity, 1, &j, 1, &jopposed, &absConvectiveFlux, ADD_VALUES ); 
+							}
+							
 						}
 					} 
 				}
@@ -556,26 +566,26 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
 				}	
-			if (_nbTimeStep >0){
-				VecGetValues(_primitiveVars,1,&IndexFace	,&u);
-				Cell Cint = _mesh.getCell(Fj.getCellsId()[0]);
-				double *vec =new double [_Ndim];
-				for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-					if (j == Cint.getFacesId()[l]){
-						for (int idim = 0; idim < _Ndim; ++idim)
-							vec[idim] = Cint.getNormalVector(l,idim);
+			/* 	if (_nbTimeStep >0){
+					VecGetValues(_primitiveVars,1,&IndexFace	,&u);
+					Cell Cint = _mesh.getCell(Fj.getCellsId()[0]);
+					double *vec =new double [_Ndim];
+					for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+						if (j == Cint.getFacesId()[l]){
+							for (int idim = 0; idim < _Ndim; ++idim)
+								vec[idim] = Cint.getNormalVector(l,idim);
+						}
 					}
-				}
-				if (vec[0] == 0){
-					//cout << "timestep ="<< _nbTimeStep  <<endl;
-					if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
-						cout << "vertical PERIODIC face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
-					else
-						cout << "vertical  face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
+					if (vec[1] == 0 && abs(u)>10e-14 ){
+						//cout << "timestep ="<< _nbTimeStep  <<endl;
+						if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
+							cout << "horizontal PERIODIC face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
+						else
+							cout << "horizontal  face "<< j<<" Fj.X =(" << Fj.x() << ","<< Fj.y()<<"),  u = "<< u	 <<endl;
 
-				}
-				delete []vec;
-				}
+					}
+					delete []vec;
+				} */
 			}
 			
 		}
@@ -671,7 +681,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	if (_nbTimeStep == 0)
 		ComputeMinCellMaxPerim(); 
 	double numax = _Ndim*2;	//TODO triangles ?
-	double dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) * numax ) ;
+	double dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) * 2 ) ;
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);
 	

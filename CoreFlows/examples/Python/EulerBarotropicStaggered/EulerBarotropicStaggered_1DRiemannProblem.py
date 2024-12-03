@@ -30,7 +30,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 	print("Building initial data " ); 
 	initialDensity_Left = 1
-	initialDensity_Right = 4
+	initialDensity_Right = 5
 
 	initialVelocity_Left = 0
 	initialVelocity_Right = 0
