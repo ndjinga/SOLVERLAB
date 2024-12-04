@@ -467,7 +467,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							
 								psif = 0;
 								for (int idim=0; idim< _Ndim ; idim++)
-									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]; //K.getNumberOfFaces();
+									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]/K.getNumberOfFaces();
 							     
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
@@ -488,7 +488,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								/* rhoL =1.0; // Découplage advection 
 								rhoR =1.0;  */
 								//cout << " c = " << _c << "rho_L - rho_R  ="<< rhoR-rhoL <<" c rhoR-rhoL = "<<(  +_c )* (rhoR - rhoL)/2.0 << " (abs(u)  +_c )* (rhoR - rhoL)/2.0 = "<<(abs(u)  +_c )* (rhoR - rhoL)/2.0 <<endl;
-								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  -(abs(u)  +_c )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) )* psif   ; //TODO : ajouter   
+								ConvectiveFlux += ( u *(rhoL + rhoR)/2.0  -(abs(u)  )* (rhoR - rhoL)/2.0 * getOrientation(idFaces[f], K) )* psif   ; //TODO : ajouter   +_c 
 								
 								std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 								

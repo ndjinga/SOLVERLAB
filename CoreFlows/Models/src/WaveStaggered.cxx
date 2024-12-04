@@ -929,12 +929,11 @@ void WaveStaggered::save(){
 				std::vector< int > idCells = Fj.getCellsId();
 				Cell Ctemp1 = _mesh.getCell(idCells[0]);
 				double orien1 = getOrientation(i,Ctemp1);
-				
 				std::vector<double> M1(_Ndim), M2(_Ndim);
 				Point xK = Ctemp1.getBarryCenter();
 				Point xsigma = Fj.getBarryCenter();
-				double fac =1.0;
 
+				/* double fac =1.0
 				if (_Ndim ==2){
 					if (Ctemp1.getNumberOfFaces() == _Ndim*2)
 						fac = 1;
@@ -943,29 +942,32 @@ void WaveStaggered::save(){
 				}
 				else if (_Ndim ==1 && j==0){
 					fac = -1;
-				}
+				} */
 
-				M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+				M1[0] = orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());
 				if (_Ndim >1)
-					M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+					M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
 
 				if (Fj.getNumberOfCells() == 2){
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);
+					double orien2 = getOrientation(i,Ctemp2);
 					Point xK = Ctemp2.getBarryCenter();
-					if (_Ndim ==2){
+
+					/* if (_Ndim ==2){
 						if (Ctemp2.getNumberOfFaces() == _Ndim*2)
 							fac = 1;
 						else if (Ctemp2.getNumberOfFaces() ==  _Ndim + 1)
 							fac = -1;
 					}
+					fac = orien1; */
 
-					M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
+					M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
 					if (_Ndim >1)
-						M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
+						M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
 				
 					for (int k=0; k< _Ndim; k++){
 						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
-						_Velocity_at_Cells(idCells[1], k) -= _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
+						_Velocity_at_Cells(idCells[1], k) += _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
 					}
 					_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
 					_DivVelocity( idCells[1]) -= orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp2.getMeasure());
