@@ -63,6 +63,8 @@ public :
     bool iterateTimeStep(bool &converged);
     void testConservation();
      std::vector<double>  getTimeEvol();
+    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
+    std::vector<double> ReferenceBasisFunctionRaviartThomas(int i, Point Xhat);
     
 protected :
  /** Fluid equation of state **/

@@ -467,8 +467,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							
 								psif = 0;
 								for (int idim=0; idim< _Ndim ; idim++)
-									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]/K.getNumberOfFaces();
-							     
+									psif += _vec_sigma[idFaces[f]][idim] * normal_epsilon[idim]/2.0 ; //K.getNumberOfFaces();
+
 								if (IsfInterior){												
 									std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 									if ( it != _FacePeriodicMap.end()  ){ 
@@ -688,8 +688,79 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	return dt; 
 }
 
-void EulerBarotropicStaggered::testConservation()
-{
+std::vector<double> EulerBarotropicStaggered::ReferenceBasisFunctionRaviartThomas(int i, Point Xhat){
+	std::vector<double> Psihat(2);
+	if (_Ndim ==2){
+		if (i ==0){
+			Psihat[0] = 0;
+			Psihat[1] = -(Xhat.y() - 1)/2.0;
+		}
+		else if (i ==1){
+			Psihat[0] = (Xhat.x() + 1)/2.0;;
+			Psihat[1] = 0;
+		}
+		else if (i ==2){
+			Psihat[0] = 0;
+			Psihat[1] = (Xhat.y() + 1)/2.0;
+		}
+		else if (i ==3){
+			Psihat[0]=  -(Xhat.x() - 1)/2.0;;
+			Psihat[1] = 0;
+		}
+	}
+	return Psihat;
+}
+
+std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X){
+	std::vector<double> PhysicalPsif_in_X(2);
+	std::vector<int> idNodesofCellK = K.getNodesId();
+	std::vector<int> idNodesofFacef = Facef.getNodesId();
+	std::vector<Node> K_Nodes;
+	for (int i=0; i < idNodesofCellK.size(); i++)
+		K_Nodes.push_back(_mesh.getNode(idNodesofCellK[i]) );
+
+	Point Xhat = X ; //xToxhat(K, X); //TODO
+	double JacobianTransfor_K[_Ndim][_Ndim]; //TODO are Nodes of K ordered ?
+	if (_Ndim ==2){
+		//first column : should only depend on Xhat_x
+		JacobianTransfor_K[0][0] = 1/4.0 *( (K_Nodes[0].x()  - K_Nodes[1].x())*(1 - Xhat.y()) + (K_Nodes[2].x()  - K_Nodes[3].x())*(1 + Xhat.y())  );
+		JacobianTransfor_K[1][0] = 1/4.0 *( (K_Nodes[0].y()  - K_Nodes[1].y())*(1 - Xhat.y()) + (K_Nodes[2].y()  - K_Nodes[3].y())*(1 + Xhat.y())  );
+		//second column: should only depend on Xhat_y
+		JacobianTransfor_K[0][1] = 1/4.0 *( (K_Nodes[0].x()  - K_Nodes[3].x())*(1 - Xhat.x()) + (K_Nodes[2].x()  - K_Nodes[1].x())*(1 + Xhat.x())  );
+		JacobianTransfor_K[1][1] = 1/4.0 *( (K_Nodes[0].y()  - K_Nodes[3].y())*(1 - Xhat.x()) + (K_Nodes[2].y()  - K_Nodes[1].y())*(1 + Xhat.x())  );
+
+		double absJacobian = abs( JacobianTransfor_K[0][0] * JacobianTransfor_K[1][1] - JacobianTransfor_K[0][1]* JacobianTransfor_K[1][0] );
+
+		for (int  j = 0; j < K.getNumberOfFaces(); j ++){
+			Point Xhat_f = X; // xToxhat(K,  Facef.getBarryCenter()); //TODO
+			std::vector<double> ReferencePsij = ReferenceBasisFunctionRaviartThomas(j, Xhat_f);
+			std::vector<double> PhysicalPsij(2);
+			for (int k =0; k < _Ndim ; k++){
+				PhysicalPsij[k] = 0;
+				for (int l =0; l < _Ndim ; l++)
+					PhysicalPsij[k] += JacobianTransfor_K[k][l] * ReferencePsij[l]/absJacobian;
+			}
+			double cdot =0;
+			std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(f);
+			for (int e=0; e <_Ndim; e++)
+				cdot += PhysicalPsij[e] * it->second[e] * Facef.getMeasure(); 
+
+			if (abs(cdot) ==1){
+				std::vector<double> ReferencePsif_in_X = ReferenceBasisFunctionRaviartThomas(j, Xhat );
+				for (int k =0; k < _Ndim ; k++){
+					PhysicalPsif_in_X[k] = 0;
+					for (int l =0; l < _Ndim ; l++)
+						PhysicalPsif_in_X[k] += JacobianTransfor_K[k][l] * ReferencePsij[l]/absJacobian * cdot;
+				}
+			}
+		}
+	}
+
+	return PhysicalPsif_in_X;
+
+}
+
+void EulerBarotropicStaggered::testConservation(){
 	double SUM, DELTArho, DELTAq, x, InvD_sigma;
 	SUM = 0;
 	DELTArho = 0;
