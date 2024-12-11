@@ -71,25 +71,26 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	PetscBarrier(NULL);
 
-//####	Decompose the matrix A_input into 4 blocks M, G, D, C
+//####	Decompose the matrix A_input into 25 blocks and extract the 4 blocks M, G, D, C
 	Mat M, G, D, C;
 	PetscInt nrows, ncolumns;//Total number of rows and columns of A_input
 	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
-	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n = n_u+ n_p
+	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n=matrix size n >= n_u+ n_p
 	IS is_U,is_P;
 
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
-	n=n_u+n_p;
 	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
 	MatGetSize( A_input, &nrows, &ncolumns);
+	//pressure indices come after the velocity indices
 	PetscInt min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
 	PetscInt max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
+	//velocity (resp. pressure) indices are assumed to be consecutive, and nu+np = irow_max - irow_min
 	PetscInt nb_pressure_lines = irow_max >= n_u ? irow_max - min_pressure_lines : 0;
 	PetscInt nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
 
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
-	PetscCheck( n == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but only %d velocity lines and %d pressure lines declared\n", ncolumns, n_u,n_p);
+	PetscCheck( n_u+n_p > ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but %d velocity lines and %d pressure lines declared : n_u+n_p > ncolumns\n", ncolumns, n_u,n_p);
 	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
 	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, nb_pressure_lines = %d, nb_velocity_lines = %d \n", rank, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
 	
