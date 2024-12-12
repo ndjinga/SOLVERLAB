@@ -65,6 +65,7 @@ public :
      std::vector<double>  getTimeEvol();
     std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
     std::vector<double> ReferenceBasisFunctionRaviartThomas(int i, Point Xhat);
+    Point xToxhat(Cell K, Point X,std::vector<Node> K_Nodes); 
     
 protected :
  /** Fluid equation of state **/
