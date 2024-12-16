@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=3;
+			nx=2;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			
