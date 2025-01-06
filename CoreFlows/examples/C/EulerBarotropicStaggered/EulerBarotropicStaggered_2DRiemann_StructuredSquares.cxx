@@ -56,8 +56,8 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=2;
-			ny=2;
+			nx=50;
+			ny=4;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			
 		}
@@ -155,11 +155,11 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1;
+		unsigned MaxNbOfTimeStep = 100000;
 		int freqSave = 10;
 		double cfl = 0.99;
 		double maxTime = 0.07;
-		double precision = 1e-8;
+		double precision = 1e-6;
 
 		myProblem.setCFL(cfl);
 		myProblem.setPrecision(precision);
