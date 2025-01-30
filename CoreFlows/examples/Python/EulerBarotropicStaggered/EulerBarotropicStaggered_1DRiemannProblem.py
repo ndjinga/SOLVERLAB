@@ -29,11 +29,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialDensity_Left = 5
-	initialDensity_Right = 1
+	initialDensity_Left = 0.5
+	initialDensity_Right = 2
 
-	initialVelocity_Left = 1
-	initialVelocity_Right = 1
+	initialVelocity_Left = -1.5
+	initialVelocity_Right = -3
 
 	def initialDensity(x):
 		if x < discontinuity:
@@ -133,14 +133,13 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		Densitydata = pd.read_csv(fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
 		Densitydata.columns =['x','pressure', 'index']
 		
-		myEOS = myProblem.getStiffenedGasEOS(0)## Needed to retrieve gamma, pinfnity, convert (p,T) to density and (p, rho) to temperature	
-		initialPressure_Left  = myEOS.getPressureFromEnthalpy(myEOS.getEnthalpy(myProblem.getReferenceTemperature(), initialDensity_Left), initialDensity_Left)
-		initialPressure_Right  = myEOS.getPressureFromEnthalpy(myEOS.getEnthalpy(myProblem.getReferenceTemperature(), initialDensity_Right), initialDensity_Right) 
-		initialPressureLeft = initialDensity_Left*initialDensity_Left
-		initialPressureRight = initialDensity_Right*initialDensity_Right
-		initalVelocityWall = initialVelocity_Right
-		exactDensity, exactVelocity = exact_rs_stiffenedgas_isentropic.exact_sol_Riemann_problem(xinf, xsup, time[i], 2.0, 1.0 , [initialPressureLeft , initialVelocity_Left], [ initialPressureRight, initialVelocity_Right ], (xinf+xsup)/2, nx)# (xinf+xsup)/2
- 		
+		myEOS = myProblem.getBarotropicEOS(0)	
+		initialPressure_Left  = myEOS.getPressure(initialDensity_Left)
+		initialPressure_Right  = myEOS.getPressure(initialDensity_Right)  
+		a = myEOS.constante("a");
+		gamma = myEOS.constante("gamma");
+		exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, gamma, a , [initialPressure_Left , initialVelocity_Left ], [ initialPressure_Right, initialVelocity_Right ], (xinf+xsup)/2, nx)
+
 		plt.figure()
 		plt.subplot(121)
 		plt.plot(Densitydata['x'], exactDensity,  label = "exact Density")

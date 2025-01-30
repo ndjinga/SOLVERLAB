@@ -33,8 +33,8 @@ def EulerBarotropicStaggered_1DDecoupledTransport():
 	initialDensity_Left = 1
 	initialDensity_Right = 1
 
-	initialVelocity_Left = 1
-	initialVelocity_Right = -100
+	initialVelocity_Left = -4
+	initialVelocity_Right = 1
 
 	
 	def initialDensity(x):
@@ -93,7 +93,7 @@ def EulerBarotropicStaggered_1DDecoupledTransport():
 	fileName = "EulerBarotropicStaggered_1DDecoupledTransport";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 50;
+	MaxNbOfTimeStep = 100;
 	freqSave = 1;
 	cfl = 0.99
 	maxTime = 20;
