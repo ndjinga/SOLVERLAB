@@ -150,10 +150,16 @@ void EulerBarotropicStaggered::initialize(){
 	VecZeroEntries(_BoundaryTerms);
 	
 	// matrix CONVECTION 
-	MatCreate(PETSC_COMM_SELF, & _Conv); 
+	/* MatCreate(PETSC_COMM_SELF, & _Conv); 
 	MatSetSizes(_Conv, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nfaces );
 	MatSetFromOptions(_Conv);
 	MatSetUp(_Conv);
+	 */
+	VecCreate(PETSC_COMM_SELF, & _Conv); 
+	VecSetSizes(_Conv, PETSC_DECIDE, _globalNbUnknowns); 
+	VecSetFromOptions(_Conv);
+	VecSetUp(_Conv);
+
 
 	// matrix LAPLACIAN VeLOCITY(without boundary terms)
 	MatCreate(PETSC_COMM_SELF, & _LaplacianVelocity); 
@@ -322,7 +328,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	
 	MatZeroEntries(_DivRhoU);
 	MatZeroEntries(_LaplacianPressure);
-	MatZeroEntries(_Conv);
+	VecZeroEntries(_Conv);
 	MatZeroEntries(_Div); 
 	MatZeroEntries(_DivTranspose); 
 	MatZeroEntries(_LaplacianVelocity);
@@ -393,15 +399,17 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						for (int f =0; f <K.getNumberOfFaces(); f ++){
 							bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
 							bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
-							bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end() ;			
+							bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end();
+
 							Face Facef = _mesh.getFace( idFaces[f] );
 							std::vector< int> idCellsOfFacef =  Facef.getCellsId();
+							std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 							I = _Nmailles + idFaces[f];
 							VecGetValues(_primitiveVars,1,&I	,&u);
 
-							if (_Ndim ==1){
-								Convection_integral += u*u * rho/(2.0 *u_sigma)* (  K.getBarryCenter().x()-BarycenterFj.x() )/abs( K.getBarryCenter().x()-BarycenterFj.x() ) ;
-							}
+							//if ( std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[0])!=idNodesOfFacef.end() || idFaces[f] ==j  )
+							Convection_integral += u*u * rho/(2.0 )* ( -1.0 * getOrientation(j, K) ) ; // K.getBarryCenter().x()-BarycenterFj.x() )/abs( K.getBarryCenter().x()-BarycenterFj.x() ) ;
+							
 							
 							/* if (IsfInterior){												
 								std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
@@ -436,7 +444,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							} */
 						}
 					} 
-					MatSetValues(_Conv, 1, &j, 1, &j, &Convection_integral, ADD_VALUES ); 
+					VecSetValues(_Conv, 1, &IndexFace, &Convection_integral, ADD_VALUES ); 
 				}
 				else if (IsWallBound || IsSteggerBound ) { 
 					/****************** Density conservation equation *********************/
@@ -478,8 +486,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatAssemblyBegin(_Div, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
 
-		MatAssemblyBegin(_Conv, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_Conv, MAT_FINAL_ASSEMBLY);
+		VecAssemblyBegin(_Conv);
+		VecAssemblyEnd(_Conv);
 		MatAssemblyBegin(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_LaplacianVelocity, MAT_FINAL_ASSEMBLY);		
 		
@@ -489,10 +497,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
-		MatScale(_Conv, -1.0);
-		MatScale(_LaplacianVelocity, 0); //TODO à supprimer	
-		MatAXPY(_Conv, 1, _LaplacianVelocity, UNKNOWN_NONZERO_PATTERN);
-		MatAXPY(_Conv, -1.0 *( _c*_rhoMax/2.0 + _uMax/2.0), _GradDivTilde, UNKNOWN_NONZERO_PATTERN); 
+		VecScale(_Conv, -1.0);
+		MatScale(_GradDivTilde, -1. *( _c*_rhoMax/2.0 + _uMax/2.0));
 		//MatScale(_DivRhoU, 0);	// Découplage burgers
 
 		Mat G[4], ZeroNfaces_Ncells, Prod;
@@ -501,7 +507,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		G[0] = _LaplacianPressure;
 		G[1] = _DivRhoU;
 		G[2] = ZeroNfaces_Ncells ;
-		G[3] = _Conv; 
+		G[3] = _GradDivTilde; 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
@@ -509,16 +515,22 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMult(_A,_primitiveVars, _b); 
 		
 		/***********Adding boundary terms and pressure gradient**************/
-		Vec Temporary1,Temporary2, Pressure, GradPressure;
+		Vec Temporary1,Temporary2, Temporary3, Pressure, GradPressure;
 		VecCreate(PETSC_COMM_SELF, & Temporary1);
 		VecCreate(PETSC_COMM_SELF, & Temporary2);
+		VecCreate(PETSC_COMM_SELF, & Temporary3);
 		VecSetSizes(Temporary1, PETSC_DECIDE, _globalNbUnknowns);
 		VecSetSizes(Temporary2, PETSC_DECIDE, _Nfaces);
+		VecSetSizes(Temporary3, PETSC_DECIDE, _globalNbUnknowns);
 		VecSetFromOptions(Temporary1);
 		VecSetFromOptions(Temporary2);
+		VecSetFromOptions(Temporary3);
 		//add boundary terms to AU^n//
 		MatMult(_InvVol, _BoundaryTerms, Temporary1); 
 		VecAXPY(_b,     1, Temporary1); 
+		//add convection terms to AU^n//
+		MatMult(_InvVol, _Conv, Temporary3); 
+		VecAXPY(_b,     1, Temporary3); 
 		//Extract pressure to multiply by _DivTranspose //
 		VecCreate(PETSC_COMM_SELF, & Pressure); 
 		VecSetSizes(Pressure, PETSC_DECIDE, _Nmailles); 
@@ -548,6 +560,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 		VecDestroy(& Temporary1);
 		VecDestroy(& Temporary2);
+		VecDestroy(& Temporary3);
 		MatDestroy(& Prod); 
 		MatDestroy(&ZeroNfaces_Ncells);
 		VecDestroy(& GradPressure);
@@ -768,7 +781,7 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged)
 
 void EulerBarotropicStaggered::terminate(){ 
 	MatDestroy(& _LaplacianVelocity);
-	MatDestroy(& _Conv); 
+	VecDestroy(& _Conv); 
 	MatDestroy(& _DivRhoU); 
 
 	/* // 	PCDestroy(_pc);

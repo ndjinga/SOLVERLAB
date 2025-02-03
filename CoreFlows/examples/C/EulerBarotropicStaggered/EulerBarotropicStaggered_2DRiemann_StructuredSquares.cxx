@@ -6,7 +6,7 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 4;
+		return 12;
 	else
 		return 1;
 }
@@ -15,22 +15,22 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	std::vector<double> vec(2);
 	if (z < discontinuity){
 		if (Direction == 'x'){
-			vec[0] = 1;
+			vec[0] = 1.5;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 0;
+			vec[1] = 1.5;
 		}
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = 0;
+			vec[0] = -3;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 1;
+			vec[1] = -3;
 		}
 	}
 	return vec;
@@ -56,8 +56,8 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=50;
-			ny=4;
+			nx=40;
+			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			
 		}
@@ -68,14 +68,12 @@ int main(int argc, char** argv)
 		}
 
 		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
-		
 		double a = 1.0;
 		double gamma = 2.0;
 		EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
 
 		// Prepare for the initial condition
 		// set the boundary conditions
-		
 		//Initial field creation
 		cout << "Building initial data" << endl;
 		std::map<int ,double> wallPressureMap;
@@ -156,9 +154,9 @@ int main(int argc, char** argv)
 
 		// parameters calculation
 		unsigned MaxNbOfTimeStep = 100000;
-		int freqSave = 10;
-		double cfl = 0.99;
-		double maxTime = 0.07;
+		int freqSave = 1;
+		double cfl = 0.5;
+		double maxTime = 0.05;
 		double precision = 1e-6;
 
 		myProblem.setCFL(cfl);

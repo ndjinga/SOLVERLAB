@@ -18,7 +18,7 @@ def EulerBarotropicStaggered_1DDecoupledTransport():
 	print("Building mesh " );
 	xinf = -1 ;
 	xsup=1
-	nx=80;
+	nx=200;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 #+ 0.75/nx
 
@@ -33,8 +33,8 @@ def EulerBarotropicStaggered_1DDecoupledTransport():
 	initialDensity_Left = 1
 	initialDensity_Right = 1
 
-	initialVelocity_Left = -4
-	initialVelocity_Right = 1
+	initialVelocity_Left = 1.5
+	initialVelocity_Right = -3
 
 	
 	def initialDensity(x):
@@ -96,7 +96,7 @@ def EulerBarotropicStaggered_1DDecoupledTransport():
 	MaxNbOfTimeStep = 100;
 	freqSave = 1;
 	cfl = 0.99
-	maxTime = 20;
+	maxTime = 0.05;
 	precision = 1e-10;
 
 	myProblem.setCFL(cfl);

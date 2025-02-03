@@ -128,7 +128,7 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 }
 
 //TODO Adapter au périodique ?
-void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ // TODO fonctionne ?
+void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ 
 	assert( atFaces.getTypeOfField() == FACES);
 	assert( atCells.getTypeOfField() == CELLS);
 	for (int l=0; l < _Nmailles ; l++){
@@ -325,7 +325,7 @@ void WaveStaggered::initialize(){
 
 	// transfer information de condition initial vers primitiveVars  
 	if (_mpi_rank == 0){
-		int *indices1 = new int[_Nmailles]; //TODO : peut-on faire cela en parallèle ?
+		int *indices1 = new int[_Nmailles]; // TODO ok en parallèle ?
 		int *indices2 = new int[_Nfaces];
 		std::iota(indices1, indices1 + _Nmailles, 0);
 		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
@@ -952,14 +952,6 @@ void WaveStaggered::save(){
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);
 					double orien2 = getOrientation(i,Ctemp2);
 					Point xK = Ctemp2.getBarryCenter();
-
-					/* if (_Ndim ==2){
-						if (Ctemp2.getNumberOfFaces() == _Ndim*2)
-							fac = 1;
-						else if (Ctemp2.getNumberOfFaces() ==  _Ndim + 1)
-							fac = -1;
-					}
-					fac = orien1; */
 
 					M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
 					if (_Ndim >1)

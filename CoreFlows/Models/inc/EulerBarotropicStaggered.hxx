@@ -74,8 +74,8 @@ protected :
 	double _Tref, _Pref; //EOS reference temperature &pressure
 
     PetscReal _rhoMax, _uMax;
-    Vec _DualDensity ;
-	Mat _InvVolPrim, _InvVolDual,_Conv, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
+    Vec _DualDensity,_Conv ;
+	Mat _InvVolPrim, _InvVolDual, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
 	double _c, _ConvectiveMax;
 	std::vector<double> _Entropy, _Time;
 				
