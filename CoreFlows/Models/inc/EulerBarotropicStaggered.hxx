@@ -61,11 +61,17 @@ public :
     void AssembleMetricsMatrices();
     void UpdateDualDensity();
     bool iterateTimeStep(bool &converged);
-    void testConservation();
-     std::vector<double>  getTimeEvol();
-    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
+    std::vector<double>  getTimeEvol();
+
+  
+    
     std::vector<double> ReferenceBasisFunctionRaviartThomas(int i, Point Xhat);
+    std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i);
     Point xToxhat(Cell K, Point X,std::vector<Node> K_Nodes); 
+    std::vector<double>  JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes);
+    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
+    std::vector<double>  Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
+    std::vector<double> VelocityRaviartThomas_at_point_X(Cell K,Point X);
     
 protected :
  /** Fluid equation of state **/

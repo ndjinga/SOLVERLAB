@@ -6,7 +6,7 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 12;
+		return 8;
 	else
 		return 1;
 }
@@ -15,7 +15,7 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	std::vector<double> vec(2);
 	if (z < discontinuity){
 		if (Direction == 'x'){
-			vec[0] = 1.5;
+			vec[0] = -1;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
@@ -25,7 +25,7 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = -3;
+			vec[0] = 3;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=40;
+			nx=80;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			
@@ -154,10 +154,10 @@ int main(int argc, char** argv)
 
 		// parameters calculation
 		unsigned MaxNbOfTimeStep = 100000;
-		int freqSave = 1;
+		int freqSave = 40;
 		double cfl = 0.5;
-		double maxTime = 0.05;
-		double precision = 1e-6;
+		double maxTime = 0.07;
+		double precision = 1e-10;
 
 		myProblem.setCFL(cfl);
 		myProblem.setPrecision(precision);
