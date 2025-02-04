@@ -6,9 +6,9 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 8;
-	else
 		return 1;
+	else
+		return 10;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
@@ -25,7 +25,7 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = 3;
+			vec[0] = 1;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=80;
+			nx=400;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			

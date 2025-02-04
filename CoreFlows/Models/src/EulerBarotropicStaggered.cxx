@@ -409,8 +409,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 							std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 							I = _Nmailles + idFaces[f];
-							VecGetValues(_primitiveVars,1,&I	,&u);
 
+
+							VecGetValues(_primitiveVars,1,&I	,&u);
 							if (_Ndim==1)
 								Convection_integral -= getOrientation(j, K) * u*u * rho/2.0; 
 							if (_Ndim == 2){
@@ -418,7 +419,17 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 									Convection_integral -=  getOrientation(j, K) * Fj.getMeasure()* u*u * rho/2.0 ;
 								}
 							}
+							//************* _Ndim dimensional terms *************//
+							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, Facef.getBarryCenter() );
+							std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
+							std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, Fj,j, Facef.getBarryCenter());
+							double uTensu_Contracted_Nabla_Psi = Contraction(utensorielu, GradientPsi_j_in_Xf);
+							Node vertex1 = _mesh.getNode( idNodesOfFacef[0] );
+							Node vertex2 = _mesh.getNode( idNodesOfFacef[1] );
+							double orientedArea = ((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0;
+							//Convection_integral += uTensu_Contracted_Nabla_Psi * abs(orientedArea);
 
+							//************* (_Ndim-1)  dimensional terms *************//
 							if (IsfInterior){												
 								std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
 								if ( it != _FacePeriodicMap.end()  ){ 
@@ -564,7 +575,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 }
 
 
-//################ Raviar-Thomas ##############//
+//################ Raviart-Thomas ##############//
 std::vector<double> EulerBarotropicStaggered::ReferenceBasisFunctionRaviartThomas(int i, Point Xhat){
 	std::vector<double> Psihat(_Ndim);
 	if (_Ndim ==2){
@@ -654,14 +665,14 @@ std::vector<double> EulerBarotropicStaggered::JacobianTransfor_K_X(Point X, std:
 	std::vector<double> JacobianTransfor_K(_Ndim * _Ndim);
 	if (_Ndim ==2){
 	//first column : should only depend on Xhat_x
-	JacobianTransfor_K[0] = 1/4.0 *( (K_Nodes[0].x()  - K_Nodes[1].x())*(1 - X.y()) + (K_Nodes[3].x()  - K_Nodes[2].x())*(1 + X.y())  );
-	JacobianTransfor_K[2] = 1/4.0 *( (K_Nodes[0].y()  - K_Nodes[1].y())*(1 - X.y()) + (K_Nodes[3].y()  - K_Nodes[2].y())*(1 + X.y())  );
-	//second column: should only depend on Xhat_y
-	JacobianTransfor_K[1] = 1/4.0 *( (K_Nodes[3].x()  - K_Nodes[0].x())*(1 - X.x()) + (K_Nodes[2].x()  - K_Nodes[1].x())*(1 + X.x())  );
-	JacobianTransfor_K[3] = 1/4.0 *( (K_Nodes[3].y()  - K_Nodes[0].y())*(1 - X.x()) + (K_Nodes[2].y()  - K_Nodes[1].y())*(1 + X.x())  );
-	double absJacobian =  abs(JacobianTransfor_K[0] * JacobianTransfor_K[3] - JacobianTransfor_K[2]* JacobianTransfor_K[1] ); 
-	for (int k =0; k< _Ndim * _Ndim; k++)
-		JacobianTransfor_K[k] /= absJacobian;
+		JacobianTransfor_K[0] = 1/4.0 *( (K_Nodes[0].x()  - K_Nodes[1].x())*(1 - X.y()) + (K_Nodes[3].x()  - K_Nodes[2].x())*(1 + X.y())  );
+		JacobianTransfor_K[2] = 1/4.0 *( (K_Nodes[0].y()  - K_Nodes[1].y())*(1 - X.y()) + (K_Nodes[3].y()  - K_Nodes[2].y())*(1 + X.y())  );
+		//second column: should only depend on Xhat_y
+		JacobianTransfor_K[1] = 1/4.0 *( (K_Nodes[3].x()  - K_Nodes[0].x())*(1 - X.x()) + (K_Nodes[2].x()  - K_Nodes[1].x())*(1 + X.x())  );
+		JacobianTransfor_K[3] = 1/4.0 *( (K_Nodes[3].y()  - K_Nodes[0].y())*(1 - X.x()) + (K_Nodes[2].y()  - K_Nodes[1].y())*(1 + X.x())  );
+		double absJacobian =  abs(JacobianTransfor_K[0] * JacobianTransfor_K[3] - JacobianTransfor_K[2]* JacobianTransfor_K[1] ); 
+		for (int k =0; k< _Ndim * _Ndim; k++)
+			JacobianTransfor_K[k] /= absJacobian;
 	}
 	return JacobianTransfor_K;
 }
@@ -693,8 +704,8 @@ std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas
 		if (abs(cdot) !=0){
 			std::vector<double> ReferencePsif_in_X = ReferenceBasisFunctionRaviartThomas(j, Xhat );
 			for (int k =0; k < _Ndim ; k++){	
-				for (int l =0; l < _Ndim ; l++)
-					PhysicalPsif_in_X[k] += JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferencePsif_in_X[l] * Facef.getMeasure()/2.0 ;//TODO why 1/2.0 ?
+				for (int l =0; l < _Ndim ; l++)//TODO why 1/2.0 ?
+					PhysicalPsif_in_X[k] += JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferencePsif_in_X[l] * Facef.getMeasure()/2.0 ;
 			}
 		}
 	}
@@ -703,11 +714,11 @@ std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas
 }
 
 
-//TODO ; for now only on affine meshes and need to add B^{-t}
+//TODO for now only on affine meshes AND need to add B^{-t}
 std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef, int f, Point X){
 	std::vector<double> Gradient_PhysicalPsif_in_X(_Ndim* _Ndim);
 	for (int k =0; k < _Ndim* _Ndim ; k++)
-		Gradient_PhysicalPsif_in_X[k+ k*_Ndim ] = 0;
+		Gradient_PhysicalPsif_in_X[k*_Ndim+ k ] = 0;
 
 	std::vector<int> idNodesofCellK = K.getNodesId();
 	std::vector<Node> K_Nodes;
@@ -754,8 +765,9 @@ std::vector<double> EulerBarotropicStaggered::VelocityRaviartThomas_at_point_X(C
 		PetscInt IndexFace = _Nmailles + idFaces[f];
 		std::vector<double> Psif = PhysicalBasisFunctionRaviartThomas(K,_mesh.getFace(idFaces[f]), idFaces[f], X);
 		VecGetValues(_primitiveVars,1,&IndexFace,&u);
+		//TODO CHECK ORIENTATION (no orientation for now since in cartesian all the faces vertical faces are given the (1,0)^t orientation and the horizontal faces the (0,1^t) orientation)
 		for (int k=0; k< _Ndim; k++)
-			VelocityRT[k] += u * Psif[k];
+			VelocityRT[k] += u * Psif[k]; 
 	}
 	return VelocityRT;
  }
