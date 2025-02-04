@@ -63,8 +63,7 @@ public :
     bool iterateTimeStep(bool &converged);
     std::vector<double>  getTimeEvol();
 
-  
-    
+    //********* Raviart-Thomas related functions ***********//
     std::vector<double> ReferenceBasisFunctionRaviartThomas(int i, Point Xhat);
     std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i);
     Point xToxhat(Cell K, Point X,std::vector<Node> K_Nodes); 
@@ -72,6 +71,9 @@ public :
     std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
     std::vector<double>  Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K,Point X);
+
+    std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); 
+    double Contraction(std::vector<double> &u, std::vector<double> &v); //Contraction of two order 2 tensors
     
 protected :
  /** Fluid equation of state **/
@@ -82,7 +84,7 @@ protected :
     PetscReal _rhoMax, _uMax;
     Vec _DualDensity,_Conv ;
 	Mat _InvVolPrim, _InvVolDual, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
-	double _c, _ConvectiveMax;
+	double _c;
 	std::vector<double> _Entropy, _Time;
 				
 

@@ -684,7 +684,7 @@ std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas
 		for (int k =0; k < _Ndim ; k++){
 			PhysicalPsij[k] = 0;
 			for (int l =0; l < _Ndim ; l++)
-				PhysicalPsij[k] += JacobianTransfor_K_Xhatf[k + _Ndim * l] * ReferencePsij[l]* Facef.getMeasure() /2.0 ;
+				PhysicalPsij[k] += JacobianTransfor_K_Xhatf[k* _Ndim +l] * ReferencePsij[l]* Facef.getMeasure() /2.0 ;
 		}
 		double cdot =0;
 		std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(f);
@@ -694,13 +694,14 @@ std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas
 			std::vector<double> ReferencePsif_in_X = ReferenceBasisFunctionRaviartThomas(j, Xhat );
 			for (int k =0; k < _Ndim ; k++){	
 				for (int l =0; l < _Ndim ; l++)
-					PhysicalPsif_in_X[k] += JacobianTransfor_K_Xhat[k + l*_Ndim] * ReferencePsif_in_X[l] * Facef.getMeasure()/2.0 ;//TODO why 1/2.0 ?
+					PhysicalPsif_in_X[k] += JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferencePsif_in_X[l] * Facef.getMeasure()/2.0 ;//TODO why 1/2.0 ?
 			}
 		}
 	}
 
 	return PhysicalPsif_in_X;
 }
+
 
 //TODO ; for now only on affine meshes and need to add B^{-t}
 std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef, int f, Point X){
@@ -724,7 +725,7 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 		for (int k =0; k < _Ndim ; k++){
 			PhysicalPsij[k] = 0;
 			for (int l =0; l < _Ndim ; l++)
-				PhysicalPsij[k] += JacobianTransfor_K_Xhatf[k  + _Ndim * l] * ReferencePsij[l]* Facef.getMeasure() ;
+				PhysicalPsij[k] += JacobianTransfor_K_Xhatf[k*_Ndim   + l] * ReferencePsij[l]* Facef.getMeasure() ;
 		}
 		double cdot =0;
 		std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(f);
@@ -735,13 +736,14 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 			for (int i =0; i < _Ndim ; i++){
 				for (int j =0; j < _Ndim ; j++){
 					for (int l =0; l < _Ndim ; l++)
-						Gradient_PhysicalPsif_in_X[i+ j*_Ndim ] += JacobianTransfor_K_Xhat[i + _Ndim * l] * Gradient_ReferencePsif_in_X[l + _Ndim *j] * Facef.getMeasure()/2.0 ;//TODO why 1/2.0 ?
+						Gradient_PhysicalPsif_in_X[i*_Ndim + j] += JacobianTransfor_K_Xhat[i*_Ndim  +  l] * Gradient_ReferencePsif_in_X[l*_Ndim + j] * Facef.getMeasure()/2.0 ;//TODO why 1/2.0 ?
 				}
 			}		
 		}
 	}
 	return Gradient_PhysicalPsif_in_X;
 }
+
 
 std::vector<double> EulerBarotropicStaggered::VelocityRaviartThomas_at_point_X(Cell K, Point X){
 	std::vector<double> VelocityRT(_Ndim,0.0);
@@ -756,6 +758,27 @@ std::vector<double> EulerBarotropicStaggered::VelocityRaviartThomas_at_point_X(C
 			VelocityRT[k] += u * Psif[k];
 	}
 	return VelocityRT;
+ }
+
+
+ std::vector<double> EulerBarotropicStaggered::TensorProduct(std::vector<double> &u, std::vector<double> &v){
+	std::vector<double> tensorproduct(u.size() * v.size());
+	for (int i=0; i< _Ndim; i++){
+		for (int j=0; j< _Ndim; j++){
+			tensorproduct[i*_Ndim + j] = u[i] * v[j];
+		}
+	}
+	return tensorproduct;
+ }
+
+double EulerBarotropicStaggered::Contraction(std::vector<double> &u, std::vector<double> &v){
+	double contraction;
+	for (int i=0; i< _Ndim; i++){
+		for (int j=0; j< _Ndim; j++){
+			contraction += u[i*_Ndim + j]* v[i*_Ndim + j];
+		}
+	}
+	return contraction;
  }
 
 
