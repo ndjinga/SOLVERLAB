@@ -91,8 +91,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
     # simulation parameters 
 	MaxNbOfTimeStep = 100000000;
-	freqSave = 200;
-	cfl = 0.5
+	freqSave = 100000;
+	cfl = 0.99
 	maxTime = 0.07;
 	precision = 1e-10;
 

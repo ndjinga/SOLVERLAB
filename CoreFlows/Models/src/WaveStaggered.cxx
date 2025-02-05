@@ -77,7 +77,9 @@ void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 	for (int idim = 0; idim < _Ndim; ++idim)
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
 }
-double WaveStaggered::getOrientation(int j, Cell Cint){
+double WaveStaggered::getOrientation(int l, Cell Cint){
+	std::map<int,int>::iterator ite = _FacePeriodicMap.find(l);
+	int j = (ite != _FacePeriodicMap.end()) ? ite->second : l;
 	std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(j);
 	double *vec =new double [_Ndim];
 			
@@ -88,16 +90,9 @@ double WaveStaggered::getOrientation(int j, Cell Cint){
 			}
 		}
 	double dotprod = 0;
-	double orien;
 	for (int idim = 0; idim < _Ndim; ++idim)
 		dotprod += vec[idim] * it->second[idim]; 
-
-	if (dotprod > 0)
-		orien = 1;
-	else if (dotprod < 0)
-		orien = -1;
-	delete []vec;
-	return orien;
+	return dotprod;
 }
 
 
@@ -287,32 +282,32 @@ void WaveStaggered::initialize(){
 
 	double * initialFieldVelocity = new double[_Nfaces];
 	double * initialFieldPressure = new double[_Nmailles];
-	if (_mpi_rank == 0){
-		cout<<"\n Initialising the Wave System model\n"<<endl;
-		*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
+	
+	cout<<"\n Initialising the Wave System model\n"<<endl;
+	*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
 
-		_globalNbUnknowns = _Nmailles + _Nfaces; //Staggered discretisation : velocity is on faces
+	_globalNbUnknowns = _Nmailles + _Nfaces; //Staggered discretisation : velocity is on faces
 
-		if(!_initialDataSet)
-		{
-			*_runLogFile<<"!!!!!!!!WaveStaggered::initialize() set initial data first"<<endl;
-			_runLogFile->close();
-			throw CdmathException("!!!!!!!!WaveStaggered::initialize() set initial data first");
-		}
-		cout << "mesh dimension = "<<_Ndim <<endl;
-		*_runLogFile << " spaceDim= "<<_Ndim <<endl;
-
-		_d = 1/( sqrt(2*_neibMaxNbCells) );
-		_vec_normal = new double[_Ndim];
-
-		//Construction des champs primitifs initiaux comme avant dans ParaFlow
-		
-		for(int i =0; i<_Nfaces; i++)
-			initialFieldVelocity[i]=_Velocity(i); 
-			
-		for(int i =0; i<_Nmailles; i++)
-			initialFieldPressure[i]=_Pressure(i); 
+	if(!_initialDataSet)
+	{
+		*_runLogFile<<"!!!!!!!!WaveStaggered::initialize() set initial data first"<<endl;
+		_runLogFile->close();
+		throw CdmathException("!!!!!!!!WaveStaggered::initialize() set initial data first");
 	}
+	cout << "mesh dimension = "<<_Ndim <<endl;
+	*_runLogFile << " spaceDim= "<<_Ndim <<endl;
+
+	_d = 1/( sqrt(2*_neibMaxNbCells) );
+	_vec_normal = new double[_Ndim];
+
+	//Construction des champs primitifs initiaux comme avant dans ParaFlow
+	
+	for(int i =0; i<_Nfaces; i++)
+		initialFieldVelocity[i]=_Velocity(i); 
+		
+	for(int i =0; i<_Nmailles; i++)
+		initialFieldPressure[i]=_Pressure(i); 
+	
 
 	/**********Petsc structures:  ****************/
 	
@@ -324,18 +319,17 @@ void WaveStaggered::initialize(){
 	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
 
 	// transfer information de condition initial vers primitiveVars  
-	if (_mpi_rank == 0){
-		int *indices1 = new int[_Nmailles]; // TODO ok en parallèle ?
-		int *indices2 = new int[_Nfaces];
-		std::iota(indices1, indices1 + _Nmailles, 0);
-		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
-		VecSetValues(_primitiveVars, _Nmailles , indices1, initialFieldPressure, INSERT_VALUES); 
-		VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES);
-		delete[] initialFieldVelocity;
-		delete[] initialFieldPressure;
-		delete[] indices1;
-		delete[] indices2;
-	} 
+	int *indices1 = new int[_Nmailles]; // TODO ok en parallèle ?
+	int *indices2 = new int[_Nfaces];
+	std::iota(indices1, indices1 + _Nmailles, 0);
+	std::iota(indices2, indices2 + _Nfaces, _Nmailles);
+	VecSetValues(_primitiveVars, _Nmailles , indices1, initialFieldPressure, INSERT_VALUES); 
+	VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES);
+	delete[] initialFieldVelocity;
+	delete[] initialFieldPressure;
+	delete[] indices1;
+	delete[] indices2;
+	 
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
 
@@ -405,9 +399,9 @@ void WaveStaggered::initialize(){
 		cout << endl;
 	}
 
-	if(_mpi_size>1 && _mpi_rank == 0)
+	/* if(_mpi_size>1 && _mpi_rank == 0)
     	VecCreateSeq(PETSC_COMM_SELF, _globalNbUnknowns, &_primitiveVars_seq);//For saving results on proc 0
-    VecScatterCreateToZero(_primitiveVars,&_scat,&_primitiveVars_seq);
+    VecScatterCreateToZero(_primitiveVars,&_scat,&_primitiveVars_seq); */
 
 
 	createKSP();
@@ -427,106 +421,105 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	if (_timeScheme == Explicit ){ 
 		if ( _nbTimeStep == 0 ){
 			cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
-			if (_mpi_rank ==0){
-				// Assembly of matrices 
-				for (int j=0; j<_Nfaces;j++){
-					Face Fj = _mesh.getFace(j);
-					std::vector< int > idCells = Fj.getCellsId();
-					Cell Ctemp1 = _mesh.getCell(idCells[0]);
+			// Assembly of matrices 
+			for (int j=0; j<_Nfaces;j++){
+				Face Fj = _mesh.getFace(j);
+				std::vector< int > idCells = Fj.getCellsId();
+				Cell Ctemp1 = _mesh.getCell(idCells[0]);
 
-					bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-					bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
-					bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
+				bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+				bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+				bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
 
-					// Metrics
-					double orien = getOrientation(j,Ctemp1);
-					PetscScalar orientedFaceArea = orien * Fj.getMeasure();
-					PetscScalar orientedMinusFaceArea = -orientedFaceArea;
-					PetscScalar FaceArea = Fj.getMeasure();
-					PetscScalar MinusFaceArea = -FaceArea;
-					PetscScalar det, InvPerimeter1, InvPerimeter2, InvD_sigma, InvVol1, InvVol2;
-					PetscInt IndexFace = _Nmailles + j;
-					InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
-					
-					if ( IsInterior ){	// || (periodicFaceComputed == true) Fj is inside the domain or is a boundary periodic face (computed)
-						std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
-						if ( it != _FacePeriodicMap.end()  ){ 
-							std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-							idCells.push_back( idCells_other_Fj[0]  );
-						}
-						Cell Ctemp2 = _mesh.getCell(idCells[1]);	
-						/******************* Metrics related matrices ***********************/
-						if (_Ndim == 1){
-							det = Ctemp2.x() - Ctemp1.x();
-							InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
-							InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
-						} 
-						if (_Ndim ==2){
-							std::vector<int> nodes =  Fj.getNodesId();
-							Node vertex = _mesh.getNode( nodes[0] );
-							// determinant of the vectors forming the diamond cell around the face sigma
-							det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
-							InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
-							InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
-						}
-						InvD_sigma = 1.0/PetscAbsReal(det);
-						InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
-						MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-						MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
-						MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
-						MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-						MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
-
-						/******************* Pressure equation ***********************/
-						MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-						MatSetValues(_Div, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES );  
-						MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
-						MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
-						MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
-						MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES );  
-
-						/******************* Velocity equation ***********************/
-						MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
-						MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
-					
+				// Metrics
+				double orien = getOrientation(j,Ctemp1);
+				PetscScalar orientedFaceArea = orien * Fj.getMeasure();
+				PetscScalar orientedMinusFaceArea = -orientedFaceArea;
+				PetscScalar FaceArea = Fj.getMeasure();
+				PetscScalar MinusFaceArea = -FaceArea;
+				PetscScalar det, InvPerimeter1, InvPerimeter2, InvD_sigma, InvVol1, InvVol2;
+				PetscInt IndexFace = _Nmailles + j;
+				InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
+				
+				if ( IsInterior ){	// || (periodicFaceComputed == true) Fj is inside the domain or is a boundary periodic face (computed)
+					std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
+					if ( it != _FacePeriodicMap.end()  ){ 
+						std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
+						idCells.push_back( idCells_other_Fj[0]  );
 					}
-					else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 		
-						if (_Ndim == 1){
-							InvD_sigma = 2.0/Ctemp1.getMeasure() ;
-							InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
-						} 
-						if (_Ndim == 2){
-							std::vector< int > nodes =  Fj.getNodesId();
-							Node vertex1 = _mesh.getNode( nodes[0] );
-							Node vertex2 = _mesh.getNode( nodes[1] );
-							det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
-							// determinant of the vectors forming the interior half diamond cell around the face sigma
-							InvD_sigma = 1.0/PetscAbsReal(det);	
-							InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
-						}
-						/***************** Metric related matrices ******************/
-						MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-						MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
-						MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
+					Cell Ctemp2 = _mesh.getCell(idCells[1]);	
+					/******************* Metrics related matrices ***********************/
+					if (_Ndim == 1){
+						det = Ctemp2.x() - Ctemp1.x();
+						InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
+						InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
+					} 
+					if (_Ndim ==2){
+						std::vector<int> nodes =  Fj.getNodesId();
+						Node vertex = _mesh.getNode( nodes[0] );
+						// determinant of the vectors forming the diamond cell around the face sigma
+						det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
+						InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
+						InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
+					}
+					InvD_sigma = 1.0/PetscAbsReal(det);
+					InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
+					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+					MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
+					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
+					MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
+					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 
-						/***************** Pressure equation related matrices ******************/
-						MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-						MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
+					/******************* Pressure equation ***********************/
+					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+					MatSetValues(_Div, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES );  
+					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
+					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
+					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
+					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES );  
 
-						//Is the face a wall boundarycondition face
-						if (IsWallBound ){
-							VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
-							_pExt =  Fj.getMeasure()*_pInt; //_pExt = pin so (grad p)_j = 0
-						}
-						else if (IsSteggerBound){ //Imposed boundaryconditions
-							std::map<int,double> boundaryPressure = getboundaryPressure(); 
-							std::map<int,double>::iterator it = boundaryPressure.find(j);
-							_pExt = Fj.getMeasure()*boundaryPressure[it->first]; 
-						}
-						VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
-					}	
+					/******************* Velocity equation ***********************/
+					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
+					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
+				
 				}
+				else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 		
+					if (_Ndim == 1){
+						InvD_sigma = 2.0/Ctemp1.getMeasure() ;
+						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
+					} 
+					if (_Ndim == 2){
+						std::vector< int > nodes =  Fj.getNodesId();
+						Node vertex1 = _mesh.getNode( nodes[0] );
+						Node vertex2 = _mesh.getNode( nodes[1] );
+						det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+						// determinant of the vectors forming the interior half diamond cell around the face sigma
+						InvD_sigma = 1.0/PetscAbsReal(det);	
+						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
+					}
+					/***************** Metric related matrices ******************/
+					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
+					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
+
+					/***************** Pressure equation related matrices ******************/
+					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
+
+					//Is the face a wall boundarycondition face
+					if (IsWallBound ){
+						VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
+						_pExt =  Fj.getMeasure()*_pInt; //_pExt = pin so (grad p)_j = 0
+					}
+					else if (IsSteggerBound){ //Imposed boundaryconditions
+						std::map<int,double> boundaryPressure = getboundaryPressure(); 
+						std::map<int,double>::iterator it = boundaryPressure.find(j);
+						_pExt = Fj.getMeasure()*boundaryPressure[it->first]; 
+					}
+					VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
+				}	
 			}
+			
 			MatAssemblyBegin(_Div,MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
 			MatAssemblyBegin(_DivTranspose, MAT_FINAL_ASSEMBLY);
@@ -566,20 +559,19 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			
 		}
 		if (_isWall && _nbTimeStep >0 ){	
-			if (_mpi_rank ==0){
-				for (int j=0; j<_Nfaces;j++){
-					Face Fj = _mesh.getFace(j);
-					if (Fj.getNumberOfCells()==1) { //if boundary face 
-						//Is the face a wall boundarycondition face
-						if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){
-							std::vector< int > idCells = Fj.getCellsId();
-							VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
-							_pExt = _d * _c * Fj.getMeasure()*_pInt; //_pExt = pin so (grad p)_j = 0
-							VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
-						} 
-					}	
-				}
+			for (int j=0; j<_Nfaces;j++){
+				Face Fj = _mesh.getFace(j);
+				if (Fj.getNumberOfCells()==1) { //if boundary face 
+					//Is the face a wall boundarycondition face
+					if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){
+						std::vector< int > idCells = Fj.getCellsId();
+						VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
+						_pExt = _d * _c * Fj.getMeasure()*_pInt; //_pExt = pin so (grad p)_j = 0
+						VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
+					} 
+				}	
 			}
+			
 			VecAssemblyBegin(_BoundaryTerms);
 			VecAssemblyEnd(_BoundaryTerms);
 		}
@@ -651,46 +643,43 @@ void WaveStaggered::ComputeMinCellMaxPerim(){
 }
 
 void WaveStaggered::ComputeEnergyAtTimeT(){
-	if (_mpi_rank ==0){
-		double E = 0;
-		for (int j=0; j<_Nfaces;j++){
-			Face Fj = _mesh.getFace(j);
-			PetscInt I = _Nmailles + j;
-			std::vector< int > idCells = Fj.getCellsId();
-			Cell Ctemp1 = _mesh.getCell(idCells[0]);
-			PetscScalar InvD_sigma, InvCell1measure, InvCell2measure, pressure_in, pressure_out, velocity;
-			
-			if (Fj.getNumberOfCells()==2  ){	// Fj is inside the domain or is a boundary periodic face (computed)
-				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-				MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
-				MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell1measure );
-				MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell2measure );
-				VecGetValues(_primitiveVars, 1, &idCells[0], &pressure_in );
-				VecGetValues(_primitiveVars, 1, &idCells[1], &pressure_out );
-				VecGetValues(_primitiveVars, 1, &I, &velocity );
+	double E = 0;
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		PetscInt I = _Nmailles + j;
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		PetscScalar InvD_sigma, InvCell1measure, InvCell2measure, pressure_in, pressure_out, velocity;
+		
+		if (Fj.getNumberOfCells()==2  ){	// Fj is inside the domain or is a boundary periodic face (computed)
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
+			MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell1measure );
+			MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell2measure );
+			VecGetValues(_primitiveVars, 1, &idCells[0], &pressure_in );
+			VecGetValues(_primitiveVars, 1, &idCells[1], &pressure_out );
+			VecGetValues(_primitiveVars, 1, &I, &velocity );
 
-				double pressure_int=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ;
-				double pressure_ext=  1/(InvCell2measure*Ctemp2.getNumberOfFaces()) * (pressure_out)*(pressure_out);
-				double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
-				E += pressure_int + pressure_ext + velocity_part ;
-							
-			}
-			else if (Fj.getNumberOfCells()==1 ) { //if boundary face and face index is different from periodic faces not computed 	
-				MatGetValues(_InvVol,1,&I, 1, &I,&InvD_sigma);
-				MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell1measure );
-				VecGetValues(_primitiveVars, 1, &idCells[0], &pressure_in );
-				VecGetValues(_primitiveVars, 1, &I, &velocity );
-
-				double pressure_part_cellint=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ; 
-				double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
-				E += pressure_part_cellint + velocity_part ;
-			}	
+			double pressure_int=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ;
+			double pressure_ext=  1/(InvCell2measure*Ctemp2.getNumberOfFaces()) * (pressure_out)*(pressure_out);
+			double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
+			E += pressure_int + pressure_ext + velocity_part ;
+						
 		}
-		_Energy.push_back(E);
+		else if (Fj.getNumberOfCells()==1 ) { //if boundary face and face index is different from periodic faces not computed 	
+			MatGetValues(_InvVol,1,&I, 1, &I,&InvD_sigma);
+			MatGetValues(_InvVol, 1, &idCells[0],1, &idCells[0], &InvCell1measure );
+			VecGetValues(_primitiveVars, 1, &idCells[0], &pressure_in );
+			VecGetValues(_primitiveVars, 1, &I, &velocity );
+
+			double pressure_part_cellint=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ; 
+			double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
+			E += pressure_part_cellint + velocity_part ;
+		}	
 	}
+	_Energy.push_back(E);
 }
 
-//TODO que faire de mpirank ?
 
 bool WaveStaggered::iterateTimeStep(bool &converged)
 {
@@ -857,168 +846,155 @@ void WaveStaggered::save(){
         VecScatterBegin(_scat,_primitiveVars,_primitiveVars_seq,INSERT_VALUES,SCATTER_FORWARD);
         VecScatterEnd(  _scat,_primitiveVars,_primitiveVars_seq,INSERT_VALUES,SCATTER_FORWARD);
     }
-	if (_mpi_rank ==0){
-		if(_savePressure){
-			for (int i = 0 ; i < _Nmailles  ; i++){
-					if (_mpi_size > 1)
-						VecGetValues(_primitiveVars_seq,1,&i,&_Pressure(i));
-					else 
-						VecGetValues(_primitiveVars,1,&i,&_Pressure(i));
-				}
-				
-			_Pressure.setTime(_time,_nbTimeStep);
-			if (_nbTimeStep ==0){
-				_Pressure.setInfoOnComponent(0,"_Pressure (N/m²)");
-				switch(_saveFormat)
-				{
-				case VTK :
-					_Pressure.writeVTK(prim+"_Pressure");
-					break;
-				case MED :
-					_Pressure.writeMED(prim+"_Pressure");
-					break;
-				case CSV :
-					_Pressure.writeCSV(prim+"_Pressure");
-					break;
-				}
-			}
-			else{
-				switch(_saveFormat)
-				{
-				case VTK :
-					_Pressure.writeVTK(prim+"_Pressure",false);
-					break;
-				case MED :
-					_Pressure.writeMED(prim+"_Pressure",false);
-					break;
-				case CSV :
-					_Pressure.writeCSV(prim+"_Pressure");
-					break;
-				}
-			}
-		}
-		if(_saveVelocity  ){ 
-			if (_nbTimeStep == 0){
-				_Velocity_at_Cells = Field("Velocity at cells results", CELLS, _mesh,3);
-				_DivVelocity = Field("velocity divergence", CELLS, _mesh, 1);	 
-			}
-
-			_Velocity_at_Cells.setTime(_time,_nbTimeStep);
-			_DivVelocity.setTime(_time,_nbTimeStep);
-			for (int l=0; l < _Nmailles ; l++){
-				_DivVelocity(l) =0;
-				for (int k=0; k< 3; k++){
-					_Velocity_at_Cells(l, k) =0;
-				}
-			}
-
-			for (int i = 0 ; i < _Nfaces ; i++){
-				bool periodicFaceNotComputed;
-				std::map<int,int>::iterator it2 = _FacePeriodicMap.begin();
-				while ( ( i !=it2->second) && (it2 != _FacePeriodicMap.end() ) )
-					it2++;
-				periodicFaceNotComputed = (it2 !=  _FacePeriodicMap.end());
-				int j = (periodicFaceNotComputed ==true) && (_indexFacePeriodicSet == true) ? it2->first : i; // in periodic k stays i, if it has been computed by scheme and takes the value of its matched face 
-				int I= _Nmailles + j;
+	if(_savePressure){
+		for (int i = 0 ; i < _Nmailles  ; i++){
 				if (_mpi_size > 1)
-					VecGetValues(_primitiveVars_seq,1,&I,&_Velocity(i));
-				else
-					VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
-
-				Face Fj = _mesh.getFace(i);
-				std::vector< int > idCells = Fj.getCellsId();
-				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				double orien1 = getOrientation(i,Ctemp1);
-				std::vector<double> M1(_Ndim), M2(_Ndim);
-				Point xK = Ctemp1.getBarryCenter();
-				Point xsigma = Fj.getBarryCenter();
-
-				/* double fac =1.0
-				if (_Ndim ==2){
-					if (Ctemp1.getNumberOfFaces() == _Ndim*2)
-						fac = 1;
-					else if (Ctemp1.getNumberOfFaces() ==  _Ndim + 1)
-						fac = -1;
-				}
-				else if (_Ndim ==1 && j==0){
-					fac = -1;
-				} */
-
-				M1[0] = orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());
-				if (_Ndim >1)
-					M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
-
-				if (Fj.getNumberOfCells() == 2){
-					Cell Ctemp2 = _mesh.getCell(idCells[1]);
-					double orien2 = getOrientation(i,Ctemp2);
-					Point xK = Ctemp2.getBarryCenter();
-
-					M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
-					if (_Ndim >1)
-						M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
-				
-					for (int k=0; k< _Ndim; k++){
-						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
-						_Velocity_at_Cells(idCells[1], k) += _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
-					}
-					_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
-					_DivVelocity( idCells[1]) -= orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp2.getMeasure());
-
-				}
-				else if  (Fj.getNumberOfCells() == 1){
-					for (int k=0; k< _Ndim; k++){
-						_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
-					}
-					_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
-				}
+					VecGetValues(_primitiveVars_seq,1,&i,&_Pressure(i));
+				else 
+					VecGetValues(_primitiveVars,1,&i,&_Pressure(i));
 			}
-
-
-			_Velocity.setTime(_time,_nbTimeStep);
-			_Velocity_at_Cells.setTime(_time,_nbTimeStep);
-			_DivVelocity.setTime(_time,_nbTimeStep);
-			_Velocity.setInfoOnComponent(0,"Velocity . n_sigma_(m/s)");
-			_Velocity_at_Cells.setInfoOnComponent(0,"Velocity at cells x_(m/s)");
-			_Velocity_at_Cells.setInfoOnComponent(1,"Velocity at cells y_(m/s)");
-			_DivVelocity.setInfoOnComponent(0,"divergence velocity (s^-1)");
-		
+			
+		_Pressure.setTime(_time,_nbTimeStep);
+		if (_nbTimeStep ==0){
+			_Pressure.setInfoOnComponent(0,"_Pressure (N/m²)");
 			switch(_saveFormat)
 			{
 			case VTK :
-				_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
-				_DivVelocity.writeVTK(prim+"Divergence Velocity");
-				_Velocity.writeVTK(prim+"_Velocity");
+				_Pressure.writeVTK(prim+"_Pressure");
 				break;
 			case MED :
-				_Velocity.writeMED(prim+"_Velocity");
+				_Pressure.writeMED(prim+"_Pressure");
 				break;
 			case CSV :
-				_Velocity.writeCSV(prim+"_Velocity");
+				_Pressure.writeCSV(prim+"_Pressure");
 				break;
 			}
-
-			if (_isStationary || _time == _timeMax){
-				double boundaryIntegral =0;
-				for (int j=0; j<_Nfaces;j++){
-					Face Fj = _mesh.getFace(j);
-					if (Fj.getNumberOfCells() == 1){ 
-						std::vector< int > idCells = Fj.getCellsId();
-						Cell Ctemp1 = _mesh.getCell(idCells[0]);
-
-						double u;
-						int I = _Nmailles + j;
-						VecGetValues(_primitiveVars, 1, &I, &u);
-						double orien1 = getOrientation(j, Ctemp1);
-						boundaryIntegral += Fj.getMeasure() * orien1 * u;
-					}
-				}
-				double norm = 0;
-				for (int i = 0; i < _Nmailles; i++){
-					if (norm < fabs(_DivVelocity(i)))
-						norm = fabs(_DivVelocity(i));	
-				}
-				cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
+		}
+		else{
+			switch(_saveFormat)
+			{
+			case VTK :
+				_Pressure.writeVTK(prim+"_Pressure",false);
+				break;
+			case MED :
+				_Pressure.writeMED(prim+"_Pressure",false);
+				break;
+			case CSV :
+				_Pressure.writeCSV(prim+"_Pressure");
+				break;
 			}
 		}
 	}
+	if(_saveVelocity  ){ 
+		if (_nbTimeStep == 0){
+			_Velocity_at_Cells = Field("Velocity at cells results", CELLS, _mesh,3);
+			_DivVelocity = Field("velocity divergence", CELLS, _mesh, 1);	 
+		}
+
+		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
+		_DivVelocity.setTime(_time,_nbTimeStep);
+		for (int l=0; l < _Nmailles ; l++){
+			_DivVelocity(l) =0;
+			for (int k=0; k< 3; k++){
+				_Velocity_at_Cells(l, k) =0;
+			}
+		}
+
+		for (int i = 0 ; i < _Nfaces ; i++){
+			bool periodicFaceNotComputed;
+			std::map<int,int>::iterator it2 = _FacePeriodicMap.begin();
+			while ( ( i !=it2->second) && (it2 != _FacePeriodicMap.end() ) )
+				it2++;
+			periodicFaceNotComputed = (it2 !=  _FacePeriodicMap.end());
+			int j = (periodicFaceNotComputed ==true) && (_indexFacePeriodicSet == true) ? it2->first : i; // in periodic k stays i, if it has been computed by scheme and takes the value of its matched face 
+			int I= _Nmailles + j;
+			if (_mpi_size > 1)
+				VecGetValues(_primitiveVars_seq,1,&I,&_Velocity(i));
+			else
+				VecGetValues(_primitiveVars,1,&I,&_Velocity(i));
+
+			Face Fj = _mesh.getFace(i);
+			std::vector< int > idCells = Fj.getCellsId();
+			Cell Ctemp1 = _mesh.getCell(idCells[0]);
+			double orien1 = getOrientation(i,Ctemp1);
+			std::vector<double> M1(_Ndim), M2(_Ndim);
+			Point xK = Ctemp1.getBarryCenter();
+			Point xsigma = Fj.getBarryCenter();
+
+			M1[0] = orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());
+			if (_Ndim >1)
+				M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
+
+			if (Fj.getNumberOfCells() == 2){
+				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+				double orien2 = getOrientation(i,Ctemp2);
+				Point xK = Ctemp2.getBarryCenter();
+
+				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
+				if (_Ndim >1)
+					M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
+			
+				for (int k=0; k< _Ndim; k++){
+					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
+					_Velocity_at_Cells(idCells[1], k) += _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
+				}
+				_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
+				_DivVelocity( idCells[1]) -= orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp2.getMeasure());
+
+			}
+			else if  (Fj.getNumberOfCells() == 1){
+				for (int k=0; k< _Ndim; k++){
+					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
+				}
+				_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/(Ctemp1.getMeasure());
+			}
+		}
+
+		_Velocity.setTime(_time,_nbTimeStep);
+		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
+		_DivVelocity.setTime(_time,_nbTimeStep);
+		_Velocity.setInfoOnComponent(0,"Velocity . n_sigma_(m/s)");
+		_Velocity_at_Cells.setInfoOnComponent(0,"Velocity at cells x_(m/s)");
+		_Velocity_at_Cells.setInfoOnComponent(1,"Velocity at cells y_(m/s)");
+		_DivVelocity.setInfoOnComponent(0,"divergence velocity (s^-1)");
+	
+		switch(_saveFormat)
+		{
+		case VTK :
+			_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
+			_DivVelocity.writeVTK(prim+"Divergence Velocity");
+			_Velocity.writeVTK(prim+"_Velocity");
+			break;
+		case MED :
+			_Velocity.writeMED(prim+"_Velocity");
+			break;
+		case CSV :
+			_Velocity.writeCSV(prim+"_Velocity");
+			break;
+		}
+
+		if (_isStationary || _time == _timeMax){
+			double boundaryIntegral =0;
+			for (int j=0; j<_Nfaces;j++){
+				Face Fj = _mesh.getFace(j);
+				if (Fj.getNumberOfCells() == 1){ 
+					std::vector< int > idCells = Fj.getCellsId();
+					Cell Ctemp1 = _mesh.getCell(idCells[0]);
+
+					double u;
+					int I = _Nmailles + j;
+					VecGetValues(_primitiveVars, 1, &I, &u);
+					double orien1 = getOrientation(j, Ctemp1);
+					boundaryIntegral += Fj.getMeasure() * orien1 * u;
+				}
+			}
+			double norm = 0;
+			for (int i = 0; i < _Nmailles; i++){
+				if (norm < fabs(_DivVelocity(i)))
+					norm = fabs(_DivVelocity(i));	
+			}
+			cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
+		}
+	}
+	
 }

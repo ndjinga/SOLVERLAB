@@ -37,30 +37,29 @@ std::vector<double>  EulerBarotropicStaggered::getTimeEvol(){
 void EulerBarotropicStaggered::initialize(){
 	double * initialFieldVelocity = new double[_Nfaces];
 	double * initialFieldPressure = new double[_Nmailles];
-	if (_mpi_rank == 0){
-		cout<<"\n Initialising the Wave System model\n"<<endl;
-		*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
+	cout<<"\n Initialising the Wave System model\n"<<endl;
+	*_runLogFile<<"\n Initialising the Wave Sytem model\n"<<endl;
 
-		_globalNbUnknowns = _Nmailles + _Nfaces; //Staggered discretisation : velocity is on faces
+	_globalNbUnknowns = _Nmailles + _Nfaces; //Staggered discretisation : velocity is on faces
 
-		if(!_initialDataSet)
-		{
-			*_runLogFile<<"!!!!!!!!EulerBarotropicStaggered::initialize() set initial data first"<<endl;
-			_runLogFile->close();
-			throw CdmathException("!!!!!!!!EulerBarotropicStaggered::initialize() set initial data first");
-		}
-		cout << "mesh dimension = "<<_Ndim <<endl;
-		*_runLogFile << " spaceDim= "<<_Ndim <<endl;
-
-		_vec_normal = new double[_Ndim];
-		//Construction des champs primitifs initiaux comme avant dans ParaFlow
-		
-		for(int i =0; i<_Nfaces; i++)
-			initialFieldVelocity[i]=_Velocity(i); 
-			
-		for(int i =0; i<_Nmailles; i++)
-			initialFieldPressure[i]=_Pressure(i); 
+	if(!_initialDataSet)
+	{
+		*_runLogFile<<"!!!!!!!!EulerBarotropicStaggered::initialize() set initial data first"<<endl;
+		_runLogFile->close();
+		throw CdmathException("!!!!!!!!EulerBarotropicStaggered::initialize() set initial data first");
 	}
+	cout << "mesh dimension = "<<_Ndim <<endl;
+	*_runLogFile << " spaceDim= "<<_Ndim <<endl;
+
+	_vec_normal = new double[_Ndim];
+	//Construction des champs primitifs initiaux comme avant dans ParaFlow
+	
+	for(int i =0; i<_Nfaces; i++)
+		initialFieldVelocity[i]=_Velocity(i); 
+		
+	for(int i =0; i<_Nmailles; i++)
+		initialFieldPressure[i]=_Pressure(i); 
+	
 
 	/**********Petsc structures:  ****************/
 	
@@ -72,18 +71,17 @@ void EulerBarotropicStaggered::initialize(){
 	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
 
 	// transfer information de condition initial vers primitiveVars  
-	if (_mpi_rank == 0){
-		int *indices1 = new int[_Nmailles];
-		int *indices2 = new int[_Nfaces];
-		std::iota(indices1, indices1 + _Nmailles, 0);
-		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
-		VecSetValues(_primitiveVars, _Nmailles , indices1, initialFieldPressure, INSERT_VALUES); 
-		VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES);
-		delete[] initialFieldVelocity;
-		delete[] initialFieldPressure;
-		delete[] indices1;
-		delete[] indices2;
-	} 
+	int *indices1 = new int[_Nmailles];
+	int *indices2 = new int[_Nfaces];
+	std::iota(indices1, indices1 + _Nmailles, 0);
+	std::iota(indices2, indices2 + _Nfaces, _Nmailles);
+	VecSetValues(_primitiveVars, _Nmailles , indices1, initialFieldPressure, INSERT_VALUES); 
+	VecSetValues(_primitiveVars, _Nfaces, indices2, initialFieldVelocity, INSERT_VALUES);
+	delete[] initialFieldVelocity;
+	delete[] initialFieldPressure;
+	delete[] indices1;
+	delete[] indices2;
+	
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
 
@@ -168,9 +166,9 @@ void EulerBarotropicStaggered::initialize(){
 		cout << endl;
 	}
 
-	if(_mpi_size>1 && _mpi_rank == 0)
+	/* if(_mpi_size>1 && _mpi_rank == 0)
     	VecCreateSeq(PETSC_COMM_SELF, _globalNbUnknowns, &_primitiveVars_seq);//For saving results on proc 0
-    VecScatterCreateToZero(_primitiveVars,&_scat,&_primitiveVars_seq);
+    VecScatterCreateToZero(_primitiveVars,&_scat,&_primitiveVars_seq); */
 
 	createKSP();
 	PetscPrintf(PETSC_COMM_WORLD,"SOLVERLAB Newton solver ");
@@ -338,148 +336,148 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	MatZeroEntries(_LaplacianVelocity);
 	
 	if (_timeScheme == Explicit ){ 
-		if (_mpi_rank ==0){
-			// Assembly of matrices 
-			for (int j=0; j<_Nfaces; j++){	 
-				Face Fj = _mesh.getFace(j);
-				std::vector< int > idCells = Fj.getCellsId();
-				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				PetscScalar Convection_integral, rhoL, rhoR, u, u_sigma, det, InvD_sigma, InvPerimeter1, InvPerimeter2;	
+		// Assembly of matrices 
+		for (int j=0; j<_Nfaces; j++){	 
+			Face Fj = _mesh.getFace(j);
+			std::vector< int > idCells = Fj.getCellsId();
+			Cell Ctemp1 = _mesh.getCell(idCells[0]);
+			PetscScalar Convection_integral, rhoL, rhoR, u, u_sigma, det, InvD_sigma, InvPerimeter1, InvPerimeter2;	
+			
+			PetscScalar orientedFaceArea = getOrientation(j,Ctemp1) * Fj.getMeasure();
+			PetscScalar orientedMinusFaceArea = -orientedFaceArea;
+			PetscScalar FaceArea = Fj.getMeasure();
+			PetscScalar MinusFaceArea = -FaceArea;
+			PetscInt IndexFace = _Nmailles + j;
+			//PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
+
+			bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+			bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
+	
+			if (IsInterior){
+				std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
+				if ( it != _FacePeriodicMap.end()  ){ 
+					std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
+					idCells.push_back( idCells_other_Fj[0]  );
+				}
+				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+
+				/****************** Density conservation equation *********************/
+				VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
+				VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
+				VecGetValues(_primitiveVars,1,&IndexFace,&u_sigma);
+
+				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0 ;
+				PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
+				PetscScalar FaceArea_upwinding = (abs(u)+ _c ) * FaceArea/2.0; 
+				PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
+				MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
+				MatSetValues(_DivRhoU, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
+				MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES ); 
+				MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[1], &FaceArea_upwinding, ADD_VALUES );  
+				MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea_upwinding, ADD_VALUES ); 
+				MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[0], &FaceArea_upwinding, ADD_VALUES );  
+
+				/*************** Momentum conservation equation *****************/
+				MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+				MatSetValues(_Div, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES ); 
+				MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
+				MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 				
-				PetscScalar orientedFaceArea = getOrientation(j,Ctemp1) * Fj.getMeasure();
-				PetscScalar orientedMinusFaceArea = -orientedFaceArea;
-				PetscScalar FaceArea = Fj.getMeasure();
-				PetscScalar MinusFaceArea = -FaceArea;
-				PetscInt IndexFace = _Nmailles + j;
-				//PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
+				// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
+				PetscInt I;
+				Convection_integral= 0;
+				for (int nei =0; nei <2; nei ++){ // we are in the case where an interior face has two neighbours
+					Cell K = _mesh.getCell(idCells[nei]); 
+					Point BarycenterK =  K.getBarryCenter();
+					std::vector<int> idFaces = K.getFacesId();
+					VecGetValues(_primitiveVars,1,&idCells[nei],&rho);
 
-				bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-				bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
-				bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
-		
-				if (IsInterior){
-					std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
-					if ( it != _FacePeriodicMap.end()  ){ 
-						std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-						idCells.push_back( idCells_other_Fj[0]  );
-					}
-					Cell Ctemp2 = _mesh.getCell(idCells[1]);
-
-					/****************** Density conservation equation *********************/
-					VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
-					VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
-					VecGetValues(_primitiveVars,1,&IndexFace,&u_sigma);
-
-					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0 ;
-					PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-					PetscScalar FaceArea_upwinding = (abs(u)+ _c ) * FaceArea/2.0; 
-					PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
-					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
-					MatSetValues(_DivRhoU, 1, &idCells[1], 1, &j, &MinusorientedFaceArea_densityMean, ADD_VALUES );  
-					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES ); 
-					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[1], &FaceArea_upwinding, ADD_VALUES );  
-					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea_upwinding, ADD_VALUES ); 
-					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[0], &FaceArea_upwinding, ADD_VALUES );  
-
-					/*************** Momentum conservation equation *****************/
-					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(_Div, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES ); 
-					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
+					//If  the face is periodic, recover the geometric informations of the associated periodic cell 
+					std::vector< int > NodesFj = ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei]    ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getNodesId() :  Fj.getNodesId(); 
+					Point BarycenterFj =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] 	 ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getBarryCenter() :  Fj.getBarryCenter();
 					
-					// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
-					PetscInt I;
-					Convection_integral= 0;
-					for (int nei =0; nei <2; nei ++){ // we are in the case where an interior face has two neighbours
-						Cell K = _mesh.getCell(idCells[nei]); 
-						Point BarycenterK =  K.getBarryCenter();
-						std::vector<int> idFaces = K.getFacesId();
-						VecGetValues(_primitiveVars,1,&idCells[nei],&rho);
+					for (int f =0; f <K.getNumberOfFaces(); f ++){
+						bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
+						bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
+						bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end();
 
-						//If  the face is periodic, recover the geometric informations of the associated periodic cell 
-						std::vector< int > NodesFj = ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei]    ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getNodesId() :  Fj.getNodesId(); 
-						Point BarycenterFj =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] 	 ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getBarryCenter() :  Fj.getBarryCenter();
-						
-						for (int f =0; f <K.getNumberOfFaces(); f ++){
-							bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
-							bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
-							bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end();
-
-							Face Facef = _mesh.getFace( idFaces[f] );
-							std::vector< int> idCellsOfFacef =  Facef.getCellsId();
-							std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
-							I = _Nmailles + idFaces[f];
+						Face Facef = _mesh.getFace( idFaces[f] );
+						std::vector< int> idCellsOfFacef =  Facef.getCellsId();
+						std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
+						I = _Nmailles + idFaces[f];
 
 
-							VecGetValues(_primitiveVars,1,&I	,&u);
-							if (_Ndim==1)
-								Convection_integral -= getOrientation(j, K) * u*u * rho/2.0; 
-							if (_Ndim == 2){
-								if ( ( (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[0])==idNodesOfFacef.end()) && (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[1])==idNodesOfFacef.end()) ) || (idFaces[f] ==j)  ){
-									Convection_integral -=  getOrientation(j, K) * Fj.getMeasure()* u*u * rho/2.0 ;
-								}
-							}
-							//************* _Ndim dimensional terms *************//
-							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, Facef.getBarryCenter() );
-							std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
-							std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, Fj,j, Facef.getBarryCenter());
-							double uTensu_Contracted_Nabla_Psi = Contraction(utensorielu, GradientPsi_j_in_Xf);
-							Node vertex1 = _mesh.getNode( idNodesOfFacef[0] );
-							Node vertex2 = _mesh.getNode( idNodesOfFacef[1] );
-							double orientedArea = ((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0;
-							//Convection_integral += uTensu_Contracted_Nabla_Psi * abs(orientedArea);
-
-							//************* (_Ndim-1)  dimensional terms *************//
-							if (IsfInterior){												
-								std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
-								if ( it != _FacePeriodicMap.end()  ){ 
-									std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-									idCellsOfFacef.push_back( idCells_other_Fj[0]  );
-								}
-								VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoR);	
-							}
-							else if (IsfWallBound ){			
-								rhoR =  rhoL;
-							}
-							else if (IsfSteggerBound){ 
-								std::map<int,double> boundaryPressure = getboundaryPressure(); 
-								std::map<int,double>::iterator it = boundaryPressure.find( idFaces[f]);
-								rhoR = boundaryPressure[it->first]; 
+						VecGetValues(_primitiveVars,1,&I	,&u);
+						//TODO conditional jump ? sur getOrientation
+						double orien = getOrientation(j, K);
+						if (_Ndim==1)
+							Convection_integral -= orien * u*u * rho/2.0; 
+						if (_Ndim == 2){
+							if ( ( (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[0])==idNodesOfFacef.end()) && (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[1])==idNodesOfFacef.end()) ) || (idFaces[f] ==j)  ){
+								Convection_integral -=  orien * Fj.getMeasure()* u*u * rho/2.0 ;
 							}
 						}
-					} 
-					VecSetValues(_Conv, 1, &IndexFace, &Convection_integral, ADD_VALUES ); 
-				}
-				else if (IsWallBound || IsSteggerBound ) { 
-					/****************** Density conservation equation *********************/
-					PetscScalar rhoExt, rhoInt;
-					VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
-					//VecGetValues(_primitiveVars,1,&IndexFace,&u);
-					
-					//Is the face a wall boundarycondition face
-					if (IsWallBound){	
-						rhoExt =  rhoInt;
-					}
-					else if (IsSteggerBound){ //Imposed boundaryconditions
-						std::map<int,double> boundaryPressure = getboundaryPressure(); 
-						std::map<int,double>::iterator it = boundaryPressure.find(j);
-						rhoExt = boundaryPressure[it->first]; 
-					}
-					PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
-					MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
-					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
-					
-					PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/2.0; 
-					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
-					PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
-					VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
-				}	
-			}
-		}
+						//************* _Ndim dimensional terms *************//
+						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, Facef.getBarryCenter() );
+						std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
+						std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, Fj,j, Facef.getBarryCenter());
+						double uTensu_Contracted_Nabla_Psi = Contraction(utensorielu, GradientPsi_j_in_Xf);
+						Node vertex1 = _mesh.getNode( idNodesOfFacef[0] );
+						Node vertex2 = _mesh.getNode( idNodesOfFacef[1] );
+						double orientedArea = ((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0;
+						//	Convection_integral += uTensu_Contracted_Nabla_Psi * abs(orientedArea);
 
+						//************* (_Ndim-1)  dimensional terms *************//
+						if (IsfInterior){												
+							std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
+							if ( it != _FacePeriodicMap.end()  ){ 
+								std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
+								idCellsOfFacef.push_back( idCells_other_Fj[0]  );
+							}
+							VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoR);	
+						}
+						else if (IsfWallBound ){			
+							rhoR =  rhoL;
+						}
+						else if (IsfSteggerBound){ 
+							std::map<int,double> boundaryPressure = getboundaryPressure(); 
+							std::map<int,double>::iterator it = boundaryPressure.find( idFaces[f]);
+							rhoR = boundaryPressure[it->first]; 
+						}
+					}
+				} 
+				VecSetValues(_Conv, 1, &IndexFace, &Convection_integral, ADD_VALUES ); 
+			}
+			else if (IsWallBound || IsSteggerBound ) { 
+				/****************** Density conservation equation *********************/
+				PetscScalar rhoExt, rhoInt;
+				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
+				//VecGetValues(_primitiveVars,1,&IndexFace,&u);
+				
+				//Is the face a wall boundarycondition face
+				if (IsWallBound){	
+					rhoExt =  rhoInt;
+				}
+				else if (IsSteggerBound){ //Imposed boundaryconditions
+					std::map<int,double> boundaryPressure = getboundaryPressure(); 
+					std::map<int,double>::iterator it = boundaryPressure.find(j);
+					rhoExt = boundaryPressure[it->first]; 
+				}
+				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
+				MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
+				MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
+				
+				PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/2.0; 
+				MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES );
+				PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
+				VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
+			}	
+		}
+		
 		MatAssemblyBegin(_DivRhoU,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_DivRhoU, MAT_FINAL_ASSEMBLY);
-		MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY); //TODO conditional jump ?
 		MatAssemblyEnd(_LaplacianPressure, MAT_FINAL_ASSEMBLY);
 		VecAssemblyBegin(_BoundaryTerms);
 		VecAssemblyEnd(_BoundaryTerms);
@@ -718,7 +716,7 @@ std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas
 std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef, int f, Point X){
 	std::vector<double> Gradient_PhysicalPsif_in_X(_Ndim* _Ndim);
 	for (int k =0; k < _Ndim* _Ndim ; k++)
-		Gradient_PhysicalPsif_in_X[k*_Ndim+ k ] = 0;
+		Gradient_PhysicalPsif_in_X[k] = 0;
 
 	std::vector<int> idNodesofCellK = K.getNodesId();
 	std::vector<Node> K_Nodes;
@@ -741,13 +739,14 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 		double cdot =0;
 		std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(f);
 		for (int e=0; e <_Ndim; e++)
-			cdot += PhysicalPsij[e] * it->second[e] 	; 
+			cdot += PhysicalPsij[e] * it->second[e]; 
 		if (abs(cdot) !=0){
 			std::vector<double>  Gradient_ReferencePsif_in_X = Gradient_ReferenceBasisFunctionRaviartThomas(j);
 			for (int i =0; i < _Ndim ; i++){
 				for (int j =0; j < _Ndim ; j++){
-					for (int l =0; l < _Ndim ; l++)
+					for (int l =0; l < _Ndim ; l++){
 						Gradient_PhysicalPsif_in_X[i*_Ndim + j] += JacobianTransfor_K_Xhat[i*_Ndim  +  l] * Gradient_ReferencePsif_in_X[l*_Ndim + j] * Facef.getMeasure()/2.0 ;//TODO why 1/2.0 ?
+					}
 				}
 			}		
 		}
@@ -791,6 +790,16 @@ double EulerBarotropicStaggered::Contraction(std::vector<double> &u, std::vector
 		}
 	}
 	return contraction;
+ }
+
+ std::vector<double> EulerBarotropicStaggered::InvTranspose(std::vector<double> &u){
+	std::vector<double> InverseTransposed( u.size() );
+	double detu = u[0] * u[3] - u[2] * u[1];
+	InverseTransposed[0] = u[3]/detu;
+	InverseTransposed[1] = -u[2]/detu;
+	InverseTransposed[2] = -u[1]/detu;
+	InverseTransposed[3] = u[0]/detu;
+	return InverseTransposed;
  }
 
 

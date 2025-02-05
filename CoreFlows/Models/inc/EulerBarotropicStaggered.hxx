@@ -72,9 +72,10 @@ public :
     std::vector<double>  Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K,Point X);
 
-    std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); 
-    double Contraction(std::vector<double> &u, std::vector<double> &v); //Contraction of two order 2 tensors
-    
+    std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v
+    double Contraction(std::vector<double> &u, std::vector<double> &v); // returns contraction of two order 2 tensors
+    std::vector<double> InvTranspose(std::vector<double> &u); // returns (u^{-1})^t
+     
 protected :
  /** Fluid equation of state **/
     vector<    Fluide* > _fluides;//

@@ -111,7 +111,7 @@ public :
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
 	
 	/***********Orientation *************/
-	double getOrientation(int j, Cell Cint);
+	double getOrientation(int l, Cell Cint);
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
 
 	/***********Post Pro *************/
