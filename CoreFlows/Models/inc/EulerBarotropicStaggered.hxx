@@ -68,8 +68,9 @@ public :
     std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i);
     Point xToxhat(Cell K, Point X,std::vector<Node> K_Nodes); 
     std::vector<double>  JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes);
-    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
-    std::vector<double>  Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X);
+    bool FindlocalBasis(int m, Face Facej, int j, Cell K, std::vector<Node> K_Nodes );
+    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K,std::vector<Cell> Support, Face Facej,int j, Point X);
+    std::vector<double>  Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, std::vector<Cell> Support, Face Facej, int j, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K,Point X);
 
     std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v

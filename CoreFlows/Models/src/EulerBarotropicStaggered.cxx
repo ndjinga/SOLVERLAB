@@ -205,11 +205,8 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 		}
 
 		if (IsInterior){
-			std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
-			if ( it != _FacePeriodicMap.end()  ){ 
-				std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-				idCells.push_back( idCells_other_Fj[0]  );
-			}
+			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
+				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 	
 			if (_Ndim == 1){
@@ -268,19 +265,16 @@ void EulerBarotropicStaggered::UpdateDualDensity(){
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
 		Cell Ctemp1 = _mesh.getCell(idCells[0]);
-		PetscScalar detL, detR, D_sigmaL, D_sigmaR, rho_sigma,inv_rho_sigma, rhoL, rhoR, usigma;
+		PetscScalar detL, detR, D_sigmaL, D_sigmaR, rho_sigma, rhoL, rhoR, usigma;
 
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
 		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
 		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;		
 		PetscInt I = _Nmailles + j;
-		PetscScalar one = 1.0;
+
 		if (IsInterior){
-			std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
-			if ( it != _FacePeriodicMap.end()  ){ 
-				std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-				idCells.push_back( idCells_other_Fj[0]  );
-			}
+			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
+				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 			if (_Ndim == 1){
 				detL = (Ctemp2.x() - Ctemp1.x())/2.0;
@@ -341,33 +335,29 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 			Face Fj = _mesh.getFace(j);
 			std::vector< int > idCells = Fj.getCellsId();
 			Cell Ctemp1 = _mesh.getCell(idCells[0]);
-			PetscScalar Convection_integral, rhoL, rhoR, u, u_sigma, det, InvD_sigma, InvPerimeter1, InvPerimeter2;	
+			PetscScalar Convection, rhoInt, rhoExt, u, u_sigma, det, InvD_sigma, InvPerimeter1, InvPerimeter2;	
 			
 			PetscScalar orientedFaceArea = getOrientation(j,Ctemp1) * Fj.getMeasure();
 			PetscScalar orientedMinusFaceArea = -orientedFaceArea;
 			PetscScalar FaceArea = Fj.getMeasure();
 			PetscScalar MinusFaceArea = -FaceArea;
 			PetscInt IndexFace = _Nmailles + j;
-			//PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 
 			bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
 			bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
 			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
 	
 			if (IsInterior){
-				std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
-				if ( it != _FacePeriodicMap.end()  ){ 
-					std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-					idCells.push_back( idCells_other_Fj[0]  );
-				}
+				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
+					idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
 
 				/****************** Density conservation equation *********************/
-				VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
-				VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
+				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
+				VecGetValues(_primitiveVars,1,&idCells[1],&rhoExt);
 				VecGetValues(_primitiveVars,1,&IndexFace,&u_sigma);
 
-				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoL + rhoR)/2.0 ;
+				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0 ;
 				PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
 				PetscScalar FaceArea_upwinding = (abs(u)+ _c ) * FaceArea/2.0; 
 				PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
@@ -381,21 +371,22 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				/*************** Momentum conservation equation *****************/
 				MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 				MatSetValues(_Div, 1, &idCells[1], 1, &j, &orientedMinusFaceArea, ADD_VALUES ); 
-				MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
+				MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES );
 				MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 				
 				// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
 				PetscInt I;
-				Convection_integral= 0;
+				Convection= 0; 
+				std::vector<Cell> Support_j;
+				Support_j.push_back(_mesh.getCell(idCells[0]));
+				Support_j.push_back(_mesh.getCell(idCells[1]));
 				for (int nei =0; nei <2; nei ++){ // we are in the case where an interior face has two neighbours
 					Cell K = _mesh.getCell(idCells[nei]); 
 					Point BarycenterK =  K.getBarryCenter();
 					std::vector<int> idFaces = K.getFacesId();
 					VecGetValues(_primitiveVars,1,&idCells[nei],&rho);
-
-					//If  the face is periodic, recover the geometric informations of the associated periodic cell 
-					std::vector< int > NodesFj = ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei]    ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getNodesId() :  Fj.getNodesId(); 
-					Point BarycenterFj =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] 	 ? _mesh.getFace(_FacePeriodicMap.find(j)->second ).getBarryCenter() :  Fj.getBarryCenter();
+					//If  the face is periodic and K isn't the direct neighbour of Fj, recover the geometric informations of the associated periodic cell 
+					Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
 					
 					for (int f =0; f <K.getNumberOfFaces(); f ++){
 						bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
@@ -406,64 +397,64 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						std::vector< int> idCellsOfFacef =  Facef.getCellsId();
 						std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 						I = _Nmailles + idFaces[f];
-
-
 						VecGetValues(_primitiveVars,1,&I	,&u);
-						//TODO conditional jump ? sur getOrientation
-						double orien = getOrientation(j, K);
-						if (_Ndim==1)
-							Convection_integral -= orien * u*u * rho/2.0; 
-						if (_Ndim == 2){
-							if ( ( (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[0])==idNodesOfFacef.end()) && (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[1])==idNodesOfFacef.end()) ) || (idFaces[f] ==j)  ){
-								Convection_integral -=  orien * Fj.getMeasure()* u*u * rho/2.0 ;
+
+						if (_Ndim==1) Convection -= getOrientation(j, K) * u*u * rho/2.0; 
+						/* if (_Ndim == 2){
+							if ( ( (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), Fj_physical.getNodesId()[0] )==idNodesOfFacef.end()) && (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), Fj_physical.getNodesId()[1])==idNodesOfFacef.end()) ) || (idFaces[f] ==j)  ){
+								Convection -=  getOrientation(j, K) * Fj.getMeasure()* u*u * rho/2.0 ;
 							}
-						}
+						} */
+						
+						/* std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas( K, Support_j, Fj_physical, j, Facef.getBarryCenter()) ;
+						cout << "x_j = ("<< Fj.getBarryCenter().x() <<" , "<< Fj.getBarryCenter().y() <<") Psi_"<<j << " ( "<<Facef.getBarryCenter().x() << " , " << Facef.getBarryCenter().y() <<") = ( " <<Psi_j_in_Xf[0]<<" , "<< Psi_j_in_Xf[1]<< " )" <<endl;	
+ */
+						//TODO : le code ne va pas marcher en dimension 1 car piola n'est pas défini pour _ndim ==1
 						//************* _Ndim dimensional terms *************//
 						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, Facef.getBarryCenter() );
 						std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
-						std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, Fj,j, Facef.getBarryCenter());
+						std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K,Support_j, Fj_physical,j, Facef.getBarryCenter());
 						double uTensu_Contracted_Nabla_Psi = Contraction(utensorielu, GradientPsi_j_in_Xf);
 						Node vertex1 = _mesh.getNode( idNodesOfFacef[0] );
 						Node vertex2 = _mesh.getNode( idNodesOfFacef[1] );
-						double orientedArea = ((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0;
-						//	Convection_integral += uTensu_Contracted_Nabla_Psi * abs(orientedArea);
+						//TODO seulement en dim 2 pour le moment à corriger. 
+						double orientedArea = (_Ndim==2) ? ((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0 : K.x() - vertex1.x();
+						Convection += uTensu_Contracted_Nabla_Psi * abs(orientedArea);
 
 						//************* (_Ndim-1)  dimensional terms *************//
 						if (IsfInterior){												
-							std::map<int,int>::iterator it = _FacePeriodicMap.find(f);
-							if ( it != _FacePeriodicMap.end()  ){ 
-								std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-								idCellsOfFacef.push_back( idCells_other_Fj[0]  );
-							}
-							VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoR);	
+							std::map<int,int>::iterator it = _FacePeriodicMap.find(idFaces[f]);
+							if ( _FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()  )
+								idCellsOfFacef.push_back( _mesh.getFace( _FacePeriodicMap.find(idFaces[f])->second ).getCellsId()[0]  );
+							VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoExt);	
 						}
-						else if (IsfWallBound ){			
-							rhoR =  rhoL;
+						else 
+							rhoExt = IsfWallBound ? rho : (IsfSteggerBound ? getboundaryPressure().find(j)->second : 1.0 );
+						
+						double jump =0;
+						// TODO Sign & vérifier support nul 
+						for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
+							double dotprod =0;
+							Cell Neibourg_of_f = _mesh.getCell(idCellsOfFacef[ncell]);
+							std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, Support_j, Fj_physical,j, Facef.getBarryCenter()); 
+							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(Neibourg_of_f, Facef.getBarryCenter() );
+							for (int ndim =0; ndim < _Ndim; ndim ++ )
+								dotprod += Psi_j_in_Xf[ndim] * velocityRT_in_Xf[ndim]; 
+							jump += getOrientation( idFaces[f],Neibourg_of_f) * dotprod; 
 						}
-						else if (IsfSteggerBound){ 
-							std::map<int,double> boundaryPressure = getboundaryPressure(); 
-							std::map<int,double>::iterator it = boundaryPressure.find( idFaces[f]);
-							rhoR = boundaryPressure[it->first]; 
-						}
+						/* if (jump !=0.0)
+							cout << "jump =" << jump << " meanrho u jump = "<< (rhoInt + rhoExt) * u * Facef.getMeasure() * jump/2.0 <<endl; */
+						Convection += (rho + rhoExt) * u * Facef.getMeasure() * jump/2.0; //surface integral approximated in midpoint	
 					}
 				} 
-				VecSetValues(_Conv, 1, &IndexFace, &Convection_integral, ADD_VALUES ); 
+				VecSetValues(_Conv, 1, &IndexFace, &Convection, ADD_VALUES ); 
 			}
 			else if (IsWallBound || IsSteggerBound ) { 
 				/****************** Density conservation equation *********************/
-				PetscScalar rhoExt, rhoInt;
-				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
-				//VecGetValues(_primitiveVars,1,&IndexFace,&u);
-				
-				//Is the face a wall boundarycondition face
-				if (IsWallBound){	
-					rhoExt =  rhoInt;
-				}
-				else if (IsSteggerBound){ //Imposed boundaryconditions
-					std::map<int,double> boundaryPressure = getboundaryPressure(); 
-					std::map<int,double>::iterator it = boundaryPressure.find(j);
-					rhoExt = boundaryPressure[it->first]; 
-				}
+				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);		
+				VecGetValues(_primitiveVars,1,&IndexFace,&u);		
+				rhoExt = IsWallBound ? rhoInt : (IsSteggerBound ? getboundaryPressure().find(j)->second : 1.0 );
+
 				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
 				MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
 				MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
@@ -492,7 +483,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		/***********Assembling the matrix _A such that : *************/
 		// _A = ( (u+c) _Laplacian   ;                 -Div(\rhomean .)                  )
 		//      (0_FacesxCells   ; -Conv+ c (\tilde rho) MinusGrad 1/|dK| Div + LaplacianVelocity	)
-
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
 		VecScale(_Conv, -1.0);
@@ -538,7 +528,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		}														
 		//add pressure gradient : AU^n+ V^{-1}Boundterms - V^{-1}_Conv - V^{-1}GradPressure//
 		MatMult(_DivTranspose, Pressure, Temporary2); 						
-		double *Product = new double[_Nfaces]; //Can we avoid creating a pointer only to insert in the bigger Vector ?
+		double *Product = new double[_Nfaces]; //CTOSO an we avoid creating a pointer only to insert in the bigger Vector ?
 		PetscScalar gradp;
 		for (int i=0; i <_Nfaces; i++){
 			VecGetValues(Temporary2,1,&i,&gradp);
@@ -578,7 +568,7 @@ std::vector<double> EulerBarotropicStaggered::ReferenceBasisFunctionRaviartThoma
 	std::vector<double> Psihat(_Ndim);
 	if (_Ndim ==2){
 		if (i ==0){
-			Psihat[0] = (Xhat.x() + 1)/2.0;;
+			Psihat[0] = (Xhat.x() + 1)/2.0;
 			Psihat[1] = 0;
 		}
 		else if (i ==1){
@@ -595,6 +585,97 @@ std::vector<double> EulerBarotropicStaggered::ReferenceBasisFunctionRaviartThoma
 		}
 	}
 	return Psihat;
+}
+
+Point EulerBarotropicStaggered::xToxhat(Cell K, Point X, std::vector<Node> K_Nodes){
+	Point Xhat;
+	Point Xb = K.getBarryCenter();
+	if (_Ndim ==2){
+		if (X .x() == Xb.x() && X.y() == Xb.y() ) //if X is the center of gravity
+			Xhat = Point(0,0,0);
+		
+		//Nodes related
+		else if (X.x() == K_Nodes[0].x() && X.y() == K_Nodes[0].y() ) // if X is the Node X_1
+			Xhat = Point(-1,-1,0);
+		else if (X.x() == K_Nodes[1].x() && X.y() == K_Nodes[1].y() ) // if X is the Node X_2
+			Xhat = Point(1,-1,0);
+		else if (X.x() == K_Nodes[2].x() && X.y() == K_Nodes[2].y() ) // if X is the Node X_3
+			Xhat = Point(1,1,0);
+		else if (X.x() == K_Nodes[3].x() && X.y() == K_Nodes[3].y() ) // if X is the Node X_4
+			Xhat = Point(-1,1,0);
+
+		//Faces related
+		else if (X.x() == ( K_Nodes[0].x() +  K_Nodes[1].x())/2.0 && X.y() == ( K_Nodes[0].y() +  K_Nodes[1].y())/2.0  ) // if X is the middle point of the first face
+			Xhat = Point(0,-1,0);
+		else if (X.x() == ( K_Nodes[1].x() +  K_Nodes[2].x())/2.0 && X.y() == ( K_Nodes[1].y() +  K_Nodes[2].y())/2.0 )  // if X is the middle point of the second face
+			Xhat = Point(1,0,0);
+		else if (X.x() == ( K_Nodes[2].x() +  K_Nodes[3].x())/2.0 && X.y() == ( K_Nodes[2].y() +  K_Nodes[3].y())/2.0 )  // if X is the middle point of the third face
+			Xhat = Point(0,1,0);
+		else if (X.x() == ( K_Nodes[3].x() +  K_Nodes[0].x())/2.0 && X.y() == ( K_Nodes[3].y() +  K_Nodes[0].y())/2.0 )  // if X is the middle point of the fourth face
+			Xhat = Point(-1,0,0);
+	}	
+	return Xhat;
+}
+
+
+std::vector<double> EulerBarotropicStaggered::JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes){
+	std::vector<double> JacobianTransfor_K(_Ndim * _Ndim);
+	if (_Ndim ==2){
+	//first column : should only depend on Xhat_x
+		JacobianTransfor_K[0] = 1/4.0 *( (K_Nodes[0].x()  - K_Nodes[1].x())*(1 - X.y()) + (K_Nodes[3].x()  - K_Nodes[2].x())*(1 + X.y())  );
+		JacobianTransfor_K[2] = 1/4.0 *( (K_Nodes[0].y()  - K_Nodes[1].y())*(1 - X.y()) + (K_Nodes[3].y()  - K_Nodes[2].y())*(1 + X.y())  );
+		//second column: should only depend on Xhat_y
+		JacobianTransfor_K[1] = 1/4.0 *( (K_Nodes[3].x()  - K_Nodes[0].x())*(1 - X.x()) + (K_Nodes[2].x()  - K_Nodes[1].x())*(1 + X.x())  );
+		JacobianTransfor_K[3] = 1/4.0 *( (K_Nodes[3].y()  - K_Nodes[0].y())*(1 - X.x()) + (K_Nodes[2].y()  - K_Nodes[1].y())*(1 + X.x())  );
+		double absJacobian =  abs(JacobianTransfor_K[0] * JacobianTransfor_K[3] - JacobianTransfor_K[2]* JacobianTransfor_K[1] ); 
+		for (int k =0; k< _Ndim * _Ndim; k++)
+			JacobianTransfor_K[k] /= absJacobian;
+	}
+	return JacobianTransfor_K;
+}
+
+
+bool EulerBarotropicStaggered::FindlocalBasis(int m, Face Facej, int j, Cell K, std::vector<Node> K_Nodes ){
+	Point Xhat_j =  xToxhat(K,  Facej.getBarryCenter(), K_Nodes) ; 
+	std::vector<double>  JacobianTransfor_K_Xhatf = JacobianTransfor_K_X(Xhat_j, K_Nodes );
+	
+	std::vector<double> ReferencePsij = ReferenceBasisFunctionRaviartThomas(m, Xhat_j);
+	std::vector<double> PhysicalPsij(_Ndim, 0.0);
+	for (int k =0; k < _Ndim ; k++){
+		for (int l =0; l < _Ndim ; l++)
+			PhysicalPsij[k] += JacobianTransfor_K_Xhatf[k* _Ndim +l] * ReferencePsij[l]* Facej.getMeasure()/2.0 ; //TODO facteur 2
+	}
+	double cdot =0;
+	for (int e=0; e <_Ndim; e++)
+		cdot += PhysicalPsij[e] * _vec_sigma.find(j)->second[e]; 
+
+	return (cdot == 1);
+}
+
+
+std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, std::vector<Cell> Support, Face Facej, int j, Point X){
+	std::vector<double> PhysicalPsif_in_X(_Ndim, 0.0);
+	std::vector<Node> K_Nodes;
+	for (int i=0; i < K.getNodesId().size(); i++)
+		K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
+	std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X( xToxhat(K, X, K_Nodes), K_Nodes );
+	//In order to find the corresponding basis function on the reference element we test its image by Piola transform 
+	//and select the only one that is non-zero when taken against n_sigma. TODO find better way to find the reference basis function 
+	for (int  m = 0; m < K.getNumberOfFaces(); m ++){
+		bool K_is_in_Support = false;
+		for (const auto &cell: Support){
+			if (K.getBarryCenter().x() == cell.getBarryCenter().x() && K.getBarryCenter().y() == cell.getBarryCenter().y())
+				K_is_in_Support =true;
+		}
+		if ( FindlocalBasis(m, Facej, j, K,  K_Nodes) == true && K_is_in_Support == true ){
+			std::vector<double> ReferencePsif_in_X = ReferenceBasisFunctionRaviartThomas(m, xToxhat(K, X, K_Nodes) );
+			for (int k =0; k < _Ndim ; k++){	
+				for (int l =0; l < _Ndim ; l++)//TODO why 1/2.0 ?
+					PhysicalPsif_in_X[k] += JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferencePsif_in_X[l] * Facej.getMeasure()/2.0 ;
+			}
+		}
+	}
+	return PhysicalPsif_in_X;
 }
 
 std::vector<double>  EulerBarotropicStaggered::Gradient_ReferenceBasisFunctionRaviartThomas(int i){
@@ -628,124 +709,29 @@ std::vector<double>  EulerBarotropicStaggered::Gradient_ReferenceBasisFunctionRa
 	}
 	return Gradient_Psihat;	
 }
-
-Point EulerBarotropicStaggered::xToxhat(Cell K, Point X, std::vector<Node> K_Nodes){
-	Point Xhat;
-	Point Xb = K.getBarryCenter();
-	if (_Ndim ==2){
-		if (X .x() == Xb.x() && X.y() == Xb.y() ) //if X is the center of gravity
-			Xhat = Point(0,0,0);
-		
-		//Nodes related
-		else if (X.x() == K_Nodes[0].x() && X.y() == K_Nodes[0].y() ) // if X is the Node X_1
-			Xhat = Point(-1,-1,0);
-		else if (X.x() == K_Nodes[1].x() && X.y() == K_Nodes[1].y() ) // if X is the Node X_2
-			Xhat = Point(1,-1,0);
-		else if (X.x() == K_Nodes[2].x() && X.y() == K_Nodes[2].y() ) // if X is the Node X_3
-			Xhat = Point(1,1,0);
-		else if (X.x() == K_Nodes[3].x() && X.y() == K_Nodes[3].y() ) // if X is the Node X_4
-			Xhat = Point(-1,1,0);
-
-		//Faces related
-		else if (X.x() == ( K_Nodes[0].x() +  K_Nodes[1].x())/2.0 && X.y() == ( K_Nodes[0].y() +  K_Nodes[1].y())/2.0  ) // if X is the middle point of the first face
-			Xhat = Point(0,-1,0);
-		else if (X.x() == ( K_Nodes[1].x() +  K_Nodes[2].x())/2.0 && X.y() == ( K_Nodes[1].y() +  K_Nodes[2].y())/2.0 )  // if X is the middle point of the second face
-			Xhat = Point(1,0,0);
-		else if (X.x() == ( K_Nodes[2].x() +  K_Nodes[3].x())/2.0 && X.y() == ( K_Nodes[2].y() +  K_Nodes[3].y())/2.0 )  // if X is the middle point of the third face
-			Xhat = Point(0,1,0);
-		else if (X.x() == ( K_Nodes[3].x() +  K_Nodes[0].x())/2.0 && X.y() == ( K_Nodes[3].y() +  K_Nodes[0].y())/2.0 )  // if X is the middle point of the fourth face
-			Xhat = Point(-1,0,0);
-	}	
-	return Xhat;
-}
-
-std::vector<double> EulerBarotropicStaggered::JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes){
-	std::vector<double> JacobianTransfor_K(_Ndim * _Ndim);
-	if (_Ndim ==2){
-	//first column : should only depend on Xhat_x
-		JacobianTransfor_K[0] = 1/4.0 *( (K_Nodes[0].x()  - K_Nodes[1].x())*(1 - X.y()) + (K_Nodes[3].x()  - K_Nodes[2].x())*(1 + X.y())  );
-		JacobianTransfor_K[2] = 1/4.0 *( (K_Nodes[0].y()  - K_Nodes[1].y())*(1 - X.y()) + (K_Nodes[3].y()  - K_Nodes[2].y())*(1 + X.y())  );
-		//second column: should only depend on Xhat_y
-		JacobianTransfor_K[1] = 1/4.0 *( (K_Nodes[3].x()  - K_Nodes[0].x())*(1 - X.x()) + (K_Nodes[2].x()  - K_Nodes[1].x())*(1 + X.x())  );
-		JacobianTransfor_K[3] = 1/4.0 *( (K_Nodes[3].y()  - K_Nodes[0].y())*(1 - X.x()) + (K_Nodes[2].y()  - K_Nodes[1].y())*(1 + X.x())  );
-		double absJacobian =  abs(JacobianTransfor_K[0] * JacobianTransfor_K[3] - JacobianTransfor_K[2]* JacobianTransfor_K[1] ); 
-		for (int k =0; k< _Ndim * _Ndim; k++)
-			JacobianTransfor_K[k] /= absJacobian;
-	}
-	return JacobianTransfor_K;
-}
-
-std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef,int f, Point X){
-	std::vector<double> PhysicalPsif_in_X(_Ndim, 0.0);
-	std::vector<int> idNodesofCellK = K.getNodesId();
-	std::vector<Node> K_Nodes;
-	for (int i=0; i < idNodesofCellK.size(); i++)
-		K_Nodes.push_back(_mesh.getNode(idNodesofCellK[i]) );
-
-	Point Xhat_f =  xToxhat(K,  Facef.getBarryCenter(), K_Nodes) ; 
-	Point Xhat = xToxhat(K, X, K_Nodes); 
-	std::vector<double>  JacobianTransfor_K_Xhatf = JacobianTransfor_K_X(Xhat_f, K_Nodes );
-	std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X(Xhat, K_Nodes );
-	
-	for (int  j = 0; j < K.getNumberOfFaces(); j ++){
-		std::vector<double> ReferencePsij = ReferenceBasisFunctionRaviartThomas(j, Xhat_f);
-		std::vector<double> PhysicalPsij(_Ndim);
-		for (int k =0; k < _Ndim ; k++){
-			PhysicalPsij[k] = 0;
-			for (int l =0; l < _Ndim ; l++)
-				PhysicalPsij[k] += JacobianTransfor_K_Xhatf[k* _Ndim +l] * ReferencePsij[l]* Facef.getMeasure() /2.0 ;
-		}
-		double cdot =0;
-		std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(f);
-		for (int e=0; e <_Ndim; e++)
-			cdot += PhysicalPsij[e] * it->second[e] 	; 
-		if (abs(cdot) !=0){
-			std::vector<double> ReferencePsif_in_X = ReferenceBasisFunctionRaviartThomas(j, Xhat );
-			for (int k =0; k < _Ndim ; k++){	
-				for (int l =0; l < _Ndim ; l++)//TODO why 1/2.0 ?
-					PhysicalPsif_in_X[k] += JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferencePsif_in_X[l] * Facef.getMeasure()/2.0 ;
-			}
-		}
-	}
-
-	return PhysicalPsif_in_X;
-}
-
-
 //TODO for now only on affine meshes AND need to add B^{-t}
-std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, Face Facef, int f, Point X){
-	std::vector<double> Gradient_PhysicalPsif_in_X(_Ndim* _Ndim);
-	for (int k =0; k < _Ndim* _Ndim ; k++)
-		Gradient_PhysicalPsif_in_X[k] = 0;
-
-	std::vector<int> idNodesofCellK = K.getNodesId();
+std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, std::vector<Cell> Support, Face Facej, int j, Point X){
+	std::vector<double> Gradient_PhysicalPsif_in_X(_Ndim* _Ndim, 0.0);
 	std::vector<Node> K_Nodes;
-	for (int i=0; i < idNodesofCellK.size(); i++)
-		K_Nodes.push_back(_mesh.getNode(idNodesofCellK[i]) );
-	
-	Point Xhat_f =  xToxhat(K,  Facef.getBarryCenter(), K_Nodes) ; 
-	Point Xhat = xToxhat(K, X, K_Nodes); 
-	std::vector<double>  JacobianTransfor_K_Xhatf = JacobianTransfor_K_X(Xhat_f, K_Nodes );
-	std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X(Xhat, K_Nodes ); 
+	for (int i=0; i < K.getNodesId().size(); i++)
+		K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
+	std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X( xToxhat(K, X, K_Nodes), K_Nodes ); 
+	std::vector<double>  JacobianTransfor_K_Xhat_InversedTranposed = InvTranspose( JacobianTransfor_K_Xhat );
 
-	for (int  j = 0; j < K.getNumberOfFaces(); j ++){
-		std::vector<double> ReferencePsij = ReferenceBasisFunctionRaviartThomas(j, Xhat_f);
-		std::vector<double> PhysicalPsij(_Ndim);
-		for (int k =0; k < _Ndim ; k++){
-			PhysicalPsij[k] = 0;
-			for (int l =0; l < _Ndim ; l++)
-				PhysicalPsij[k] += JacobianTransfor_K_Xhatf[k*_Ndim   + l] * ReferencePsij[l]* Facef.getMeasure() ;
+	for (int  m = 0; m < K.getNumberOfFaces(); m ++){
+		bool K_is_in_Support = false;
+		for (const auto &cell: Support){
+			if (K.getBarryCenter().x() == cell.getBarryCenter().x() && K.getBarryCenter().y() == cell.getBarryCenter().y())
+				K_is_in_Support =true;
 		}
-		double cdot =0;
-		std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(f);
-		for (int e=0; e <_Ndim; e++)
-			cdot += PhysicalPsij[e] * it->second[e]; 
-		if (abs(cdot) !=0){
-			std::vector<double>  Gradient_ReferencePsif_in_X = Gradient_ReferenceBasisFunctionRaviartThomas(j);
+		if (FindlocalBasis(m, Facej, j, K,  K_Nodes) && K_is_in_Support == true ){
+			std::vector<double>  Gradient_ReferencePsif_in_X = Gradient_ReferenceBasisFunctionRaviartThomas(m);
 			for (int i =0; i < _Ndim ; i++){
 				for (int j =0; j < _Ndim ; j++){
 					for (int l =0; l < _Ndim ; l++){
-						Gradient_PhysicalPsif_in_X[i*_Ndim + j] += JacobianTransfor_K_Xhat[i*_Ndim  +  l] * Gradient_ReferencePsif_in_X[l*_Ndim + j] * Facef.getMeasure()/2.0 ;//TODO why 1/2.0 ?
+						for (int t =0; t < _Ndim ; t++){
+							Gradient_PhysicalPsif_in_X[i*_Ndim + j] += JacobianTransfor_K_Xhat[i*_Ndim  +  l] * Gradient_ReferencePsif_in_X[l*_Ndim + t] * JacobianTransfor_K_Xhat_InversedTranposed[t*_Ndim + j] * Facej.getMeasure()/2.0 ;//TODO why 1/2.0 ?
+						}
 					}
 				}
 			}		
@@ -758,11 +744,13 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 std::vector<double> EulerBarotropicStaggered::VelocityRaviartThomas_at_point_X(Cell K, Point X){
 	std::vector<double> VelocityRT(_Ndim,0.0);
 	std::vector< int > idFaces = K.getFacesId();
+	std::vector<Cell> Support ;
+	Support.push_back(K);
 	PetscInt IndexFace;
 	PetscScalar u;
 	for (int f=0; f< K.getNumberOfFaces(); f++){
 		PetscInt IndexFace = _Nmailles + idFaces[f];
-		std::vector<double> Psif = PhysicalBasisFunctionRaviartThomas(K,_mesh.getFace(idFaces[f]), idFaces[f], X);
+		std::vector<double> Psif = PhysicalBasisFunctionRaviartThomas(K, Support, _mesh.getFace(idFaces[f]), idFaces[f], X);
 		VecGetValues(_primitiveVars,1,&IndexFace,&u);
 		//TODO CHECK ORIENTATION (no orientation for now since in cartesian all the faces vertical faces are given the (1,0)^t orientation and the horizontal faces the (0,1^t) orientation)
 		for (int k=0; k< _Ndim; k++)

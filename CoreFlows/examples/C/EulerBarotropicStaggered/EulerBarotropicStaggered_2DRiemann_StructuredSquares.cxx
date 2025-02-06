@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=100;
+			nx=50;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			
@@ -153,8 +153,8 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1000000;
-		int freqSave = 100;
+		unsigned MaxNbOfTimeStep = 100000000;
+		int freqSave = 40;
 		double cfl = 0.99;
 		double maxTime = 0.07;
 		double precision = 1e-10;
