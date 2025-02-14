@@ -68,9 +68,10 @@ public :
     std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i);
     Point xToxhat(Cell K, Point X,std::vector<Node> K_Nodes); 
     std::vector<double>  JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes);
+
     bool FindlocalBasis(int m, Face Facej, int j, Cell K, std::vector<Node> K_Nodes );
     std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K,std::vector<Cell> Support, Face Facej,int j, Point X);
-    std::vector<double>  Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, std::vector<Cell> Support, Face Facej, int j, Point X);
+    std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, std::vector<Cell> Support, Face Facej, int j, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K,Point X);
 
     std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v
@@ -88,6 +89,8 @@ protected :
 	Mat _InvVolPrim, _InvVolDual, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
 	double _c;
 	std::vector<double> _Entropy, _Time;
+    std::map<int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >_PhysicalPsif, _GradientPhysicalPsif;
+    //int is the number of the face j, the fist argument of the map is the number of the face f in which is evaluated the basis function and the second is the value of the basis funciton (or gradient)
 				
 
 };
