@@ -1,6 +1,7 @@
 #include "EulerBarotropicStaggered.hxx"
 #include "math.h"
 #include <cassert>
+#include <cstdlib>
 
 using namespace std;
 
@@ -13,22 +14,22 @@ double initialPressure( double z, double discontinuity){
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
-	if (z < discontinuity){
-		if (Direction == 'x'){
+	if (Direction == 'x'){
+		if (z < discontinuity){
 			vec[0] = 1.5;
 			vec[1] = 0;
 		}
-		if (Direction == 'y'){
-			vec[0] = 0;
-			vec[1] = 1.5;
-		}
-	}
-	else{
-		if (Direction == 'x'){
+		else {
 			vec[0] = -3;
 			vec[1] = 0;
 		}
-		if (Direction == 'y'){
+	}
+	else if (Direction == 'y'){
+		if (z < discontinuity){
+			vec[0] = 0;
+			vec[1] = 1.5;
+		}
+		else {
 			vec[0] = 0;
 			vec[1] = -3;
 		}
@@ -39,7 +40,6 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 
 int main(int argc, char** argv)
 {
-	
 	if (argc<2 || (*(argv[1]) != 'x' && *(argv[1]) != 'y') ){
 		cout << "ERROR : you have to give a direction for the pseudo 1d Riemann problem, either 'x' or 'y' ";
 	}
@@ -56,14 +56,14 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=3;
+			nx=50;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=80;
+			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 		}
 
@@ -153,7 +153,7 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 3;//00000000;
+		unsigned MaxNbOfTimeStep = 1000000;
 		int freqSave = 1;
 		double cfl = 0.99;
 		double maxTime = 0.07;
@@ -180,7 +180,15 @@ int main(int argc, char** argv)
 
 		cout << "------------ End of calculation !!! -----------" << endl;
 		myProblem.terminate();
-	}
 
+		/* cout << "Python script for exact solution" << endl;
+		int result = system("python3 EulerBarotropicStaggered_1DRiemannProblem.py");  
+		if (result == 0) {
+			cout << "Script executed" << endl;
+		} else {
+			cerr << "ERROR in execution python script" << endl;
+		} */
+	}
+		
 	return EXIT_SUCCESS;
 }

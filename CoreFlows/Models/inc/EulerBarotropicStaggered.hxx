@@ -70,6 +70,12 @@ public :
     std::vector<double>  JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes);
 
     bool FindlocalBasis(int m, Face Facej, int j, Cell K, std::vector<Node> K_Nodes );
+    double MassLumping(Cell K, Face Facej,int j);
+
+    // K is the cell on which we evaluate the basis function
+    // Support is the table containing the support (so only K when we compute in the cell)
+    // Facej is the face of the basis function and j its number
+    // X the point inwhich it is evaluated
     std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K,std::vector<Cell> Support, Face Facej,int j, Point X);
     std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, std::vector<Cell> Support, Face Facej, int j, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K,Point X);
