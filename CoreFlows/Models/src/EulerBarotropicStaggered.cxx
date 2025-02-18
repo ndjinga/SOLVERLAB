@@ -210,7 +210,6 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
  		Cell Ctemp1 = _mesh.getCell(idCells[0]);
 		std::vector< int > idFaces = Ctemp1.getFacesId();
 		PetscScalar det, InvD_sigma, InvPerimeter1, InvPerimeter2, deltaY	;
-		double mlump=0;
 		PetscInt IndexFace = _Nmailles + j;
 		PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 
@@ -218,14 +217,15 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
 		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;	
 
-		for (int f =0; f <Ctemp1.getNumberOfFaces(); f ++){			
+		/* for (int f =0; f <Ctemp1.getNumberOfFaces(); f ++){			
 			Face Facef = _mesh.getFace( idFaces[f] );
 			std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 			if ( ( (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[0])!=idNodesOfFacef.end()) || (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[1])!=idNodesOfFacef.end()) ) && (idFaces[f] != j) ){
 				deltaY = Facef.getMeasure();
 			}	
 		}
-		mlump += MassLumping(Ctemp1, Fj, j);
+		 */
+		double mlump = MassLumping(Ctemp1, Fj, j);
 		InvPerimeter1 = (_Ndim ==2) ? ( 1.0/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  )) : (1.0/Ctemp1.getNumberOfFaces());
 		if (IsInterior){
 			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
@@ -234,7 +234,7 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 			Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
 			InvPerimeter2 = (_Ndim ==2) ? (1.0/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  )) : (1.0/Ctemp2.getNumberOfFaces());
 			mlump += MassLumping(Ctemp2, Fj_physical, j);
-			InvD_sigma += 1.0/mlump;
+			InvD_sigma = 1.0/mlump;
 			PetscScalar InvVol2 = 1.0/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
 			MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
 			MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
@@ -387,6 +387,18 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					VecGetValues(_primitiveVars,1,&idCells[nei],&rho);
 					//If  the face is periodic and K isn't the direct neighbour of Fj, recover the geometric informations of the associated periodic cell 
 					Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
+
+					/* std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K,Support_j, Fj_physical,j, Fj.getBarryCenter());
+					for (int i =0; i< _Ndim; i++){
+						for (int l =0; l<_Ndim ; l++){
+							if (GradientPsi_j_in_Xf[i*_Ndim +l] != 0  ){
+								cout << "cell K = "<< idCells[nei]<< " x_k = ("<< K.getBarryCenter().x() <<" , "<<  K.getBarryCenter().y() << ") with nabla Psi_"<<j << " [" << i <<" , "<< l << "] = " << GradientPsi_j_in_Xf[i*_Ndim +l]<<" with Fj = ("<<Fj.getBarryCenter().x()<< " , "<<Fj.getBarryCenter().y()<<" )" <<endl;
+								//cout << "cell K = "<< idCells[nei]<<", utensorielu Psi_"<<j << " [" << i <<" , "<< l << "] = "<< utensorielu[i*_Ndim +l] <<endl; 
+								
+							}
+						}
+					} */
+
 					for (int f =0; f <K.getNumberOfFaces(); f ++){
 						bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
 						bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
@@ -423,15 +435,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						
 						/* for (int i =0; i< _Ndim; i++){
 							for (int l =0; l<_Ndim ; l++){
-								if (GradientPsi_j_in_Xf[i*_Ndim +l] != 0 && utensorielu[i*_Ndim +l] != 0 ){
-									cout << "cell K = "<< idCells[nei]<<", nabla Psi_"<<j << " [" << i <<" , "<< l << "] = " << GradientPsi_j_in_Xf[i*_Ndim +l] <<endl;
-									cout << "cell K = "<< idCells[nei]<<", utensorielu Psi_"<<j << " [" << i <<" , "<< l << "] = "<< utensorielu[i*_Ndim +l] <<endl; 
+								if (GradientPsi_j_in_Xf[i*_Ndim +l] != 0  ){
+									cout << "cell K = "<< idCells[nei]<< " x_k = ("<< K.getBarryCenter().x() <<" , "<<  K.getBarryCenter().y() << ") with nabla Psi_"<<j << " [" << i <<" , "<< l << "] = " << GradientPsi_j_in_Xf[i*_Ndim +l]<<" with Fj = ("<<Fj.getBarryCenter().x()<< " , "<<Fj.getBarryCenter().y()<<" )" <<endl;
+									//cout << "cell K = "<< idCells[nei]<<", utensorielu Psi_"<<j << " [" << i <<" , "<< l << "] = "<< utensorielu[i*_Ndim +l] <<endl; 
 									
 								}
 							}
-						}
-						*/
-					
+						} */
 						
 						//TODO what is the pb with sign difference if pb is in x or y ?
 												
@@ -551,7 +561,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
 
 		MatMult(_InvVol, GradPressure, Temporary1);
-		VecAXPY(_b,     1, Temporary1); 									
+		VecAXPY(_b,     1, Temporary1); 
+
+		VecView(_b, PETSC_VIEWER_STDOUT_WORLD);							
 
 		VecDestroy(& Temporary1);
 		VecDestroy(& Temporary2);
@@ -788,7 +800,7 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 				for (int i =0; i < _Ndim ; i++){
 					for (int j =0; j < _Ndim ; j++){
 						for (int l =0; l < _Ndim ; l++){
-							for (int t =0; t < _Ndim ; t++){
+							for (int t =0; t < _Ndim ; t++){ 
 								Gradient_PhysicalPsif_in_X[i*_Ndim + j] += JacobianTransfor_K_Xhat[i*_Ndim  +  l] * Gradient_ReferencePsif_in_X[l*_Ndim + t] * JacobianTransfor_K_Xhat_InversedTranposed[t*_Ndim + j] * Facej.getMeasure()/(_Ndim *  absJacobian);//TODO why 1/2.0 ?
 							}
 						}

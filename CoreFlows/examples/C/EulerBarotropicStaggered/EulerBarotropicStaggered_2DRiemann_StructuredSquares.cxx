@@ -7,31 +7,33 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 12;
-	else
 		return 1;
+	else
+		return 10;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
+	double ul = -1;
+	double ur = 1;
 	if (Direction == 'x'){
 		if (z < discontinuity){
-			vec[0] = 1.5;
+			vec[0] = ul;
 			vec[1] = 0;
 		}
 		else {
-			vec[0] = -3;
+			vec[0] = ur;
 			vec[1] = 0;
 		}
 	}
 	else if (Direction == 'y'){
 		if (z < discontinuity){
 			vec[0] = 0;
-			vec[1] = 1.5;
+			vec[1] = ul;
 		}
 		else {
 			vec[0] = 0;
-			vec[1] = -3;
+			vec[1] = ur;
 		}
 	}
 	return vec;
@@ -56,14 +58,14 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny;
 		if (Direction == 'x'){
-			nx=50;
+			nx=200;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=2;
+			ny=50;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 		}
 
@@ -153,7 +155,7 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1000000;
+		unsigned MaxNbOfTimeStep = 100000;
 		int freqSave = 1;
 		double cfl = 0.99;
 		double maxTime = 0.07;
@@ -180,14 +182,14 @@ int main(int argc, char** argv)
 
 		cout << "------------ End of calculation !!! -----------" << endl;
 		myProblem.terminate();
-
-		/* cout << "Python script for exact solution" << endl;
+		// Should check if tmax, ncells, cfl and pl, pr, ul, ur are the same 
+		cout << "Python script for exact solution" << endl;
 		int result = system("python3 EulerBarotropicStaggered_1DRiemannProblem.py");  
 		if (result == 0) {
 			cout << "Script executed" << endl;
 		} else {
 			cerr << "ERROR in execution python script" << endl;
-		} */
+		}
 	}
 		
 	return EXIT_SUCCESS;
