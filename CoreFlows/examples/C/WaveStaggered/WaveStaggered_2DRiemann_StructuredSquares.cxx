@@ -60,22 +60,23 @@ int main(int argc, char** argv){
 		cout << "Construction of a cartesian mesh" << endl;
 		double inf = 0.0;
 		double sup = 1.0;
-		int nx, ny;
+		double discontinuity;
+		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=50;
-			if (nx%2 !=0)
-				cout << "ERROR the number of cells should be even" <<endl;
-			ny=3;
+			nx=49;
+			ny=2;
+			discontinuity = (inf + sup)/2.0 +  0.75/nx;
+			ncells = nx;
+			
 		}
 		else if (Direction == 'y'){
-			nx=3;
+			nx=2;
 			ny=50;
-			if (ny%2 !=0)
-				cout << "ERROR the number of cells should be even" <<endl;
+			discontinuity = (inf + sup)/2.0 +  0.75/ny;
+			ncells = ny;
 		}
 
 		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
-		double discontinuity = (inf + sup)/2.0;
 		
 		double kappa = 1;
 		double rho = 1;
@@ -92,7 +93,7 @@ int main(int argc, char** argv){
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Velocity0("velocity", FACES, M, 1);
 		
-		myProblem.setPeriodicFaces(M, Direction);
+		myProblem.setPeriodicFaces(M, Direction, ncells);
 		std::map<int,int> FacePeriodicMap = myProblem.getFacePeriodicMap();
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){

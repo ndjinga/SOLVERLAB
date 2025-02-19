@@ -7,15 +7,15 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 1;
+		return 12;
 	else
-		return 10;
+		return 1;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
-	double ul = -1;
-	double ur = 1;
+	double ul = 1.5;
+	double ur = -3;
 	if (Direction == 'x'){
 		if (z < discontinuity){
 			vec[0] = ul;
@@ -56,17 +56,19 @@ int main(int argc, char** argv)
 		double inf = 0.0;
 		double sup = 1.0;
 		double discontinuity;
-		int nx, ny;
+		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=200;
+			nx=50;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
+			ncells = nx;
 			
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=50;
+			ny=49;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
+			ncells = ny;
 		}
 
 		Mesh M=Mesh(inf,sup,nx,inf,sup,ny);
@@ -83,8 +85,14 @@ int main(int argc, char** argv)
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Velocity0("velocity", FACES, M, 1);
 		
-		myProblem.setPeriodicFaces(M, Direction);
+		myProblem.setPeriodicFaces(M, Direction, ncells );
 		std::map<int,int> FacePeriodicMap = myProblem.getFacePeriodicMap();
+		std::map<int,int>::iterator it = FacePeriodicMap.begin();
+		/* while (it != FacePeriodicMap.end()){
+			//if (M.getFace( it->first).getBarryCenter().x() != M.getFace( it->second).getBarryCenter().x())
+			cout << it->first<<" = "<<M.getFace( it->first).getBarryCenter().x() <<", "<< it->second<< " = " <<M.getFace( it->second).getBarryCenter().x()<<endl;
+			it++;
+		} */
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);
@@ -116,10 +124,9 @@ int main(int argc, char** argv)
 				}
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				std::vector<double > InitialVel = initialVelocity(coordFace, discontinuity, Direction);
 				double dotprod = 0;
-				for (int k = 0 ; k <InitialVel.size() ; k++)
-						dotprod += InitialVel[k] * vec_normal_sigma[k];
+				for (int k = 0 ; k <spaceDim ; k++)
+						dotprod += initialVelocity(coordFace, discontinuity, Direction)[k] * vec_normal_sigma[k];
 				Velocity0[j] = dotprod;
 			}
 			else if (Fj.getNumberOfCells()==1  ){ // If boundary face and if periodic check that the boundary face is the computed (avoid passing twice ) 
@@ -128,16 +135,16 @@ int main(int argc, char** argv)
 							vec_normal_sigma[idim] = -vec_normal_sigma[idim];
 				}
 				myProblem.setOrientation(j,vec_normal_sigma);
-				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
-					myProblem.setSteggerBoundIndex(j);	
 				if (Direction == 'x')
 					coordFace = Fj.x();
 				else if (Direction == 'y')
-					coordFace = Fj.y() ;						
-				std::vector<double > BoundaryVel = initialVelocity(coordFace,discontinuity, Direction);
+					coordFace = Fj.y() ;
+
+				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
+					myProblem.setSteggerBoundIndex(j);	
 				double dotprod = 0;
-				for (int k = 0 ; k <BoundaryVel.size() ; k++)
-					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
+				for (int k = 0 ; k <spaceDim ; k++)
+					dotprod += initialVelocity(coordFace,discontinuity, Direction)[k] * vec_normal_sigma[k];
 				wallVelocityMap[j] = dotprod;
 				wallPressureMap[j] = initialPressure(coordFace,discontinuity);
 			}
@@ -183,13 +190,13 @@ int main(int argc, char** argv)
 		cout << "------------ End of calculation !!! -----------" << endl;
 		myProblem.terminate();
 		// Should check if tmax, ncells, cfl and pl, pr, ul, ur are the same 
-		cout << "Python script for exact solution" << endl;
+		/* cout << "Python script for exact solution" << endl;
 		int result = system("python3 EulerBarotropicStaggered_1DRiemannProblem.py");  
 		if (result == 0) {
 			cout << "Script executed" << endl;
 		} else {
 			cerr << "ERROR in execution python script" << endl;
-		}
+		} */
 	}
 		
 	return EXIT_SUCCESS;

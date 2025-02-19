@@ -78,21 +78,18 @@ void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
 }
 double WaveStaggered::getOrientation(int l, Cell Cint){
-	std::map<int,int>::iterator ite = _FacePeriodicMap.find(l);
-	int j = (ite != _FacePeriodicMap.end()) ? ite->second : l;
-	std::map<int, std::vector<double>  >::iterator it = _vec_sigma.find(j);
-	double *vec =new double [_Ndim];
-			
-	for(int l=0; l<Cint.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
-		if (j == Cint.getFacesId()[l]){
+	double *vec =new double [_Ndim];		
+	for(int m=0; m<Cint.getNumberOfFaces(); m++){//we look for l the index of the face Fj for the cell Ctemp1
+		if (l == Cint.getFacesId()[m]){
 			for (int idim = 0; idim < _Ndim; ++idim)
-				vec[idim] = Cint.getNormalVector(l,idim);
+				vec[idim] = Cint.getNormalVector(m,idim);
 			}
 		}
 	double dotprod = 0;
 	for (int idim = 0; idim < _Ndim; ++idim)
-		dotprod += vec[idim] * it->second[idim]; 
+		dotprod += vec[idim] * _vec_sigma.find(l)->second[idim]; 
 	return dotprod;
+	delete[] vec;
 }
 
 
@@ -759,16 +756,17 @@ void WaveStaggered::abortTimeStep(){
 	_dt = 0;
 }
 
-void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
+void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
 	for (int j=0;j<M.getNumberOfFaces() ; j++){
 		Face my_face=M.getFace(j);
 		double e;
+		double tol = 1.0/(ncells *4);
 		if (Direction == 'x')
 			e=my_face.x();
 		else if (Direction == 'y' && _Ndim ==2)
 			e=my_face.y();
 		if (my_face.getNumberOfCells() ==1 ){ 
-			if(_Ndim==2 &&  e>0 && e<1){
+			if( (_Ndim==2) &&  e>tol && e< (1.0-tol) ){
 				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
 					Face face_i=M.getFace(iface);
 					double ei;
@@ -776,7 +774,7 @@ void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction){ // TODO :
 						ei=face_i.x();
 					else if (Direction == 'y')
 						ei=face_i.y();
-					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(e-ei)<1e-3) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(e-ei)<tol) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
 						_FacePeriodicMap[j]=iface;
 						setInteriorIndex(j);
 					}

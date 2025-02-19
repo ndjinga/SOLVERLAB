@@ -217,14 +217,14 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
 		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;	
 
-		/* for (int f =0; f <Ctemp1.getNumberOfFaces(); f ++){			
+		for (int f =0; f <Ctemp1.getNumberOfFaces(); f ++){			
 			Face Facef = _mesh.getFace( idFaces[f] );
 			std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 			if ( ( (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[0])!=idNodesOfFacef.end()) || (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), NodesFj[1])!=idNodesOfFacef.end()) ) && (idFaces[f] != j) ){
 				deltaY = Facef.getMeasure();
 			}	
 		}
-		 */
+		
 		double mlump = MassLumping(Ctemp1, Fj, j);
 		InvPerimeter1 = (_Ndim ==2) ? ( 1.0/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  )) : (1.0/Ctemp1.getNumberOfFaces());
 		if (IsInterior){
@@ -235,6 +235,7 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 			InvPerimeter2 = (_Ndim ==2) ? (1.0/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  )) : (1.0/Ctemp2.getNumberOfFaces());
 			mlump += MassLumping(Ctemp2, Fj_physical, j);
 			InvD_sigma = 1.0/mlump;
+			//InvD_sigma = 1.0/(Fj.getMeasure() * deltaY);
 			PetscScalar InvVol2 = 1.0/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
 			MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
 			MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
@@ -244,6 +245,7 @@ void EulerBarotropicStaggered::AssembleMetricsMatrices(){
 		}
 		else if (IsWallBound || IsSteggerBound ) { 
 			InvD_sigma = 1.0/mlump; 	
+			//InvD_sigma = 2.0/(Fj.getMeasure() * deltaY);
 			MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
 			MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
 			MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES);  
@@ -346,7 +348,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 			bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
 			bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
 			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
-	
+
 			if (IsInterior){
 				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
 					idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
@@ -355,7 +357,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				/****************** Density conservation equation *********************/
 				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
 				VecGetValues(_primitiveVars,1,&idCells[1],&rhoExt);
-				VecGetValues(_primitiveVars,1,&IndexFace,&u_sigma);
+				VecGetValues(_primitiveVars,1,&IndexFace,&u);
 
 				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0 ;
 				PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
@@ -387,7 +389,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					VecGetValues(_primitiveVars,1,&idCells[nei],&rho);
 					//If  the face is periodic and K isn't the direct neighbour of Fj, recover the geometric informations of the associated periodic cell 
 					Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
-
+					
 					/* std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K,Support_j, Fj_physical,j, Fj.getBarryCenter());
 					for (int i =0; i< _Ndim; i++){
 						for (int l =0; l<_Ndim ; l++){
@@ -428,10 +430,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						double uTensu_Contracted_Nabla_Psi = Contraction(utensorielu, GradientPsi_j_in_Xf);
 						Node vertex1, vertex2;
 						vertex1 = _mesh.getNode( idNodesOfFacef[0] );
-						if (_Ndim ==2 )
-							vertex2 = _mesh.getNode( idNodesOfFacef[1] );
+						if (_Ndim ==2 ) vertex2 = _mesh.getNode( idNodesOfFacef[1] );
 						double Area = (_Ndim==2 )? abs((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0 : abs(K.x() - vertex1.x()) ;
-						Convection += Area * rho * uTensu_Contracted_Nabla_Psi ; 
+						Convection -= Area * rho * uTensu_Contracted_Nabla_Psi ; 
 						
 						/* for (int i =0; i< _Ndim; i++){
 							for (int l =0; l<_Ndim ; l++){
@@ -451,8 +452,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 								idCellsOfFacef.push_back( _mesh.getFace( _FacePeriodicMap.find(idFaces[f])->second ).getCellsId()[0]  );
 							VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoExt);	
 						}
-						else 
-							rhoExt = IsfWallBound ? rho : (IsfSteggerBound ? getboundaryPressure().find(j)->second : 1.0 );
+						else if (IsWallBound) rhoExt = rhoInt;
+						else if (IsSteggerBound) rhoExt = getboundaryPressure().find(j)->second;
 
 						double jump =0;
 						for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
@@ -468,12 +469,14 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 					}
 				} 
 				VecSetValues(_Conv, 1, &IndexFace, &Convection, ADD_VALUES ); 
+				
 			}
 			else if (IsWallBound || IsSteggerBound ) { 
 				/****************** Density conservation equation *********************/
 				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);		
-				VecGetValues(_primitiveVars,1,&IndexFace,&u);		
-				rhoExt = IsWallBound ? rhoInt : (IsSteggerBound ? getboundaryPressure().find(j)->second : 1.0 );
+				VecGetValues(_primitiveVars,1,&IndexFace,&u);
+				if (IsWallBound) rhoExt = rhoInt;
+				else if (IsSteggerBound) rhoExt = getboundaryPressure().find(j)->second;
 
 				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0;
 				MatSetValues(_DivRhoU, 1, &idCells[0], 1, &j, &orientedFaceArea_densityMean, ADD_VALUES ); 
@@ -484,6 +487,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
 				VecSetValues(_BoundaryTerms, 1,&idCells[0], &boundterm, INSERT_VALUES );
 			}	
+
 		}
 		
 		MatAssemblyBegin(_DivRhoU,MAT_FINAL_ASSEMBLY);
@@ -505,7 +509,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		//      (0_FacesxCells   ; -Conv+ c (\tilde rho) MinusGrad 1/|dK| Div + LaplacianVelocity	)
 		MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); // -grad (inv_Surf) Div// -(-grad (inv_Surf) Div) = grad (inv_Surf) Div
 		MatScale(_DivRhoU, -1.0);	
-		VecScale(_Conv, -1.0);
+		VecScale(_Conv, -1.0);	
 		MatScale(_GradDivTilde, -1. *( _c*_rhoMax + _uMax)/2.0 );
 		//MatScale(_DivRhoU, 0);	// Découplage burgers
 
@@ -519,7 +523,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-		MatCopy(Prod,_A, UNKNOWN_NONZERO_PATTERN); 						
+		MatCopy(Prod,_A, UNKNOWN_NONZERO_PATTERN); 				
 		MatMult(_A,_primitiveVars, _b); 
 		
 		/***********Adding boundary terms to density equation, convection term and pressure gradient to momentum equation **************/
@@ -563,7 +567,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		MatMult(_InvVol, GradPressure, Temporary1);
 		VecAXPY(_b,     1, Temporary1); 
 
-		VecView(_b, PETSC_VIEWER_STDOUT_WORLD);							
+		//VecView(_b, PETSC_VIEWER_STDOUT_WORLD);							
 
 		VecDestroy(& Temporary1);
 		VecDestroy(& Temporary2);
@@ -577,6 +581,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 	if (_nbTimeStep == 0)
 		ComputeMinCellMaxPerim(); 
 	double numax = _Ndim*2;	
+	
 	double dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) * 2 ) ;
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);
