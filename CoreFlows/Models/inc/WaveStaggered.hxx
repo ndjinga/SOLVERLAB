@@ -121,7 +121,6 @@ public :
 	//TODO à supprimer ?
 	void setExactVelocityFieldAtCells(const Field &atCells);
 	void ComputeMinCellMaxPerim();
-	void AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell Ctemp2);
 
 
 protected :

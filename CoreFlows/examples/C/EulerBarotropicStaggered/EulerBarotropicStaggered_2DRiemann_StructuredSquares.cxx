@@ -58,7 +58,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=50;
+			nx=3;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=49;
+			ny=200;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 			ncells = ny;
 		}
@@ -88,11 +88,6 @@ int main(int argc, char** argv)
 		myProblem.setPeriodicFaces(M, Direction, ncells );
 		std::map<int,int> FacePeriodicMap = myProblem.getFacePeriodicMap();
 		std::map<int,int>::iterator it = FacePeriodicMap.begin();
-		/* while (it != FacePeriodicMap.end()){
-			//if (M.getFace( it->first).getBarryCenter().x() != M.getFace( it->second).getBarryCenter().x())
-			cout << it->first<<" = "<<M.getFace( it->first).getBarryCenter().x() <<", "<< it->second<< " = " <<M.getFace( it->second).getBarryCenter().x()<<endl;
-			it++;
-		} */
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);
@@ -189,7 +184,9 @@ int main(int argc, char** argv)
 
 		cout << "------------ End of calculation !!! -----------" << endl;
 		myProblem.terminate();
+
 		// Should check if tmax, ncells, cfl and pl, pr, ul, ur are the same 
+
 		/* cout << "Python script for exact solution" << endl;
 		int result = system("python3 EulerBarotropicStaggered_1DRiemannProblem.py");  
 		if (result == 0) {

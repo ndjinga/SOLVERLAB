@@ -17,7 +17,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=200;
+	nx=200 ;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -29,11 +29,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialDensity_Left = 1
-	initialDensity_Right = 10
+	initialDensity_Left = 12
+	initialDensity_Right = 1
 
-	initialVelocity_Left = -1	
-	initialVelocity_Right = 1
+	initialVelocity_Left =1.5	
+	initialVelocity_Right = -3
 
 	def initialDensity(x):
 		if x < discontinuity:
@@ -91,9 +91,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
     # simulation parameters 
 	MaxNbOfTimeStep = 1000000;
-	freqSave = 1;
+	freqSave = 10;
 	cfl = 0.5
-	maxTime = 0.035;
+	maxTime = 0.06;
 	precision = 1e-10;
 
 	myProblem.setCFL(cfl);

@@ -585,35 +585,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	return _cfl * _minCell / (_maxPerim * _c);
 }
 
-void WaveStaggered::AssembleLocalMetricMatricsInterior(int j, Cell Ctemp1 , Cell Ctemp2){
-	/******************* Metrics related matrices ***********************/
-	PetscScalar det, InvPerimeter1, InvPerimeter2, InvD_sigma, InvVol1, InvVol2;
-	PetscInt IndexFace = _Nmailles + j;
-	Face Fj = _mesh.getFace(j);
-	std::vector< int > idCells = Fj.getCellsId();
-	if (_Ndim == 1){
-		det = Ctemp2.x() - Ctemp1.x();
-		InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
-		InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
-	} 
-	if (_Ndim ==2){
-		std::vector<int> nodes =  Fj.getNodesId();
-		Node vertex = _mesh.getNode( nodes[0] );
-		// determinant of the vectors forming the diamond cell around the face sigma
-		det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
-		InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
-		InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
-	}
-	InvD_sigma = 1.0/PetscAbsReal(det);
-	InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
-	InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
-	MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-	MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
-	MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
-	MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-	MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
-}
-
 
 void WaveStaggered::ComputeMinCellMaxPerim(){
 	Vec V, W;

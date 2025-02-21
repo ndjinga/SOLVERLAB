@@ -69,16 +69,18 @@ public :
     Point xToxhat(Cell K, Point X,std::vector<Node> K_Nodes); 
     std::vector<double>  JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes);
 
+    //In order to find the corresponding basis function on the reference element we test its image by Piola transform 
+    //and select the only one that is non-zero when taken against n_sigma. 
     bool FindlocalBasis(int m, Face Facej, int j, Cell K, std::vector<Node> K_Nodes );
-    double MassLumping(Cell K, Face Facej,int j);
+    double MassLumping(Cell K, int idcell, Face Facej,int j);
 
     // K is the cell on which we evaluate the basis function
     // Support is the table containing the support (so only K when we compute in the cell)
     // Facej is the face of the basis function and j its number
     // X the point inwhich it is evaluated
-    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K,std::vector<Cell> Support, Face Facej,int j, Point X);
-    std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, std::vector<Cell> Support, Face Facej, int j, Point X);
-    std::vector<double> VelocityRaviartThomas_at_point_X(Cell K,Point X);
+    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, int idcell, std::vector<Cell> Support, Face Facej,int j, Point X);
+    std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, int idcell,  std::vector<Cell> Support, Face Facej, int j, Point X);
+    std::vector<double> VelocityRaviartThomas_at_point_X(Cell K, int idcell, Point X);
 
     std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v
     double Contraction(std::vector<double> &u, std::vector<double> &v); // returns contraction of two order 2 tensors
@@ -95,9 +97,9 @@ protected :
 	Mat _InvVolPrim, _InvVolDual, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
 	double _c;
 	std::vector<double> _Entropy, _Time;
-    std::map<int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >_PhysicalPsif, _GradientPhysicalPsif;
-    //int is the number of the face j, the fist argument of the map is the number of the face f in which is evaluated the basis function and the second is the value of the basis funciton (or gradient)
-				
+    std::map< int , std::map< int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >> _PhysicalPsif,_GradientPhysicalPsif;
+    //  map< idcell, map< idface, pair< K, [(x_0, nabla Psi_sigma_|K (x_0) ), ..., (x_f, nabla Psi_sigma_|K (x_f) )] >>>
+    
 
 };
 #endif /* EULERBAROTROPICSTAGGERED_HXX_*/
