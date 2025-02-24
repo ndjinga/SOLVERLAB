@@ -181,7 +181,7 @@ void EulerBarotropicStaggered::initialize(){
 }
 
 
-double EulerBarotropicStaggered::MassLumping(Cell K, int idcell, Face Facej,int j){
+double EulerBarotropicStaggered::MassLumping(const Cell &K, const int &idcell, const Face & Facej, const int &j){
 	double masslumping_on_K =0;
 	std::vector<Cell> Support_f, Support_j ;
 	Support_f.push_back(K);
@@ -341,9 +341,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
 
 			if (IsInterior){
-				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
-					idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
+				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  ) idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+				//cout <<" j = "<< j <<" or(j, "<< idCells[0]<< " )= "<<getOrientation(j,Ctemp1) <<" and or(j, "<< idCells[1]<<" ) = "<< getOrientation(j,Ctemp2)<<endl;
+				
 
 				/****************** Density conservation equation *********************/
 				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
@@ -391,6 +392,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						I = _Nmailles + idFaces[f];
 						VecGetValues(_primitiveVars,1,&I	,&u);
 
+						
 						/* if (_Ndim==1) Convection -= getOrientation(j, K) * u*u * rho/2.0; 
 						if (_Ndim == 2){
 							if ( ( (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), Fj_physical.getNodesId()[0] )==idNodesOfFacef.end()) && (std::find(idNodesOfFacef.begin(), idNodesOfFacef.end(), Fj_physical.getNodesId()[1])==idNodesOfFacef.end()) ) || (idFaces[f] ==j)  ){
@@ -410,7 +412,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 						vertex1 = _mesh.getNode( idNodesOfFacef[0] );
 						if (_Ndim ==2 ) vertex2 = _mesh.getNode( idNodesOfFacef[1] );
 						double Area = (_Ndim==2 )? abs((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0 : abs(K.x() - vertex1.x()) ;
-						Convection -=  Area * rho * uTensu_Contracted_Nabla_Psi ; //TODO what is the pb with sign difference if pb is in x or y ?					
+						Convection -=  Area * rho * uTensu_Contracted_Nabla_Psi ; 					
 
 						/* for (int i =0; i< _Ndim; i++){
 							for (int l =0; l<_Ndim ; l++){
@@ -567,7 +569,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 
 //################ Raviart-Thomas ##############//
-std::vector<double> EulerBarotropicStaggered::ReferenceBasisFunctionRaviartThomas(int i, Point Xhat){
+std::vector<double> EulerBarotropicStaggered::ReferenceBasisFunctionRaviartThomas(const int &i, const Point &Xhat){
 	std::vector<double> Psihat(_Ndim);
 	if (_Ndim ==1){
 		if (i ==0)
@@ -585,18 +587,20 @@ std::vector<double> EulerBarotropicStaggered::ReferenceBasisFunctionRaviartThoma
 			Psihat[1] = Xhat.y();
 		}
 		else if (i ==2){	
-			Psihat[0]=  1 - Xhat.x();
+			Psihat[0]=   Xhat.x()-1;
 			Psihat[1] = 0;
 		}
 		else if (i ==3){
 			Psihat[0] = 0;
-			Psihat[1] = 1 - Xhat.y();	
+			Psihat[1] = Xhat.y()-1;	
 		}
 	}
 	return Psihat;
 }
 
-Point EulerBarotropicStaggered::xToxhat(Cell K, Point X, std::vector<Node> K_Nodes){
+
+//TODO modifier les tests égalités par des inégalités abs() <1e-11
+Point EulerBarotropicStaggered::xToxhat(const Cell & K, const Point &X, const std::vector<Node> & K_Nodes){
 	Point Xhat;
 	Point Xb = K.getBarryCenter();
 	if (_Ndim ==1){
@@ -612,51 +616,69 @@ Point EulerBarotropicStaggered::xToxhat(Cell K, Point X, std::vector<Node> K_Nod
 			Xhat = Point(0.5,0.5,0);
 		
 		//Nodes related 
-		else if (X.x() == K_Nodes[0].x() && X.y() == K_Nodes[0].y() ) // if X is the Node X_1
+		else if (X.x() == K_Nodes[1].x() && X.y() == K_Nodes[1].y() ) // if X is the Node X_1
 			Xhat = Point(0,0,0);
-		else if (X.x() == K_Nodes[1].x() && X.y() == K_Nodes[1].y() ) // if X is the Node X_2
+		else if (X.x() == K_Nodes[2].x() && X.y() == K_Nodes[2].y() ) // if X is the Node X_2
 			Xhat = Point(0,1,0);
-		else if (X.x() == K_Nodes[2].x() && X.y() == K_Nodes[2].y() ) // if X is the Node X_3
+		else if (X.x() == K_Nodes[3].x() && X.y() == K_Nodes[3].y() ) // if X is the Node X_3
 			Xhat = Point(1,1,0);
-		else if (X.x() == K_Nodes[3].x() && X.y() == K_Nodes[3].y() ) // if X is the Node X_4
+		else if (X.x() == K_Nodes[0].x() && X.y() == K_Nodes[0].y() ) // if X is the Node X_4
 			Xhat = Point(1,0,0);
-
-		//Faces related
-		else if (X.x() == ( K_Nodes[0].x() +  K_Nodes[1].x())/2.0 && X.y() == ( K_Nodes[0].y() +  K_Nodes[1].y())/2.0  ) // if X is the middle point of the first face
-			Xhat = Point(0.5,0,0);
-		else if (X.x() == ( K_Nodes[1].x() +  K_Nodes[2].x())/2.0 && X.y() == ( K_Nodes[1].y() +  K_Nodes[2].y())/2.0 )  // if X is the middle point of the second face
+		
+		//Faces related 
+		else if (X.x() == ( K_Nodes[1].x() +  K_Nodes[2].x())/2.0 && X.y() == ( K_Nodes[1].y() +  K_Nodes[2].y())/2.0 )  // if X is the middle point of the first face
 			Xhat = Point(0,0.5,0); 
-		else if (X.x() == ( K_Nodes[2].x() +  K_Nodes[3].x())/2.0 && X.y() == ( K_Nodes[2].y() +  K_Nodes[3].y())/2.0 )  // if X is the middle point of the third face
+		else if (X.x() == ( K_Nodes[2].x() +  K_Nodes[3].x())/2.0 && X.y() == ( K_Nodes[2].y() +  K_Nodes[3].y())/2.0 )  // if X is the middle point of the second face
 			Xhat = Point(0.5,1,0);
-		else if (X.x() == ( K_Nodes[3].x() +  K_Nodes[0].x())/2.0 && X.y() == ( K_Nodes[3].y() +  K_Nodes[0].y())/2.0 )  // if X is the middle point of the fourth face
+		else if (X.x() == ( K_Nodes[3].x() +  K_Nodes[0].x())/2.0 && X.y() == ( K_Nodes[3].y() +  K_Nodes[0].y())/2.0 )  // if X is the middle point of the third face
 			Xhat = Point(1,0.5,0); 
+		else if (X.x() == ( K_Nodes[0].x() +  K_Nodes[1].x())/2.0 && X.y() == ( K_Nodes[0].y() +  K_Nodes[1].y())/2.0  ) // if X is the middle point of the fourth face
+			Xhat = Point(0.5,0,0);
+
+		/* 	//Faces related 
+		else if (X.x() == ( K_Nodes[0].x() +  K_Nodes[1].x())/2.0 && X.y() == ( K_Nodes[0].y() +  K_Nodes[1].y())/2.0  ) // if X is the middle point of the fourth face
+			Xhat = Point(0,0.5,0);
+		else if (X.x() == ( K_Nodes[1].x() +  K_Nodes[2].x())/2.0 && X.y() == ( K_Nodes[1].y() +  K_Nodes[2].y())/2.0 )  // if X is the middle point of the first face
+			Xhat = Point(0.5,1,0); 
+		else if (X.x() == ( K_Nodes[2].x() +  K_Nodes[3].x())/2.0 && X.y() == ( K_Nodes[2].y() +  K_Nodes[3].y())/2.0 )  // if X is the middle point of the second face
+			Xhat = Point(1,0.5,0);
+		else if (X.x() == ( K_Nodes[3].x() +  K_Nodes[0].x())/2.0 && X.y() == ( K_Nodes[3].y() +  K_Nodes[0].y())/2.0 )  // if X is the middle point of the third face
+			Xhat = Point(0.5,0,0);  */
+		
 	}	
 	return Xhat;
 }
 
 
-std::vector<double> EulerBarotropicStaggered::JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes){
+std::vector<double> EulerBarotropicStaggered::JacobianTransfor_K_X(const Point &X, const std::vector<Node> &K_Nodes){
 	std::vector<double> JacobianTransfor_K(_Ndim * _Ndim);
 	if (_Ndim ==1){
 		JacobianTransfor_K[0] = (K_Nodes[1].x()-K_Nodes[0].x()) ; 
 	}
-	if (_Ndim ==2){ //TODO pas bon !!!!
-	//first column : should only depend on Xhat_y
+	if (_Ndim ==2){ 
+		//first column : should only depend on Xhat_y
 		JacobianTransfor_K[0] = ( (K_Nodes[0].x()  - K_Nodes[1].x())*(1 - X.y()) + (K_Nodes[3].x()  - K_Nodes[2].x())*X.y() );
 		JacobianTransfor_K[2] = ( (K_Nodes[0].y()  - K_Nodes[1].y())*(1 - X.y()) + (K_Nodes[3].y()  - K_Nodes[2].y())*X.y() );
 		//second column: should only depend on Xhat_x
-		JacobianTransfor_K[1] = ( (K_Nodes[3].x()  - K_Nodes[0].x())*(1 - X.x()) + (K_Nodes[2].x()  - K_Nodes[1].x())*X.x()  );
-		JacobianTransfor_K[3] = ( (K_Nodes[3].y()  - K_Nodes[0].y())*(1 - X.x()) + (K_Nodes[2].y()  - K_Nodes[1].y())*X.x()  );
+		JacobianTransfor_K[1] = ( (K_Nodes[2].x()  - K_Nodes[1].x())*(1 - X.x()) + (K_Nodes[3].x()  - K_Nodes[0].x())*X.x()  );
+		JacobianTransfor_K[3] = ( (K_Nodes[2].y()  - K_Nodes[1].y())*(1 - X.x()) + (K_Nodes[3].y()  - K_Nodes[0].y())*X.x()  );
+
+		/* //first column : should only depend on Xhat_y
+		JacobianTransfor_K[1] = ( (K_Nodes[3].x()  - K_Nodes[0].x())*(1 - X.y()) + (K_Nodes[2].x()  - K_Nodes[1].x())*X.y()  );
+		JacobianTransfor_K[3] = ( (K_Nodes[3].y()  - K_Nodes[0].y())*(1 - X.y()) + (K_Nodes[2].y()  - K_Nodes[1].y())*X.y()  );
+		//second column: should only depend on Xhat_x
+		JacobianTransfor_K[0] = ( (K_Nodes[1].x()  - K_Nodes[0].x())*(1 - X.x()) + (K_Nodes[2].x()  - K_Nodes[3].x())*X.x() );
+		JacobianTransfor_K[2] = ( (K_Nodes[1].y()  - K_Nodes[0].y())*(1 - X.x()) + (K_Nodes[2].y()  - K_Nodes[3].y())*X.x() ); */
 	}
 	return JacobianTransfor_K;
 }
 
 
 
-bool EulerBarotropicStaggered::FindlocalBasis(int m, Face Facej, int j, Cell K, std::vector<Node> K_Nodes ){
+bool EulerBarotropicStaggered::FindlocalBasis(const int &m,const Face &Facej, const int &j,const  Cell& K, const std::vector<Node> &K_Nodes ){
 	Point Xhat_j =  xToxhat(K,  Facej.getBarryCenter(), K_Nodes) ; 
 	std::vector<double>  JacobianTransfor_K_Xhatf = JacobianTransfor_K_X(Xhat_j, K_Nodes );
-	double absJacobian =  (_Ndim ==2) ? abs(JacobianTransfor_K_Xhatf[0] * JacobianTransfor_K_Xhatf[3] - JacobianTransfor_K_Xhatf[2]* JacobianTransfor_K_Xhatf[1] ) : abs(JacobianTransfor_K_Xhatf[0]); 
+	double absJacobian =  (_Ndim ==2) ? abs(JacobianTransfor_K_Xhatf[0] * JacobianTransfor_K_Xhatf[3] - JacobianTransfor_K_Xhatf[2]* JacobianTransfor_K_Xhatf[1])  : abs(JacobianTransfor_K_Xhatf[0]); 
 	std::vector<double> PhysicalPsij(_Ndim, 0.0);
 
 	for (int k =0; k < _Ndim ; k++){
@@ -665,7 +687,7 @@ bool EulerBarotropicStaggered::FindlocalBasis(int m, Face Facej, int j, Cell K, 
 	}
 	double cdot =0;
 	for (int e=0; e <_Ndim; e++)
-		cdot += PhysicalPsij[e] * _vec_sigma.find(j)->second[e]; 	
+		cdot += PhysicalPsij[e] * _vec_sigma.find(j)->second[e]*getOrientation(j,K) ; 	
 	return (abs(cdot -1)< 1e-11); 
 }
 
@@ -675,27 +697,34 @@ std::vector<double> EulerBarotropicStaggered::PhysicalBasisFunctionRaviartThomas
 	xf.push_back(X.x());
 	if (_Ndim ==2) xf.push_back(X.y());
 	std::vector<double> PhysicalPsif_in_X(_Ndim, 0.0); 
+	
 	if (_nbTimeStep ==0){ //TODO déjà assemblée dans assemblemetric matrices ?
 		std::vector<Node> K_Nodes;
 		for (int i=0; i < K.getNodesId().size(); i++)
 			K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 		std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X( xToxhat(K, X, K_Nodes), K_Nodes );
+		double absJacobian = (_Ndim ==2) ? abs(JacobianTransfor_K_Xhat[0] * JacobianTransfor_K_Xhat[3] - JacobianTransfor_K_Xhat[2]* JacobianTransfor_K_Xhat[1])  :abs(JacobianTransfor_K_Xhat[0]) ; 
 
-		double absJacobian = (_Ndim ==2) ? abs(JacobianTransfor_K_Xhat[0] * JacobianTransfor_K_Xhat[3] - JacobianTransfor_K_Xhat[2]* JacobianTransfor_K_Xhat[1] ) :abs(JacobianTransfor_K_Xhat[0]) ; 
-		for (int  m = 0; m < K.getNumberOfFaces(); m ++){
-			bool K_is_in_Support = false;
+		bool K_is_in_Support = false;
 			for (const auto &cell: Support){
 				if (K.getBarryCenter().x() == cell.getBarryCenter().x() && K.getBarryCenter().y() == cell.getBarryCenter().y())
 					K_is_in_Support =true;
 			}
+		
+		for (int  m = 0; m < K.getNumberOfFaces(); m ++){
 			if ( FindlocalBasis(m, Facej, j, K,  K_Nodes) == true && K_is_in_Support == true ){
 				std::vector<double> ReferencePsif_in_X = ReferenceBasisFunctionRaviartThomas(m, xToxhat(K, X, K_Nodes) );
+				//cout <<"  idcell = "<<idcell <<", X.x = "<<X.x()<<", X.y = "<< X.y() << " while xhat_x = "<< xToxhat(K, X, K_Nodes).x() << "  xhat_y = "<< xToxhat(K, X, K_Nodes).y() <<endl;
 				for (int k =0; k < _Ndim ; k++){	
-					for (int l =0; l < _Ndim ; l++)
-						PhysicalPsif_in_X[k] += JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferencePsif_in_X[l] * Facej.getMeasure()/(absJacobian) ;
+					for (int l =0; l < _Ndim ; l++){
+						//cout << "JacobianTransfor_K_Xhat[ "<<k <<" , "<< l <<"] = "<<  JacobianTransfor_K_Xhat[k*_Ndim + l] <<endl;
+						PhysicalPsif_in_X[k] += getOrientation(j,K) * JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferencePsif_in_X[l] * Facej.getMeasure()/(absJacobian);
+					}
 				}
 			}
+			
 		}
+			
 		bool already_there =false;
 		if (_PhysicalPsif.find(idcell) != _PhysicalPsif.end() ){
 			if ( _PhysicalPsif.find(idcell)->second.find(j) != _PhysicalPsif.find(idcell)->second.end()){
@@ -724,7 +753,7 @@ std::vector<double>  EulerBarotropicStaggered::Gradient_ReferenceBasisFunctionRa
 	std::vector<double>  Gradient_Psihat(_Ndim*_Ndim); 
 	if (_Ndim==1){
 		if (i ==0)
-			Gradient_Psihat[0] = -1;
+			Gradient_Psihat[0] = 1;
 		else if (i ==1)
 			Gradient_Psihat[0] = 1;
 	}
@@ -743,7 +772,7 @@ std::vector<double>  EulerBarotropicStaggered::Gradient_ReferenceBasisFunctionRa
 
 		}
 		else if (i ==2){	
-			Gradient_Psihat[0] = -1;
+			Gradient_Psihat[0] = 1;
 			Gradient_Psihat[1] = 0;
 			Gradient_Psihat[2] = 0;
 			Gradient_Psihat[3] = 0;
@@ -752,7 +781,7 @@ std::vector<double>  EulerBarotropicStaggered::Gradient_ReferenceBasisFunctionRa
 			Gradient_Psihat[0] = 0;
 			Gradient_Psihat[1] = 0;
 			Gradient_Psihat[2] = 0;
-			Gradient_Psihat[3] = -1;
+			Gradient_Psihat[3] = 1;
 		}
 	}
 	return Gradient_Psihat;	
@@ -770,31 +799,23 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 		for (int i=0; i < K.getNodesId().size(); i++)
 			K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 		std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X( xToxhat(K, X, K_Nodes), K_Nodes ); 
-		double absJacobian = (_Ndim ==2) ? abs(JacobianTransfor_K_Xhat[0] * JacobianTransfor_K_Xhat[3] - JacobianTransfor_K_Xhat[2]* JacobianTransfor_K_Xhat[1] ) : abs(JacobianTransfor_K_Xhat[0]) ; 
+		double absJacobian = (_Ndim ==2) ? abs(JacobianTransfor_K_Xhat[0] * JacobianTransfor_K_Xhat[3] - JacobianTransfor_K_Xhat[2]* JacobianTransfor_K_Xhat[1])  : abs(JacobianTransfor_K_Xhat[0]) ; 
 		std::vector<double>  JacobianTransfor_K_Xhat_InversedTranposed = InvTranspose( JacobianTransfor_K_Xhat );
 
+		bool K_is_in_Support = false;
+		for (const auto &cell: Support){
+			if (K.getBarryCenter().x() == cell.getBarryCenter().x() && K.getBarryCenter().y() == cell.getBarryCenter().y())
+				K_is_in_Support =true;
+		}
+
 		for (int  m = 0; m < K.getNumberOfFaces(); m ++){
-			bool K_is_in_Support = false;
-			for (const auto &cell: Support){
-				if (K.getBarryCenter().x() == cell.getBarryCenter().x() && K.getBarryCenter().y() == cell.getBarryCenter().y())
-					K_is_in_Support =true;
-			}
 			if (FindlocalBasis(m, Facej, j, K,  K_Nodes) && K_is_in_Support == true ){
 				std::vector<double>  Gradient_ReferencePsif_in_X = Gradient_ReferenceBasisFunctionRaviartThomas(m);
-				/* Point Xhat_j =  xToxhat(K,  Facej.getBarryCenter(), K_Nodes) ; 
-
-				for (int f=0; f <_Ndim; f++){
-					for (int g=0; g <_Ndim; g++){
-						if ( Gradient_ReferencePsif_in_X[f*_Ndim + g] != 0)
-							cout << "cell = "<< idcell <<" face j = "<< j << " local index = "<< m <<" Xhat_j = ( "<< Xhat_j.x()<<" , "<< Xhat_j.y()<<" ) and Grad Psi [ "<< f <<" , "<< g <<" ] = "<< Gradient_ReferencePsif_in_X[f*_Ndim + g]<<endl;
-					}	
-				} */
 				for (int i =0; i < _Ndim ; i++){
-					for (int j =0; j < _Ndim ; j++){
+					for (int k =0; k < _Ndim ; k++){
 						for (int l =0; l < _Ndim ; l++){
-							for (int t =0; t < _Ndim ; t++){
-								Gradient_PhysicalPsif_in_X[i*_Ndim + j] += JacobianTransfor_K_Xhat[i*_Ndim  +  l] * Gradient_ReferencePsif_in_X[l*_Ndim + t] * JacobianTransfor_K_Xhat_InversedTranposed[t*_Ndim + j] * Facej.getMeasure()/absJacobian;
-							}
+							for (int t =0; t < _Ndim ; t++)
+								Gradient_PhysicalPsif_in_X[i*_Ndim + k] +=  getOrientation(j,K) * JacobianTransfor_K_Xhat[i*_Ndim  +  l] * Gradient_ReferencePsif_in_X[l*_Ndim + t] * JacobianTransfor_K_Xhat_InversedTranposed[t*_Ndim + k] * Facej.getMeasure()/absJacobian; 
 						}
 					}
 				}		
@@ -814,7 +835,7 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 			_GradientPhysicalPsif[idcell][j].push_back( make_pair(xf, Gradient_PhysicalPsif_in_X) );
 		
 	}
-	else{ 
+	else{
 		for (const auto & e : _GradientPhysicalPsif.find(idcell)->second.find(j)->second ){
 			if ( (_Ndim==1 && e.first[0] == X.x()) || (_Ndim ==2  && e.first[0] == X.x() && e.first[1] == X.y()) ){
 				for (int k= 0; k < Gradient_PhysicalPsif_in_X.size(); k++){

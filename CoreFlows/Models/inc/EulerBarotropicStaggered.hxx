@@ -64,15 +64,15 @@ public :
     std::vector<double>  getTimeEvol();
 
     //********* Raviart-Thomas related functions ***********//
-    std::vector<double> ReferenceBasisFunctionRaviartThomas(int i, Point Xhat);
+    std::vector<double> ReferenceBasisFunctionRaviartThomas(const int &i, const Point &Xhat);
     std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i);
-    Point xToxhat(Cell K, Point X,std::vector<Node> K_Nodes); 
-    std::vector<double>  JacobianTransfor_K_X(Point X, std::vector<Node> K_Nodes);
+    Point xToxhat(const Cell &K, const  Point &X, const std::vector<Node> & K_Nodes); 
+    std::vector<double>  JacobianTransfor_K_X(const Point &X, const std::vector<Node> &K_Nodes);
 
     //In order to find the corresponding basis function on the reference element we test its image by Piola transform 
     //and select the only one that is non-zero when taken against n_sigma. 
-    bool FindlocalBasis(int m, Face Facej, int j, Cell K, std::vector<Node> K_Nodes );
-    double MassLumping(Cell K, int idcell, Face Facej,int j);
+    bool FindlocalBasis(const int &m,const Face &Facej, const int &j,const  Cell& K, const std::vector<Node> &K_Nodes );
+    double MassLumping(const Cell &K, const int &idcell, const Face & Facej, const int &j);
 
     // K is the cell on which we evaluate the basis function
     // Support is the table containing the support (so only K when we compute in the cell)
