@@ -64,8 +64,8 @@ public :
     std::vector<double>  getTimeEvol();
 
     //********* Raviart-Thomas related functions ***********//
-    std::vector<double> ReferenceBasisFunctionRaviartThomas(const int &i, const Point &Xhat);
-    std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i);
+    std::vector<double> ReferenceBasisFunctionRaviartThomas(const int &i, const Point &Xhat, const std::vector<Node> &K_Nodes );
+    std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i, const std::vector<Node> &K_Nodes );
     Point xToxhat(const Cell &K, const  Point &X, const std::vector<Node> & K_Nodes); 
     std::vector<double>  JacobianTransfor_K_X(const Point &X, const std::vector<Node> &K_Nodes);
 
@@ -82,6 +82,8 @@ public :
     std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, int idcell,  std::vector<Cell> Support, Face Facej, int j, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K, int idcell, Point X);
 
+    // operation on matrices
+    double Jacobian(const std::vector<double> & mat);
     std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v
     double Contraction(std::vector<double> &u, std::vector<double> &v); // returns contraction of two order 2 tensors
     std::vector<double> InvTranspose(std::vector<double> &u); // returns (u^{-1})^t

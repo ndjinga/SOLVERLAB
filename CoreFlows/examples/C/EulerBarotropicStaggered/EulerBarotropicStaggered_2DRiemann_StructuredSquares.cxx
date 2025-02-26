@@ -39,6 +39,14 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	return vec;
 }
 
+double dotprod(std::vector<double> vector, std::vector<double> normal){
+	assert(vector.size() == normal.size());
+	double dotprod =0;
+	for (int n =0; n< vector.size(); n++){
+		dotprod += vector[n] * normal[n];
+	}
+	return dotprod;
+}
 
 int main(int argc, char** argv)
 {
@@ -84,10 +92,7 @@ int main(int argc, char** argv)
 		std::map<int ,double> wallVelocityMap ;
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Velocity0("velocity", FACES, M, 1);
-		
 		myProblem.setPeriodicFaces(M, Direction, ncells );
-		std::map<int,int> FacePeriodicMap = myProblem.getFacePeriodicMap();
-		std::map<int,int>::iterator it = FacePeriodicMap.begin();
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);
@@ -119,10 +124,10 @@ int main(int argc, char** argv)
 				}
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				double dotprod = 0;
+				/* double dotprod = 0;
 				for (int k = 0 ; k <spaceDim ; k++)
-						dotprod += initialVelocity(coordFace, discontinuity, Direction)[k] * vec_normal_sigma[k];
-				Velocity0[j] = dotprod;
+						dotprod += initialVelocity(coordFace, discontinuity, Direction)[k] * vec_normal_sigma[k]; */
+				Velocity0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma );
 			}
 			else if (Fj.getNumberOfCells()==1  ){ // If boundary face and if periodic check that the boundary face is the computed (avoid passing twice ) 
 				for (int idim = 0; idim <spaceDim; idim ++){
@@ -137,10 +142,10 @@ int main(int argc, char** argv)
 
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 					myProblem.setSteggerBoundIndex(j);	
-				double dotprod = 0;
+				/* double dotprod = 0;
 				for (int k = 0 ; k <spaceDim ; k++)
-					dotprod += initialVelocity(coordFace,discontinuity, Direction)[k] * vec_normal_sigma[k];
-				wallVelocityMap[j] = dotprod;
+					dotprod += initialVelocity(coordFace,discontinuity, Direction)[k] * vec_normal_sigma[k]; */
+				wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) ;
 				wallPressureMap[j] = initialPressure(coordFace,discontinuity);
 			}
 		}

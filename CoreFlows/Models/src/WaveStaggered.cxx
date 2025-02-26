@@ -896,8 +896,7 @@ void WaveStaggered::save(){
 			Point xsigma = Fj.getBarryCenter();
 
 			M1[0] = orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());
-			if (_Ndim >1)
-				M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
+			if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
 
 			if (Fj.getNumberOfCells() == 2){
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
@@ -905,8 +904,7 @@ void WaveStaggered::save(){
 				Point xK = Ctemp2.getBarryCenter();
 
 				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
-				if (_Ndim >1)
-					M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
+				if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
 			
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 

@@ -149,8 +149,9 @@ CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DCylinderDeflection.cxx  "
 CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DRiemann_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
 
 ################### Euler Barotropic staggered
-CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
-CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DRiemann_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
+CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv Euler barotropic Staggered 1d coreflows" )
+CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DRiemann_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Eulerbarotropic Staggered structured coreflows" )
+CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DCylinderDeflection.cxx  "${libs_for_tests}" "C++ fv Euler barotropic Staggered 2d cylinder coreflows" )
 
 if( SOLVERLAB_WITH_MPI )#Tests parallèles
   add_executable(MEDCouplingSendRecvFieldSameMesh_MPI.exe MEDCouplingSendRecvFieldSameMesh_MPI.cxx)
