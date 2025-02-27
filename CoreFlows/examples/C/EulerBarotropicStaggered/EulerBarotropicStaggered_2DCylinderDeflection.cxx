@@ -12,16 +12,16 @@ std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 }
 
 double initialPressure( double x, double y){
-	return 0;
+	return 1;
 }
 
 double initialBoundPressure( double x, double y){
-	return 0;
+	return 1;
 }
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 1;
+	vec[0] = 0;
 	vec[1] = 0;
 	return vec;
 }
@@ -141,13 +141,13 @@ int main(int argc, char** argv)
 	myProblem.setTimeScheme(Explicit);
     
     // name of result file
-	string fileName = "WaveStaggered_2DCylinderDeflection";
+	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 10000000;
-	int freqSave = 500;
-	double cfl = 0.5;
-	double maxTime = 800;
+	int freqSave = 40;
+	double cfl = 0.99;
+	double maxTime = 50;
 	double precision = 1e-6;
 
 	myProblem.setCFL(cfl);

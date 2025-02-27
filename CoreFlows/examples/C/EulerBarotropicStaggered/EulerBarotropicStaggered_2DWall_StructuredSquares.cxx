@@ -7,15 +7,15 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 12;
+		return 2;
 	else
-		return 1;
+		return 2;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
-	double ul = 1.5;
-	double ur = -3;
+	double ul = 1;
+	double ur = 1;
 	if (Direction == 'x'){
 		if (z < discontinuity){
 			vec[0] = ul;
@@ -50,11 +50,12 @@ double dotprod(std::vector<double> vector, std::vector<double> normal){
 
 int main(int argc, char** argv)
 {
-	if (argc<2 || (*(argv[1]) != 'x' && *(argv[1]) != 'y') ){
-		cout << "ERROR : you have to give a direction for the pseudo 1d Riemann problem, either 'x' or 'y' ";
+	if (argc<3 ||  ( (*(argv[1]) != 'x' && *(argv[1]) != 'y') && (*(argv[2]) != 'l' && *(argv[2]) != 'r') ) ){
+		cout << "ERROR : you have to give a direction for the pseudo 1d Riemann problem, either 'x' or 'y' AND the side of the boundary condition, either 'l' for left side or 'r' for the right side";
 	}
 	else{
 		char Direction = *(argv[1]);
+		char wall = *(argv[2]);
 		//Preprocessing: mesh and group creation
 		int spaceDim = 2;
 		
@@ -74,7 +75,7 @@ int main(int argc, char** argv)
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=200;
+			ny=50;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 			ncells = ny;
 		}
@@ -135,10 +136,21 @@ int main(int argc, char** argv)
 				if (Direction == 'x')  coordFace = Fj.x();
 				else if (Direction == 'y') coordFace = Fj.y() ;
 
-				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
-					myProblem.setSteggerBoundIndex(j);	
-				wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) ;
-				wallPressureMap[j] = initialPressure(coordFace,discontinuity);
+				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false){
+					if (wall =='l' && coordFace <1.0/(4*ncells) ){
+						myProblem.setWallBoundIndex(j);
+						wallVelocityMap[j] = 0;
+					}
+					else if (wall =='r' && abs(coordFace-1) <1.0/(4*ncells) ){
+						myProblem.setWallBoundIndex(j);
+						wallVelocityMap[j] = 0;
+					}
+					else {
+						myProblem.setSteggerBoundIndex(j);	
+						wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) ;
+						wallPressureMap[j] = initialPressure(coordFace,discontinuity);
+					}
+				}
 			}
 		}
 		

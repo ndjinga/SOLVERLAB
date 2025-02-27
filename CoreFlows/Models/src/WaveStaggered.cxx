@@ -78,9 +78,11 @@ void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
 }
 double WaveStaggered::getOrientation(int l, Cell Cint) {
-	double *vec =new double [_Ndim];		
+	double *vec =new double [_Ndim];	
+	vec[0] =0;
+	vec[1] =0;	
 	for(int m=0; m<Cint.getNumberOfFaces(); m++){//we look for l the index of the face Fj for the cell Ctemp1
-		if (l == Cint.getFacesId()[m] ){
+		if (l == Cint.getFacesId()[m]  ){
 			for (int idim = 0; idim < _Ndim; ++idim)
 				vec[idim] = Cint.getNormalVector(m,idim);
 		}
@@ -92,7 +94,6 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 	double dotprod = 0;
 	for (int idim = 0; idim < _Ndim; ++idim)
 		dotprod += vec[idim] * _vec_sigma.find(l)->second[idim]; 
-	//cout << "l = "<< l <<"   " << vec[0]<<" , "<< vec[1]<<"    "<<  _vec_sigma.find(l)->second[0] <<" , "<<  _vec_sigma.find(l)->second[1]<<endl;; 
 	return dotprod;
 	delete[] vec;
 }
