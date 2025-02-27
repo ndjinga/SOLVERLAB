@@ -27,7 +27,7 @@ std::vector<double> initialVelocity(double x,double y){
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
-	vec[0] = 1;
+	vec[0] = sqrt(1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
 	vec[1] = 0;
 	return vec;
 }
@@ -145,10 +145,10 @@ int main(int argc, char** argv)
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 10000000;
-	int freqSave = 40;
-	double cfl = 0.99;
+	int freqSave = 50;
+	double cfl = 0.6;
 	double maxTime = 50;
-	double precision = 1e-6;
+	double precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

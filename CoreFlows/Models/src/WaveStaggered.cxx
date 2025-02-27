@@ -94,8 +94,9 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 	double dotprod = 0;
 	for (int idim = 0; idim < _Ndim; ++idim)
 		dotprod += vec[idim] * _vec_sigma.find(l)->second[idim]; 
-	return dotprod;
 	delete[] vec;
+	return dotprod;
+
 }
 
 

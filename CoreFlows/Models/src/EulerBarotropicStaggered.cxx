@@ -551,6 +551,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		VecDestroy(& GradPressure);
 		VecDestroy(& Pressure);	
 		delete[] indices2;
+		delete[] Product;
 		
 	}
 	if (_nbTimeStep == 0)
@@ -959,6 +960,8 @@ void EulerBarotropicStaggered::terminate(){
 	MatDestroy(& _LaplacianVelocity);
 	VecDestroy(& _Conv); 
 	MatDestroy(& _DivRhoU); 
+	delete _compressibleFluid;
+	_compressibleFluid = nullptr;
 
 	/* // 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
