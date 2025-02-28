@@ -6,8 +6,8 @@ using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * cos(2*theta));
-	vec[1] =  r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * sin(2*theta));
+	vec[0] = sqrt( 1*1) * 1e-4 * (1 - r0*r0/(r*r) * cos(2*theta)); //r1*r1/(r1*r1 -r0*r0)*
+	vec[1] = sqrt(1*1) * 1e-4 * (- r0*r0/(r*r) * sin(2*theta)); // r1*r1/(r1*r1 -r0*r0)*
 	return vec;
 }
 
@@ -27,7 +27,7 @@ std::vector<double> initialVelocity(double x,double y){
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
+	vec[0] = sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
 	vec[1] = 0;
 	return vec;
 }
@@ -144,9 +144,9 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10000000;
-	int freqSave = 50;
-	double cfl = 0.6;
+	unsigned MaxNbOfTimeStep = 1;
+	int freqSave = 1;
+	double cfl = 0.99;
 	double maxTime = 50;
 	double precision = 1e-8;
 

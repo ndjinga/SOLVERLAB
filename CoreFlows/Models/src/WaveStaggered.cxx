@@ -236,6 +236,8 @@ void WaveStaggered::setInitialField(const Field &field)
 		_Velocity.setName("Velocity results");
 		_time=_Velocity.getTime();
 		_mesh=_Velocity.getMesh();
+		_Velocity_at_Cells = Field("Velocity at cells results", CELLS, _mesh,3);
+		_DivVelocity = Field("velocity divergence", CELLS, _mesh, 1);	 
 		_facesBoundinit = true;
 	} 
 	_initialDataSet=true;
@@ -396,6 +398,7 @@ void WaveStaggered::initialize(){
 	MatSetUp(_GradDivTilde);
 	MatZeroEntries(_GradDivTilde);
 
+	AssembleMetricsMatrices();
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
@@ -418,13 +421,89 @@ void WaveStaggered::initialize(){
 }
 
 
+void WaveStaggered::AssembleMetricsMatrices(){
+	MatZeroEntries(_InvVol); 
+	MatZeroEntries(_InvSurface); 
+	for (int j=0; j<_Nfaces;j++){ 
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		std::vector< int > NodesFj =  Fj.getNodesId();
+ 		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		std::vector< int > idFaces = Ctemp1.getFacesId();
+		PetscScalar det, InvD_sigma, InvPerimeter1, InvPerimeter2, deltaY	;
+		PetscInt IndexFace = _Nmailles + j;
+		PetscScalar InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
+
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
+		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;	
+		
+		InvPerimeter1 = (_Ndim ==2) ? ( 1.0/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  )) : (1.0/Ctemp1.getNumberOfFaces());
+
+		if (IsInterior){
+			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()) idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
+			InvPerimeter2 = (_Ndim ==2) ? (1.0/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  )) : (1.0/Ctemp2.getNumberOfFaces());
+			/******************* Metrics related matrices ***********************/
+			if (_Ndim == 1){
+				det = Ctemp2.x() - Ctemp1.x();
+				InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
+				InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
+			} 
+			if (_Ndim ==2){
+				std::vector<int> nodes =  Fj.getNodesId();
+				Node vertex = _mesh.getNode( nodes[0] );
+				// determinant of the vectors forming the diamond cell around the face sigma
+				det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
+				InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
+				InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
+			}
+			InvD_sigma = 1.0/PetscAbsReal(det);
+			PetscScalar 	InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
+			MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+			MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
+			MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
+			MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
+			MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES);
+		}
+		else if (IsWallBound || IsSteggerBound ) { 
+			if (_Ndim == 1){
+				InvD_sigma = 2.0/Ctemp1.getMeasure() ;
+				InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
+			} 
+			if (_Ndim == 2){
+				std::vector< int > nodes =  Fj.getNodesId();
+				Node vertex1 = _mesh.getNode( nodes[0] );
+				Node vertex2 = _mesh.getNode( nodes[1] );
+				det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+				// determinant of the vectors forming the interior half diamond cell around the face sigma
+				InvD_sigma = 1.0/PetscAbsReal(det);	
+				InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
+			}
+			/***************** Metric related matrices ******************/
+			MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
+			MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
+			MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
+		}
+	}
+	MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
+	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
+}
+
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 	//The matrices are assembled only in the first time step since linear problem
+	MatZeroEntries(_LaplacianPressure);
+	MatZeroEntries(_Div); 
+	MatZeroEntries(_DivTranspose); 
+
+	MatZeroEntries(_A); 
 
 	if (_timeScheme == Explicit ){ 
-		if ( _nbTimeStep == 0 ){
-			cout << "WaveStaggered::computeTimeStep : Début calcul matrice implicite et second membre"<<endl;
+		if ( _nbTimeStep == 0 || _nbTimeStep > 0 ){ //TODO à supprimer  
 			// Assembly of matrices 
 			for (int j=0; j<_Nfaces;j++){
 				Face Fj = _mesh.getFace(j);
@@ -446,33 +525,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 				
 				if ( IsInterior ){	// || (periodicFaceComputed == true) Fj is inside the domain or is a boundary periodic face (computed)
-					std::map<int,int>::iterator it = _FacePeriodicMap.find(j);
-					if ( it != _FacePeriodicMap.end()  ){ 
-						std::vector< int > idCells_other_Fj =  _mesh.getFace(it->second).getCellsId();
-						idCells.push_back( idCells_other_Fj[0]  );
-					}
+					if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
+						idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);	
-					/******************* Metrics related matrices ***********************/
-					if (_Ndim == 1){
-						det = Ctemp2.x() - Ctemp1.x();
-						InvPerimeter1 = 1.0/Ctemp1.getNumberOfFaces();
-						InvPerimeter2 = 1.0/Ctemp2.getNumberOfFaces();
-					} 
-					if (_Ndim ==2){
-						std::vector<int> nodes =  Fj.getNodesId();
-						Node vertex = _mesh.getNode( nodes[0] );
-						// determinant of the vectors forming the diamond cell around the face sigma
-						det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
-						InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
-						InvPerimeter2 = 1/(_perimeters(idCells[1])*Ctemp2.getNumberOfFaces()  );
-					}
-					InvD_sigma = 1.0/PetscAbsReal(det);
-					InvVol2 = 1/( Ctemp2.getMeasure()* Ctemp2.getNumberOfFaces());
-					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-					MatSetValues(_InvSurface,1, &idCells[1],1, &idCells[1], &InvPerimeter2, ADD_VALUES );
-					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1 , ADD_VALUES );
-					MatSetValues(_InvVol, 1, &idCells[1],1 ,&idCells[1], &InvVol2, ADD_VALUES );
-					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 
 					/******************* Pressure equation ***********************/
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
@@ -482,33 +537,32 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
 					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES );  
 
+					MatSetValues(_A, 1, &idCells[0], 1, &IndexFace, &orientedMinusFaceArea, ADD_VALUES ); 
+					MatSetValues(_A, 1, &idCells[1], 1, &IndexFace, &orientedFaceArea, ADD_VALUES );  
+
+					MatSetValues(_A, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
+					MatSetValues(_A, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
+					MatSetValues(_A, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
+					MatSetValues(_A, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES ); 
+					
 					/******************* Velocity equation ***********************/
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
+
+					MatSetValues(_A, 1, &IndexFace, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
+					MatSetValues(_A, 1, &IndexFace, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
+
+					
 				
 				}
 				else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 		
-					if (_Ndim == 1){
-						InvD_sigma = 2.0/Ctemp1.getMeasure() ;
-						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces();
-					} 
-					if (_Ndim == 2){
-						std::vector< int > nodes =  Fj.getNodesId();
-						Node vertex1 = _mesh.getNode( nodes[0] );
-						Node vertex2 = _mesh.getNode( nodes[1] );
-						det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
-						// determinant of the vectors forming the interior half diamond cell around the face sigma
-						InvD_sigma = 1.0/PetscAbsReal(det);	
-						InvPerimeter1 = 1/Ctemp1.getNumberOfFaces(); //TODO ?? pourquoi pas pareil que face intérieure ?InvPerimeter1 = 1/( _perimeters(idCells[0])*Ctemp1.getNumberOfFaces()  );
-					}
-					/***************** Metric related matrices ******************/
-					MatSetValues(_InvSurface,1, &idCells[0],1, &idCells[0], &InvPerimeter1, ADD_VALUES );
-					MatSetValues(_InvVol, 1, &idCells[0],1 ,&idCells[0], &InvVol1, ADD_VALUES );
-					MatSetValues(_InvVol, 1, &IndexFace, 1, &IndexFace,  &InvD_sigma, ADD_VALUES); 
 
 					/***************** Pressure equation related matrices ******************/
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
+
+					MatSetValues(_A, 1, &idCells[0], 1, &IndexFace, &orientedFaceArea, ADD_VALUES ); 
+					MatSetValues(_A, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
 
 					//Is the face a wall boundarycondition face
 					if (IsWallBound ){
@@ -540,24 +594,32 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
+			MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+			MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
+
 			// _A = (dc _LaplacianPressure  ;  -1/rho B         )
 			//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 			MatScale(_DivTranspose, -1.0);
-			MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
+
+			if (_nbTimeStep == 0) MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
+
 			MatScale(_LaplacianPressure, _d*_c );
 			MatScale(_Div, -1.0/_rho);
 			MatScale(_DivTranspose, -1.0*_kappa);
-			MatScale(_GradDivTilde, _d*_c);
+			//MatScale(_GradDivTilde, _d*_c); //TODO
 			Mat G[4];
 			G[0] = _LaplacianPressure;
 			G[1] = _Div;
 			G[2] = _DivTranspose;
-			G[3] = _GradDivTilde;
-			MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
+			G[3] = _DivTranspose ; //_GradDivTilde; TODO
+
+			//MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
+
 			Mat Prod;
 			MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 			MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 			MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
+			MatDestroy(& Prod); 
 
 			ComputeMinCellMaxPerim();
 			
@@ -588,7 +650,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 
 	}
 
-	ComputeEnergyAtTimeT();
+	//ComputeEnergyAtTimeT();
 	return _cfl * _minCell / (_maxPerim * _c);
 }
 
@@ -862,10 +924,10 @@ void WaveStaggered::save(){
 		}
 	}
 	if(_saveVelocity  ){ 
-		if (_nbTimeStep == 0){
+		/* if (_nbTimeStep == 0){
 			_Velocity_at_Cells = Field("Velocity at cells results", CELLS, _mesh,3);
 			_DivVelocity = Field("velocity divergence", CELLS, _mesh, 1);	 
-		}
+		} */
 
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 		_DivVelocity.setTime(_time,_nbTimeStep);

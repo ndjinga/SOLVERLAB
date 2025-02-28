@@ -63,7 +63,7 @@ int main(int argc, char** argv){
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=49;
+			nx=3;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
@@ -168,7 +168,7 @@ int main(int argc, char** argv){
 		string fileName = "WaveStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 2;
+		unsigned MaxNbOfTimeStep = 1000000;
 		int freqSave = 1;
 		double cfl = 0.5;
 		double maxTime = 800;

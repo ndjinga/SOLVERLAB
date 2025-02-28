@@ -117,6 +117,7 @@ public :
 	/***********Post Pro *************/
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
+	void AssembleMetricsMatrices();
 
 	//TODO à supprimer ?
 	void setExactVelocityFieldAtCells(const Field &atCells);

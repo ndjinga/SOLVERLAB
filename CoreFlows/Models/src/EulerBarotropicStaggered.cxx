@@ -368,6 +368,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
 				
 				// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
+
+				/*
+				
 				PetscInt I;
 				Convection= 0; 
 				std::vector<Cell> Support_j;
@@ -401,8 +404,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 
 						//cout << "cell K = "<< idCells[nei]<<", Psi_"<<j << "( "<<Facef.getBarryCenter().x()<<" , "<<Facef.getBarryCenter().y() <<" )  = ( "<< PhysicalBasisFunctionRaviartThomas(K,idCells[nei],Support_j, Fj_physical,j, Facef.getBarryCenter())[0]<<" , "<<PhysicalBasisFunctionRaviartThomas(K,idCells[nei],Support_j, Fj_physical,j, Facef.getBarryCenter())[1]<< " )" <<endl;
 						
-						 
+						
 						//************* _Ndim-dimensional terms *************//
+
+						/*
+
 						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, idCells[nei], Facef.getBarryCenter());
 						std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
 						std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, Facef.getBarryCenter());
@@ -423,6 +429,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 							}
 						} */
 						//************* (_Ndim-1)-dimensional terms *************//
+
+						/*
+
 						if (IsfInterior){											
 							if ( _FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()  )
 								idCellsOfFacef.push_back( _mesh.getFace( _FacePeriodicMap.find(idFaces[f])->second ).getCellsId()[0]  );
@@ -447,6 +456,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 				} 
 				VecSetValues(_Conv, 1, &IndexFace, &Convection, ADD_VALUES ); 
 				
+				*/
+				
 			}
 			else if (IsWallBound || IsSteggerBound ) { 
 				/****************** Density conservation equation *********************/
@@ -469,7 +480,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){//dt is not known 
 		
 		MatAssemblyBegin(_DivRhoU,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_DivRhoU, MAT_FINAL_ASSEMBLY);
-		MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY); //TODO conditional jump ?
+		MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY); 
 		MatAssemblyEnd(_LaplacianPressure, MAT_FINAL_ASSEMBLY);
 		VecAssemblyBegin(_BoundaryTerms);
 		VecAssemblyEnd(_BoundaryTerms);
@@ -959,6 +970,7 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 void EulerBarotropicStaggered::terminate(){ 
 	MatDestroy(& _LaplacianVelocity);
 	VecDestroy(& _Conv); 
+	VecDestroy(& _DualDensity);
 	MatDestroy(& _DivRhoU); 
 	delete _compressibleFluid;
 	_compressibleFluid = nullptr;

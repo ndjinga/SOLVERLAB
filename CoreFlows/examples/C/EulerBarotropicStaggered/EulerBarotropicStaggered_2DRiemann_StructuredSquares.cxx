@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1;
+		unsigned MaxNbOfTimeStep = 2;
 		int freqSave = 1;
 		double cfl = 0.99;
 		double maxTime = 0.07;
@@ -173,13 +173,14 @@ int main(int argc, char** argv)
 		
 		// evolution
 		myProblem.initialize();
+		/* return EXIT_SUCCESS;
 		bool ok = myProblem.run();
 		if (ok)
 			cout << "Simulation "<<fileName<<" is successful !" << endl;
 		else
 			cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
-		cout << "------------ End of calculation !!! -----------" << endl;
+		cout << "------------ End of calculation !!! -----------" << endl; */
 		myProblem.terminate();
 
 		// Should check if tmax, ncells, cfl and pl, pr, ul, ur are the same 

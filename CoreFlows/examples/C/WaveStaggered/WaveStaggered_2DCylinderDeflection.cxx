@@ -163,7 +163,7 @@ int main(int argc, char** argv)
 	int freqSave = 500;
 	double cfl = 0.5;
 	double maxTime = 800;
-	double precision = 1e-6;
+	double precision = 1e-12;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
