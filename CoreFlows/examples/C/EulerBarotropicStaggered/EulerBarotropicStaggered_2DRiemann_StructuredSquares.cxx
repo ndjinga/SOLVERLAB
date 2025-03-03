@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=3	;
+			nx=50	;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=200;
+			ny=50;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 			ncells = ny;
 		}
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 2;
+		unsigned MaxNbOfTimeStep = 1000000;
 		int freqSave = 1;
 		double cfl = 0.99;
 		double maxTime = 0.07;
@@ -173,14 +173,13 @@ int main(int argc, char** argv)
 		
 		// evolution
 		myProblem.initialize();
-		/* return EXIT_SUCCESS;
 		bool ok = myProblem.run();
 		if (ok)
 			cout << "Simulation "<<fileName<<" is successful !" << endl;
 		else
 			cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
-		cout << "------------ End of calculation !!! -----------" << endl; */
+		cout << "------------ End of calculation !!! -----------" << endl;
 		myProblem.terminate();
 
 		// Should check if tmax, ncells, cfl and pl, pr, ul, ur are the same 

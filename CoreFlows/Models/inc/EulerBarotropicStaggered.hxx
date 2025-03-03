@@ -62,6 +62,7 @@ public :
     void UpdateDualDensity();
     bool iterateTimeStep(bool &converged);
     std::vector<double>  getTimeEvol();
+    void Rhomax_Umax_Cmax();
 
     //********* Raviart-Thomas related functions ***********//
     std::vector<double> ReferenceBasisFunctionRaviartThomas(const int &i, const Point &Xhat, const std::vector<Node> &K_Nodes );

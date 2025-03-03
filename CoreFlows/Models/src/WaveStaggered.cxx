@@ -500,10 +500,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	MatZeroEntries(_Div); 
 	MatZeroEntries(_DivTranspose); 
 
-	MatZeroEntries(_A); 
-
 	if (_timeScheme == Explicit ){ 
-		if ( _nbTimeStep == 0 || _nbTimeStep > 0 ){ //TODO à supprimer  
+		if ( _nbTimeStep == 0  ){   
 			// Assembly of matrices 
 			for (int j=0; j<_Nfaces;j++){
 				Face Fj = _mesh.getFace(j);
@@ -536,23 +534,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
 					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
 					MatSetValues(_LaplacianPressure, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES );  
-
-					MatSetValues(_A, 1, &idCells[0], 1, &IndexFace, &orientedMinusFaceArea, ADD_VALUES ); 
-					MatSetValues(_A, 1, &idCells[1], 1, &IndexFace, &orientedFaceArea, ADD_VALUES );  
-
-					MatSetValues(_A, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES ); 
-					MatSetValues(_A, 1, &idCells[0], 1, &idCells[1], &FaceArea, ADD_VALUES );  
-					MatSetValues(_A, 1, &idCells[1], 1, &idCells[1], &MinusFaceArea, ADD_VALUES ); 
-					MatSetValues(_A, 1, &idCells[1], 1, &idCells[0], &FaceArea, ADD_VALUES ); 
 					
 					/******************* Velocity equation ***********************/
 					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
-
-					MatSetValues(_A, 1, &IndexFace, 1, &idCells[0], &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(_A, 1, &IndexFace, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES ); 
-
-					
+					MatSetValues(_DivTranspose, 1, &j, 1, &idCells[1], &orientedMinusFaceArea, ADD_VALUES );				
 				
 				}
 				else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 		
@@ -560,9 +545,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					/***************** Pressure equation related matrices ******************/
 					MatSetValues(_Div, 1, &idCells[0], 1, &j, &orientedFaceArea, ADD_VALUES ); 
 					MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
-
-					MatSetValues(_A, 1, &idCells[0], 1, &IndexFace, &orientedFaceArea, ADD_VALUES ); 
-					MatSetValues(_A, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea, ADD_VALUES );
 
 					//Is the face a wall boundarycondition face
 					if (IsWallBound ){
@@ -594,34 +576,31 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 			MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
-			MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-
 			// _A = (dc _LaplacianPressure  ;  -1/rho B         )
 			//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
 			MatScale(_DivTranspose, -1.0);
-
-			if (_nbTimeStep == 0) MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
-
+			if (_nbTimeStep == 0) 
+				MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
 			MatScale(_LaplacianPressure, _d*_c );
 			MatScale(_Div, -1.0/_rho);
 			MatScale(_DivTranspose, -1.0*_kappa);
-			//MatScale(_GradDivTilde, _d*_c); //TODO
-			Mat G[4];
+			MatScale(_GradDivTilde, _d*_c); 
+			Mat G[4], Prod;
 			G[0] = _LaplacianPressure;
 			G[1] = _Div;
 			G[2] = _DivTranspose;
-			G[3] = _DivTranspose ; //_GradDivTilde; TODO
-
-			//MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
-
-			Mat Prod;
+			G[3] = _GradDivTilde; 
+			
+			// WARNING MatCreateNest() memory problem when time evolution of matrices
+			assert( _nbTimeStep == 0);
+			MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
 			MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
 			MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 			MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
-			MatDestroy(& Prod); 
+			MatDestroy(& Prod);
 
 			ComputeMinCellMaxPerim();
+
 			
 		}
 		if (_isWall && _nbTimeStep >0 ){	
@@ -646,10 +625,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatMult(_InvVol, _BoundaryTerms, Prod2);  
 		MatMult(_A,_primitiveVars, _b); 
 		VecAXPY(_b,     1, Prod2);
-		VecDestroy(& Prod2); 
+		VecDestroy(& Prod2); 	
 
 	}
-
 	//ComputeEnergyAtTimeT();
 	return _cfl * _minCell / (_maxPerim * _c);
 }
