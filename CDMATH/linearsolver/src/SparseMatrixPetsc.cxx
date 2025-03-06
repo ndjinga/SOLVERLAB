@@ -39,7 +39,17 @@ SparseMatrixPetsc::SparseMatrixPetsc( int numberOfRows, int numberOfColumns)
 	_numberOfRows = numberOfRows;
 	_numberOfColumns=numberOfColumns;
 	_isSparseMatrix=true;
-	PetscInitialize(0, (char ***)"", NULL, NULL);
+
+#if CMAKE_BUILD_TYPE==DEBUG
+	int argc = 2;
+	char **argv = new char*[argc];
+	argv[0] = (char*)"SparseMatrixPetsc";
+	argv[1] = (char*)"-on_error_attach_debugger";
+	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+#else
+	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+#endif
+
 	MatCreateSeqAIJ(MPI_COMM_SELF,_numberOfRows,_numberOfColumns,PETSC_DEFAULT,NULL,&_mat);
 }
 
@@ -47,7 +57,16 @@ SparseMatrixPetsc::SparseMatrixPetsc( int numberOfRows, int numberOfColumns)
 SparseMatrixPetsc::SparseMatrixPetsc( Mat mat )
 //----------------------------------------------------------------------
 {
-	PetscInitialize(0, (char ***)"", NULL, NULL);
+#if CMAKE_BUILD_TYPE==DEBUG
+	int argc = 2;
+	char **argv = new char*[argc];
+	argv[0] = (char*)"SparseMatrixPetsc";
+	argv[1] = (char*)"-on_error_attach_debugger";
+	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+#else
+	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+#endif
+
 	_isSparseMatrix=true;
 	_mat=mat;
 	//extract number of row and column
@@ -63,12 +82,21 @@ SparseMatrixPetsc::SparseMatrixPetsc( Mat mat )
 SparseMatrixPetsc::SparseMatrixPetsc( int numberOfRows, int numberOfColumns, int nnz )
 //----------------------------------------------------------------------
 {
+#if CMAKE_BUILD_TYPE==DEBUG
+	int argc = 2;
+	char **argv = new char*[argc];
+	argv[0] = (char*)"SparseMatrixPetsc";
+	argv[1] = (char*)"-on_error_attach_debugger";
+	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+#else
+	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+#endif
+
 	_numberOfRows = numberOfRows;
 	_numberOfColumns=numberOfColumns;
 	_numberOfNonZeros=nnz;
 	_isSparseMatrix=true;
 	_mat=NULL;
-	PetscInitialize(0, (char ***)"", NULL, NULL);
 	MatCreateSeqAIJ(MPI_COMM_SELF,_numberOfRows,_numberOfColumns,_numberOfNonZeros,NULL,&_mat);
 }
 
@@ -81,13 +109,32 @@ SparseMatrixPetsc::SparseMatrixPetsc( int blockSize, int numberOfRows, int numbe
 	_numberOfNonZeros=nnz;
 	_isSparseMatrix=true;
 	_mat=NULL;
-	PetscInitialize(0, (char ***)"", NULL, NULL);
+
+#if CMAKE_BUILD_TYPE==DEBUG
+	int argc = 2;
+	char **argv = new char*[argc];
+	argv[0] = (char*)"SparseMatrixPetsc";
+	argv[1] = (char*)"-on_error_attach_debugger";
+	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+#else
+	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+#endif
+
 	MatCreateSeqBAIJ(MPI_COMM_SELF,blockSize, _numberOfRows,_numberOfColumns,_numberOfNonZeros,NULL,&_mat);
 }
 
 SparseMatrixPetsc::SparseMatrixPetsc(std::string filename, bool hdf5BinaryMode)
 {
-	PetscInitialize(0, (char ***)"", NULL, NULL);
+#if CMAKE_BUILD_TYPE==DEBUG
+	int argc = 2;
+	char **argv = new char*[argc];
+	argv[0] = (char*)"SparseMatrixPetsc";
+	argv[1] = (char*)"-on_error_attach_debugger";
+	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+#else
+	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+#endif
+
 	_mat = NULL;
 	readPETScMatrixFromFile( filename, hdf5BinaryMode);
 
