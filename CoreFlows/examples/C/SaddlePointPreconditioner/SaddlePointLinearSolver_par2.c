@@ -16,24 +16,19 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                        - G submatrix u-p of A_{input}                                         */
 /*                        - D submatrix p-u of A_{input}                                         */
 /*                        - C submatrix p-p of A_{input}                                         */
+/*                        - R submatrix neither p nor u - neither p nor u of A_{input}           */
 /*                                                                                               */
-/*                                  *X X X X X*                                                  */
-/*                                 * X M X G X *                                                 */
-/*                        A     = *  X X X X X  *                                                */
-/*                                 * X D X C X *                                                 */
-/*                                  *X X X X X*                                                  */
+/*                                 * M G X *                                                     */
+/*                        A     = *  D C X  *                                                    */
+/*                                 * X X R *                                                     */
 /*                                                                                               */
-/*                                  *X X     X  X X*                                             */
-/*                                 * X C_hat X -D X *                                            */
-/*                        A_hat = *  X X     X  X X  *                                           */
-/*                                 * X G_hat X  M X *                                            */
-/*                                  *X X     X  X X*                                             */
+/*                                 * C_hat -D X *                                                */
+/*                        A_hat = *  G_hat  M X  *                                               */
+/*                                 * X      X R *                                                */
 /*                                                                                               */
-/*                                  *X X     X X         X*                                      */
-/*                                 * X C_hat X 0         X *                                     */
-/*                        Pmat  = *  X X     X X         X  *                                    */
-/*                                 * X G_hat X 2 diag(M) X *                                     */
-/*                                  *X X     X X         X*                                      */
+/*                                 * C_hat 0          0 *                                        */
+/*                        Pmat  = *  G_hat 2 diag(M)  0  *                                       */
+/*                                 * X     X          R *                                        */
 /*                                                                                               */
 /*************************************************************************************************/
 
@@ -71,37 +66,46 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
 	PetscBarrier(NULL);
 
-//####	Decompose the matrix A_input into 25 blocks and extract the 4 blocks M, G, D, C
-	Mat M, G, D, C;
+//####	Decompose the matrix A_input into 9=3x3 blocks and extract the 4 blocks M, G, D, C
+	Mat M, G, D, C, Remaining_Diagonal_Block;
 	PetscInt nrows, ncolumns;//Total number of rows and columns of A_input
-	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
-	PetscInt n_u, n_p, n;//Total number of velocity and pressure lines. n=matrix size n >= n_u+ n_p
-	IS is_U,is_P;
+	PetscInt irow_min, irow_max, nb_local_lines;//min and max indices of rows stored locally on this process
+	IS is_U,is_P, is_neither_U_nor_P;
+	PetscInt n_u, n_p, n_neither_U_nor_P;//Total number of velocity (n_u), pressure (n_p) and remaining (n_neither_U_nor_P) lines. n=matrix size = n_u+ n_p+ n_neither_U_nor_P
 
+	/* build is_U and is_P if they are not given
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
 	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
-	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
-	MatGetSize( A_input, &nrows, &ncolumns);
 	//pressure indices come after the velocity indices
 	PetscInt min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
 	PetscInt max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
 	//velocity (resp. pressure) indices are assumed to be consecutive, and nu+np = irow_max - irow_min
 	PetscInt nb_pressure_lines = irow_max >= n_u ? irow_max - min_pressure_lines : 0;
 	PetscInt nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
-
-	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
-	PetscCheck( n_u+n_p > ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but %d velocity lines and %d pressure lines declared : n_u+n_p > ncolumns\n", ncolumns, n_u,n_p);
-	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines and %d pressure lines\n", n, n_u,n_p);
-	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, nb_pressure_lines = %d, nb_velocity_lines = %d \n", rank, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
-	
-	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks \n M G\n D C\n");
 	ISCreateStride(PETSC_COMM_WORLD, nb_velocity_lines, max_velocity_lines - nb_velocity_lines, 1, &is_U);
 	ISCreateStride(PETSC_COMM_WORLD, nb_pressure_lines, min_pressure_lines                    , 1, &is_P);
+	*/
+	
+	ISGetSize(is_U, &n_u);//Total number of velocity (n_u) lines.
+	ISGetSize(is_P, &n_p);//Total number of pressure lines.
+	ISGetSize(is_neither_U_nor_P, n_neither_U_nor_P);//Total number of remaining lines.
+
+	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
+	nb_local_lines = irow_max - irow_min;
+	MatGetSize( A_input, &nrows, &ncolumns);
+	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
+	PetscCheck( n_u+n_p + n_neither_U_nor_P = ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but %d velocity lines, %d pressure lines and %d remaining lines declared : n_u+n_p +n_neither_U_nor_P=%d, is not equal to the number of lines %d\n", ncolumns, n_u,n_p,n_neither_U_nor_P,n_u+n_p +n_neither_U_nor_P,ncolumns);
+
+	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines, %d pressure and %d remaining lines\n", n, n_u,n_p,n_neither_U_nor_P);
+	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, nb_pressure_lines = %d, nb_velocity_lines = %d \n", rank, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
+	
+	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 5 blocks M,G,D,C,R :\n M G *\n D C *\n * * R\n");
 	
 	MatCreateSubMatrix(A_input,is_U, is_U,MAT_INITIAL_MATRIX,&M);
 	MatCreateSubMatrix(A_input,is_U, is_P,MAT_INITIAL_MATRIX,&G);
 	MatCreateSubMatrix(A_input,is_P, is_U,MAT_INITIAL_MATRIX,&D);
 	MatCreateSubMatrix(A_input,is_P, is_P,MAT_INITIAL_MATRIX,&C);
+	MatCreateSubMatrix(A_input,is_neither_U_nor_P, is_neither_U_nor_P, MAT_INITIAL_MATRIX, &Remaining_Diagonal_Block);
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
 
 	//#Display some informations about the four blocs
@@ -114,30 +118,26 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"Size of G : %d,%d\n", size1,size2);
 	MatGetSize(D, &size1,&size2);
 	PetscPrintf(PETSC_COMM_WORLD,"Size of D : %d,%d\n", size1,size2);
+	MatGetSize(Remaining_Diagonal_Block, &size1,&size2);
+	PetscPrintf(PETSC_COMM_WORLD,"Size of Remaining_Diagonal_Block : %d,%d\n", size1,size2);
 
 //##### Definition of the right hand side to test the preconditioner
-	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
-	Vec X_array[2];
-	PetscScalar y[nb_pressure_lines];
-	PetscInt i_p[nb_pressure_lines];
-
-	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
-	VecCreate(PETSC_COMM_WORLD,&b_input);
-	VecSetSizes(b_input,PETSC_DECIDE,n_u+n_p);
-	VecSetFromOptions(b_input);
+	Vec b_input, b_input_p, b_input_u, b_input_neither_p_nor_u, b_hat, X_hat, X_anal;
+	Vec X_array[3];
+	PetscScalar  y[nb_local_lines];//To store the values
+	PetscInt i_loc[nb_local_lines];//To store the indices
 	
-	VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
-	VecDuplicate(b_input,&X_hat);// X_hat will store the numerical solution of the transformed system
+	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
+	MatCreateVecs( A_input, X_anal, b_input );
+	VecDuplicate(X_anal,&X_hat);// X_hat will store the numerical solution of the transformed system
 	VecDuplicate(b_input,&b_hat);// b_hat will store the right hand side of the transformed system
 
-	VecSet(X_anal,0.0);
-
-	for (int i = min_pressure_lines;i<irow_max;i++){
-		y[i-n_u]=1.0/i;
-		i_p[i-n_u]=i;
+	for (int i = irow_min;i<irow_max;i++){
+		y[i]=1.0/i;
+		i_loc[i]=i;
 	}
 	
-	VecSetValues(X_anal,nb_pressure_lines,i_p,y,INSERT_VALUES);
+	VecSetValues(X_anal,nb_local_lines,i_loc,y,INSERT_VALUES);
 	VecAssemblyBegin(X_anal);
 	VecAssemblyEnd(X_anal);
 	VecNormalize( X_anal, NULL);
@@ -148,11 +148,13 @@ int main( int argc, char **args ){
 	//Swap the pressure and velocity components
 	VecGetSubVector( b_input, is_P, &b_input_p);
 	VecGetSubVector( b_input, is_U, &b_input_u);
+	VecGetSubVector( b_input, is_neither_p_nor_u, &b_input_neither_p_nor_u);
 	X_array[0] = b_input_p;
 	X_array[1] = b_input_u;
+	X_array[2] = b_input_neither_p_nor_u;
 
-	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &b_hat);//This may generate an error message : "Nest vector argument 3 not setup "
-	VecConcatenate(2, X_array, &b_hat, NULL);
+	//VecCreateNest( PETSC_COMM_WORLD, 3, NULL, X_array, &b_hat);//This may generate an error message : "Nest vector argument 3 not setup "
+	VecConcatenate(3, X_array, &b_hat, NULL);
 	
 
 //##### Application of the transformation A -> A_hat
@@ -165,7 +167,7 @@ int main( int argc, char **args ){
 	VecScatter scat;//tool to redistribute a vector on the processors
 	IS is_to, is_from;
 	
-	Mat_array[3]=M;//Bottom left block of A_hat
+	Mat_array[3]=M;//Bottom right block of A_hat
 
 	//Extraction of the diagonal of M
 	MatCreateVecs(M,NULL,&v);//v has the parallel distribution of M
@@ -218,7 +220,7 @@ int main( int argc, char **args ){
 	IS is_U_hat,is_P_hat;
 	
 	ISCreateStride(PETSC_COMM_WORLD, n_u, n_p, 1, &is_U_hat);
-	ISCreateStride(PETSC_COMM_WORLD, n_p, 0, 1, &is_P_hat);
+	ISCreateStride(PETSC_COMM_WORLD, n_p,   0, 1, &is_P_hat);
 
 //##### Call KSP solver and monitor convergence
 	double residu, abstol, rtol=1e-7, dtol;
