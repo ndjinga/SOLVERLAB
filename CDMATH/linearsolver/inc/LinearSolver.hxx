@@ -113,6 +113,11 @@ public: //----------------------------------------------------------------
 	void precDuplicate(const PC source, const KSP ksp, PC destination) const;
 	KSP getPetscKsp() ;
 	PC getPetscPc() ;
+    	/** \fn setPetscOptions
+	 * \brief sets the options used in PETSc global database
+	 * @param Any available option in PETSc (See PETSc documentation)
+	 */
+	void setPetscOptions(const char petscOptions[], const char value[] = NULL){PetscOptionsSetValue(NULL, petscOptions, value);}
 
 
 private: //----------------------------------------------------------------
