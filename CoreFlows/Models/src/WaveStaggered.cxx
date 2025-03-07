@@ -81,6 +81,8 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 	double *vec =new double [_Ndim];	
 	vec[0] =0;
 	vec[1] =0;	
+	std::map<int,int>::iterator it = _FacePeriodicMap.begin();
+	while ( ( l !=it->second) && (it !=_FacePeriodicMap.end() ) )it++;
 	for(int m=0; m<Cint.getNumberOfFaces(); m++){//we look for l the index of the face Fj for the cell Ctemp1
 		if (l == Cint.getFacesId()[m]  ){
 			for (int idim = 0; idim < _Ndim; ++idim)
@@ -89,6 +91,11 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 		else if ((_FacePeriodicMap.find(l) != _FacePeriodicMap.end()) && (_FacePeriodicMap.find(l)->second == Cint.getFacesId()[m])){
 			for (int idim = 0; idim < _Ndim; ++idim)
 				vec[idim] = Cint.getNormalVector(m,idim);
+		}
+		else if (it !=_FacePeriodicMap.end() && ( it->first == Cint.getFacesId()[m])){
+			for (int idim = 0; idim < _Ndim; ++idim)
+				vec[idim] = Cint.getNormalVector(m,idim);
+
 		}
 	}
 	double dotprod = 0;

@@ -7,23 +7,23 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 12;
+		return 1; //12
 	else
 		return 1;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
-	double ul = 1.5;
-	double ur = -3;
+	double ul = 3 ; //1.5;
+	double ur = -10 ; //-3;
 	if (Direction == 'x'){
 		if (z < discontinuity){
 			vec[0] = ul;
-			vec[1] = 0;
+			vec[1] = 2;
 		}
 		else {
-			vec[0] = ur;
-			vec[1] = 0;
+			vec[0] = ul;
+			vec[1] = ur;
 		}
 	}
 	else if (Direction == 'y'){
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=50	;
+			nx=3	;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1000000;
+		unsigned MaxNbOfTimeStep = 2;
 		int freqSave = 1;
 		double cfl = 0.99;
 		double maxTime = 0.07;
