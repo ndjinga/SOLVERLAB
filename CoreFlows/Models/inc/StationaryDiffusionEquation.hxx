@@ -60,6 +60,12 @@ public :
     
     //Linear system and spectrum
     void setLinearSolver(linearSolver kspType, preconditioner pcType);
+	/** \fn setPetscOptions
+	 * \brief sets the options used in PETSc global database
+	 * @param Any available option in PETSc (See PETSc documentation)
+	 */
+	void setPetscOptions(const char petscOptions[], const char value[] = NULL){PetscOptionsSetValue(NULL, petscOptions, value);}
+
     double getConditionNumber(bool isSingular=false, double tol=1e-6) const;
     std::vector< double > getEigenvalues (int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6) const;
     std::vector< Vector > getEigenvectors(int nev, EPSWhich which=EPS_SMALLEST_MAGNITUDE, double tol=1e-6) const;

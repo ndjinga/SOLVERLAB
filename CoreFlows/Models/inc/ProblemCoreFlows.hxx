@@ -609,6 +609,12 @@ public :
 	 */
 	void setLinearSolver(std::string solverName, std::string pcName, double maxIts=50);
 
+	/** \fn setPetscOptions
+	 * \brief sets the options used in PETSc global database
+	 * @param Any available option in PETSc (See PETSc documentation)
+	 */
+	void setPetscOptions(const char petscOptions[], const char value[] = NULL){PetscOptionsSetValue(NULL, petscOptions, value);}
+
 	/** \fn setNewtonSolver
 	 * \brief sets the Newton type algorithm for solving the nonlinear algebraic system arising from the discretisation of the PDE
 	 * \param [in] double : precision required for the convergence of the newton scheme
