@@ -259,17 +259,23 @@ LinearSolver::setLinearSolver(const GenericMatrix& matrix, const Vector& secondM
 		throw CdmathException(msg);
 	}
 
-	//All constructors lead here so we initialize petsc here
+	//Most constructors lead here so we initialize petsc here
+	//check if PETSC is already initialised
+	PetscBool petscInitialized;
+	PetscInitialized(&petscInitialized);
+	if(!petscInitialized)
+    {
 #if CMAKE_BUILD_TYPE==DEBUG
-	int argc = 2;
-	char **argv = new char*[argc];
-	argv[0] = (char*)"SolverlabLinearSolver";
-	argv[1] = (char*)"-on_error_attach_debugger";
-	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+        int argc = 2;
+        char **argv = new char*[argc];
+        argv[0] = (char*)"SolverlabLinearSolver";
+        argv[1] = (char*)"-on_error_attach_debugger";
+        PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
 #else
-	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+        PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
 #endif
-
+    }
+    
 	setMatrix(matrix);
 	setSndMember(secondMember);
 	VecDuplicate(_smb,&_solution);
@@ -285,16 +291,22 @@ LinearSolver::setLinearSolver(const std::string filename, bool hdf5BinaryMode)
 		throw CdmathException(msg);
 	}
 
-	//All constructors lead here so we initialize petsc here
+	/* Initialisation of PETSC */
+	//check if PETSC is already initialised
+	PetscBool petscInitialized;
+	PetscInitialized(&petscInitialized);
+	if(!petscInitialized)
+    {
 #if CMAKE_BUILD_TYPE==DEBUG
-	int argc = 2;
-	char **argv = new char*[argc];
-	argv[0] = (char*)"SolverlabLinearSolver";
-	argv[1] = (char*)"-on_error_attach_debugger";
-	PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
+        int argc = 2;
+        char **argv = new char*[argc];
+        argv[0] = (char*)"SolverlabLinearSolver";
+        argv[1] = (char*)"-on_error_attach_debugger";
+        PetscInitialize(&argc, &argv, 0, 0);//Note this is ok if MPI has been been initialised independently from PETSC
 #else
-	PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
+        PetscInitialize(NULL,NULL,0,0);//Note this is ok if MPI has been been initialised independently from PETSC
 #endif
+    }
 
 	setMatrixAndSndMember( filename, hdf5BinaryMode);
 	VecDuplicate(_smb,&_solution);
