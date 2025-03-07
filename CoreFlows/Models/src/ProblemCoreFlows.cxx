@@ -715,10 +715,7 @@ bool ProblemCoreFlows::solveTimeStep(){
 
 ProblemCoreFlows::~ProblemCoreFlows()
 {
-	PetscBool petscInitialized;
-	PetscInitialized(&petscInitialized);
-	if(petscInitialized)
-		PetscFinalize();//This might break coupled simulation unless they are performed on different communicators
+	PetscFinalize();//This might break coupled simulation unless they are performed on different communicators
 
 	delete _runLogFile;
 }
