@@ -718,7 +718,7 @@ ProblemCoreFlows::~ProblemCoreFlows()
 	PetscBool petscInitialized;
 	PetscInitialized(&petscInitialized);
 	if(petscInitialized)
-		PetscFinalize();
+		PetscFinalize();//This might break coupled simulation unless they are performed on different communicators
 
 	delete _runLogFile;
 }
