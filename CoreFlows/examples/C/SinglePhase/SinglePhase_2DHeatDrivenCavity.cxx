@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 	myProblem.setNumericalScheme(upwind, Implicit);
 
 	// set the Petsc resolution
-	myProblem.setLinearSolver(GMRES,LU,false);
+	myProblem.setLinearSolver(GMRES,ILU,false);
 
 	// name result file
 	string fileName = "2DHeatDrivenCavity";
