@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 	myProblem.setGravity(gravite);
 
 	// set the numerical method
-	myProblem.setNumericalScheme(upwind, Implicit);
+	myProblem.setNumericalScheme(upwind, Explicit);
 
 	// name file save
 	string fileName = "2DInclinedSedimentation";
