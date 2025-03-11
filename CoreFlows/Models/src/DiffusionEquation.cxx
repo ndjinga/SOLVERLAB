@@ -329,7 +329,7 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         {
         Cell Cj;
         string nameOfGroup;
-        double coeff;//Diffusion coefficients between nodes i and j
+        double coeff;//Diffusion coefficients between nodes i and j (to be inserted in stiffness matrix), or boundary coefficient (to be inserted in RHS)
         
         Matrix M(_Ndim+1,_Ndim+1);//cell geometry matrix
         std::vector< Vector > GradShapeFuncs(_Ndim+1);//shape functions of cell nodes
@@ -371,12 +371,13 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     for (int jdim=0; jdim<_Ndim+1;jdim++)
                     {
                         if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
-                        {//Second node of the edge is not Dirichlet node
+                        {//Second node of the edge is not Dirichlet node -> contribution to the stiffness matrix
                             j_int= unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                            MatSetValue(_A,i_int,j_int,(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
+                            coeff = (_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure();
+                            MatSetValue(_A,i_int,j_int, coeff, ADD_VALUES);
                         }
                         else if (!dirichletCell_treated)
-                        {//Second node of the edge is a Dirichlet node
+                        {//Second node of the edge is a Dirichlet node -> contribution to the right hand side
                             dirichletCell_treated=true;
                             for (int kdim=0; kdim<_Ndim+1;kdim++)
                             {
@@ -575,7 +576,7 @@ double DiffusionEquation::computeRHS(bool & stop){//Contribution of the PDE RHS 
                             }
                             else//Implicit scheme    
                             {
-                                double coeff = (_heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]))/(_rho*_cp);
+                                coeff = (_heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]))/(_rho*_cp);
                                 VecSetValue(_b,nodej_unknown_index, coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
                             }
                         }

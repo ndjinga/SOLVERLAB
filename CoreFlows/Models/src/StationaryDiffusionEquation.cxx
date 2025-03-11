@@ -347,7 +347,7 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
         {
         Cell Cj;
         string nameOfGroup;
-        double coeff;//Diffusion coefficients between nodes i and j
+        double coeff;//Diffusion coefficients between nodes i and j (to be inserted in stiffness matrix), or boundary coefficient (to be inserted in RHS)
         
         Matrix M(_Ndim+1,_Ndim+1);//cell geometry matrix
         std::vector< Vector > GradShapeFuncs(_Ndim+1);//shape functions of cell nodes
@@ -389,12 +389,13 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                     for (int jdim=0; jdim<_Ndim+1;jdim++)
                     {
                         if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodeIds[jdim])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[jdim])
-                        {//Second node of the edge is not Dirichlet node
+                        {//Second node of the edge is not Dirichlet node -> contribution to the stiffness matrix
                             j_int= DiffusionEquation::unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
-                            MatSetValue(_A,i_int,j_int,(_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure(), ADD_VALUES);
+                            coeff = (_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure();
+                            MatSetValue(_A,i_int,j_int, coeff, ADD_VALUES);
                         }
                         else if (!dirichletCell_treated)
-                        {//Second node of the edge is a Dirichlet node
+                        {//Second node of the edge is a Dirichlet node -> contribution to the right hand side
                             dirichletCell_treated=true;
                             for (int kdim=0; kdim<_Ndim+1;kdim++)
                             {
@@ -588,7 +589,6 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFV(bool & stop){
 
 double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the PDE RHS to the linear systemm RHS (boundary conditions do contribute to the system RHS via the function computeDiffusionMatrix
 {
-
     if(_mpi_rank == 0)
     {
         if(!_FECalculation)
@@ -598,6 +598,7 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
             {
                 Cell Ci;
                 std::vector< int > nodesId;
+                double coeff;// Coefficient to be inserted in RHS
                 for (int i=0; i<_Nmailles;i++)
                 {
                     Ci=_mesh.getCell(i);
@@ -605,7 +606,7 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
                     for (int j=0; j<nodesId.size();j++)
                         if(!_mesh.isBorderNode(nodesId[j])) 
                         {
-                            double coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]);
+                            coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]);
                             VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
                         }
                 }
