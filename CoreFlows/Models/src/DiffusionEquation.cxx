@@ -375,8 +375,8 @@ double DiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                             j_int= unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
                             coeff = (_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure();
 #if CMAKE_BUILD_TYPE==DEBUG
-                            if( coeff>0)//non acute triangle/tetrahedron -> violation of mawimum principle
-                                PetscPrintf(PETSC_COMM_WORLD,"\n !!! Warning : non acute triangle/tetrahedron cell %d, nodes %d and %d, possible violation of the maximum principle \n",j, nodeIds[idim], nodeIds[jdim]);
+                            if( idim != jdim && coeff>0 )//non acute triangle/tetrahedron -> violation of mawimum principle
+                                PetscPrintf(PETSC_COMM_WORLD,"\n !!! Warning : non acute triangle/tetrahedron cell %d, nodes %d and %d, coeff=%.2f, possible violation of the maximum principle \n",j, nodeIds[idim], nodeIds[jdim], coeff);
 #endif
                             MatSetValue(_A,i_int,j_int, coeff, ADD_VALUES);
                         }
