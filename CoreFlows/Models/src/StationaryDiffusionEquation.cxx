@@ -392,6 +392,10 @@ double StationaryDiffusionEquation::computeDiffusionMatrixFE(bool & stop){
                         {//Second node of the edge is not Dirichlet node -> contribution to the stiffness matrix
                             j_int= DiffusionEquation::unknownNodeIndex(nodeIds[jdim], _dirichletNodeIds);//assumes Dirichlet boundary node numbering is strictly increasing
                             coeff = (_DiffusionTensor*GradShapeFuncs[idim])*GradShapeFuncs[jdim]/Cj.getMeasure();
+#if CMAKE_BUILD_TYPE==DEBUG
+                            if( coeff>0)//non acute triangle/tetrahedron -> violation of mawimum principle
+                                PetscPrintf(PETSC_COMM_WORLD,"\n !!! Warning : non acute triangle/tetrahedron cell %d, nodes %d and %d, possible violation of the maximum principle \n",j, nodeIds[idim], nodeIds[jdim]);
+#endif
                             MatSetValue(_A,i_int,j_int, coeff, ADD_VALUES);
                         }
                         else if (!dirichletCell_treated)
