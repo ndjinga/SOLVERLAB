@@ -49,6 +49,7 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
     }
 
     _FECalculation=FECalculation;
+    _secondOrderQuadrature=false;
     _onlyNeumannBC=false;    
     
     _Ndim=dim;
@@ -599,10 +600,12 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
             for (int i=0; i<_Nmailles;i++)
                 VecSetValue(_b,i, _heatTransfertCoeff*_fluidTemperatureField(i) + _heatPowerField(i) ,ADD_VALUES);
         else
+        {
+            double coeff;// Coefficient to be inserted in RHS
+                std::vector< int > nodesId;
+            if( !_secondOrderQuadrature )//first order quadrature
             {
                 Cell Ci;
-                std::vector< int > nodesId;
-                double coeff;// Coefficient to be inserted in RHS
                 for (int i=0; i<_Nmailles;i++)
                 {
                     Ci=_mesh.getCell(i);
@@ -615,6 +618,37 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
                         }
                 }
             }
+            else//second order quadrature
+            {
+                Face Fi;
+                Cell Ci1,Ci2;
+                int i1, i2;
+                double valueFace;
+                for (int i=0; i<_mesh.getNumberOfFaces();i++)
+                {
+                    Fi=_mesh.getFace(i);
+                    nodesId = Fi.getNodesId();
+                    //compute average value of the RHS on face Fi
+                    valueFace = 0;
+                    for(int inode=0; inode<Fi.getNumberOfNodes(); inode++)
+                        valueFace+=_heatTransfertCoeff*_fluidTemperatureField(nodesId[inode]) + _heatPowerField(nodesId[inode]);
+
+                    i1=Fi.getCellId(0);
+                    Ci1=_mesh.getCell(i1);
+                    coeff = Ci1.getMeasure();
+                    if( ! Fi.isBorder() )
+                    {
+                        i2=Fi.getCellId(1);
+                        Ci2=_mesh.getCell(i2);
+                        coeff += Ci2.getMeasure();
+                    }
+                    coeff *= valueFace/(_Ndim*(_Ndim+1));//Ci1.getNumberOfFaces()=_Ndim+1, Fi.getNumberOfNodes()=_Ndim
+                    for(int inode=0; inode<Fi.getNumberOfNodes(); inode++)
+                        if(!_mesh.isBorderNode(nodesId[inode])) 
+                            VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[inode], _dirichletNodeIds), coeff,ADD_VALUES);                    
+                }
+            }
+        }
     }
     VecAssemblyBegin(_b);
     VecAssemblyEnd(_b);
@@ -676,9 +710,9 @@ bool StationaryDiffusionEquation::iterateNewtonStep(bool &converged)
     else{
         if( _MaxIterLinearSolver < _PetscIts)
             _MaxIterLinearSolver = _PetscIts;
-        PetscPrintf(PETSC_COMM_WORLD,"## Système linéaire résolu en %d itérations par le solveur %s et le preconditioneur %s, précision demandée = %1.2e\n",_PetscIts,_ksptype,_pctype,_precision);
+        PetscPrintf(PETSC_COMM_WORLD,"## Système linéaire résolu en %d itérations par le solveur %s et le preconditioneur %s, précision demandée = %1.2e, résidu final  = %1.2e\n",_PetscIts,_ksptype,_pctype,_precision, residu);
         if(_mpi_rank==0)//Avoid redundant printing
-            *_runLogFile<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<endl<<endl;
+            *_runLogFile<<"## Système linéaire résolu en "<<_PetscIts<<" itérations par le solveur "<<  _ksptype<<" et le preconditioneur "<<_pctype<<", précision demandée= "<<_precision<<", résidu final = "<< residu<<endl<<endl;
 
         VecCopy(_Tk, _deltaT);//ici on a deltaT=Tk
         VecAXPY(_deltaT,  -1, _Tkm1);//On obtient deltaT=Tk-Tkm1
