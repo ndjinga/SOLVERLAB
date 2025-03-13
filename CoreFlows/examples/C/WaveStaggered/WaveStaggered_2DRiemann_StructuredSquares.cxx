@@ -15,7 +15,7 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	std::vector<double> vec(2);
 	if (z < discontinuity){
 		if (Direction == 'x'){
-			vec[0] = 0;
+			vec[0] = 1;
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
@@ -63,7 +63,7 @@ int main(int argc, char** argv){
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=3;
+			nx=200;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
@@ -171,7 +171,7 @@ int main(int argc, char** argv){
 		unsigned MaxNbOfTimeStep = 1000000;
 		int freqSave = 1;
 		double cfl = 0.5;
-		double maxTime = 800;
+		double maxTime = 0.07;
 		double precision = 1e-6;
 
 		myProblem.setCFL(cfl);

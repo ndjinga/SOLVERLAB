@@ -72,7 +72,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		// ./resources/AnnulusSpiderWeb5x16med
+		// ./resources/AnnulusSpiderWeb5x16.med
 	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
 	    cout << "Loading of a mesh named "<<argv[1] << endl;
 	    string filename = argv[1];
@@ -159,10 +159,10 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10000000;
+	unsigned MaxNbOfTimeStep = 100000000;
 	int freqSave = 500;
 	double cfl = 0.5;
-	double maxTime = 800;
+	double maxTime = 4.68;
 	double precision = 1e-12;
 
 	myProblem.setCFL(cfl);

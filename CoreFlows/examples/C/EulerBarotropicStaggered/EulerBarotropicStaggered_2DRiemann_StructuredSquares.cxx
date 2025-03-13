@@ -7,33 +7,33 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 1; //12
+		return 12; //12
 	else
 		return 1;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
-	double ul = 3 ; //1.5;
-	double ur = -10 ; //-3;
+	double ul = 1.5 ; //1.5;
+	double ur = -3 ; //-3;
 	if (Direction == 'x'){
 		if (z < discontinuity){
 			vec[0] = ul;
-			vec[1] = 2;
+			vec[1] = 0;
 		}
 		else {
-			vec[0] = ul;
-			vec[1] = ur;
+			vec[0] = ur;
+			vec[1] = 0;
 		}
 	}
 	else if (Direction == 'y'){
 		if (z < discontinuity){
-			vec[0] = 0;
-			vec[1] = ul;
+			vec[0] = 1;
+			vec[1] = 2;
 		}
 		else {
-			vec[0] = 0;
-			vec[1] = ur;
+			vec[0] = 1;
+			vec[1] = -3	;
 		}
 	}
 	return vec;
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 		char Direction = *(argv[1]);
 		//Preprocessing: mesh and group creation
 		int spaceDim = 2;
-		
+		PetscInitialize(&argc, &argv, 0,0);
 		// Prepare for the mesh
 		cout << "Building mesh" << endl;
 		cout << "Construction of a cartesian mesh" << endl;
@@ -66,15 +66,15 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=3	;
+			nx=50	;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
 			
 		}
 		else if (Direction == 'y'){
-			nx=2;
-			ny=50;
+			nx=4;
+			ny=30;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 			ncells = ny;
 		}
@@ -126,17 +126,19 @@ int main(int argc, char** argv)
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
 				Velocity0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma );
 			}
-			else if (Fj.getNumberOfCells()==1  ){ // If boundary face and if periodic check that the boundary face is the computed (avoid passing twice ) 
-				for (int idim = 0; idim <spaceDim; idim ++){
+			else if (Fj.getNumberOfCells()==1  ){ // If boundary face *
+			for (int idim = 0; idim <spaceDim; idim ++){
 						if (vec_normal_sigma[idim] < 0)
 							vec_normal_sigma[idim] = -vec_normal_sigma[idim];
 				}
 				myProblem.setOrientation(j,vec_normal_sigma);
+				// if periodic check that the boundary face is the computed (avoid passing twice ) 
+				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
+					myProblem.setSteggerBoundIndex(j);	
+				
 				if (Direction == 'x')  coordFace = Fj.x();
 				else if (Direction == 'y') coordFace = Fj.y() ;
 
-				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
-					myProblem.setSteggerBoundIndex(j);	
 				wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) ;
 				wallPressureMap[j] = initialPressure(coordFace,discontinuity);
 			}
@@ -154,8 +156,8 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 2;
-		int freqSave = 1;
+		unsigned MaxNbOfTimeStep = 10000000;
+		int freqSave = 100;
 		double cfl = 0.99;
 		double maxTime = 0.07;
 		double precision = 1e-10;

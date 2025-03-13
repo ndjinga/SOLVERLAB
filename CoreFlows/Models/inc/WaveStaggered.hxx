@@ -101,11 +101,10 @@ public :
 	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
 	bool  IsFaceBoundaryComputedInPeriodic(int j );
 
-	/*******Imposed boundary conditions related ********/
+	/******* Boundary conditions ********/
 	void setWallBoundIndex(int j );
 	void setSteggerBoundIndex(int j ); //Imposed pressure and velocity
 	void setInteriorIndex(int j ); //To avoid complicated implementation in periodic
-
 	std::map<int,double>  getboundaryPressure() const;
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
@@ -118,10 +117,24 @@ public :
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
 	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
 	void AssembleMetricsMatrices();
-
 	//TODO à supprimer ?
 	void setExactVelocityFieldAtCells(const Field &atCells);
 	void ComputeMinCellMaxPerim();
+
+	 //********* Raviart-Thomas related functions ***********//
+    std::vector<double> ReferenceBasisFunctionRaviartThomas(const int &i, const Point &Xhat, const std::vector<Node> &K_Nodes );
+    Point xToxhat(const Cell &K, const  Point &X, const std::vector<Node> & K_Nodes); 
+    std::vector<double>  JacobianTransfor_K_X(const Point &X, const std::vector<Node> &K_Nodes);
+	// K is the cell on which we evaluate the basis function, Support is the table containing the support, Facej is the face of the basis function and j its number,X the point inwhich it is evaluated
+    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, int idcell, std::vector<Cell> Support, Face Facej,int j, Point X);
+	double MassLumping(const Cell &K, const int &idcell, const Face & Facej, const int &j);
+
+    //We find the corresponding basis function on the ref elemm by testing its image by Piola transform & select the only one that is non-zero when taken against n_sigma. 
+    bool FindlocalBasis(const int &m,const Face &Facej, const int &j,const  Cell& K, const std::vector<Node> &K_Nodes );
+	double Jacobian(const std::vector<double> & mat);
+
+    
+
 
 
 protected :
@@ -137,7 +150,8 @@ protected :
 	std::map<int,int> _FacePeriodicMap;
 	std::vector<int>_WallBoundFaceSet, _SteggerBoundFaceSet, _InteriorFaceSet; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
 	bool _facesBoundinit,_indexFacePeriodicSet, _isWall; // To ensure that the boundary velocity is initialized after the initial velocity 
-	std::vector<double> _Energy;
+	std::vector<double> _Energy, _Time;
+	std::map< int , std::map< int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >> _PhysicalPsif;
 				
 
 };

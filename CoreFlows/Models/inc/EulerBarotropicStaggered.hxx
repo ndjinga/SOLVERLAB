@@ -58,31 +58,15 @@ public :
             throw CdmathException("Fluid EOS is not barotropic");
     }
 
-    void AssembleMetricsMatrices();
     void UpdateDualDensity();
     bool iterateTimeStep(bool &converged);
     std::vector<double>  getTimeEvol();
     void Rhomax_Umax_Cmax();
 
     //********* Raviart-Thomas related functions ***********//
-    std::vector<double> ReferenceBasisFunctionRaviartThomas(const int &i, const Point &Xhat, const std::vector<Node> &K_Nodes );
     std::vector<double>  Gradient_ReferenceBasisFunctionRaviartThomas(int i, const std::vector<Node> &K_Nodes );
-    Point xToxhat(const Cell &K, const  Point &X, const std::vector<Node> & K_Nodes); 
-    std::vector<double>  JacobianTransfor_K_X(const Point &X, const std::vector<Node> &K_Nodes);
-
-    //In order to find the corresponding basis function on the reference element we test its image by Piola transform 
-    //and select the only one that is non-zero when taken against n_sigma. 
-    bool FindlocalBasis(const int &m,const Face &Facej, const int &j,const  Cell& K, const std::vector<Node> &K_Nodes );
-    double MassLumping(const Cell &K, const int &idcell, const Face & Facej, const int &j);
-
-    // K is the cell on which we evaluate the basis function
-    // Support is the table containing the support (so only K when we compute in the cell)
-    // Facej is the face of the basis function and j its number
-    // X the point inwhich it is evaluated
-    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, int idcell, std::vector<Cell> Support, Face Facej,int j, Point X);
     std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, int idcell,  std::vector<Cell> Support, Face Facej, int j, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K, int idcell, Point X);
-
     // operation on matrices
     double Jacobian(const std::vector<double> & mat);
     std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v
@@ -90,7 +74,7 @@ public :
     std::vector<double> InvTranspose(std::vector<double> &u); // returns (u^{-1})^t
      
 protected :
- /** Fluid equation of state **/
+    /** Fluid equation of state **/
     vector<    Fluide* > _fluides;//
 	BarotropicLaw   *_compressibleFluid;
 	double _Tref, _Pref; //EOS reference temperature &pressure
