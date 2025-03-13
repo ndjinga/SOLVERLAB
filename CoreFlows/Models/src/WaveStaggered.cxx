@@ -440,7 +440,10 @@ double WaveStaggered::MassLumping(const Cell &K, const int &idcell, const Face &
 		if (_Ndim ==2 )  vertex2 = _mesh.getNode( Facej.getNodesId()[1] );
 		double Area = (_Ndim==2 )? abs((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0 : abs(K.x() - vertex1.x()) ;
 		std::vector<double> Psi_j_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_j, Facej,j, _mesh.getFace( K.getFacesId()[l] ).getBarryCenter());
-		cout << "fj =(" <<Facej.x()<<" , "<< Facej.y() << "), cell = "<< idcell <<" x_c = ("<<K.x() <<" , " << K.y()<<"),   Psi_"<< j<<" ( "<<_mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[0]<<" , "<< _mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[1] <<" ) = ("<< Psi_j_in_Xl[0]<< " ," << Psi_j_in_Xl[1]<< " ) "<<endl;
+		/* if (abs(Facej.y()) < 1e-6 && Facej.x() >1e-6 )
+			cout << " positive fj =(" <<Facej.x()<<" , "<< Facej.y() << "), cell = "<< idcell <<" x_c = ("<<K.x() <<" , " << K.y()<<"),   Psi_"<< j<<" ( "<<_mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[0]<<" , "<< _mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[1] <<" ) = ("<< Psi_j_in_Xl[0]<< " ," << Psi_j_in_Xl[1]<< " ) "<<endl;
+		if (abs(Facej.y()) < 1e-6 && Facej.x() <-1e-6 )
+			cout << " negative fj =(" <<Facej.x()<<" , "<< Facej.y() << "), cell = "<< idcell <<" x_c = ("<<K.x() <<" , " << K.y()<<"),   Psi_"<< j<<" ( "<<_mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[0]<<" , "<< _mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[1] <<" ) = ("<< Psi_j_in_Xl[0]<< " ," << Psi_j_in_Xl[1]<< " ) "<<endl; */
 		for (int f=0; f <K.getNumberOfFaces(); f ++){
 			std::vector<double> Psi_f_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_f, _mesh.getFace( K.getFacesId()[f] ),K.getFacesId()[f], _mesh.getFace( K.getFacesId()[l] ).getBarryCenter());
 			for (int e=0; e<_Ndim; e++)
@@ -494,6 +497,70 @@ void WaveStaggered::AssembleMetricsMatrices(){
 	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
 }
+
+
+/* void WaveStaggered::AssembleMetricsMatrices(){
+	MatZeroEntries(_InvVol); 
+	MatZeroEntries(_InvSurface); 
+	for (int j=0; j<_Nfaces;j++){ 
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		std::vector< int > NodesFj =  Fj.getNodesId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		std::vector< int > idFaces = Ctemp1.getFacesId();
+		PetscScalar det, InvD_sigma, InvVol1, InvVol2, InvPerimeter1, InvPerimeter2;
+		PetscInt IndexFace = _Nmailles + j;
+
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;    
+		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;    
+		
+		InvPerimeter1 = (_Ndim ==2) ? 1.0/_perimeters(idCells[0]) : 1.0 ;
+		InvVol1 = 1.0/Ctemp1.getMeasure();
+		if (IsInterior){
+			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
+					idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
+			InvPerimeter2 = (_Ndim ==2) ? 1.0/(_perimeters(idCells[1]) ) : 1.0;
+			InvVol2 = 1.0/Ctemp2.getMeasure();
+			if (_Ndim == 1) det = Ctemp2.x() - Ctemp1.x();
+			if (_Ndim ==2){
+				std::vector<int> nodes =  Fj.getNodesId();
+				Node vertex = _mesh.getNode( nodes[0] );
+				// determinant of the vectors forming the diamond cell around the face sigma
+				det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
+			}
+			InvD_sigma = 1.0/PetscAbsReal(det);
+
+			MatSetValue(_InvVol, idCells[0],idCells[0], InvVol1 , INSERT_VALUES );
+			MatSetValue(_InvVol, idCells[1],idCells[1], InvVol2, INSERT_VALUES );
+			MatSetValue(_InvVol, IndexFace, IndexFace,  InvD_sigma, INSERT_VALUES);         
+			MatSetValue(_InvSurface,idCells[0],idCells[0], InvPerimeter1, INSERT_VALUES );
+			MatSetValue(_InvSurface,idCells[1],idCells[1], InvPerimeter2, INSERT_VALUES );
+		}
+		else if (IsWallBound || IsSteggerBound ) { 
+			if (_Ndim == 1)
+					det = InvD_sigma = 2.0/Ctemp1.getMeasure() ;
+			if (_Ndim == 2){
+				std::vector< int > nodes =  Fj.getNodesId();
+				Node vertex1 = _mesh.getNode( nodes[0] );
+				Node vertex2 = _mesh.getNode( nodes[1] );
+				det = (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() );
+				// determinant of the vectors forming the interior half diamond cell around the face sigma
+			}
+			InvD_sigma = 1.0/PetscAbsReal(det);          
+			MatSetValue(_InvSurface,idCells[0],idCells[0], InvPerimeter1, INSERT_VALUES );
+			MatSetValue(_InvVol, idCells[0],idCells[0], InvVol1, INSERT_VALUES );
+			MatSetValue(_InvVol, IndexFace, IndexFace,  InvD_sigma, INSERT_VALUES);
+
+		}
+		MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
+	}
+} */
 
 
 
@@ -1124,6 +1191,8 @@ void WaveStaggered::save(){
 			Point xK = Ctemp1.getBarryCenter();
 			Point xsigma = Fj.getBarryCenter();
 
+
+			//Multiply by -1 on triangles (why ?)
 			M1[0] =  orien1 * Fj.getMeasure()*(xsigma.x()- xK.x()) * ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
 			if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y()) * ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
 
