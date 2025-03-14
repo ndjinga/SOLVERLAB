@@ -1,0 +1,17 @@
+
+SET(MESH_MED
+  ${MED_MESHES}/squareWithTriangles.med
+  )
+
+file(COPY ${MESH_MED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+install(FILES ${MESH_MED} DESTINATION share/examples/Poisson2DEF)
+
+if (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC)
+
+    ADD_TEST(ExamplePoisson_2DEF_STIFFRHS_NODE_based_quadrature ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElements2DPoisson_STIFFRHS_NODE_based_quadrature.py)
+    ADD_TEST(ExamplePoisson_2DEF_STIFFRHS_FACE_based_quadrature ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElements2DPoisson_STIFFRHS_FACE_based_quadrature.py)
+    ADD_TEST(ExamplePoisson_2DEF_STIFFRHS_CELL_FACE_NODE_based_quadrature ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/FiniteElements2DPoisson_STIFFRHS_CELL_FACE_NODE_based_quadrature.py)
+
+endif (CDMATH_WITH_PYTHON AND CDMATH_WITH_PETSC)
+
+
