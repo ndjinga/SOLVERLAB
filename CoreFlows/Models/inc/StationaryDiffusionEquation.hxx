@@ -174,7 +174,7 @@ public :
      * \param [in] string fieldName
      * \param [out] void
      *  */
-    void setHeatPowerField(string fileName, string fieldName, int iteration = 0, int order = 0, int meshLevel=0);
+    void setHeatPowerField(string fileName, string fieldName, EntityType field_support_type, int iteration = 0, int order = 0, int meshLevel=0);
 
     /** \fn getHeatPowerField
      * \brief returns the heat power field

@@ -602,8 +602,9 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
         else
         {
             double coeff;// Coefficient to be inserted in RHS
-                std::vector< int > nodesId;
-            if( !_secondOrderQuadrature )//first order quadrature
+            std::vector< int > nodesId;
+            //Contribution de la température fluide au second membre
+            if( _heatTransfertCoeff>0 )
             {
                 Cell Ci;
                 for (int i=0; i<_Nmailles;i++)
@@ -611,14 +612,31 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
                     Ci=_mesh.getCell(i);
                     nodesId=Ci.getNodesId();
                     for (int j=0; j<nodesId.size();j++)
-                        if(!_mesh.isBorderNode(nodesId[j])) 
+                        if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodesId[j])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[idim])
                         {
-                            coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]) + _heatPowerField(nodesId[j]);
+                            coeff = _heatTransfertCoeff*_fluidTemperatureField(nodesId[j]);
                             VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
                         }
                 }
             }
-            else//second order quadrature
+
+            //Contribution du chauffage au second membre
+            if( _heatPowerField.getTypeOfField() == NODES )//first order quadrature
+            {
+                Cell Ci;
+                for (int i=0; i<_Nmailles;i++)
+                {
+                    Ci=_mesh.getCell(i);
+                    nodesId=Ci.getNodesId();
+                    for (int j=0; j<nodesId.size();j++)
+                        if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodesId[j])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[idim])
+                        {
+                            coeff = _heatPowerField(nodesId[j]);
+                            VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[j], _dirichletNodeIds), coeff*Ci.getMeasure()/(_Ndim+1),ADD_VALUES);
+                        }
+                }
+            }
+            else if( _heatPowerField.getTypeOfField() == FACES )//second order quadrature
             {
                 Face Fi;
                 Cell Ci1,Ci2;
@@ -628,10 +646,7 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
                 {
                     Fi=_mesh.getFace(i);
                     nodesId = Fi.getNodesId();
-                    //compute average value of the RHS on face Fi
-                    valueFace = 0;
-                    for(int inode=0; inode<Fi.getNumberOfNodes(); inode++)
-                        valueFace+=_heatTransfertCoeff*_fluidTemperatureField(nodesId[inode]) + _heatPowerField(nodesId[inode]);
+                    valueFace = _heatPowerField(i);//_heatTransfertCoeff*_fluidTemperatureField(nodesId[inode]) 
 
                     i1=Fi.getCellId(0);
                     Ci1=_mesh.getCell(i1);
@@ -644,10 +659,12 @@ double StationaryDiffusionEquation::computeRHS(bool & stop)//Contribution of the
                     }
                     coeff *= valueFace/(_Ndim*(_Ndim+1));//Ci1.getNumberOfFaces()=_Ndim+1, Fi.getNumberOfNodes()=_Ndim
                     for(int inode=0; inode<Fi.getNumberOfNodes(); inode++)
-                        if(!_mesh.isBorderNode(nodesId[inode])) 
+                        if(find(_dirichletNodeIds.begin(),_dirichletNodeIds.end(),nodesId[inode])==_dirichletNodeIds.end())//!_mesh.isBorderNode(nodeIds[idim]) 
                             VecSetValue(_b,DiffusionEquation::unknownNodeIndex(nodesId[inode], _dirichletNodeIds), coeff,ADD_VALUES);                    
                 }
             }
+            else
+                throw CdmathException("StationaryDiffusionEquation::computeRHS: field heatPowerField should be on NODES or FACES");            
         }
     }
     VecAssemblyBegin(_b);
@@ -1226,11 +1243,11 @@ StationaryDiffusionEquation::setHeatPowerField(Field heatPower){
 }
 
 void 
-StationaryDiffusionEquation::setHeatPowerField(string fileName, string fieldName, int iteration, int order, int meshLevel){
+StationaryDiffusionEquation::setHeatPowerField(string fileName, string fieldName, EntityType field_support_type, int iteration, int order, int meshLevel){
     if(!_meshSet)
         throw CdmathException("!!!!!!!! StationaryDiffusionEquation::setHeatPowerField set initial field first");
 
-    _heatPowerField=Field(fileName, CELLS,fieldName, iteration, order, meshLevel);
+    _heatPowerField=Field(fileName, field_support_type,fieldName, iteration, order, meshLevel);
     _heatPowerField.getMesh().checkFastEquivalWith(_mesh);
     _heatPowerFieldSet=true;
 }
