@@ -448,6 +448,15 @@ Field::readFieldMed( const std::string & fileNameRadical,
 	_mesh=Mesh( completeFileName, _field->getMesh()->getName());
 }
 
+void Field::applyFunc(  const std::string& func )
+{
+    _field->applyFunc( func );
+}
+
+void Field::fillFromAnalytic( int nbComp, const std::string & func )
+{
+    _field->fillFromAnalytic( nbComp, func ); 
+}
 
 Vector
 Field::getNormEuclidean() const

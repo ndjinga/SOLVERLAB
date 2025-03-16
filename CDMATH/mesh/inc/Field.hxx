@@ -257,6 +257,23 @@ class Field
 
     void setFieldByDataArrayDouble ( const MEDCoupling::DataArrayDouble* array );
 
+    /**
+     * Modifies values of the field by applying a function to each current value    
+	 * \brief The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of a field value. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
+	 * \details
+	 * \param [in] the function used to compute the field values from current field value.
+	 *  */
+     void applyFunc(  const std::string& func );
+     
+    /**
+     * Computes the field values from coordinates of location point
+	 * \details The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of point coordinates. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
+    In a general case, a value resulting from the function evaluation is assigned to all components of a field value. But there is a possibility to have its own expression for each component within one function. For this purpose, there are predefined variable names (IVec, JVec, KVec, LVec etc) each dedicated to a certain component (IVec, to the component #0 etc).
+	 * \param [in] number of components of the field to build
+	 * \param [in] description of the function used to compute the field values from coordinates of location point
+	 *  */
+     void fillFromAnalytic( int nbComp, const std::string & func );
+     
     /** 
 	 * \brief Delete the medcoupling mesh to save memory space
      */
