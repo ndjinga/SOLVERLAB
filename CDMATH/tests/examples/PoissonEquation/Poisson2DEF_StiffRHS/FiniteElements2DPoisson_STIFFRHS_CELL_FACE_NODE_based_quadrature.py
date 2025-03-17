@@ -183,9 +183,8 @@ my_ResultField.writeVTK("FiniteElements2DPoisson_SQUARE_ResultField")
 
 print("Numerical solution of 2D Poisson equation on a square using finite elements done")
 
-#Calcul de l'erreur commise par rapport à la solution exacte
-#===========================================================
-#The following formulas use the fact that the exact solution is equal the right hand side divided by 2*pi*pi
+#Calcul de l'erreur commise par rapport à la solution exacte + vérification du principe du maximum
+#==================================================================================================
 max_abs_sol_exacte=max(exact_sol.max(),-exact_sol.min())
 max_sol_num=my_ResultField.max()
 min_sol_num=my_ResultField.min()
