@@ -37,7 +37,7 @@ The main research objectives of SOLVERLAB are the study of :
 
 The library is currently maintained and distributed by the SALOME developpement team
 on various linux distributions (Ubuntu, CentOS, Fedora, Debian) and on Windows-10.
-The corresponding binary files can be found  [here](https://www.salome-platform.org/?page_id=15).
+The corresponding binary files can be found  [here](https://github.com/SalomePlatform/.github/wiki/SAT).
 
 
 ### Examples of use
@@ -90,7 +90,7 @@ The user guide is organized as follows :
 ### Run SOLVERLAB from SALOME
 
 The easiest way to run SOLVERLAB is to launch the SOLVERLAB module of the SALOME platform :
-- download the binary file corresponding to your operating system [here](https://www.salome-platform.org/?page_id=15).
+- download the binary file corresponding to your operating system [here](https://github.com/SalomePlatform/.github/wiki/SAT).
 - after downloading the appropriate tar.gz archive, untar it in a folder `mySALOME` (for example).
 - run the file `mySALOME/salome` in a terminal to launch SALOME
 - In the SALOME window, either
