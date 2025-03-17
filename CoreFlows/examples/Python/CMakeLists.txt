@@ -186,6 +186,8 @@ CreatePythonTest(FiveEqsTwoFluid/FiveEqsTwoFluid_2DInclinedSedimentation.py "Pyt
 CreatePythonTest(FiveEqsTwoFluid/FiveEqsTwoFluid_2DVidangeReservoir.py "Python fv fiveqs 2D gravity drainage structured coreflows")
 
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF.py "Python fe stationary diffusion 2D dirichlet unstructured triangles coreflows")
+CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_StiffRHS_NODE_quadrature.py "Python fe stationary diffusion 2D dirichlet unstructured triangles coreflows")
+CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_StiffRHS_FACE_quadrature.py "Python fe stationary diffusion 2D dirichlet unstructured triangles coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_Neumann.py "Python fe stationary diffusion 2D neumann unstructured triangles coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_DelaunayTriangles.py "Python fe stationary diffusion 2D dirichlet structured equilateral triangles coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_2DEF_EquilateralTriangles.py "Python fe stationary diffusion 2D dirichlet structured equilateral triangles coreflows")
