@@ -189,13 +189,10 @@ print("Numerical solution of 2D Poisson equation on a square using finite elemen
 
 #Calcul de l'erreur commise par rapport à la solution exacte + vérification du principe du maximum
 #==================================================================================================
-max_abs_sol_exacte=max(exact_sol.max(),-exact_sol.min())
 max_sol_num=my_ResultField.max()
 min_sol_num=my_ResultField.min()
-erreur_abs=0
-for i in range(nbNodes) :
-    if  erreur_abs < abs(exact_sol[i] - my_ResultField[i]) :
-        erreur_abs = abs(exact_sol[i] - my_ResultField[i])
+max_abs_sol_exacte=max(max_sol_num,-min_sol_num)
+erreur_abs= (exact_sol - my_ResultField).normMax()[0]
 
 print("Absolute error = max(| exact solution - numerical solution |)                         = ",erreur_abs )
 print("Relative error = max(| exact solution - numerical solution |)/max(| exact solution |) = ",erreur_abs/max_abs_sol_exacte)
