@@ -49,7 +49,6 @@ StationaryDiffusionEquation::StationaryDiffusionEquation(int dim, bool FECalcula
     }
 
     _FECalculation=FECalculation;
-    _secondOrderQuadrature=false;
     _onlyNeumannBC=false;    
     
     _Ndim=dim;

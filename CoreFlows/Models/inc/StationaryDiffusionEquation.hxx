@@ -61,7 +61,7 @@ public :
     //Linear system and spectrum
     void setLinearSolver(linearSolver kspType, preconditioner pcType);
 	/** \fn setPrecision
-	 * \brief met à jour _precision (la précision du calcule)
+	 * \brief met à jour _precision (la précision du calcul)
 	 * \details
 	 * \param [in] double
 	 * \param [out] void
@@ -205,14 +205,6 @@ public :
         _system = system;
     };
 
-    /** \fn setSecondOrderQuadrature
-     * \brief Precision of the numerical quadrature : first (default) or second order
-     * \details With finite elements we need to perform a numerical quadrature to discretise the right hand side of the PDE
-     * \param [in] bool
-     * \param [out] void
-     *  */
-    void setSecondOrderQuadrature( bool secondOrderQuadrature=false){ _secondOrderQuadrature = secondOrderQuadrature;}
-    
 protected :
     //Main unknown field
     Field _VV;
@@ -278,7 +270,6 @@ protected :
 
     /************ Data for FE calculation *************/
     bool _FECalculation;
-    bool _secondOrderQuadrature;
     int _Nnodes;/* number of nodes for FE calculation */
     int _neibMaxNbNodes;/* maximum number of nodes around a node */
     int _NunknownNodes;/* number of unknown nodes for FE calculation */
