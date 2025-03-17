@@ -108,6 +108,116 @@ void Field::buildFieldMemoryStructure()
 		revDesc->decrRef();
 		revDescI->decrRef();
 		m3->decrRef();
+	}else if(_typeField==GAUSS_PT)
+	{
+        int spaceDimension = _mesh.getSpaceDimension();
+        int meshDimension  = _mesh.getMeshDimension();
+        int nbGaussPoints, nbCellNodes;
+        std::vector<double> refCoords, gaussCoords, weights;
+        INTERP_KERNEL::NormalizedCellType typeOfField;
+        
+        if( meshDimension!=1 && !_mesh.isTriangular() && !_mesh.isTetrahedral())
+            throw CdmathException("Field construction failed : Support mesh should be composed of segments (1D) triangles (2D) or tetrahedra to allow for the use of Gauss point");
+
+        if(meshDimension==1)//GaussLegendre3 (qf3pE) from FreeFem: 3 quadrature points on each segment
+        {
+            nbGaussPoints=3;
+            nbCellNodes=2;
+            typeOfField=INTERP_KERNEL::NORM_SEG2;
+
+            const double gauss_n3_0=  0.5 ;
+            const double gauss_n3_1=  (1-sqrt(3./5.)) /2  ;
+            const double gauss_n3_2 =  1 - gauss_n3_1 ;
+            
+            const double pgauss_n3_0=  8./18.;
+            const double pgauss_n3_1=  5./18.;
+            const double pgauss_n3_2=  5./18.;
+                    
+            if( meshDimension == spaceDimension )//1D line in 1D space
+            {
+                refCoords   = std::vector<double>{0.0, 1.0};//nbCellNodes*spaceDimension
+                gaussCoords = std::vector<double>{gauss_n3_0, gauss_n3_1, gauss_n3_2};//nbGaussPoints*spaceDimension
+            }
+            else if( 1+meshDimension == spaceDimension )//1D line embedded in 2D space
+            {
+                refCoords   = std::vector<double>{ 0.0, 0.0, 1.0 , 0.0 };//nbCellNodes*spaceDimension
+                gaussCoords = std::vector<double>{gauss_n3_0, 0, gauss_n3_1, 0, gauss_n3_2, 0};//nbGaussPoints*spaceDimension
+            }
+            else if( 2+meshDimension == spaceDimension )//1D line embedded in 3D space
+            {
+                refCoords   = std::vector<double>{ 0.0, 0.0, 0.0, 1.0 , 0.0, 0.0 };//nbCellNodes*spaceDimension
+                gaussCoords = std::vector<double>{gauss_n3_0 , 0.0, 0.0, gauss_n3_1 , 0.0, 0.0, gauss_n3_2 , 0.0, 0.0};//nbGaussPoints*spaceDimension
+            }
+            weights=std::vector<double>{ pgauss_n3_0, pgauss_n3_1, pgauss_n3_2};//nbGaussPoints
+        }
+        else if(meshDimension==2)//QuadratureFormular_T_5 (qf5pT) from FreeFem: 7 quadrature points on each triangle
+        {
+            nbGaussPoints=7;
+            nbCellNodes  =3;
+            typeOfField=INTERP_KERNEL::NORM_TRI3;
+
+            // ----------------------------------------------------------------------
+            // STROUD page  314 
+            // -----------------------------
+            const double sqrt15 = 3.87298334620741688517926539978;
+            const double t_T5 =1.E0/3.E0        ,                           A_T5 = 0.225E0;
+            const double r_T5 = (6-sqrt15)/21   ,  s_T5 = (9+2*sqrt15)/21 , B_T5 = (155-sqrt15)/1200;
+            const double u_T5 = (6+sqrt15)/21   ,  v_T5 = (9-2*sqrt15)/21 , C_T5 = (155+sqrt15)/1200;
+            
+            if( meshDimension == spaceDimension )//2D surface
+            {
+                refCoords   = std::vector<double>{0.0, 0.0, 1.0 , 0.0, 0.0, 1.0};//nbCellNodes*spaceDimension
+                gaussCoords = std::vector<double>{t_T5, t_T5, r_T5, r_T5, r_T5, s_T5, s_T5, r_T5, u_T5, u_T5, u_T5, v_T5, v_T5, u_T5};//nbGaussPoints*spaceDimension
+            }
+            else//2D surface embedded in 3D
+            {
+                refCoords = std::vector<double>{ 0.0, 0.0, 0.0, 1.0 , 0.0, 0.0, 0.0, 1.0, 0.0 };//nbCellNodes*spaceDimension
+                gaussCoords = std::vector<double>{t_T5, t_T5, 0, r_T5, r_T5, 0, r_T5, s_T5, 0, s_T5, r_T5, 0, u_T5, u_T5, 0, u_T5, v_T5, 0, v_T5, u_T5, 0};//nbGaussPoints*spaceDimension
+            }
+            weights=std::vector<double>{A_T5, B_T5, B_T5, B_T5, C_T5, C_T5, C_T5};//nbGaussPoints
+        }
+        else //QuadratureFormular_T_5 (qfV5) from FreeFem: 7 quadrature points on each triangle
+        {
+            nbGaussPoints=14;
+            nbCellNodes  =4;
+            typeOfField=INTERP_KERNEL::NORM_TETRA4;
+
+            // 5  14  (formule 1)
+            /*
+            GM78
+            A. Grundmann and H.M. Möller, Invariant integration formulas for the n-simplex by combinatorial methods, SIAM J. Numer. Anal. 15 (1978), 282--290.
+             */
+            const double w1 = 0.0122488405193936582572850342477212*6;
+            const double w5 = 0.0187813209530026417998642753888810*6;
+            const double w9 = 7.09100346284691107301157135337624E-3*6;
+            const double c1 = 0.7217942490673263207930282587889082;
+            const double c2 = 0.0927352503108912264023239137370306;
+            const double c3 = 0.067342242210098170607962798709629;
+            const double c4 = 0.310885919263300609797345733763457;
+            const double c5 = 0.454496295874350350508119473720660;
+            const double c6 = 00.045503704125649649491880526279339;
+            
+            refCoords   = std::vector<double>{ 0.0, 0.0, 0.0, 1.0 , 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 };//nbCellNodes*spaceDimension
+            gaussCoords = std::vector<double>{ c1, c2, c2, 
+                                               c2, c1, c2, 
+                                               c2, c2, c1, 
+                                               c2, c2, c2, 
+                                               c3, c4, c4, 
+                                               c4, c3, c4,
+                                               c4, c4, c3,
+                                               c4, c4, c4,
+                                               c5, c5, c6,
+                                               c5, c6, c5,
+                                               c6, c5, c5,
+                                               c6, c6, c5,
+                                               c6, c5, c6,
+                                               c5, c6, c6 };//nbGaussPoints*spaceDimension
+            weights=std::vector<double>{ w1, w1, w1, w1, w5, w5, w5, w5, w9, w9, w9, w9, w9, w9 };//nbGaussPoints
+        }
+		_field=MEDCouplingFieldDouble::New(ON_GAUSS_PT);
+		array->alloc(_mesh.getNumberOfCells(),_numberOfComponents*nbGaussPoints);
+		_field->setMesh(mu);
+        _field->setGaussLocalizationOnType(typeOfField,refCoords,gaussCoords,weights);
 	}else
 		throw CdmathException("Type of Field::Field() is not compatible");
 
