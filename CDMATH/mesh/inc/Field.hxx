@@ -258,9 +258,14 @@ class Field
     void setFieldByDataArrayDouble ( const MEDCoupling::DataArrayDouble* array );
 
     /**
-     * Modifies values of the field by applying a function to each current value    
-	 * \brief The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of a field value. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
-	 * \details
+     * \brief Gives the number of gauss points per cell
+	 * \details Assume cells are simplexes (segment, triangle or tetrahedra) having identical numbers of Gauss points
+	 *  */
+     int getNumberOfGaussPtPerCell();
+     
+    /**
+     * \brief Modifies values of the field by applying a function to each current value    
+	 * \details The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of a field value. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
 	 * \param [in] the function used to compute the field values from current field value.
 	 *  */
      void applyFunc(  const std::string& func );

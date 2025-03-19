@@ -114,16 +114,16 @@ void Field::buildFieldMemoryStructure()
         int meshDimension  = _mesh.getMeshDimension();
         int nbGaussPoints, nbCellNodes;
         std::vector<double> refCoords, gaussCoords, weights;
-        INTERP_KERNEL::NormalizedCellType typeOfField;
+        INTERP_KERNEL::NormalizedCellType cellType;
         
         if( meshDimension!=1 && !_mesh.isTriangular() && !_mesh.isTetrahedral())
             throw CdmathException("Field construction failed : Support mesh should be composed of segments (1D) triangles (2D) or tetrahedra to allow for the use of Gauss point");
 
-        if(meshDimension==1)//GaussLegendre3 (qf3pE) from FreeFem: 3 quadrature points on each segment
+        if(meshDimension==1)//GaussLegendre3 (qf3pE) from FreeFem: 3 quadrature points on each segment (order 3)
         {
             nbGaussPoints=3;
             nbCellNodes=2;
-            typeOfField=INTERP_KERNEL::NORM_SEG2;
+            cellType=INTERP_KERNEL::NORM_SEG2;
 
             const double gauss_n3_0=  0.5 ;
             const double gauss_n3_1=  (1-sqrt(3./5.)) /2  ;
@@ -150,11 +150,11 @@ void Field::buildFieldMemoryStructure()
             }
             weights=std::vector<double>{ pgauss_n3_0, pgauss_n3_1, pgauss_n3_2};//nbGaussPoints
         }
-        else if(meshDimension==2)//QuadratureFormular_T_5 (qf5pT) from FreeFem: 7 quadrature points on each triangle
+        else if(meshDimension==2)//QuadratureFormular_T_5 (qf5pT) from FreeFem: 7 quadrature points on each triangle (order 5)
         {
             nbGaussPoints=7;
             nbCellNodes  =3;
-            typeOfField=INTERP_KERNEL::NORM_TRI3;
+            cellType=INTERP_KERNEL::NORM_TRI3;
 
             // ----------------------------------------------------------------------
             // STROUD page  314 
@@ -176,11 +176,11 @@ void Field::buildFieldMemoryStructure()
             }
             weights=std::vector<double>{A_T5, B_T5, B_T5, B_T5, C_T5, C_T5, C_T5};//nbGaussPoints
         }
-        else //QuadratureFormular_T_5 (qfV5) from FreeFem: 7 quadrature points on each triangle
+        else //QuadratureFormular_Tet_5 (qfV5) from FreeFem: 14 quadrature points on each tetrahedron (order 5)
         {
             nbGaussPoints=14;
             nbCellNodes  =4;
-            typeOfField=INTERP_KERNEL::NORM_TETRA4;
+            cellType=INTERP_KERNEL::NORM_TETRA4;
 
             // 5  14  (formule 1)
             /*
@@ -217,14 +217,41 @@ void Field::buildFieldMemoryStructure()
 		_field=MEDCouplingFieldDouble::New(ON_GAUSS_PT);
 		array->alloc(_mesh.getNumberOfCells(),_numberOfComponents*nbGaussPoints);
 		_field->setMesh(mu);
-        _field->setGaussLocalizationOnType(typeOfField,refCoords,gaussCoords,weights);
+        _field->setGaussLocalizationOnType(cellType,refCoords,gaussCoords,weights);
 	}else
-		throw CdmathException("Type of Field::Field() is not compatible");
+		throw CdmathException("Type of Mesh cells is not compatible. Cell types accepted are 1D segments (NORM_SEG2), 2D triangles (NORM_TRI3) and 3D tetrahedra (NORM_TETRA4)");
 
 	_field->setName(_fieldName.c_str()) ;
 	_field->setArray(array);
 	_field->setTime(_time,0,0);
 	array->decrRef();
+}
+
+int Field::getNumberOfGaussPtPerCell()
+{
+    if( _typeField != GAUSS_PT )
+        throw CdmathException("Field::getNumberOfGaussPtPerCell() : Field should be of type GAUSS_PT (not CELLS, not NODES not FACES)");
+        
+    INTERP_KERNEL::NormalizedCellType cellType;
+
+    switch( _mesh.getMeshDimension() )
+    {
+        case 1: 
+            cellType = INTERP_KERNEL::NORM_SEG2;
+            break;
+        case 2: 
+            cellType = INTERP_KERNEL::NORM_TRI3;
+            break;
+        case 3: 
+            cellType = INTERP_KERNEL::NORM_TETRA4;
+            break;
+        default: 
+    		throw CdmathException("Type of Mesh cells is not compatible. Cell types accepted are 1D segments (NORM_SEG2), 2D triangles (NORM_TRI3) and 3D tetrahedra (NORM_TETRA4)");
+    }
+    
+    int locID = _field->getGaussLocalizationIdOfOneType ( cellType );//returns exception if different nb of gauss points in cells
+
+    return _field->getGaussLocalization( locID ).getNumberOfGaussPt( );
 }
 
 Field::Field( const std::string filename, EntityType type,
