@@ -21,7 +21,7 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 0;
+	vec[0] = 1;
 	vec[1] = 0;
 	return vec;
 }
@@ -108,9 +108,7 @@ int main(int argc, char** argv)
 			}
 		}
 		myProblem.setOrientation(j,vec_normal_sigma);
-		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
-		double theta = atan(Fj.y()/Fj.x());
-		ExactVelocityAtFaces[j] = dotprod(ExactVelocity(r, theta, r1, r0), vec_normal_sigma); 
+		ExactVelocityAtFaces[j] = dotprod(ExactVelocity( sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y()) , atan(Fj.y()/Fj.x()), r1, r0), vec_normal_sigma); 
 
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
@@ -144,7 +142,7 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1;
+	unsigned MaxNbOfTimeStep = 2;
 	int freqSave = 1;
 	double cfl = 0.99;
 	double maxTime = 50;

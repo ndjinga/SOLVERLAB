@@ -159,8 +159,8 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 100000000;
-	int freqSave = 100;
+	unsigned MaxNbOfTimeStep = 10000000	;
+	int freqSave = 300;
 	double cfl = 0.5;
 	double maxTime = 100000;
 	double precision = 1e-12;

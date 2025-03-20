@@ -6,7 +6,7 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 2;
+		return 1;
 	else
 		return 1;
 }
@@ -16,7 +16,7 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	if (z < discontinuity){
 		if (Direction == 'x'){
 			vec[0] = 1;
-			vec[1] = 0;
+			vec[1] = -1;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
@@ -26,7 +26,7 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	else{
 		if (Direction == 'x'){
 			vec[0] = 1;
-			vec[1] = 0;
+			vec[1] = -1;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
@@ -63,8 +63,8 @@ int main(int argc, char** argv){
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=200;
-			ny=2;
+			nx=5;
+			ny=5;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
 			
@@ -93,8 +93,7 @@ int main(int argc, char** argv){
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Velocity0("velocity", FACES, M, 1);
 		
-		myProblem.setPeriodicFaces(M, Direction, ncells);
-		std::map<int,int> FacePeriodicMap = myProblem.getFacePeriodicMap();
+		//myProblem.setPeriodicFaces(M, Direction, ncells);
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);
@@ -168,7 +167,7 @@ int main(int argc, char** argv){
 		string fileName = "WaveStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 1000000;
+		unsigned MaxNbOfTimeStep = 2;
 		int freqSave = 1;
 		double cfl = 0.5;
 		double maxTime = 0.07;

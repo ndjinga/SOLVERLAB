@@ -438,18 +438,18 @@ double WaveStaggered::MassLumping(const Cell &K, const int &idcell, const Face &
 		Node vertex1, vertex2;
 		vertex1 = _mesh.getNode( Facej.getNodesId()[0] );
 		if (_Ndim ==2 )  vertex2 = _mesh.getNode( Facej.getNodesId()[1] );
-		double Area = (_Ndim==2 )? abs((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0 : abs(K.x() - vertex1.x()) ;
+		double Area = (_Ndim==2 )? fabs((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0 : abs(K.x() - vertex1.x()) ;
 		std::vector<double> Psi_j_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_j, Facej,j, _mesh.getFace( K.getFacesId()[l] ).getBarryCenter());
-		/* if (abs(Facej.y()) < 1e-6 && Facej.x() >1e-6 )
-			cout << " positive fj =(" <<Facej.x()<<" , "<< Facej.y() << "), cell = "<< idcell <<" x_c = ("<<K.x() <<" , " << K.y()<<"),   Psi_"<< j<<" ( "<<_mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[0]<<" , "<< _mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[1] <<" ) = ("<< Psi_j_in_Xl[0]<< " ," << Psi_j_in_Xl[1]<< " ) "<<endl;
-		if (abs(Facej.y()) < 1e-6 && Facej.x() <-1e-6 )
-			cout << " negative fj =(" <<Facej.x()<<" , "<< Facej.y() << "), cell = "<< idcell <<" x_c = ("<<K.x() <<" , " << K.y()<<"),   Psi_"<< j<<" ( "<<_mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[0]<<" , "<< _mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[1] <<" ) = ("<< Psi_j_in_Xl[0]<< " ," << Psi_j_in_Xl[1]<< " ) "<<endl; */
+
+		if ( fabs(atan(Facej.y()/Facej.x()) - fabs(0.0981748) ) < 1e-7  && Facej.x() > 1e-10   )
+			cout << "  fj =(" <<Facej.x()<<" , "<< Facej.y() << "), cell = "<< idcell <<" x_c = ("<<K.x() <<" , " << K.y()<<"),   Psi_"<< j<<" ( "<<_mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[0]<<" , "<< _mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[1] <<" ) = ("<< Psi_j_in_Xl[0]<< " ," << Psi_j_in_Xl[1]<< " ) "<<endl;
+
 		for (int f=0; f <K.getNumberOfFaces(); f ++){
 			std::vector<double> Psi_f_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_f, _mesh.getFace( K.getFacesId()[f] ),K.getFacesId()[f], _mesh.getFace( K.getFacesId()[l] ).getBarryCenter());
 			for (int e=0; e<_Ndim; e++)
 				masslumping_on_K +=  Area * Psi_j_in_Xl[e] * Psi_f_in_Xl[e];
 		}
-	}
+	}		
 	return masslumping_on_K;
 }
 
@@ -459,7 +459,7 @@ void WaveStaggered::AssembleMetricsMatrices(){
 		std::vector< int > idCells = Fj.getCellsId();
  		Cell Ctemp1 = _mesh.getCell(idCells[0]);
 		std::vector< int > idFaces = Ctemp1.getFacesId();
-		PetscScalar InvD_sigma, InvVol1, InvVol2, InvPerimeter1, InvPerimeter2;
+		PetscScalar det, InvD_sigma, InvVol1, InvVol2, InvPerimeter1, InvPerimeter2;
 		PetscInt IndexFace = _Nmailles + j;
 
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
@@ -473,9 +473,18 @@ void WaveStaggered::AssembleMetricsMatrices(){
 			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
 				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
+			Face Fj_physical =  Fj ; // ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
 			InvPerimeter2 = (_Ndim ==2) ? 1.0/_perimeters(idCells[1]) : 1.0 ;
 			mlump += MassLumping(Ctemp2,idCells[1], Fj_physical, j);
+
+			/* if (_Ndim ==2 && atan(Fj.y()/Fj.x()) <3.24/32.0 && atan(Fj.y()/Fj.x()) > -3.24/32.0 ){
+				std::vector<int> nodes =  Fj.getNodesId();
+				Node vertex = _mesh.getNode( nodes[0] );
+				// determinant of the vectors forming the diamond cell around the face sigma
+				det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
+				mlump = PetscAbsReal(det)/2.0;
+				cout << "bonjour" <<endl;
+			} */
 
 			InvD_sigma = 1.0/mlump;
 			PetscScalar InvVol2 = 1.0/Ctemp2.getMeasure();
@@ -492,6 +501,44 @@ void WaveStaggered::AssembleMetricsMatrices(){
 			MatSetValue(_InvVol, IndexFace, IndexFace,  InvD_sigma, INSERT_VALUES);  
 		}
 	}
+
+	/* for (int j=0; j<_Nfaces;j++){ 
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+ 		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
+		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;	
+		
+		double mlump = MassLumping(Ctemp1, idCells[0], Fj, j);
+		
+		if (_Ndim ==2 && atan(Fj.y()/Fj.x()) <3.24/32.0 && atan(Fj.y()/Fj.x()) > -3.24/32.0 && Fj.x() < -1e-10){
+			if (IsInterior){
+				Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
+				Cell Ctemp2 = _mesh.getCell(idCells[1]);
+				mlump += MassLumping(Ctemp2, idCells[1], Fj, j);
+				
+			}
+			double InvD_sigma = 1.0/mlump;	
+			for (int k=0; k <_Nfaces ; k++){
+				Face Fk = _mesh.getFace(k);
+				PetscInt indexk = _Nmailles + k;
+				if ( fabs( fabs(Fk.x()) -fabs(Fj.x())) <1e-6 && fabs( Fk.y()-Fj.y()) < 1e-6 && Fk.x() > 1e-10 ){
+					if ( fabs(atan(Fk.y()/Fk.x()) - 0.0981748) < 1e-7  && Fk.x() > 1e-10   ){
+						MatSetValue(_InvVol, indexk, indexk,  InvD_sigma, INSERT_VALUES); 
+						cout << " 0.09 Fk = " << Fk.x() << " , "<< Fk.y() << endl;
+					}
+					if ( fabs(atan(Fk.y()/Fk.x()) + 0.0981748) < 1e-7   ){
+						MatSetValue(_InvVol, indexk, indexk,  InvD_sigma, INSERT_VALUES); 
+						cout << " -0.09 Fk = " << Fk.x() << " , "<< Fk.y() << endl;
+					}
+				}
+			}
+		}
+
+	} */
+	
 	MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
@@ -643,11 +690,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			VecAssemblyBegin(_BoundaryTerms);
 			VecAssemblyEnd(_BoundaryTerms);
 			VecScale(_BoundaryTerms, _d * _c);
-
-			MatAssemblyBegin(_InvSurface, MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
-			MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 
 			// _A = (dc _LaplacianPressure  ;  -1/rho B         )
 			//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
@@ -1232,6 +1274,7 @@ void WaveStaggered::save(){
 		{
 		case VTK :
 			_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
+			_Velocity.writeVTK(prim+"_Velocity");
 			_DivVelocity.writeVTK(prim+"Divergence Velocity");
 			break;
 		case MED :

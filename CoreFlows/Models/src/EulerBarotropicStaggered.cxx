@@ -53,7 +53,6 @@ void EulerBarotropicStaggered::initialize(){
 
 	_vec_normal = new double[_Ndim];
 	//Construction des champs primitifs initiaux comme avant dans ParaFlow
-	
 	for(int i =0; i<_Nfaces; i++)
 		initialFieldVelocity[i]=_Velocity(i); 
 		
@@ -237,11 +236,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			std::vector< int > idCells = Fj.getCellsId();
 			Cell Ctemp1 = _mesh.getCell(idCells[0]);
 			PetscScalar Convection, rhoInt, rhoExt, u;
-			
-			PetscScalar orientedFaceArea = getOrientation(j,Ctemp1) * Fj.getMeasure();
-			PetscScalar orientedMinusFaceArea = -orientedFaceArea;
-			PetscScalar FaceArea = Fj.getMeasure();
-			PetscScalar MinusFaceArea = -FaceArea;
 			PetscInt IndexFace = _Nmailles + j;
 
 			bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
@@ -257,28 +251,20 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
 				VecGetValues(_primitiveVars,1,&idCells[1],&rhoExt);
 				VecGetValues(_primitiveVars,1,&IndexFace,&u);
-
-				PetscScalar orientedFaceArea_densityMean = orientedFaceArea * (rhoInt + rhoExt)/2.0 ;
-				PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea_densityMean;
-				PetscScalar FaceArea_upwinding = (abs(u)+ _c ) * FaceArea/2.0; 
-				PetscScalar MinusFaceArea_upwinding = -FaceArea_upwinding;
-
 				// -DivRhoU_{idcell[1], j}, -DivRhoU_{idcell[0], j}, (IndexFace = ncells + j)
-				MatSetValue(_A, idCells[0], IndexFace, MinusorientedFaceArea_densityMean, ADD_VALUES ); 
-				MatSetValue(_A, idCells[1], IndexFace, orientedFaceArea_densityMean, ADD_VALUES );  
-
+				MatSetValue(_A, idCells[0], IndexFace, -getOrientation(j,Ctemp1) * Fj.getMeasure() * (rhoInt + rhoExt)/2.0, ADD_VALUES ); 
+				MatSetValue(_A, idCells[1], IndexFace,  getOrientation(j,Ctemp1) * Fj.getMeasure() * (rhoInt + rhoExt)/2.0, ADD_VALUES );  
 				// LaplacianPressure
-				MatSetValue(_A, idCells[0], idCells[0], MinusFaceArea_upwinding, ADD_VALUES ); 
-				MatSetValue(_A, idCells[0], idCells[1], FaceArea_upwinding, ADD_VALUES );  
-				MatSetValue(_A, idCells[1], idCells[1], MinusFaceArea_upwinding, ADD_VALUES ); 
-				MatSetValue(_A, idCells[1], idCells[0], FaceArea_upwinding, ADD_VALUES );  
+				MatSetValue(_A, idCells[0], idCells[0], -(abs(u)+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES ); 
+				MatSetValue(_A, idCells[0], idCells[1],  (abs(u)+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES );  
+				MatSetValue(_A, idCells[1], idCells[1], -(abs(u)+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES ); 
+				MatSetValue(_A, idCells[1], idCells[0], ( abs(u)+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES );  
 
 				/*************** Momentum conservation equation *****************/
 				if (_nbTimeStep == 0){
-					MatSetValue(_DivTranspose, j, idCells[0], orientedFaceArea, ADD_VALUES );
-					MatSetValue(_DivTranspose, j, idCells[1], orientedMinusFaceArea, ADD_VALUES ); 
+					MatSetValue(_DivTranspose, j, idCells[0], getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES );
+					MatSetValue(_DivTranspose, j, idCells[1], -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
 				}
-				
 				// Convective terms (WARNING !!!!! is not computed in 3 space dimensions)
 				// (-1) x CONVECTION !!!!!
 				PetscInt I;
@@ -306,7 +292,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						I = _Nmailles + idFaces[f];
 						VecGetValues(_primitiveVars,1,&I	,&u);
 						double gradiv = -( _c*_rhoMax + _uMax)/2.0 *Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )?_perimeters[idCells[nei]] : 1.0);
-						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES );
+						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); //TODO
 
 						//************* _Ndim-dimensional terms *************//
 						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, idCells[nei], Facef.getBarryCenter());
@@ -329,21 +315,25 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						else if (IsWallBound) rhoExt = rhoInt;
 						else if (IsSteggerBound) rhoExt = getboundaryPressure().find(j)->second;
 						
-						double jump =0;
+						std::vector<double> jumpPsi(_Ndim, 0.0);
+						std::vector<double> meanRhoU(_Ndim, 0.0);
 						for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
-							double dotprod =0;
 							Cell Neibourg_of_f = _mesh.getCell(idCellsOfFacef[ncell]);
 							Face Facef_physical = (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
 							Face Facej_physical_2 = (_FacePeriodicMap.find(j) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[0] ?  _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj_physical;
 							std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Facej_physical_2,j, Facef_physical.getBarryCenter()); 
 							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], Facef_physical.getBarryCenter() );
 							//cout << " f = "<< idFaces[f] <<" K = " << idCellsOfFacef[ncell]<<" orien =  "<<getOrientation( idFaces[f],Neibourg_of_f) << " Psi_ "<< j <<" _in_Xf (" << Facef_physical.getBarryCenter().x() <<" , " << Facef_physical.getBarryCenter().y() <<") = ("<< Psi_j_in_Xf[0]<< " , "<< Psi_j_in_Xf[1]<<" ) and ("<<velocityRT_in_Xf[0]<< " , "<< velocityRT_in_Xf[1]<< " ) " <<endl;
-							for (int ndim =0; ndim < _Ndim; ndim ++ )
-								dotprod += Psi_j_in_Xf[ndim] * velocityRT_in_Xf[ndim];  
-							jump +=   getOrientation( idFaces[f],Neibourg_of_f) *dotprod; 
+							for (int ndim =0; ndim < _Ndim; ndim ++ ){
+								jumpPsi[ndim] += getOrientation( idFaces[f],Neibourg_of_f) *  Psi_j_in_Xf[ndim];  
+								meanRhoU[ndim] += velocityRT_in_Xf[ndim]/idCellsOfFacef.size();
+							}
 						}
+						double dotprod =0;
+						for (int ndim =0; ndim < _Ndim; ndim ++ )
+								dotprod  += u * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * (rho + rhoExt)/2.0; //TODO moyenne de rho à mettre dans meanrhoU	
 						//TODO DIVISIER PAR DEUX SI f = j
-						Convection -= (rho + rhoExt) * u * Facef.getMeasure() * jump/2.0; //surface integral approximated in midpoint
+						Convection -= dotprod; 
 					}
 				} 
 				VecSetValue(_Conv, IndexFace, Convection, ADD_VALUES );
@@ -354,18 +344,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				VecGetValues(_primitiveVars,1,&IndexFace,&u);
 				if (IsWallBound) rhoExt = rhoInt;
 				else if (IsSteggerBound) rhoExt = getboundaryPressure().find(j)->second;
-				//************* -DivRhoU_{idcells[0], j} (with Indexface = _ncells + j) ******************//
-				PetscScalar MinusorientedFaceArea_densityMean = -orientedFaceArea * (rhoInt + rhoExt)/2.0;
-				MatSetValue(_A, idCells[0], IndexFace, MinusorientedFaceArea_densityMean, ADD_VALUES ); 
-
-				PetscScalar MinusFaceArea_upwinding = -( abs(u)+_c ) * FaceArea/2.0; 
-				//MatSetValues(_LaplacianPressure, 1, &idCells[0], 1, &idCells[0], &MinusFaceArea_upwinding, ADD_VALUES ); 
-				MatSetValue(_A, idCells[0], idCells[0], MinusFaceArea_upwinding, ADD_VALUES );
-
-				PetscScalar boundterm = -rhoExt*MinusFaceArea_upwinding;
-				VecSetValue(_BoundaryTerms, idCells[0], boundterm, INSERT_VALUES );
+				MatSetValue(_A, idCells[0], IndexFace, -getOrientation(j,Ctemp1) * Fj.getMeasure() * (rhoInt + rhoExt)/2.0, ADD_VALUES ); 
+				MatSetValue(_A, idCells[0], idCells[0], -( abs(u)+_c ) * Fj.getMeasure()/2.0, ADD_VALUES );
+				VecSetValue(_BoundaryTerms, idCells[0], -( abs(u)+_c ) * Fj.getMeasure()/2.0 * rhoExt, INSERT_VALUES );
 			}	
-
 		}
 
 		VecAssemblyBegin(_BoundaryTerms);
