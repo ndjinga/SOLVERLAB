@@ -86,6 +86,9 @@ void Field::buildFieldMemoryStructure()
 {
 	MEDCouplingUMesh* mu=_mesh.getMEDCouplingMesh()->buildUnstructured();
 	DataArrayDouble *array=DataArrayDouble::New();
+    _nbGaussPoints=0;//value will be changed only if field based on gauss points
+    _localizationOfGaussPoints=NULL;//value will be changed only if field based on gauss points
+    
 	if (_typeField==CELLS)
 	{
 		_field=MEDCouplingFieldDouble::New(ON_CELLS);
@@ -115,7 +118,7 @@ void Field::buildFieldMemoryStructure()
 	{
         int spaceDimension = _mesh.getSpaceDimension();
         int meshDimension  = _mesh.getMeshDimension();
-        int nbGaussPoints, nbCellNodes;
+        int nbCellNodes;
         std::vector<double> refCoords, gaussCoords, weights;
         INTERP_KERNEL::NormalizedCellType cellType;
         
@@ -124,7 +127,7 @@ void Field::buildFieldMemoryStructure()
 
         if(meshDimension==1)//GaussLegendre3 (qf3pE) from FreeFem: 3 quadrature points on each segment (order 3)
         {
-            nbGaussPoints=3;
+            _nbGaussPoints=3;
             nbCellNodes=2;
             cellType=INTERP_KERNEL::NORM_SEG2;
 
@@ -155,7 +158,7 @@ void Field::buildFieldMemoryStructure()
         }
         else if(meshDimension==2)//QuadratureFormular_T_5 (qf5pT) from FreeFem: 7 quadrature points on each triangle (order 5)
         {
-            nbGaussPoints=7;
+            _nbGaussPoints=7;
             nbCellNodes  =3;
             cellType=INTERP_KERNEL::NORM_TRI3;
 
@@ -181,7 +184,7 @@ void Field::buildFieldMemoryStructure()
         }
         else //QuadratureFormular_Tet_5 (qfV5) from FreeFem: 14 quadrature points on each tetrahedron (order 5)
         {
-            nbGaussPoints=14;
+            _nbGaussPoints=14;
             nbCellNodes  =4;
             cellType=INTERP_KERNEL::NORM_TETRA4;
 
@@ -218,7 +221,7 @@ void Field::buildFieldMemoryStructure()
             weights=std::vector<double>{ w1, w1, w1, w1, w5, w5, w5, w5, w9, w9, w9, w9, w9, w9 };//nbGaussPoints
         }
 		_field=MEDCouplingFieldDouble::New(ON_GAUSS_PT);
-		array->alloc(_mesh.getNumberOfCells(),_numberOfComponents*nbGaussPoints);
+		array->alloc(_mesh.getNumberOfCells(),_numberOfComponents*_nbGaussPoints);
 		_field->setMesh(mu);
         _field->setGaussLocalizationOnType(cellType,refCoords,gaussCoords,weights);
         _localizationOfGaussPoints = _field->getLocalizationOfDiscr( );
@@ -258,6 +261,23 @@ int Field::getNumberOfGaussPtPerCell()
     return _field->getGaussLocalization( locID ).getNumberOfGaussPt( );
 }
 
+Point Field::getGaussPoint(int icell, int igauss)
+{
+    if( _typeField != GAUSS_PT )
+        throw CdmathException("Field::getGaussPoint(int icell, int igauss) : Field should be of type GAUSS_PT (not CELLS, not NODES not FACES)");
+    if( igauss >= _nbGaussPoints )
+        throw CdmathException("Field::getGaussPoint(int icell, int igauss) : igauss should be strictly less than nbGaussPoints");
+    if( icell >= _mesh.getNumberOfCells() )
+        throw CdmathException("Field::getGaussPoint(int icell, int igauss) : icell should be strictly less than the number of cells");
+        
+    int dim = _mesh.getSpaceDimension();
+    Point result;
+    
+    for( int idim=0; idim<dim; idim++ )
+        result[idim] = _localizationOfGaussPoints->getIJ(icell*_nbGaussPoints,idim);
+    
+    return result;
+}
 Field::Field( const std::string filename, EntityType type,
 		const std::string & fieldName,
 		int iteration, int order, int meshLevel)

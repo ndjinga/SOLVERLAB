@@ -17,6 +17,7 @@ namespace MEDCoupling
 
 #include "Vector.hxx"
 #include "Mesh.hxx"
+#include "Point.hxx"
 
 #include <MCAuto.hxx>
 
@@ -82,127 +83,127 @@ class Field
   
     /**
      * constructor with data
-	 * \brief defines a constant field on a mesh stored in a med file
-	 * \details
-	 * \param [in] string : the mesh file name
+     * \brief defines a constant field on a mesh stored in a med file
+     * \details
+     * \param [in] string : the mesh file name
      * \param fieldType: field type
-	 * \param [in] vector<double> : the value in each cell
+     * \param [in] vector<double> : the value in each cell
      * \param [in] fieldName: field name
-	 * \param [in] meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
-	 *  */
-	Field(const std::string meshfileName, EntityType fieldType, 
-		  const std::vector<double> Vconstant,const std::string & fieldName = "",
-		   int meshLevel=0, double time=0.0, std::string meshName="");
+     * \param [in] meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
+     *  */
+    Field(const std::string meshfileName, EntityType fieldType, 
+          const std::vector<double> Vconstant,const std::string & fieldName = "",
+           int meshLevel=0, double time=0.0, std::string meshName="");
 
     /**
      * constructor with data
-	 * \brief defines a constant field 
-	 * \details
-	 * \param [in] Mesh 
+     * \brief defines a constant field 
+     * \details
+     * \param [in] Mesh 
      * \param [in] fieldType: field type
-	 * \param [in] Vector
+     * \param [in] Vector
      * \param [in] fieldName: field name
-	 *  */
-	Field(const Mesh& M, EntityType fieldType, const Vector Vconstant,
-		  const std::string & fieldName = "", double time=0.0);
+     *  */
+    Field(const Mesh& M, EntityType fieldType, const Vector Vconstant,
+          const std::string & fieldName = "", double time=0.0);
 
     /**
      * constructor with data
-	 * \brief defines a constant field 
-	 * \details
-	 * \param [in] Mesh
+     * \brief defines a constant field 
+     * \details
+     * \param [in] Mesh
      * \param [in] fieldType: field type
-	 * \param [in] vector<double>
+     * \param [in] vector<double>
      * \param [in] fieldName: field name
-	 *  */
-	Field(const Mesh& M, EntityType fieldType, const std::vector<double> Vconstant, const std::string & fieldName = "", double time=0.0);
+     *  */
+    Field(const Mesh& M, EntityType fieldType, const std::vector<double> Vconstant, const std::string & fieldName = "", double time=0.0);
 
     /**
      * constructor with data
-	 * \brief Builds a rectangular mesh M and defines a constant field on M
-	 * \details
-	 * \param [in] int the space dimension
-	 * \param [in] vector<double> the value in each cell
+     * \brief Builds a rectangular mesh M and defines a constant field on M
+     * \details
+     * \param [in] int the space dimension
+     * \param [in] vector<double> the value in each cell
      * \param [in] fieldType: field type
      * \param [in] fieldName: field name
-	 * \param [in] double the lowest value in the x direction
-	 * \param [in] double the highest value in the x direction
-	 * \param [in] string name of the left boundary
-	 * \param [in] string name of the right boundary
-	 * \param [in] double the lowest value in the y direction
-	 * \param [in] double the highest value in the y direction
-	 * \param [in] string name of the back boundary
-	 * \param [in] string name of the front boundary
-	 * \param [in] double the lowest value in the z direction
-	 * \param [in] double the highest value in the z direction
-	 * \param [in] string name of the bottom boundary
-	 * \param [in] string name of the top boundary
-	 *  */
-	Field( int nDim, const std::vector<double> Vconstant, EntityType type, 
-			double xmin, double xmax,int nx, std::string leftSide, std::string rightSide,
-			double ymin=0, double ymax=0, int ny=0, std::string backSide="", std::string frontSide="",
-			double zmin=0, double zmax=0, int nz=0, std::string bottomSide="", std::string topSide="",
-			const std::string & fieldName="", double time=0.0,double epsilon=1e-6);
+     * \param [in] double the lowest value in the x direction
+     * \param [in] double the highest value in the x direction
+     * \param [in] string name of the left boundary
+     * \param [in] string name of the right boundary
+     * \param [in] double the lowest value in the y direction
+     * \param [in] double the highest value in the y direction
+     * \param [in] string name of the back boundary
+     * \param [in] string name of the front boundary
+     * \param [in] double the lowest value in the z direction
+     * \param [in] double the highest value in the z direction
+     * \param [in] string name of the bottom boundary
+     * \param [in] string name of the top boundary
+     *  */
+    Field( int nDim, const std::vector<double> Vconstant, EntityType type, 
+            double xmin, double xmax,int nx, std::string leftSide, std::string rightSide,
+            double ymin=0, double ymax=0, int ny=0, std::string backSide="", std::string frontSide="",
+            double zmin=0, double zmax=0, int nz=0, std::string bottomSide="", std::string topSide="",
+            const std::string & fieldName="", double time=0.0,double epsilon=1e-6);
 
     /**
      * constructor with data
-	 * \brief Builds a step function field on the mesh M. The direction of the discontinuity is determined by the parameter "direction". The field takes value VV_left for x,y or z<disc_pos and VV_right for x,y or z>disc_pos
-	 * \details
-	 * \param [in] Mesh
-	 * \param [in] Vector
-	 * \param [in] Vector
-	 * \param [in] double position of the discontinuity on one of the three axis
-	 * \param [in] int direction (axis carrying the discontinuity) : 0 for x, 1 for y, 2 for z
+     * \brief Builds a step function field on the mesh M. The direction of the discontinuity is determined by the parameter "direction". The field takes value VV_left for x,y or z<disc_pos and VV_right for x,y or z>disc_pos
+     * \details
+     * \param [in] Mesh
+     * \param [in] Vector
+     * \param [in] Vector
+     * \param [in] double position of the discontinuity on one of the three axis
+     * \param [in] int direction (axis carrying the discontinuity) : 0 for x, 1 for y, 2 for z
      * \param [in] fieldType: field type
      * \param [in] fieldName: field name
-	 *  */
-	Field(const Mesh M, const Vector VV_left, const Vector VV_right, double disc_pos, 
-			EntityType type, int direction=0, const std::string & fieldName="", double time=0.0);
+     *  */
+    Field(const Mesh M, const Vector VV_left, const Vector VV_right, double disc_pos, 
+            EntityType type, int direction=0, const std::string & fieldName="", double time=0.0);
 
     /**
      * constructor with data
-	 * \brief Builds a rectangular mesh M and defines a step function field on M that takes values VV_left for x<xstep and VV_right for x>xstep
-	 * \param [in] int the space dimension
-	 * \param [in] vector<double> the value left of the discontinuity
-	 * \param [in] vector<double> the value right of the discontinuity
-	 * \param [in] double the position of the discontinuity in the x direction
+     * \brief Builds a rectangular mesh M and defines a step function field on M that takes values VV_left for x<xstep and VV_right for x>xstep
+     * \param [in] int the space dimension
+     * \param [in] vector<double> the value left of the discontinuity
+     * \param [in] vector<double> the value right of the discontinuity
+     * \param [in] double the position of the discontinuity in the x direction
      * \param [in] fieldType: field type
      * \param [in] fieldName: field name
-	 * \param [in] double the lowest value in the x direction
-	 * \param [in] double the highest value in the x direction
-	 * \param [in] string name of the left boundary
-	 * \param [in] string name of the right boundary
-	 * \param [in] double the lowest value in the y direction
-	 * \param [in] double the highest value in the y direction
-	 * \param [in] string name of the back boundary
-	 * \param [in] string name of the front boundary
-	 * \param [in] double the lowest value in the z direction
-	 * \param [in] double the highest value in the z direction
-	 * \param [in] string name of the bottom boundary
-	 * \param [in] string name of the top boundary
-	 * \param [out] void
-	 *  */
-	Field( int nDim, const std::vector<double> VV_Left, std::vector<double> VV_Right, 
-			double xstep, EntityType type,
-			double xmin, double xmax,int nx, std::string leftSide, std::string rightSide,
-			double ymin=0, double ymax=0, int ny=0, std::string backSide="", std::string frontSide="",
-			double zmin=0, double zmax=0, int nz=0, std::string bottomSide="", std::string topSide="",
-			int direction=0, const std::string & fieldName="", double time=0.0, double epsilon=1e-6);
+     * \param [in] double the lowest value in the x direction
+     * \param [in] double the highest value in the x direction
+     * \param [in] string name of the left boundary
+     * \param [in] string name of the right boundary
+     * \param [in] double the lowest value in the y direction
+     * \param [in] double the highest value in the y direction
+     * \param [in] string name of the back boundary
+     * \param [in] string name of the front boundary
+     * \param [in] double the lowest value in the z direction
+     * \param [in] double the highest value in the z direction
+     * \param [in] string name of the bottom boundary
+     * \param [in] string name of the top boundary
+     * \param [out] void
+     *  */
+    Field( int nDim, const std::vector<double> VV_Left, std::vector<double> VV_Right, 
+            double xstep, EntityType type,
+            double xmin, double xmax,int nx, std::string leftSide, std::string rightSide,
+            double ymin=0, double ymax=0, int ny=0, std::string backSide="", std::string frontSide="",
+            double zmin=0, double zmax=0, int nz=0, std::string bottomSide="", std::string topSide="",
+            int direction=0, const std::string & fieldName="", double time=0.0, double epsilon=1e-6);
 
     /**
      * constructor with data
-	 * \brief builds a step function field on mesh M with values Vin inside the ball with radius Radius and Vout outside
-	 * \details
-	 * \param [in] Mesh
-	 * \param [in] Vector Vin, value inside the ball
-	 * \param [in] Vector Vout, value outside the ball
-	 * \param [in] double radius of the ball
-	 * \param [in] Vector Center, coordinates of the ball center
+     * \brief builds a step function field on mesh M with values Vin inside the ball with radius Radius and Vout outside
+     * \details
+     * \param [in] Mesh
+     * \param [in] Vector Vin, value inside the ball
+     * \param [in] Vector Vout, value outside the ball
+     * \param [in] double radius of the ball
+     * \param [in] Vector Center, coordinates of the ball center
      * \param [in] fieldType: field type
      * \param [in] fieldName: field name
-	 *  */
-	Field(const Mesh M, const Vector Vin, const Vector Vout, double Radius, 
-			Vector Center, EntityType type, const std::string & fieldName="", double time=0.0);
+     *  */
+    Field(const Mesh M, const Vector Vin, const Vector Vout, double Radius, 
+            Vector Center, EntityType type, const std::string & fieldName="", double time=0.0);
 
     void readFieldMed( const std::string & fileNameRadical,
                        EntityType type,
@@ -245,7 +246,7 @@ class Field
 
     EntityType getTypeOfField ( void ) const ;
 
-	// returns the x, y or z component of the element (node cell or face) with number i
+    // returns the x, y or z component of the element (node cell or face) with number i
     double getElementComponent(int i, int comp) const;
     /**
      * return the MEDCouplingField pointer
@@ -259,28 +260,35 @@ class Field
 
     /**
      * \brief Gives the number of gauss points per cell
-	 * \details Assume cells are simplexes (segment, triangle or tetrahedra) having identical numbers of Gauss points
-	 *  */
+     * \details Assume cells are simplexes (segment, triangle or tetrahedra) having identical numbers of Gauss points
+     *  */
      int getNumberOfGaussPtPerCell();
      
     /**
+     * \brief Gives the gauss point number igauss in cell number icell
+     * \param [in] icell : cell number
+     * \param [in] igauss : gauss point number
+     *  */
+     Point getGaussPoint(int icell, int igauss);
+     
+    /**
      * \brief Modifies values of the field by applying a function to each current value    
-	 * \details The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of a field value. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
-	 * \param [in] the function used to compute the field values from current field value.
-	 *  */
+     * \details The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of a field value. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
+     * \param [in] the function used to compute the field values from current field value.
+     *  */
      void applyFunc(  const std::string& func );
      
     /**
      * Computes the field values from coordinates of location point
-	 * \details The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of point coordinates. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
+     * \details The function can include arbitrary named variables (e.g. "x","y" or "va44") to refer to components of point coordinates. Names of variables are sorted in alphabetical order to associate a variable name with a component. For example, in the expression "2*x+z", "x" stands for the component #0 and "z" stands for the component #1 (not #2)!
     In a general case, a value resulting from the function evaluation is assigned to all components of a field value. But there is a possibility to have its own expression for each component within one function. For this purpose, there are predefined variable names (IVec, JVec, KVec, LVec etc) each dedicated to a certain component (IVec, to the component #0 etc).
-	 * \param [in] number of components of the field to build
-	 * \param [in] description of the function used to compute the field values from coordinates of location point
-	 *  */
+     * \param [in] number of components of the field to build
+     * \param [in] description of the function used to compute the field values from coordinates of location point
+     *  */
      void fillFromAnalytic( int nbComp, const std::string & func );
      
     /** 
-	 * \brief Delete the medcoupling mesh to save memory space
+     * \brief Delete the medcoupling mesh to save memory space
      */
     void deleteMEDCouplingMesh();
     
@@ -396,11 +404,13 @@ class Field
     MEDCoupling::MCAuto<MEDCoupling::MEDCouplingFieldDouble> _field;
     Mesh _mesh ;
     EntityType _typeField;
-	int _numberOfComponents;
-	double _time;
-	std::string _fieldName;
-	MEDCoupling::DataArrayDouble * _localizationOfGaussPoints;//Gauss point coordinates 
+    int _numberOfComponents;
+    double _time;
+    std::string _fieldName;
     
+    /* For Gauss quadrature */
+    MEDCoupling::DataArrayDouble * _localizationOfGaussPoints;//Gauss point coordinates 
+    int _nbGaussPoints;
     private:
 
 };
