@@ -399,7 +399,8 @@ class Field
 	int _numberOfComponents;
 	double _time;
 	std::string _fieldName;
-	
+	MEDCoupling::DataArrayDouble * _localizationOfGaussPoints;//Gauss point coordinates 
+    
     private:
 
 };

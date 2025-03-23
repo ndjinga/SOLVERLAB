@@ -40,6 +40,9 @@ Field::~Field( void )
 {
 	//std::cerr << "dtor Field, _field = " <<_field << std::endl;
 	//if (_field) _field->decrRef();
+    
+    if(_typeField==GAUSS_PT)
+        _localizationOfGaussPoints->decrRef();
 }
 
 
@@ -218,6 +221,7 @@ void Field::buildFieldMemoryStructure()
 		array->alloc(_mesh.getNumberOfCells(),_numberOfComponents*nbGaussPoints);
 		_field->setMesh(mu);
         _field->setGaussLocalizationOnType(cellType,refCoords,gaussCoords,weights);
+        _localizationOfGaussPoints = _field->getLocalizationOfDiscr( );
 	}else
 		throw CdmathException("Type of Mesh cells is not compatible. Cell types accepted are 1D segments (NORM_SEG2), 2D triangles (NORM_TRI3) and 3D tetrahedra (NORM_TETRA4)");
 
