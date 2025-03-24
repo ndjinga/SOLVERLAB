@@ -610,26 +610,44 @@ if  ( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
 else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
   set( PARAVIEW_SUFFIXES paraview-5.0 paraview-5.1 paraview-5.2 paraview-5.3 paraview-5.4 paraview-5.5 paraview-5.6 paraview-5.7 paraview-5.8 paraview-5.9 paraview-5.10 paraview-5.11 paraview-5.12 paraview-5.13 paraview-5.14 paraview-5.15)
-  find_file( vtkConfig_file vtkPVConfig.h HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
-
+  
+  # vtkPVVersion.h replaces vtkPVConfig.h from paraview 5.11 onwards
+  find_file( vtkPVVersion_file vtkPVVersion.h HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
   #extraction of the paraview version"
-  IF   ( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
-    message(WARNING "Could not find ParaView configuration file vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR} and subdirectories  ${PARAVIEW_SUFFIXES}. Postprocessing may not work")
-    set( PARAVIEW_VERSION  "5.8")
-  ELSE ( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
-    message( STATUS "Found vtkPVConfig.h in ${vtkConfig_file}")
-    file(STRINGS ${vtkConfig_file} vtkConfig)
-    FOREACH(line ${vtkConfig})
+  set( PARAVIEW_VERSION  "0.0")
+  IF   ( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
+    # use vtkPVConfig.h instead of vtkPVVersion.h for paraview prior to version 5.11
+    find_file( vtkPVConfig_file vtkPVConfig.h  HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
+    IF   ( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
+      message(WARNING "Could not find ParaView configuration file vtkPVVersion.h nor vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR} and subdirectories  ${PARAVIEW_SUFFIXES}. Postprocessing may not work")
+    ELSE ( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
+      message( STATUS "Found vtkPVConfig.h in ${vtkPVConfig_file}")
+      file(STRINGS ${vtkPVConfig_file} vtkPVConfig)
+      FOREACH(line ${vtkPVConfig})
+        string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
+        IF(NOT ${pos} EQUAL -1)
+          string(LENGTH ${line} line_length)#length of the tarball
+          MATH(EXPR start_pv_version "${line_length}-6")#line ends with "x.y.z", that counts for 7 characters
+          string(SUBSTRING ${line} ${start_pv_version} 5 PARAVIEW_VERSION)
+          break()
+        ENDIF(NOT ${pos} EQUAL -1)
+      ENDFOREACH(line ${vtkPVConfig})
+      message(STATUS "ParaView detected, version is ${PARAVIEW_VERSION}" )
+    ENDIF( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
+  ELSE( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
+    message( STATUS "Found vtkPVVersion.h in ${vtkPVVersion_file}")
+    file(STRINGS ${vtkPVVersion_file} vtkPVVersion)
+    FOREACH(line ${vtkPVVersion})
       string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
       IF(NOT ${pos} EQUAL -1)
         string(LENGTH ${line} line_length)#length of the tarball
-        MATH(EXPR start_pv_version "${line_length}-6")#line ends with "x.y.z", that counts for 7 characters
-        string(SUBSTRING ${line} ${start_pv_version} 5 PARAVIEW_VERSION)
+        MATH(EXPR start_pv_version "${line_length}-7")#line ends with "x.y.z", that counts for 7 characters
+        string(SUBSTRING ${line} ${start_pv_version} 6 PARAVIEW_VERSION)
         break()
       ENDIF(NOT ${pos} EQUAL -1)
-    ENDFOREACH(line ${vtkConfig})
+    ENDFOREACH(line ${vtkPVVersion})
     message(STATUS "ParaView detected, version is ${PARAVIEW_VERSION}" )
-  ENDIF( ${vtkConfig_file} STREQUAL "vtkConfig_file-NOTFOUND" )
+  ENDIF( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
 endif( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
 
 #Choose python 2 or 3  
