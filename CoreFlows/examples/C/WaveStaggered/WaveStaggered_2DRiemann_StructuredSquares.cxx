@@ -63,8 +63,8 @@ int main(int argc, char** argv){
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=5;
-			ny=5;
+			nx=3;
+			ny=3;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
 			

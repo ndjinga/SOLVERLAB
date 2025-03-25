@@ -5,6 +5,7 @@
 #include "WaveStaggered.hxx"
 #include "StiffenedGas.hxx"
 #include <numeric>
+#include <math.h>
 
 using namespace std;
 
@@ -434,21 +435,25 @@ double WaveStaggered::MassLumping(const Cell &K, const int &idcell, const Face &
 	std::vector<Cell> Support_f, Support_j ;
 	Support_f.push_back(K);
 	Support_j.push_back(K);
+
+	/* std::vector<Node> K_Nodes;
+	for (int i=0; i < K.getNodesId().size(); i++)
+		K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) ); */
+
 	for (int l =0; l <K.getNumberOfFaces(); l ++){
 		Node vertex1, vertex2;
-		vertex1 = _mesh.getNode( Facej.getNodesId()[0] );
-		if (_Ndim ==2 )  vertex2 = _mesh.getNode( Facej.getNodesId()[1] );
+		vertex1 = _mesh.getNode( _mesh.getFace( K.getFacesId()[l] ).getNodesId()[0] );
+		Point Xl =  _mesh.getFace( K.getFacesId()[l] ).getBarryCenter();
+		if (_Ndim ==2 )  vertex2 = _mesh.getNode( _mesh.getFace( K.getFacesId()[l] ).getNodesId()[1] );
 		double Area = (_Ndim==2 )? fabs((K.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (K.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) )/2.0 : abs(K.x() - vertex1.x()) ;
-		std::vector<double> Psi_j_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_j, Facej,j, _mesh.getFace( K.getFacesId()[l] ).getBarryCenter());
-
-		if ( fabs(atan(Facej.y()/Facej.x()) - fabs(0.0981748) ) < 1e-7  && Facej.x() > 1e-10   )
-			cout << "  fj =(" <<Facej.x()<<" , "<< Facej.y() << "), cell = "<< idcell <<" x_c = ("<<K.x() <<" , " << K.y()<<"),   Psi_"<< j<<" ( "<<_mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[0]<<" , "<< _mesh.getFace( K.getFacesId()[l] ).getBarryCenter()[1] <<" ) = ("<< Psi_j_in_Xl[0]<< " ," << Psi_j_in_Xl[1]<< " ) "<<endl;
+		std::vector<double> Psi_j_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_j, Facej,j, Xl);
 
 		for (int f=0; f <K.getNumberOfFaces(); f ++){
-			std::vector<double> Psi_f_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_f, _mesh.getFace( K.getFacesId()[f] ),K.getFacesId()[f], _mesh.getFace( K.getFacesId()[l] ).getBarryCenter());
+			Face Facef = _mesh.getFace( K.getFacesId()[f] );
+			std::vector<double> Psi_f_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_f, Facef, K.getFacesId()[f], Xl);
 			for (int e=0; e<_Ndim; e++)
-				masslumping_on_K +=  Area * Psi_j_in_Xl[e] * Psi_f_in_Xl[e];
-		}
+				masslumping_on_K +=  Area *  Psi_j_in_Xl[e] * Psi_f_in_Xl[e];	
+		} 
 	}		
 	return masslumping_on_K;
 }
@@ -473,18 +478,9 @@ void WaveStaggered::AssembleMetricsMatrices(){
 			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end())
 				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			Face Fj_physical =  Fj ; // ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
+			Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
 			InvPerimeter2 = (_Ndim ==2) ? 1.0/_perimeters(idCells[1]) : 1.0 ;
 			mlump += MassLumping(Ctemp2,idCells[1], Fj_physical, j);
-
-			/* if (_Ndim ==2 && atan(Fj.y()/Fj.x()) <3.24/32.0 && atan(Fj.y()/Fj.x()) > -3.24/32.0 ){
-				std::vector<int> nodes =  Fj.getNodesId();
-				Node vertex = _mesh.getNode( nodes[0] );
-				// determinant of the vectors forming the diamond cell around the face sigma
-				det = (Ctemp1.x() - vertex.x() )* (Ctemp2.y() - vertex.y() ) - (Ctemp1.y() - vertex.y() )* (Ctemp2.x() - vertex.x() );
-				mlump = PetscAbsReal(det)/2.0;
-				cout << "bonjour" <<endl;
-			} */
 
 			InvD_sigma = 1.0/mlump;
 			PetscScalar InvVol2 = 1.0/Ctemp2.getMeasure();
@@ -501,43 +497,51 @@ void WaveStaggered::AssembleMetricsMatrices(){
 			MatSetValue(_InvVol, IndexFace, IndexFace,  InvD_sigma, INSERT_VALUES);  
 		}
 	}
-
-	/* for (int j=0; j<_Nfaces;j++){ 
+	//TODo à supprimer : à permis de comprendre d'où venait le probleme de métrique sur masslumping
+	for (int j=0; j<_Nfaces;j++){ 
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
  		Cell Ctemp1 = _mesh.getCell(idCells[0]);
 
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
 		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
-		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;	
-		
-		double mlump = MassLumping(Ctemp1, idCells[0], Fj, j);
-		
-		if (_Ndim ==2 && atan(Fj.y()/Fj.x()) <3.24/32.0 && atan(Fj.y()/Fj.x()) > -3.24/32.0 && Fj.x() < -1e-10){
-			if (IsInterior){
-				Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
+	
+		if (  (Fj.x() < -1e-10 ) ){
+			Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) ? _mesh.getFace(_FacePeriodicMap.find(j)->second ) :  Fj;
+			if (IsInterior){	
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-				mlump += MassLumping(Ctemp2, idCells[1], Fj, j);
-				
-			}
-			double InvD_sigma = 1.0/mlump;	
-			for (int k=0; k <_Nfaces ; k++){
-				Face Fk = _mesh.getFace(k);
-				PetscInt indexk = _Nmailles + k;
-				if ( fabs( fabs(Fk.x()) -fabs(Fj.x())) <1e-6 && fabs( Fk.y()-Fj.y()) < 1e-6 && Fk.x() > 1e-10 ){
-					if ( fabs(atan(Fk.y()/Fk.x()) - 0.0981748) < 1e-7  && Fk.x() > 1e-10   ){
-						MatSetValue(_InvVol, indexk, indexk,  InvD_sigma, INSERT_VALUES); 
-						cout << " 0.09 Fk = " << Fk.x() << " , "<< Fk.y() << endl;
+				double mlump = MassLumping(Ctemp2, idCells[1], Fj, j)+ MassLumping(Ctemp1, idCells[0], Fj, j);
+
+				for (int k=0; k <_Nfaces ; k++){
+					Face Fk = _mesh.getFace(k);
+					std::vector< int > idCellsFk = Fk.getCellsId();
+ 					Cell C1 = _mesh.getCell(idCellsFk[0]);
+					if ( fabs( fabs(Fk.x()) -fabs(Fj.x())) <1e-10 && fabs( Fk.y()-Fj.y()) < 1e-10 && Fk.x() > 1e-10 && std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),k ) != _InteriorFaceSet.end() && Fk.x() > 1e-10){
+						Cell C2 = _mesh.getCell(idCellsFk[1]);
+						if (fabs( mlump -(MassLumping(C1, idCellsFk[0], Fk, k)+ MassLumping(C2, idCellsFk[1], Fk, k))) >1e-10){
+							cout << "mlump = " <<mlump <<" and mlump wrong = "<< MassLumping(C1, idCellsFk[0], Fk, k)+ MassLumping(C2, idCellsFk[1], Fk, k)<< " k = " <<k <<" Fk = ("<< Fk.x() <<", "<< Fk.y()<< ") theta ="<< atan(Fk.y()/Fk.x())<<endl;
+							cout <<"k = "<< k <<" theta = "<< atan(Fk.y()/Fk.x())<<endl; 
+						}
 					}
-					if ( fabs(atan(Fk.y()/Fk.x()) + 0.0981748) < 1e-7   ){
-						MatSetValue(_InvVol, indexk, indexk,  InvD_sigma, INSERT_VALUES); 
-						cout << " -0.09 Fk = " << Fk.x() << " , "<< Fk.y() << endl;
+				}
+			}
+			if (IsWallBound || IsSteggerBound){
+				double mlump = MassLumping(Ctemp1, idCells[0], Fj, j);
+				for (int k=0; k <_Nfaces ; k++){
+					Face Fk = _mesh.getFace(k);
+					std::vector< int > idCellsFk = Fk.getCellsId();
+ 					Cell C1 = _mesh.getCell(idCellsFk[0]);
+					if ( fabs( fabs(Fk.x()) -fabs(Fj.x())) <1e-10 && fabs( Fk.y()-Fj.y()) < 1e-10 && Fk.x() > 1e-10 ){
+						if (fabs( mlump -(MassLumping(C1, idCellsFk[0], Fk, k)) >1e-10) ){
+							cout << "mlump = " <<mlump <<" and mlump wrong = "<< MassLumping(C1, idCellsFk[0], Fk, k)<< " k = " <<k <<" Fk = ("<< Fk.x() <<", "<< Fk.y()<< ") theta ="<< atan(Fk.y()/Fk.x())<<endl;
+							cout <<"k = "<< k <<" theta = "<< atan(Fk.y()/Fk.x())<<endl; 
+						}
 					}
 				}
 			}
 		}
-
-	} */
+	}
 	
 	MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
@@ -644,9 +648,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);
 					
-					/* if (abs(Fj.x()) >1e-4 )
-						cout <<" j = "<< j <<" mlump = "<< MassLumping(Ctemp2,idCells[1], Fj, j) + MassLumping(Ctemp1,idCells[0], Fj, j)<<"     	 x= ( "<<Fj.x()<<" , "<<Fj.y() <<" ) " <<endl;	
- */
 					/******************* Pressure equation ***********************/
 					MatSetValue(_Div, idCells[0], j, orientedFaceArea, ADD_VALUES ); 
 					MatSetValue(_Div, idCells[1], j, orientedMinusFaceArea, ADD_VALUES );  
@@ -836,8 +837,8 @@ std::vector<double> WaveStaggered::ReferenceBasisFunctionRaviartThomas(const int
 				Psihat[1] = Xhat.y() - 1;
 			}
 			else if (i ==1){      
-				Psihat[0] = Xhat.x();
-				Psihat[1] = Xhat.y();
+				Psihat[0] = Xhat.x();// * 2  * sqrt(2.0);
+				Psihat[1] = Xhat.y();// * 2 * sqrt(2.0);
 			}
 			else if (i ==2){      
 				Psihat[0] = Xhat.x()-1 ;
@@ -899,8 +900,8 @@ Point WaveStaggered::xToxhat(const Cell & K, const Point &X, const std::vector<N
 				Xhat = Point(0, 0.5, 0); 
 			else if (fabs(X.x() - (K_Nodes[1].x() + K_Nodes[2].x())/2.0) < 1e-11 && fabs(X.y() - (K_Nodes[1].y() + K_Nodes[2].y())/2.0) < 1e-11) // if X is the middle point of the second face
 				Xhat = Point(0.5, 0.5, 0);
-			else if (fabs(X.x() - (K_Nodes[2].x() + K_Nodes[3].x())/2.0) < 1e-11 && fabs(X.y() - (K_Nodes[2].y() + K_Nodes[3].y())/2.0) < 1e-11) // if X is the middle point of the third face
-				Xhat = Point(0.5, 1, 0);
+			else if (fabs(X.x() - (K_Nodes[2].x() + K_Nodes[0].x())/2.0) < 1e-11 && fabs(X.y() - (K_Nodes[2].y() + K_Nodes[0].y())/2.0) < 1e-11) // if X is the middle point of the third face
+				Xhat = Point(0.5, 0, 0);
 		}
 		
 	}	

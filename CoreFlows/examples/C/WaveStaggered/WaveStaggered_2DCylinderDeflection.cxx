@@ -110,25 +110,22 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
 		double theta = atan(Fj.y()/Fj.x());
-		std::vector<double > Exact = ExactVelocity(r, theta, r1, r0);
-		double dotprod = 0;
-		for (int k = 0 ; k <Exact.size() ; k++)
-			dotprod += Exact[k] * vec_normal_sigma[k];
-		ExactVelocityAtFaces[j] = dotprod; 
+		if (fabs(theta)<1e-10 && Fj.x() > 1e-10){ //TODO suppression ?
+			for (int idim = 0; idim < spaceDim; ++idim)
+				vec_normal_sigma[idim] *=-1;
+		}
+		myProblem.setOrientation(j,vec_normal_sigma);
+		
+		ExactVelocityAtFaces[j] = dotprod( ExactVelocity(r, theta, r1, r0), vec_normal_sigma); 
 
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
 			myProblem.setInteriorIndex(j);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
-			std::vector<double > InitialVel = initialVelocity(Fj.x(),Fj.y());
-			double dotprod = 0;
-			for (int k = 0 ; k <InitialVel.size() ; k++)
-					dotprod += InitialVel[k] * vec_normal_sigma[k];
-			Velocity0[j] = dotprod;
+			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
 		}
 		else if (Fj.getNumberOfCells()==1){
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
@@ -137,11 +134,7 @@ int main(int argc, char** argv)
 			}
 			else {// if face is on exterior (stegger condition) 			
 				myProblem.setSteggerBoundIndex(j);								
-				std::vector<double > BoundaryVel = initialBoundVelocity(Fj.x(),Fj.y());
-				double dotprod = 0;
-				for (int k = 0 ; k <BoundaryVel.size() ; k++)
-					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
-				wallVelocityMap[j] = dotprod;
+				wallVelocityMap[j] = dotprod( initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
 				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
 			} // building exact solution at faces and its interpolation at cell	
 			ExactVelocityAtFaces[j] = wallVelocityMap[j];
