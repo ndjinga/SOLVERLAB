@@ -16,21 +16,21 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 	if (z < discontinuity){
 		if (Direction == 'x'){
 			vec[0] = 1;
-			vec[1] = -1;
+			vec[1] = 0;
 		}
 		if (Direction == 'y'){
-			vec[0] = 0;
+			vec[0] = 2;
 			vec[1] = 0;
 		}
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = 1;
-			vec[1] = -1;
+			vec[0] = 0;
+			vec[1] = 1;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
-			vec[1] = 1;
+			vec[1] = 2;
 		}
 	}
 	return vec;
@@ -93,12 +93,15 @@ int main(int argc, char** argv){
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Velocity0("velocity", FACES, M, 1);
 		
-		//myProblem.setPeriodicFaces(M, Direction, ncells);
-		
+		assert(fabs(inf)<1e-11);
+		assert(fabs(sup - 1.0)<1e-11);
+		myProblem.setPeriodicFaces(M, Direction, ncells); //Only works on [0,1]² -> not useful to adapt
+		double coordLeft, coordRight, coordFace;
+
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);
 			std::vector<int> idCells = Fj.getCellsId();
-			std::vector<double> vec_normal_sigma(2) ; //TODO = 0!!
+			std::vector<double> vec_normal_sigma(spaceDim, 0.0) ; 
 			Cell Ctemp1 = M.getCell(idCells[0]);
 			for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 				if (j == Ctemp1.getFacesId()[l]){
@@ -106,51 +109,31 @@ int main(int argc, char** argv){
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 				}
 			}
-			
-			double coordLeft, coordRight, coordFace; 
-			if(Fj.getNumberOfCells()==2 ){ // myProblem.IsFaceBoundaryComputedInPeriodic(j)
-				myProblem.setOrientation(j,vec_normal_sigma);
+			myProblem.setOrientation(j,vec_normal_sigma);
+
+			if (Direction == 'x') 	   coordFace = Fj.x();
+			else if (Direction == 'y') coordFace = Fj.y() ;	
+			 
+			if(Fj.getNumberOfCells()==2 ){ 
 				myProblem.setInteriorIndex(j);
 				Cell Ctemp2 = M.getCell(idCells[1]);
 				if (Direction == 'x'){
 					coordLeft = Ctemp1.x();
 					coordRight = Ctemp2.x();
-					coordFace = Fj.x();
 					
 				}
 				else if (Direction == 'y'){
 					coordLeft = Ctemp1.y();
 					coordRight = Ctemp2.y();
-					coordFace = Fj.y() ;
 				}
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				std::vector<double > InitialVel = initialVelocity(coordFace, discontinuity, Direction);
-				double dotprod = 0;
-				for (int k = 0 ; k <InitialVel.size() ; k++)
-						dotprod += InitialVel[k] * vec_normal_sigma[k];
-				Velocity0[j] = dotprod;
+				Velocity0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma  );
 			}
 			else if (Fj.getNumberOfCells()==1  ){ // If boundary face and if periodic check that the boundary face is the computed (avoid passing twice ) 
-				for (int idim = 0; idim <spaceDim; idim ++){
-						if (vec_normal_sigma[idim] < 0)
-							vec_normal_sigma[idim] = -vec_normal_sigma[idim];
-				}
-				myProblem.setOrientation(j,vec_normal_sigma);
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 					myProblem.setSteggerBoundIndex(j);	
-				if (Direction == 'x'){
-					coordFace = Fj.x();
-					
-				}
-				else if (Direction == 'y'){
-					coordFace = Fj.y() ;
-				}							
-				std::vector<double > BoundaryVel = initialVelocity(coordFace,discontinuity, Direction);
-				double dotprod = 0;
-				for (int k = 0 ; k <BoundaryVel.size() ; k++)
-					dotprod += BoundaryVel[k] * vec_normal_sigma[k];
-				wallVelocityMap[j] = dotprod;
+				wallVelocityMap[j] = dotprod( initialVelocity(coordFace,discontinuity, Direction),vec_normal_sigma);
 				wallPressureMap[j] = initialPressure(coordFace,discontinuity);
 			}
 		}
@@ -167,11 +150,11 @@ int main(int argc, char** argv){
 		string fileName = "WaveStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 2;
+		unsigned MaxNbOfTimeStep = 10000000;
 		int freqSave = 1;
 		double cfl = 0.5;
 		double maxTime = 0.07;
-		double precision = 1e-6;
+		double precision = 1e-11;
 
 		myProblem.setCFL(cfl);
 		myProblem.setPrecision(precision);

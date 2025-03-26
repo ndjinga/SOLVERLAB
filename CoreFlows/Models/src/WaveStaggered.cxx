@@ -135,7 +135,7 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 	}
 }
 
-//TODO Adapter au périodique ?
+
 void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ 
 	assert( atFaces.getTypeOfField() == FACES);
 	assert( atCells.getTypeOfField() == CELLS);
@@ -334,7 +334,7 @@ void WaveStaggered::initialize(){
 	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
 
 	// transfer information de condition initial vers primitiveVars  
-	int *indices1 = new int[_Nmailles]; // TODO ok en parallèle ?
+	int *indices1 = new int[_Nmailles]; 
 	int *indices2 = new int[_Nfaces];
 	std::iota(indices1, indices1 + _Nmailles, 0);
 	std::iota(indices2, indices2 + _Nfaces, _Nmailles);
@@ -436,10 +436,6 @@ double WaveStaggered::MassLumping(const Cell &K, const int &idcell, const Face &
 	Support_f.push_back(K);
 	Support_j.push_back(K);
 
-	/* std::vector<Node> K_Nodes;
-	for (int i=0; i < K.getNodesId().size(); i++)
-		K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) ); */
-
 	for (int l =0; l <K.getNumberOfFaces(); l ++){
 		Node vertex1, vertex2;
 		vertex1 = _mesh.getNode( _mesh.getFace( K.getFacesId()[l] ).getNodesId()[0] );
@@ -498,7 +494,7 @@ void WaveStaggered::AssembleMetricsMatrices(){
 		}
 	}
 	//TODo à supprimer : à permis de comprendre d'où venait le probleme de métrique sur masslumping
-	for (int j=0; j<_Nfaces;j++){ 
+	/* for (int j=0; j<_Nfaces;j++){ 
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
  		Cell Ctemp1 = _mesh.getCell(idCells[0]);
@@ -541,7 +537,7 @@ void WaveStaggered::AssembleMetricsMatrices(){
 				}
 			}
 		}
-	}
+	} */
 	
 	MatAssemblyBegin(_InvVol,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
@@ -643,7 +639,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 				PetscInt IndexFace = _Nmailles + j;
 				InvVol1 = 1.0/(Ctemp1.getMeasure()*Ctemp1.getNumberOfFaces());
 				
-				if ( IsInterior ){	// || (periodicFaceComputed == true) Fj is inside the domain or is a boundary periodic face (computed)
+				if ( IsInterior ){	
 					if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
 						idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
 					Cell Ctemp2 = _mesh.getCell(idCells[1]);
@@ -849,8 +845,6 @@ std::vector<double> WaveStaggered::ReferenceBasisFunctionRaviartThomas(const int
 	return Psihat;
 }
 
-
-//TODO modifier les tests égalités par des inégalités abs() <1e-11
 Point WaveStaggered::xToxhat(const Cell & K, const Point &X, const std::vector<Node> & K_Nodes){
 	Point Xhat;
 	Point Xb = K.getBarryCenter();
@@ -909,7 +903,6 @@ Point WaveStaggered::xToxhat(const Cell & K, const Point &X, const std::vector<N
 }
 
 
-//TODO  assert(Jacobian) > 0 ?
 std::vector<double> WaveStaggered::JacobianTransfor_K_X(const Point &X, const std::vector<Node> &K_Nodes){
 	std::vector<double> JacobianTransfor_K(_Ndim * _Ndim);
 	if (_Ndim ==1)  JacobianTransfor_K[0] = (K_Nodes[1].x()-K_Nodes[0].x()) ; 
@@ -931,7 +924,6 @@ std::vector<double> WaveStaggered::JacobianTransfor_K_X(const Point &X, const st
 	}
 	return JacobianTransfor_K;
 }
-
 
 
 bool WaveStaggered::FindlocalBasis(const int &m,const Face &Facej, const int &j, const  Cell& K, const std::vector<Node> &K_Nodes ){
@@ -957,7 +949,7 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 	if (_Ndim ==2) xf.push_back(X.y());
 	std::vector<double> PhysicalPsif_in_X(_Ndim, 0.0); 
 
-	if (_nbTimeStep ==0){ //TODO déjà assemblée dans assemblemetric matrices ?
+	if (_nbTimeStep ==0){ 
 		std::vector<Node> K_Nodes;
 		for (int i=0; i < K.getNodesId().size(); i++)
 			K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
@@ -965,10 +957,10 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 		double J = Jacobian(JacobianTransfor_K_Xhat);
 
 		bool K_is_in_Support = false;
-			for (const auto &cell: Support){
-				if (K.getBarryCenter().x() == cell.getBarryCenter().x() && K.getBarryCenter().y() == cell.getBarryCenter().y())
-					K_is_in_Support =true;
-			}
+		for (const auto &cell: Support){
+			if (K.getBarryCenter().x() == cell.getBarryCenter().x() && K.getBarryCenter().y() == cell.getBarryCenter().y())
+				K_is_in_Support =true;
+		}
 		
 		for (int  m = 0; m < K.getNumberOfFaces(); m ++){
 			if ( FindlocalBasis(m, Facej, j, K,  K_Nodes) == true && K_is_in_Support == true ){
@@ -1003,7 +995,7 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 	return PhysicalPsif_in_X;
 }
 
-//TODO or abs(Jacobian) ?
+//TODO or fabs( ) ?
 double WaveStaggered::Jacobian(const std::vector<double> & mat){
 	assert(mat.size() == _Ndim*_Ndim);
 	double jacobian;
@@ -1079,7 +1071,7 @@ void WaveStaggered::abortTimeStep(){
 	_dt = 0;
 }
 
-void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells){ // TODO : Rajouter un assert : maillage  carré [0,1]^2 
+void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells){ 
 	for (int j=0;j<M.getNumberOfFaces() ; j++){
 		Face my_face=M.getFace(j);
 		double e;
@@ -1097,7 +1089,7 @@ void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells
 						ei=face_i.x();
 					else if (Direction == 'y')
 						ei=face_i.y();
-					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(e-ei)<tol) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(e-ei)<tol) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ 
 						_FacePeriodicMap[j]=iface;
 						setInteriorIndex(j);
 					}
@@ -1106,7 +1098,7 @@ void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells
 			else if (_Ndim == 1){
 				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
 					Face face_i=M.getFace(iface);
-					if (face_i.getNumberOfCells() ==1 && iface !=j && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ //TODO : pas générique quelle condition mettre pour ne pas compter face de bord
+					if (face_i.getNumberOfCells() ==1 && iface !=j && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ 
 						_FacePeriodicMap[j]=iface;
 						setInteriorIndex(j);
 					}

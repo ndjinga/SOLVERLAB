@@ -14,8 +14,8 @@ double initialPressure( double z, double discontinuity){
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
-	double ul = 1.5 ; //1.5;
-	double ur = -3 ; //-3;
+	double ul = 1.5 ; 
+	double ur = -3 ; 
 	if (Direction == 'x'){
 		if (z < discontinuity){
 			vec[0] = ul;
@@ -93,7 +93,10 @@ int main(int argc, char** argv)
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Velocity0("velocity", FACES, M, 1);
 
-		//myProblem.setPeriodicFaces(M, Direction, ncells );
+		assert(fabs(inf)<1e-11);
+		assert(fabs(sup - 1.0)<1e-11);
+		myProblem.setPeriodicFaces(M, Direction, ncells); //Only works on [0,1]² -> not useful to adapt
+
 		double coordLeft, coordRight, coordFace; 
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);

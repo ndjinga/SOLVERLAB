@@ -93,7 +93,10 @@ int main(int argc, char** argv)
 		std::map<int ,double> wallVelocityMap ;
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Velocity0("velocity", FACES, M, 1);
-		myProblem.setPeriodicFaces(M, Direction, ncells );
+
+		assert(fabs(inf)<1e-11);
+		assert(fabs(sup - 1.0)<1e-11);
+		myProblem.setPeriodicFaces(M, Direction, ncells); //Only works on [0,1]² -> not useful to adapt
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);
@@ -193,16 +196,6 @@ int main(int argc, char** argv)
 
 		cout << "------------ End of calculation !!! -----------" << endl;
 		myProblem.terminate();
-
-		// Should check if tmax, ncells, cfl and pl, pr, ul, ur are the same 
-
-		/* cout << "Python script for exact solution" << endl;
-		int result = system("python3 EulerBarotropicStaggered_1DRiemannProblem.py");  
-		if (result == 0) {
-			cout << "Script executed" << endl;
-		} else {
-			cerr << "ERROR in execution python script" << endl;
-		} */
 	}
 		
 	return EXIT_SUCCESS;
