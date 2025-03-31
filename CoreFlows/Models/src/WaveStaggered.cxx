@@ -104,7 +104,7 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 	for (int idim = 0; idim < _Ndim; ++idim)
 		dotprod += vec[idim] * _vec_sigma.find(l)->second[idim]; 
 	delete[] vec;
-	return dotprod;
+	return dotprod ; 
 
 }
 
@@ -929,7 +929,7 @@ std::vector<double> WaveStaggered::JacobianTransfor_K_X(const Point &X, const st
 bool WaveStaggered::FindlocalBasis(const int &m,const Face &Facej, const int &j, const  Cell& K, const std::vector<Node> &K_Nodes ){
 	Point Xhat_j =  xToxhat(K,  Facej.getBarryCenter(), K_Nodes) ; 
 	std::vector<double>  JacobianTransfor_K_Xhatf = JacobianTransfor_K_X(Xhat_j, K_Nodes );
-	double J = Jacobian(JacobianTransfor_K_Xhatf);
+	double J = det(JacobianTransfor_K_Xhatf);
 	std::vector<double> PhysicalPsij(_Ndim, 0.0);
 
 	for (int k =0; k < _Ndim ; k++){
@@ -954,7 +954,7 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 		for (int i=0; i < K.getNodesId().size(); i++)
 			K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 		std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X( xToxhat(K, X, K_Nodes), K_Nodes );
-		double J = Jacobian(JacobianTransfor_K_Xhat);
+		double J = det(JacobianTransfor_K_Xhat);
 
 		bool K_is_in_Support = false;
 		for (const auto &cell: Support){
@@ -996,12 +996,12 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 }
 
 //TODO or fabs( ) ?
-double WaveStaggered::Jacobian(const std::vector<double> & mat){
+double WaveStaggered::det(const std::vector<double> & mat){
 	assert(mat.size() == _Ndim*_Ndim);
-	double jacobian;
-	if (_Ndim ==1) jacobian = mat[0];
-	else if (_Ndim ==2) jacobian = mat[0]*mat[3] - mat[1]*mat[2];
-	return jacobian; 
+	double det;
+	if (_Ndim ==1) det = mat[0];
+	else if (_Ndim ==2) det = mat[0]*mat[3] - mat[1]*mat[2];
+	return det; 
 
 }
 
@@ -1228,16 +1228,17 @@ void WaveStaggered::save(){
 
 
 			//Multiply by -1 on triangles (why ?)
-			M1[0] =  orien1 * Fj.getMeasure()*(xsigma.x()- xK.x()) * ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
-			if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y()) * ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
-
+			M1[0] =  orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());//* ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
+			if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());//* ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
+			cout<<"face = "<<j << " fJ;x = "<< Fj.getBarryCenter().x()<<" , "<< Fj.getBarryCenter().y()<<" cell1 = "<<idCells[0]<<" orien1 = " << orien1 << " _vec_sigma = "<<_vec_sigma.find(j)->second[0]<< " , "<<_vec_sigma.find(j)->second[1] <<endl;
 			if (Fj.getNumberOfCells() == 2){
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
 				double orien2 = getOrientation(i,Ctemp2);
+				cout<<"face = "<<j <<" cell2 = "<<idCells[1]<<" orien2= " << orien2 <<endl;
 				Point xK = Ctemp2.getBarryCenter();
 
-				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x()) *  ((_Ndim ==2) ? ( ( Ctemp2.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
-				if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y()) * ((_Ndim ==2) ? ( ( Ctemp2.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
+				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());//*  ((_Ndim ==2) ? ( ( Ctemp2.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
+				if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());//* ((_Ndim ==2) ? ( ( Ctemp2.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
 			
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 

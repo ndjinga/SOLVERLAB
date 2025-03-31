@@ -131,7 +131,7 @@ public :
 
     //We find the corresponding basis function on the ref elemm by testing its image by Piola transform & select the only one that is non-zero when taken against n_sigma. 
     bool FindlocalBasis(const int &m,const Face &Facej, const int &j,const  Cell& K, const std::vector<Node> &K_Nodes );
-	double Jacobian(const std::vector<double> & mat);
+	double det(const std::vector<double> & mat);
 
     
 

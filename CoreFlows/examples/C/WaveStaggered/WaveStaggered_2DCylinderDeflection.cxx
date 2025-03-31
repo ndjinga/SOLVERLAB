@@ -21,7 +21,7 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 0;
+	vec[0] = 1;
 	vec[1] = 0;
 	return vec;
 }
@@ -152,7 +152,7 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10000000	;
+	unsigned MaxNbOfTimeStep = 1	;
 	int freqSave = 300;
 	double cfl = 0.5;
 	double maxTime = 100000;
