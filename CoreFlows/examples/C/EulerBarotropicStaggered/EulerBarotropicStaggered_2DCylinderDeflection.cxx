@@ -68,7 +68,6 @@ int main(int argc, char** argv)
 	Field Pressure0("pressure", CELLS, M, 1);
 	Field Velocity0("velocity", FACES, M, 1);
 	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
-	//Field ExactVelocityAtCells("ExactVelocityAtCells", CELLS, M, 3); //TODO not used ?
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -81,10 +80,6 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		/* if (fabs(atan(Fj.y()/Fj.x()))<1e-10 && Fj.x() > 1e-10){ //TODO why do we need to change the orientation for faces located on theta=0, r\in [0.8, 6] so that the masslumping is ok ?
-			for (int idim = 0; idim < spaceDim; ++idim)
-				vec_normal_sigma[idim] *=-1;
-		} */
 		myProblem.setOrientation(j,vec_normal_sigma);
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
@@ -107,6 +102,8 @@ int main(int argc, char** argv)
 			ExactVelocityAtFaces[j] = wallVelocityMap[j];
 		}
 	}
+
+		
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);

@@ -299,31 +299,32 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						//************* _Ndim-dimensional terms *************//
 						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, idCells[nei], Facef.getBarryCenter());
 						std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
-						
-
 						std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, Facef.getBarryCenter());
 						//cout << " grad psi_sigma = " << GradientPsi_j_in_Xf[0] <<" , "<< GradientPsi_j_in_Xf[1] << " , "<< GradientPsi_j_in_Xf[2] << " , "<< GradientPsi_j_in_Xf[3] << endl;
 						
-						double inte_K_divpsi = K.getMeasure() *( GradientPsi_j_in_Xf[0] +  GradientPsi_j_in_Xf[3]) ;
+
+
+						/* double inte_K_divpsi = K.getMeasure() *( GradientPsi_j_in_Xf[0] +  GradientPsi_j_in_Xf[3]) ;
 						std::vector<Node> K_Nodes;
 						for (int i=0; i < K.getNodesId().size(); i++)
 							K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
-						if  (j < 4){
-							for (int  m = 0; m < K.getNumberOfFaces(); m ++){
-								if (FindlocalBasis(m, Fj, j, K,  K_Nodes) ){
-									std::vector<double>  Gradient_ReferencePsif_in_X = Gradient_ReferenceBasisFunctionRaviartThomas(m, K_Nodes);
-									double inte_refer_divpsi =  getOrientation(j, K) * Fj.getMeasure() * ( Gradient_ReferencePsif_in_X[0] +  Gradient_ReferencePsif_in_X[3]);
+
+						for (int  m = 0; m < K.getNumberOfFaces(); m ++){
+							if (FindlocalBasis(m, Fj, j, K,  K_Nodes) ){
+								std::vector<double>  Gradient_ReferencePsif_in_X = Gradient_ReferenceBasisFunctionRaviartThomas(m, K_Nodes);
+								double inte_refer_divpsi =  getOrientation(j, K) * Fj.getMeasure() * ( Gradient_ReferencePsif_in_X[0] +  Gradient_ReferencePsif_in_X[3]);
+		
+								if (fabs(inte_K_divpsi - inte_refer_divpsi)>1e-10){
+									cout<< " NOT O.K "<<endl;
 									cout << " \nj = "<< j <<" Fj.x = ( "<< Fj.x() <<" , "<< Fj.y() <<" ) "<< "Facef.x = ( "<< Facef.x()<<" , "<< Facef.y() <<" )"		<<endl;
-									cout << " int_K div( psi_sigma) = " << inte_K_divpsi << endl;
-									cout << " or(sigma, K)|sigma| int_[0,1]^2 div( hat psi_sigma) = " << inte_refer_divpsi  << endl;
-									if (fabs(inte_K_divpsi - inte_refer_divpsi)>1e-10)
-										cout<< " NOT O.K "<<endl;
-									else 
-										cout<< " O.K "<<endl;
-									
+									cout << " int_K div( psi_sigma) = " << inte_K_divpsi << ",     or(sigma, K)|sigma| int_[0,1]^2 div( hat psi_sigma) = " << inte_refer_divpsi  << endl;
 								}
+								else 
+									cout<< " O.K "<<endl;
+								
 							}
-						}
+						} */
+	
 						
 						
 						
@@ -527,7 +528,7 @@ std::vector<double> EulerBarotropicStaggered::Gradient_PhysicalBasisFunctionRavi
 		for (int i=0; i < K.getNodesId().size(); i++)
 			K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 		std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X( xToxhat(K, X, K_Nodes), K_Nodes ); 
-		double J = det(JacobianTransfor_K_Xhat);
+		double J = fabs( det(JacobianTransfor_K_Xhat) );
 		std::vector<double>  JacobianTransfor_K_Xhat_Inversed = Inverse( JacobianTransfor_K_Xhat );
 	
 		/* std::vector<double> e0(_Ndim, 0.0), e1(_Ndim, 0.0);; 

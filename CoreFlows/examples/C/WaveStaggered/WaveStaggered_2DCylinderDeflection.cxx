@@ -84,18 +84,12 @@ int main(int argc, char** argv)
 	double c = sqrt(kappa/rho);
 	WaveStaggered myProblem(spaceDim,rho, kappa);
 
-	// Prepare for the initial condition
-	// set the boundary conditions
-	
-	
 	//Initial field creation
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
 	Field Pressure0("pressure", CELLS, M, 1);
 	Field Velocity0("velocity", FACES, M, 1);
-
-	Field ExactVelocityAtCells("ExactVelocityAtCells", CELLS, M, 3); //TODO not used ?
 	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
 	Field ExactVelocityInterpolate("ExactVelocityInterpolate", CELLS, M, 3);
 	
@@ -110,14 +104,10 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
+		myProblem.setOrientation(j,vec_normal_sigma);
+
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
 		double theta = atan(Fj.y()/Fj.x());
-		if (fabs(theta)<1e-10 && Fj.x() > 1e-10){ //TODO suppression ?
-			for (int idim = 0; idim < spaceDim; ++idim)
-				vec_normal_sigma[idim] *=-1;
-		}
-		myProblem.setOrientation(j,vec_normal_sigma);
-		
 		ExactVelocityAtFaces[j] = dotprod( ExactVelocity(r, theta, r1, r0), vec_normal_sigma); 
 
 		if(Fj.getNumberOfCells()==2){
@@ -152,7 +142,7 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1	;
+	unsigned MaxNbOfTimeStep = 10000000	;
 	int freqSave = 300;
 	double cfl = 0.5;
 	double maxTime = 100000;

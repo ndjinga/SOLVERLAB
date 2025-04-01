@@ -81,6 +81,7 @@ void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 }
 double WaveStaggered::getOrientation(int l, Cell Cint) {
 	double *vec =new double [_Ndim];	
+	double checktouternormal;
 	vec[0] =0;
 	vec[1] =0;	
 	std::map<int,int>::iterator it = _FacePeriodicMap.begin();
@@ -89,6 +90,13 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 		if (l == Cint.getFacesId()[m]  ){
 			for (int idim = 0; idim < _Ndim; ++idim)
 				vec[idim] = Cint.getNormalVector(m,idim);
+			checktouternormal = ( _mesh.getFace(l).getBarryCenter().x()  - Cint.getBarryCenter().x() ) *vec[0];
+			if(_Ndim ==2) checktouternormal+= ( _mesh.getFace(l).getBarryCenter().y() - Cint.getBarryCenter().y()  ) *vec[1];
+			if (checktouternormal <0){
+				for (int idim = 0; idim < _Ndim; ++idim)
+					vec[idim] = -Cint.getNormalVector(m,idim);
+
+			}
 		}
 		else if ((_FacePeriodicMap.find(l) != _FacePeriodicMap.end()) && (_FacePeriodicMap.find(l)->second == Cint.getFacesId()[m])){
 			for (int idim = 0; idim < _Ndim; ++idim)
@@ -929,7 +937,7 @@ std::vector<double> WaveStaggered::JacobianTransfor_K_X(const Point &X, const st
 bool WaveStaggered::FindlocalBasis(const int &m,const Face &Facej, const int &j, const  Cell& K, const std::vector<Node> &K_Nodes ){
 	Point Xhat_j =  xToxhat(K,  Facej.getBarryCenter(), K_Nodes) ; 
 	std::vector<double>  JacobianTransfor_K_Xhatf = JacobianTransfor_K_X(Xhat_j, K_Nodes );
-	double J = det(JacobianTransfor_K_Xhatf);
+	double J = fabs( det(JacobianTransfor_K_Xhatf) ) ;
 	std::vector<double> PhysicalPsij(_Ndim, 0.0);
 
 	for (int k =0; k < _Ndim ; k++){
@@ -954,7 +962,7 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 		for (int i=0; i < K.getNodesId().size(); i++)
 			K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 		std::vector<double>  JacobianTransfor_K_Xhat = JacobianTransfor_K_X( xToxhat(K, X, K_Nodes), K_Nodes );
-		double J = det(JacobianTransfor_K_Xhat);
+		double J = fabs( det(JacobianTransfor_K_Xhat) );
 
 		bool K_is_in_Support = false;
 		for (const auto &cell: Support){
@@ -995,7 +1003,6 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 	return PhysicalPsif_in_X;
 }
 
-//TODO or fabs( ) ?
 double WaveStaggered::det(const std::vector<double> & mat){
 	assert(mat.size() == _Ndim*_Ndim);
 	double det;
@@ -1226,19 +1233,16 @@ void WaveStaggered::save(){
 			Point xK = Ctemp1.getBarryCenter();
 			Point xsigma = Fj.getBarryCenter();
 
-
-			//Multiply by -1 on triangles (why ?)
-			M1[0] =  orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());//* ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
-			if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());//* ((_Ndim ==2) ? ( ( Ctemp1.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
-			cout<<"face = "<<j << " fJ;x = "<< Fj.getBarryCenter().x()<<" , "<< Fj.getBarryCenter().y()<<" cell1 = "<<idCells[0]<<" orien1 = " << orien1 << " _vec_sigma = "<<_vec_sigma.find(j)->second[0]<< " , "<<_vec_sigma.find(j)->second[1] <<endl;
+			M1[0] =  orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());
+			if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
+			
 			if (Fj.getNumberOfCells() == 2){
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
 				double orien2 = getOrientation(i,Ctemp2);
-				cout<<"face = "<<j <<" cell2 = "<<idCells[1]<<" orien2= " << orien2 <<endl;
 				Point xK = Ctemp2.getBarryCenter();
 
-				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());//*  ((_Ndim ==2) ? ( ( Ctemp2.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
-				if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());//* ((_Ndim ==2) ? ( ( Ctemp2.getNumberOfFaces() == 3 ) ? -1 : 1.0  ): 1.0);
+				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
+				if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
 			
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 

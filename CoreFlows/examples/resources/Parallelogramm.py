@@ -72,7 +72,7 @@ Mesh = smesh.Mesh(CompoundFaces)
 
 # Définir les hypothèses de maillage
 algo = Mesh.Segment()
-algo.NumberOfSegments(2)  # Divise chaque côté en 2 segments pour un maillage uniforme
+algo.NumberOfSegments(1)  # Divise chaque côté en 2 segments pour un maillage uniforme
 
 # Créer des éléments quadrangulaires
 algo2D = Mesh.Quadrangle()
@@ -86,4 +86,4 @@ smesh.SetName(Mesh, 'Parallelogram_Mesh')
 smesh.SetName(algo, 'Segment_Hypothesis')
 
 # Exportation du maillage en format .med
-Mesh.ExportMED('./Parallelogram_Mesh.med')
+Mesh.ExportMED('./Parallelogram_Mesh1.med')
