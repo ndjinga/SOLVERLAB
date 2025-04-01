@@ -52,36 +52,14 @@ int main(int argc, char** argv)
 	double r1 = 6;
 
 	Mesh M;
-	if(argc<2)
-	{
-		    cout << "- DOMAIN : SQUARE" << endl;
-		    cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
-		    cout << "Construction of a cartesian mesh" << endl;
-	    double xinf=-0.5;
-	    double xsup= 0.5;
-	    double yinf=-0.5;
-	    double ysup= 0.5;
-	    int nx=50;
-	    int ny=50;
-	    M=Mesh(xinf,xsup,nx,yinf,ysup,ny);
-	    double eps=1e-6;
-	    M.setGroupAtPlan(xsup,0,eps,"RightEdge");
-	    M.setGroupAtPlan(xinf,0,eps,"LeftEdge");
-	    M.setGroupAtPlan(yinf,1,eps,"BottomEdge");
-	    M.setGroupAtPlan(ysup,1,eps,"TopEdge");
-	}
-	else
-	{
-		// ./resources/AnnulusSpiderWeb5x16.med
-	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
-	    cout << "Loading of a mesh named "<<argv[1] << endl;
-	    string filename = argv[1];
-	    M=Mesh(filename);
-	}
+	// ./resources/AnnulusSpiderWeb5x16.med
+	cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
+	cout << "Loading of a mesh named "<<argv[1] << endl;
+	string filename = argv[1];
+	M=Mesh(filename);
 
 	double kappa = 1;
 	double rho = 1;
-	double c = sqrt(kappa/rho);
 	WaveStaggered myProblem(spaceDim,rho, kappa);
 
 	//Initial field creation
@@ -96,7 +74,7 @@ int main(int argc, char** argv)
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
 		std::vector<int> idCells = Fj.getCellsId();
-		std::vector<double> vec_normal_sigma(2) ; //TODO = 0!!
+		std::vector<double> vec_normal_sigma(2, 0.0) ; 
 		Cell Ctemp1 = M.getCell(idCells[0]);
 		for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 			if (j == Ctemp1.getFacesId()[l]){
@@ -126,8 +104,7 @@ int main(int argc, char** argv)
 				myProblem.setSteggerBoundIndex(j);								
 				wallVelocityMap[j] = dotprod( initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
 				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
-			} // building exact solution at faces and its interpolation at cell	
-			ExactVelocityAtFaces[j] = wallVelocityMap[j];
+			}
 		}
 	}
 	myProblem.setInitialField(Pressure0);
@@ -143,10 +120,10 @@ int main(int argc, char** argv)
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 10000000	;
-	int freqSave = 300;
+	int freqSave = 500;
 	double cfl = 0.5;
-	double maxTime = 100000;
-	double precision = 1e-12;
+	double maxTime = 100;
+	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
