@@ -144,7 +144,7 @@ protected :
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	double *_vec_normal;
 	PetscScalar _pExt, _pInt;
-	bool _savePressure, _saveVelocity;
+	bool _savePressure, _saveVelocity, _BasisFunctionAlreadyComputed;
 	std::map<int, double>  _boundaryPressure;
 	std::map<int, std::vector<double> > _vec_sigma; // arbitrary degree of liberty associated to a face
 	std::map<int,int> _FacePeriodicMap;

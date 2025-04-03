@@ -14,7 +14,6 @@ std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 double initialPressure( double x, double y){
 	return 0;
 }
-
 double initialBoundPressure( double x, double y){
 	return 0;
 }

@@ -21,14 +21,14 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 1;
-	vec[1] = 5;
+	vec[0] = sqrt(2 * 1*1) * 1e-1;
+	vec[1] = 0;
 	return vec;
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
-	vec[0] =  1; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
-	vec[1] = 5;
+	vec[0] =  sqrt(2 * 1*1) * 1e-1; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
+	vec[1] = 0;
 	return vec;
 }
 
@@ -89,16 +89,16 @@ int main(int argc, char** argv)
 			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
 		}
 		else if (Fj.getNumberOfCells()==1){
-			/* if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
+			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
 			}
-			else { */
+			else {
 				// if face is on exterior (stegger condition) 			
 				myProblem.setSteggerBoundIndex(j);								
 				wallVelocityMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
 				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
-			//} 
+			} 
 			ExactVelocityAtFaces[j] = wallVelocityMap[j];
 		}
 	}
@@ -116,11 +116,11 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 2;
-	int freqSave = 1	;
+	unsigned MaxNbOfTimeStep = 1000000000;
+	int freqSave = 100	;
 	double cfl = 0.99;
 	double maxTime = 50;
-	double precision = 1e-8;
+	double precision = 1e-6;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

@@ -22,6 +22,8 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_vec_normal=NULL;
 	_isWall =false ;
 	_Time.push_back(0.0);
+	_BasisFunctionAlreadyComputed = false;
+	
 	if (_Ndim == 3){	
 		cout<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 		*_runLogFile<<"!!!!!!!!!!!!!!!!!!!!!!!!WaveStaggered pas dispo en 3D, arret de calcul!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
@@ -518,6 +520,7 @@ void WaveStaggered::AssembleMetricsMatrices(){
 	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
+	//_BasisFunctionAlreadyComputed = true;
 }
 
 
@@ -924,7 +927,7 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 	if (_Ndim ==2) xf.push_back(X.y());
 	std::vector<double> PhysicalPsif_in_X(_Ndim, 0.0); 
 
-	if (_nbTimeStep ==0){ 
+	if (_nbTimeStep ==0 && _BasisFunctionAlreadyComputed == false){ 
 		std::vector<Node> K_Nodes;
 		for (int i=0; i < K.getNodesId().size(); i++)
 			K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
