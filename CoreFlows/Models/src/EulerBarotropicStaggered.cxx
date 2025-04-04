@@ -221,7 +221,22 @@ void EulerBarotropicStaggered::UpdateDualDensity(){
 	VecAssemblyEnd(_DualDensity);
 }
 
-
+double EulerBarotropicStaggered::getOrientationNode(int n, int j) {
+	//TODO what about periodic
+	assert(_Ndim == 2); //TODO ajouter message d'erreur;
+	std:vector<double> n_sigma_perp(_Ndim, 0.0), XnMinusXsigma(_Ndim, 0.0);
+	n_sigma_perp[0] = -_vec_sigma.find(j)->second[1];
+	n_sigma_perp[1] =  _vec_sigma.find(j)->second[0];
+	XnMinusXsigma[0] = _mesh.getNode(n).x() - _mesh.getFace(j).getBarryCenter().x() ;
+	XnMinusXsigma[1] = _mesh.getNode(n).y() - _mesh.getFace(j).getBarryCenter().y() ;
+	
+	double dotprod = 0;
+	if ( _mesh.getFace(j).getNodesId()[0] == n  ||  _mesh.getFace(j).getNodesId()[1] == n ){
+		for (int idim = 0; idim < _Ndim; ++idim)
+			dotprod += n_sigma_perp[idim] * XnMinusXsigma[idim] * 2.0/_mesh.getFace(j).getMeasure(); 
+	}
+	return dotprod ; 
+}
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 
@@ -296,7 +311,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 						I = _Nmailles + idFaces[f];
 						VecGetValues(_primitiveVars,1,&I	,&u);
-						double gradiv = -( _c*_rhoMax + _uMax)/2.0 *Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )?_perimeters[idCells[nei]] : 1.0);
+						double gradiv = -_rhoMax * ( _c + _uMax)/2.0 *Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )?_perimeters[idCells[nei]] : 1.0);
 						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
 
 						//************* _Ndim-dimensional terms *************//
@@ -382,8 +397,37 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					}
 					//cout <<" sum gradphi = ("<< sumGradphi[0]<<", "<< sumGradphi[2]<<" ) / ( "<< sumGradphi[1]<<" ,"<< sumGradphi[3]<< " ) on cell = "<< idCells[nei]<<endl;
 				} 
-				//cout << Convection <<endl;
+				//cout << Convection <<end;
 				VecSetValue(_Conv, IndexFace, Convection, ADD_VALUES );
+
+				// *************** Grad^perp tilde (Grad^per)^*  ************//
+				if (_Ndim ==2){
+					double Inv_Dsigma, length_sigma_perp,  Inv_Df, length_f_perp;
+					MatGetValues(_InvVol, 1, &IndexFace, 1, &IndexFace, &Inv_Dsigma);
+					length_sigma_perp = 1/(Inv_Dsigma * Fj.getMeasure());
+					//TODO periodic
+					std::vector<int> idNodesSigma = Fj.getNodesId();
+					for (int n=0; n < idNodesSigma.size() ; n++){
+						std::vector<int> idFacesn = _mesh.getNode( idNodesSigma[n] ).getFacesId();
+						double measureBoundaryDualVolumOfN =0;
+						//TODO only works 
+						for (int f=0; f< idFacesn.size(); f++){
+							Face Facef = _mesh.getFace(idFacesn[f]);
+							Face Facefplus = _mesh.getFace( idFacesn[(f+1)%idFacesn.size()] );
+							double XfplusMinusXf_x = Facefplus.getBarryCenter().x() -Facef.getBarryCenter().x();
+							double XfplusMinusXf_y = Facefplus.getBarryCenter().y() -Facef.getBarryCenter().y();
+							measureBoundaryDualVolumOfN += 2.0 * sqrt(XfplusMinusXf_x*XfplusMinusXf_x + XfplusMinusXf_y*XfplusMinusXf_y  );
+						}	
+						for (int f=0; f< idFacesn.size(); f++){
+							int I_f = _Nmailles + idFacesn[f];
+							MatGetValues(_InvVol, 1, &I_f, 1, &I_f, &Inv_Df);
+							length_f_perp = 1/(Inv_Df * _mesh.getFace(idFacesn[f]).getMeasure());
+							double rotrot = _rhoMax * _uMax/2.0 *length_sigma_perp * getOrientationNode(idNodesSigma[n],j) * length_f_perp * getOrientationNode(idNodesSigma[n], idFacesn[f])/measureBoundaryDualVolumOfN; 
+							MatSetValue(_A, IndexFace, I_f, rotrot, ADD_VALUES ); 
+
+						}
+					}
+				}
 			}
 			else if (IsWallBound || IsSteggerBound ) { 
 				/****************** Density conservation equation *********************/

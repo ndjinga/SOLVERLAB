@@ -72,6 +72,8 @@ public :
     std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v
     double Contraction(std::vector<double> &u, std::vector<double> &v); // returns contraction of two order 2 tensors
     std::vector<double> Inverse(std::vector<double> &u); // returns (u^{-1})^t
+
+    double getOrientationNode(int n, int j);
      
 protected :
     /** Fluid equation of state **/
