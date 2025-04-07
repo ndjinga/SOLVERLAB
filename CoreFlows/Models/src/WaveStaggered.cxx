@@ -804,6 +804,12 @@ std::vector<double> WaveStaggered::ReferenceBasisFunctionRaviartThomas(const int
 			else if (i ==1) Psihat[1] = Xhat.y();
 			else if (i ==2)	Psihat[0]=  Xhat.x()-1;
 			else if (i ==3) Psihat[1] = Xhat.y()-1;	
+			double areaKleft = fabs( (K_Nodes[0].x()-K_Nodes[1].x())* (K_Nodes[2].y()-K_Nodes[1].y()) - (K_Nodes[0].y()-K_Nodes[1].y())* (K_Nodes[2].x()-K_Nodes[1].x())  )/2.0;
+			double areaKright = fabs( (K_Nodes[2].x()-K_Nodes[3].x())* (K_Nodes[0].y()-K_Nodes[3].y()) - (K_Nodes[2].y()-K_Nodes[3].y())* (K_Nodes[0].x()-K_Nodes[3].x())  )/2.0;
+			double distortedQuadsX = ((K_Nodes[0].x()-K_Nodes[1].x()) * (K_Nodes[3].y()-K_Nodes[2].y()) - (K_Nodes[0].y()-K_Nodes[1].y())* ( K_Nodes[3].x()-K_Nodes[2].x() ) )/(2.0 *(areaKleft+ areaKright) );
+			double distortedQuadsY = ((K_Nodes[1].x()-K_Nodes[2].x()) * (K_Nodes[3].y()-K_Nodes[0].y()) - (K_Nodes[1].y()-K_Nodes[2].y())* ( K_Nodes[3].x()-K_Nodes[0].x() ) )/(2.0 *(areaKleft+ areaKright) );
+			Psihat[0] += distortedQuadsX * Xhat.x() *(Xhat.x() - 1 );
+			Psihat[1] += distortedQuadsY * Xhat.y() *(Xhat.y() - 1 );
 		}
 		if ( K_Nodes.size() == 3){
 			if (i ==0){      

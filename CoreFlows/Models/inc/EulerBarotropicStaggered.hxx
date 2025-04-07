@@ -65,7 +65,7 @@ public :
 
     //********* Raviart-Thomas related functions ***********//
     std::vector<double> HessienneTransfo(const int component, const std::vector<Node> &K_Nodes);
-    std::vector<double> Gradient_ReferenceBasisFunctionRaviartThomas(int i, const std::vector<Node> &K_Nodes );
+    std::vector<double> Gradient_ReferenceBasisFunctionRaviartThomas(int i, const std::vector<Node> &K_Nodes, const Point & Xhat );
     std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, int idcell,  std::vector<Cell> Support, Face Facej, int j, Point X);
     std::vector<double> VelocityRaviartThomas_at_point_X(Cell K, int idcell, Point X);
     // operation on matrices
@@ -73,7 +73,7 @@ public :
     double Contraction(std::vector<double> &u, std::vector<double> &v); // returns contraction of two order 2 tensors
     std::vector<double> Inverse(std::vector<double> &u); // returns (u^{-1})^t
 
-    double getOrientationNode(int n, int j);
+    double getOrientationNode(int n, int j); //n is a norde, j a face, gives back sign( (x_n - x_j). n_sigma^perp    )
      
 protected :
     /** Fluid equation of state **/
