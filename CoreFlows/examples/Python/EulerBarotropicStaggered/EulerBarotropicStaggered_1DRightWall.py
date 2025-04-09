@@ -130,7 +130,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	Tmax = myProblem.getTime();
 	time = myProblem.getTimeEvol();
 
-	myProblem.terminate();
+	
 	if not os.path.exists(fileName):
 		os.mkdir(fileName)
 	
@@ -158,7 +158,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	plt.legend()
 	plt.title("Data at time step"+str(len(time) -1)+"t ="+str(Tmax))
 	plt.savefig(fileName + "/Data at time step"+str(len(time) -1))
-
+	
+	myProblem.terminate();
 	return ok
 
 if __name__ == """__main__""":

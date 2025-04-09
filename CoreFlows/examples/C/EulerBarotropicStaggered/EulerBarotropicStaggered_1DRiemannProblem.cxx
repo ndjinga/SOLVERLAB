@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 	double xinf=-1.0;
 	double xsup=1.0;
 	double discontinuity = (xinf+xsup)/2.;
-	int nx=5;
+	int nx=100;
 	Mesh M(xinf,xsup,nx);
 	int spaceDim = M.getSpaceDimension();
 
@@ -49,31 +49,25 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		
+		myProblem.setOrientation(j,vec_normal_sigma);
+
 		if(Fj.getNumberOfCells()==2 ){ 
 			myProblem.setInteriorIndex(j);
-			myProblem.setOrientation(j,vec_normal_sigma);
 			Cell Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x());
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
 			Velocity0[j] = initialVelocity(Fj.x());
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
-			for (int idim = 0; idim <spaceDim; idim ++){
-					if (vec_normal_sigma[idim] < 0)
-						vec_normal_sigma[idim] = -vec_normal_sigma[idim];
-			}
-			myProblem.setOrientation(j,vec_normal_sigma);
 			myProblem.setSteggerBoundIndex(j);								
 			wallVelocityMap[j] =initialVelocity(Fj.x());
 			wallPressureMap[j] = initialPressure(Fj.x());
 		}
 	}
-		myProblem.setInitialField(Pressure0);
-		myProblem.setInitialField(Velocity0);
-		myProblem.setboundaryPressure(wallPressureMap);
-		myProblem.setboundaryVelocity(wallVelocityMap);
-
+	myProblem.setInitialField(Pressure0);
+	myProblem.setInitialField(Velocity0);
+	myProblem.setboundaryPressure(wallPressureMap);
+	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
 	myProblem.setTimeScheme(Explicit);
@@ -82,10 +76,10 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1;
-	int freqSave = 10;
+	unsigned MaxNbOfTimeStep = 10000;
+	int freqSave = 1;
 	double cfl = 0.5;
-	double maxTime = 30;
+	double maxTime = 0.03;
 	double precision = 1e-13;
 
 	myProblem.setCFL(cfl);

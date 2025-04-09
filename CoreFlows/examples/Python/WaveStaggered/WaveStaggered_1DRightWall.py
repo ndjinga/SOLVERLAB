@@ -69,18 +69,18 @@ def WaveStaggered_1DRiemannProblem():
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
-		
+		myProblem.setOrientation(j,vec_normal_sigma)
 		if(Fj.getNumberOfCells()==2):
-			myProblem.setOrientation(j,vec_normal_sigma)
+			myProblem.setInteriorIndex(j)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
 			Velocity0[j] = initialVelocityForPb(Fj.x())
 		elif (Fj.getNumberOfCells()==1):
-			for idim in range(spaceDim):
+			""" for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
-			myProblem.setOrientation(j,vec_normal_sigma)
+			myProblem.setOrientation(j,vec_normal_sigma) """
 			if ( j== nx ): 
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
@@ -103,7 +103,7 @@ def WaveStaggered_1DRiemannProblem():
 
     # simulation parameters 
 	MaxNbOfTimeStep = 200;
-	freqSave = 5;
+	freqSave = 1;
 	cfl = 0.4 
 	maxTime = 20;
 	precision = 1e-6;
@@ -138,7 +138,7 @@ def WaveStaggered_1DRiemannProblem():
 	Tmax = myProblem.getTime();
 	myProblem.terminate();
 	time = 0
-	i=0
+	i=1
 	if not os.path.exists("WaveStaggered_"+fileName):
 		os.mkdir("WaveStaggered_"+fileName)
 	while time < Tmax:

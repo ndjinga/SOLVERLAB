@@ -19,14 +19,14 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 			vec[1] = 0;
 		}
 		if (Direction == 'y'){
-			vec[0] = 2;
-			vec[1] = 0;
+			vec[0] = 0;
+			vec[1] = 1;
 		}
 	}
 	else{
 		if (Direction == 'x'){
-			vec[0] = 0;
-			vec[1] = 1;
+			vec[0] = 2;
+			vec[1] = 0;
 		}
 		if (Direction == 'y'){
 			vec[0] = 0;
