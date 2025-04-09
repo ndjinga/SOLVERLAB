@@ -93,7 +93,7 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 				vec[idim] = Cint.getNormalVector(m,idim);
 			checktouternormal = ( _mesh.getFace(l).x()  - Cint.x() ) *vec[0];
 			if(_Ndim ==2) checktouternormal+= ( _mesh.getFace(l).y() - Cint.y()  ) *vec[1];
-			if (checktouternormal <0){
+			if (checktouternormal <-1e-11){
 				for (int idim = 0; idim < _Ndim; ++idim)
 					vec[idim] = -Cint.getNormalVector(m,idim);
 
