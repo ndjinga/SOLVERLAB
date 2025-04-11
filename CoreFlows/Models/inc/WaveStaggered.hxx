@@ -97,7 +97,7 @@ public :
 	void ComputeEnergyAtTimeT();
 	/*******Periodicity related ********/
 	void setPeriodicFaces(	Mesh &M, const char &Direction, int ncells);
-	std::map<int,int>  getFacePeriodicMap() const;
+	//std::map<int,int>  getFacePeriodicMap() const;
 	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
 	bool  IsFaceBoundaryComputedInPeriodic(int j );
 

@@ -136,23 +136,11 @@ void EulerBarotropicStaggered::initialize(){
 	VecSetFromOptions(_Conv);
 	VecSetUp(_Conv);
 
-	// matrice DIVERGENCE  rho U (|K|div(rho u))
-	/* MatCreate(PETSC_COMM_SELF, & _DivRhoU); 
-	MatSetSizes(_DivRhoU, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-	MatSetFromOptions(_DivRhoU);
-	MatSetUp(_DivRhoU); */
-
 	// matrix LAPLACIAN Pressure (without boundary terms)
 	MatCreate(PETSC_COMM_SELF, & _LaplacianPressure); 
 	MatSetSizes(_LaplacianPressure, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
 	MatSetFromOptions(_LaplacianPressure);
 	MatSetUp(_LaplacianPressure);
-
-	// matrix LAPLACIAN VeLOCITY(without boundary terms)
-	/* MatCreate(PETSC_COMM_SELF, & _LaplacianVelocity); 
-	MatSetSizes(_LaplacianVelocity, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nfaces ); 
-	MatSetFromOptions(_LaplacianVelocity);
-	MatSetUp(_LaplacianVelocity); */
 
 	AssembleMetricsMatrices();
 
@@ -213,8 +201,6 @@ void EulerBarotropicStaggered::UpdateDualDensity(){
 			VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
 			VecGetValues(_primitiveVars,1,&j,&usigma);
 			rho_sigma = (rhoL * D_sigmaL + rhoR*D_sigmaR)/(D_sigmaL +  D_sigmaR) ;
-			
-			//rho_sigma = 1.0; //Découplage advectionrho_sigma
 			VecSetValues(_DualDensity, 1, &j, &rho_sigma, INSERT_VALUES );
 		}
 	}
@@ -348,6 +334,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
 							std::vector<double> jumpPsi(_Ndim, 0.0);
 							std::vector<double> meanRhoU(_Ndim, 0.0);
+							
 							for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
 								Cell Neibourg_of_f = _mesh.getCell(idCellsOfFacef[ncell]);
 								Face Facef_physical = (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
@@ -426,6 +413,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 		MatMult(_InvVol,Au, _b); 
 
 		/***********Adding boundary terms to density equation, convection term and pressure gradient to momentum equation **************/
+		//TODO : créer vecteur dans intialize() et les supprimer dans terminate()
 		Vec Temporary1, Temporary2, Pressure, GradPressure;
 		VecCreate(PETSC_COMM_SELF, & Temporary2);
 		VecDuplicate(_BoundaryTerms, & Temporary1);

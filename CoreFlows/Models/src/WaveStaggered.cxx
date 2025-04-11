@@ -73,9 +73,10 @@ bool  WaveStaggered::IsFaceBoundaryNotComputedInPeriodic(int j ) {
 bool  WaveStaggered::IsFaceBoundaryComputedInPeriodic(int j ) {
 	return  std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
 }
-std::map<int,int>  WaveStaggered::getFacePeriodicMap() const{
+
+/* std::map<int,int>  WaveStaggered::getFacePeriodicMap() const{
 	return _FacePeriodicMap;
-}
+} */
 
 void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 	for (int idim = 0; idim < _Ndim; ++idim)
@@ -117,123 +118,43 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 }
 
 
-
-void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
-
-	_ExactVelocityInftyAtCells = atCells;
-
-	_ExactVelocityInftyAtCells.setName("_ExactVelocityInftyAtCells");
-	_time=_ExactVelocityInftyAtCells.getTime();
-	_mesh=_ExactVelocityInftyAtCells.getMesh();
-	_ExactVelocityInftyAtCells.setInfoOnComponent(0,"ExactVelocityInfty_x(m/s)");
-	_ExactVelocityInftyAtCells.setInfoOnComponent(1,"ExactVelocityInfty_y(m/s)");
-	string prim(_path+"/");///Results
-	prim+=_fileName;
-	switch(_saveFormat)
-	{
-	case VTK :
-		_ExactVelocityInftyAtCells.writeVTK(prim+"_ExactVelocityInftyAtCells");
-		break;
-	case MED :
-		_ExactVelocityInftyAtCells.writeMED(prim+"_ExactVelocityInftyAtCells");
-		break;
-	case CSV :
-		_ExactVelocityInftyAtCells.writeCSV(prim+"_ExactVelocityInftyAtCells	");
-		break;
-	}
-}
-
-
-void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ 
-	assert( atFaces.getTypeOfField() == FACES);
-	assert( atCells.getTypeOfField() == CELLS);
-	for (int l=0; l < _Nmailles ; l++){
-		for (int k=0; k< 3; k++){
-			atCells(l, k) =0;
-		}
-	}
-	for (int i = 0 ; i < _Nfaces ; i++){
-		Face Fj = _mesh.getFace(i);
-		std::vector< int > idCells = Fj.getCellsId();
-		Cell Ctemp1 = _mesh.getCell(idCells[0]);
-		double orien1 = getOrientation(i,Ctemp1);
-		
-		std::vector<double> M1(_Ndim), M2(_Ndim);
-		Point xK = Ctemp1.getBarryCenter();
-		Point xsigma = Fj.getBarryCenter();
-		double fac;
-
-		if (Ctemp1.getNumberOfFaces() == _Ndim*2)
-			fac = 1;
-		else if (Ctemp1.getNumberOfFaces() ==  _Ndim + 1)
-			fac = -1;
-
-		M1[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
-		if (_Ndim >1)
-			M1[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
-
-		if (Fj.getNumberOfCells() == 2){
-			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			xK = Ctemp2.getBarryCenter();
-			if (Ctemp2.getNumberOfFaces() == _Ndim*2)
-				fac = 1;
-			else if (Ctemp2.getNumberOfFaces() ==  _Ndim + 1)
-				fac = -1;
-
-			M2[0] = fac * Fj.getMeasure()*(xsigma.x()- xK.x());
-			if (_Ndim >1)
-				M2[1] = fac * Fj.getMeasure()*(xsigma.y()- xK.y());
-		
-			for (int k=0; k< _Ndim; k++){
-				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
-				atCells(idCells[1], k) -= atFaces(i) * M2[k]/Ctemp2.getMeasure(); 
+void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells){ 
+	for (int j=0;j<M.getNumberOfFaces() ; j++){
+		Face my_face=M.getFace(j);
+		double e;
+		double tol = 1.0/(ncells *4);
+		if (Direction == 'x')
+			e=my_face.x();
+		else if (Direction == 'y' && _Ndim ==2)
+			e=my_face.y();
+		if (my_face.getNumberOfCells() ==1 ){ 
+			if( (_Ndim==2) &&  e>tol && e< (1.0-tol) ){
+				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
+					Face face_i=M.getFace(iface);
+					double ei;
+					if (Direction == 'x')
+						ei=face_i.x();
+					else if (Direction == 'y')
+						ei=face_i.y();
+					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(e-ei)<tol) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ 
+						_FacePeriodicMap[j]=iface;
+						setInteriorIndex(j);
+					}
+				}
 			}
+			else if (_Ndim == 1){
+				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
+					Face face_i=M.getFace(iface);
+					if (face_i.getNumberOfCells() ==1 && iface !=j && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ 
+						_FacePeriodicMap[j]=iface;
+						setInteriorIndex(j);
+					}
+				}	
+			}	
 		}
-		else if  (Fj.getNumberOfCells() == 1){
-			for (int k=0; k< _Ndim; k++)
-				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
-		}
 	}
-	string prim(_path+"/");///Results
-	string primCells = prim +_fileName + atCells.getName();
-	string primFaces = prim + _fileName  +atFaces.getName();
-	cout << primFaces <<endl;
-	cout << primCells <<endl;
-
-	switch(_saveFormat)
-	{
-	case VTK :
-		atCells.writeVTK(primCells);
-		atFaces.writeVTK(primFaces);
-		break;
-	}
+	_indexFacePeriodicSet = true;
 }
-
-std::vector<double> WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells ){
-	double errorface =0;
-	double errorcell =0;
-	std::vector<double> Error(2);
-	for (int j=0; j < _Nfaces; j++){
-		PetscInt I = _Nmailles + j;
-		double InvD_sigma;
-		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
-		double Dsigma = 1/InvD_sigma;
-		errorface += Dsigma * (_Velocity(j) - ExactVelocityInftyAtFaces(j))*(_Velocity(j) - ExactVelocityInftyAtFaces(j));
-	}
-	for (int j=0; j < _Nmailles; j++){
-		double InvK;
-		MatGetValues(_InvVol, 1, &j,1, &j, &InvK);
-		double K = 1/InvK;
-		for (int k =0; k < _Ndim; k++)
-			errorcell += K * (_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k))*(_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k));
-	}
-	Error[0] = sqrt(errorface);
-	Error[1] = sqrt(errorcell);
-	return Error;
-}
-
-
-
 
 void WaveStaggered::setInitialField(const Field &field)
 {
@@ -509,7 +430,6 @@ void WaveStaggered::AssembleMetricsMatrices(){
 	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
-	//_BasisFunctionAlreadyComputed = true;
 }
 
 
@@ -518,150 +438,284 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	MatZeroEntries(_LaplacianPressure);
 	MatZeroEntries(_Div); 
 	MatZeroEntries(_DivTranspose); 
+	VecZeroEntries(_b); 
 
-	if (_timeScheme == Explicit ){ 
-		if ( _nbTimeStep == 0  ){   
-			// Assembly of matrices 
-			for (int j=0; j<_Nfaces;j++){
-				Face Fj = _mesh.getFace(j);
-				std::vector< int > idCells = Fj.getCellsId();
-				Cell Ctemp1 = _mesh.getCell(idCells[0]);
-				PetscInt IndexFace = _Nmailles + j;
+	if ( _nbTimeStep == 0  ){   
+		// Assembly of matrices 
+		for (int j=0; j<_Nfaces;j++){
+			Face Fj = _mesh.getFace(j);
+			std::vector< int > idCells = Fj.getCellsId();
+			Cell Ctemp1 = _mesh.getCell(idCells[0]);
+			PetscInt IndexFace = _Nmailles + j;
 
-				bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-				bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
-				bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
+			bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+			bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
 
-				if ( IsInterior ){	
-					if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
-						idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
-					Cell Ctemp2 = _mesh.getCell(idCells[1]);
-					
-					/******************* Pressure equation ***********************/
-					MatSetValue(_Div, idCells[0], j, getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-					MatSetValue(_Div, idCells[1], j, -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES );  
-					MatSetValue(_LaplacianPressure, idCells[0], idCells[0], -Fj.getMeasure(), ADD_VALUES ); 
-					MatSetValue(_LaplacianPressure, idCells[0], idCells[1], Fj.getMeasure(), ADD_VALUES );  
-					MatSetValue(_LaplacianPressure, idCells[1], idCells[1], -Fj.getMeasure(), ADD_VALUES ); 
-					MatSetValue(_LaplacianPressure, idCells[1], idCells[0], Fj.getMeasure(), ADD_VALUES );  
-					
-					/******************* Velocity equation ***********************/
-					MatSetValue(_DivTranspose, j, idCells[0], getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-					MatSetValue(_DivTranspose, j, idCells[1], -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES );				
+			if ( IsInterior ){	
+				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  )
+					idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j)->second).getCellsId()[0]  );
+				Cell Ctemp2 = _mesh.getCell(idCells[1]);
 				
-				}
-				else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 
-					/***************** Pressure equation ******************/
-					MatSetValue(_Div, idCells[0], j, getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-					MatSetValue(_LaplacianPressure, idCells[0], idCells[0], -Fj.getMeasure(), ADD_VALUES );
-		
-					if (IsWallBound ){
-						VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
-						_pExt =  Fj.getMeasure()*_pInt; 
-					}
-					else if (IsSteggerBound){ 
-						std::map<int,double> boundaryPressure = getboundaryPressure(); 
-						std::map<int,double>::iterator it = boundaryPressure.find(j);
-						_pExt = Fj.getMeasure()*boundaryPressure[it->first]; 
-					}
-					VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
-				}	
+				/******************* Pressure equation ***********************/
+				MatSetValue(_Div, idCells[0], j, getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+				MatSetValue(_Div, idCells[1], j, getOrientation(j,Ctemp2) * Fj.getMeasure(), ADD_VALUES );  
+				MatSetValue(_LaplacianPressure, idCells[0], idCells[0], -Fj.getMeasure(), ADD_VALUES ); 
+				MatSetValue(_LaplacianPressure, idCells[0], idCells[1], Fj.getMeasure(), ADD_VALUES );  
+				MatSetValue(_LaplacianPressure, idCells[1], idCells[1], -Fj.getMeasure(), ADD_VALUES ); 
+				MatSetValue(_LaplacianPressure, idCells[1], idCells[0], Fj.getMeasure(), ADD_VALUES );  
+				
+				/******************* Velocity equation ***********************/
+				MatSetValue(_DivTranspose, j, idCells[0], getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+				MatSetValue(_DivTranspose, j, idCells[1], getOrientation(j,Ctemp2) * Fj.getMeasure(), ADD_VALUES );				
+			
 			}
-			
-			MatAssemblyBegin(_Div,MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
-			MatAssemblyBegin(_DivTranspose, MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_DivTranspose, MAT_FINAL_ASSEMBLY);
-
-			MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY);
-			MatAssemblyEnd(_LaplacianPressure, MAT_FINAL_ASSEMBLY);
-			VecAssemblyBegin(_BoundaryTerms);
-			VecAssemblyEnd(_BoundaryTerms);
-			VecScale(_BoundaryTerms, _d * _c);
-
-			// _A = (dc _LaplacianPressure  ;  -1/rho B         )
-			//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
-			MatScale(_DivTranspose, -1.0);
-			if (_nbTimeStep == 0) 
-				MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
-			MatScale(_LaplacianPressure, _d*_c );
-			MatScale(_Div, -1.0/_rho);
-			MatScale(_DivTranspose, -1.0*_kappa);
-			MatScale(_GradDivTilde, _d*_c); 
-			Mat G[4], Prod;
-			G[0] = _LaplacianPressure;
-			G[1] = _Div;
-			G[2] = _DivTranspose;
-			G[3] = _GradDivTilde; 
-			
-			// WARNING MatCreateNest() memory problem when time evolution of matrices
-			assert( _nbTimeStep == 0);
-			MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
-			MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
-			MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
-			MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
-			MatDestroy(& Prod);
-
-			ComputeMinCellMaxPerim();
-
-			
-		}
-		if (_isWall && _nbTimeStep >0 ){	
-			for (int j=0; j<_Nfaces;j++){
-				Face Fj = _mesh.getFace(j);
-				if (Fj.getNumberOfCells()==1) { 
-					if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){
-						std::vector< int > idCells = Fj.getCellsId();
-						VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
-						_pExt = _d * _c * Fj.getMeasure()*_pInt; //_pExt = pin so (grad p)_j = 0
-						VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
-					} 
-				}	
-			}
-			
-			VecAssemblyBegin(_BoundaryTerms);
-			VecAssemblyEnd(_BoundaryTerms);
-		}
-		Vec Prod2;
-		VecDuplicate(_BoundaryTerms, &Prod2);
-		MatMult(_InvVol, _BoundaryTerms, Prod2);  
-		MatMult(_A,_primitiveVars, _b); 
-		VecAXPY(_b,     1, Prod2);
-		VecDestroy(& Prod2); 	
-
-	}
+			else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 
+				/***************** Pressure equation ******************/
+				MatSetValue(_Div, idCells[0], j, getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+				MatSetValue(_LaplacianPressure, idCells[0], idCells[0], -Fj.getMeasure(), ADD_VALUES );
 	
-	ComputeEnergyAtTimeT();
-	double dt = _cfl * _minCell / (_maxPerim * _c ) ;
+				if (IsWallBound ){
+					VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
+					_pExt =  Fj.getMeasure()*_pInt; 
+				}
+				else if (IsSteggerBound){ 
+					std::map<int,double> boundaryPressure = getboundaryPressure(); 
+					std::map<int,double>::iterator it = boundaryPressure.find(j);
+					_pExt = Fj.getMeasure()*boundaryPressure[it->first]; 
+					cout << _pExt <<endl;
+				}
+				VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
+			}	
+		}
+		
+		MatAssemblyBegin(_Div,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_Div, MAT_FINAL_ASSEMBLY);
+		MatAssemblyBegin(_DivTranspose, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_DivTranspose, MAT_FINAL_ASSEMBLY);
+
+		MatAssemblyBegin(_LaplacianPressure,MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_LaplacianPressure, MAT_FINAL_ASSEMBLY);
+		VecAssemblyBegin(_BoundaryTerms);
+		VecAssemblyEnd(_BoundaryTerms);
+		VecScale(_BoundaryTerms, _d * _c);
+
+		// _A = (dc _LaplacianPressure  ;  -1/rho B         )
+		//      (kappa B^t     ;  dc -B^t(1/|dK|) B ) 
+		MatScale(_DivTranspose, -1.0);
+		if (_nbTimeStep == 0) 
+			MatMatMatMult(_DivTranspose,_InvSurface, _Div , MAT_INITIAL_MATRIX, PETSC_DEFAULT, &_GradDivTilde); 
+		MatScale(_LaplacianPressure, _d*_c );
+		MatScale(_Div, -1.0/_rho);
+		MatScale(_DivTranspose, -1.0*_kappa);
+		MatScale(_GradDivTilde, _d*_c); 
+		Mat G[4], Prod;
+		G[0] = _LaplacianPressure;
+		G[1] = _Div;
+		G[2] = _DivTranspose;
+		G[3] = _GradDivTilde; 
+		
+		// WARNING MatCreateNest() memory problem when time evolution of matrices
+		assert( _nbTimeStep == 0);
+		MatCreateNest(PETSC_COMM_WORLD,2, NULL, 2, NULL , G, &_A); 
+		MatConvert(_A, MATAIJ, MAT_INPLACE_MATRIX, & _A);
+		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
+		MatDestroy(& Prod);
+
+		ComputeMinCellMaxPerim();
+	}
+		
+	if (_isWall && _nbTimeStep >0 ){	
+		for (int j=0; j<_Nfaces;j++){
+			Face Fj = _mesh.getFace(j);
+			if (Fj.getNumberOfCells()==1) { 
+				if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){
+					std::vector< int > idCells = Fj.getCellsId();
+					VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
+					_pExt = _d * _c * Fj.getMeasure()*_pInt; //_pExt = pin so (grad p)_j = 0
+					VecSetValues(_BoundaryTerms, 1,&idCells[0], &_pExt, INSERT_VALUES );
+				} 
+			}	
+		}
+		VecAssemblyBegin(_BoundaryTerms);
+		VecAssemblyEnd(_BoundaryTerms);
+	}
+
+	double dt;
+	Vec Prod2;
+	VecScale(_BoundaryTerms, 0);
+	VecDuplicate(_BoundaryTerms, &Prod2);
+	MatMult(_InvVol, _BoundaryTerms, Prod2);  
+	if (_timeScheme == Explicit){
+		cout << "bonjour"<<endl;
+		MatMult(_A,_primitiveVars, _b); 
+		dt =  _cfl * _minCell / (_maxPerim * _c ) ;
+		VecScale(_b,  _dt);
+	}
+	else if (_timeScheme == Implicit){
+		VecDuplicate(_primitiveVars, &_b); 
+		if (_nbTimeStep ==0){
+			MatShift(_A,  1);
+			dt =  10 * _minCell / (_maxPerim * _c ) ;
+			MatScale(_A,  - _dt);
+
+		}
+		
+	}
+		
+	VecAXPY(_b,     dt , Prod2);
+	VecDestroy(& Prod2); 
+	
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);
+	ComputeEnergyAtTimeT();
 	return dt ;
 }
 
 
 
 void WaveStaggered::ComputeMinCellMaxPerim(){
-	Vec V, W;
-	PetscScalar minInvSurf, maxInvVol;
+	if(_nbTimeStep == 0){
+		Vec V, W;
+		PetscScalar minInvSurf, maxInvVol;
+		
+		VecCreate(PETSC_COMM_SELF, & V);
+		VecCreate(PETSC_COMM_SELF, & W);
+		VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
+		VecSetSizes(W, PETSC_DECIDE, _Nmailles);
+		VecSetFromOptions(V);
+		VecSetFromOptions(W);
+
+		// Minimum size of mesh volumes
+		MatGetDiagonal(_InvVol,V);
+		VecMax(V, NULL, &maxInvVol);
+		_minCell = 1.0/maxInvVol;
+		//Maximum size of surfaces
+		MatGetDiagonal(_InvSurface, W);
+		VecMin(W, NULL, &minInvSurf);
+		_maxPerim = 1.0/minInvSurf;
+
+		VecDestroy(& V);
+		VecDestroy(& W);
+	} 
+}
+
+void WaveStaggered::computeNewtonVariation(){
+	if(_timeScheme == Explicit)
+		VecCopy(_b,_newtonVariation); //DELTA U = _b = delta t*  Au + delta t * V^{-1}_Boundterms
+	else if (_timeScheme == Implicit)
+		VecCopy(_primitiveVars, _newtonVariation); //DELTA U = U^n
+}
+
+bool WaveStaggered::iterateTimeStep(bool &converged){
+	bool stop=false;
+	if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
+		_maxvp=0.;
+		computeTimeStep(stop);//This compute timestep is just to update the linear system. The time step was imposed before starting the Newton iterations
+	}
+	if(stop){//Le compute time step ne s'est pas bien passé
+		cout<<"ComputeTimeStep failed"<<endl;
+		converged=false;
+		return false;
+	}
+	computeNewtonVariation();
+	if(_timeScheme == Explicit){
+		converged=true;
+		VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
+	}
+	else if (_timeScheme == Implicit){
+        KSPSetOperators(_ksp, _A, _A);
+
+        if(_conditionNumber)
+            KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
+		
+
+        KSPSolve(_ksp, _b, _primitiveVars);
+
+        KSPConvergedReason reason;
+        KSPGetConvergedReason(_ksp,&reason);
+        KSPGetIterationNumber(_ksp, &_PetscIts);
+        double residu;
+        KSPGetResidualNorm(_ksp,&residu);
+
+        if (reason!=2 and reason!=3)
+        {
+            PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.\n");
+            PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2e, précision demandée= %1.2e.\n",_maxPetscIts,residu,_precision);
+            PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d.\n",_ksptype,_pctype,_PetscIts);
+            if(_mpi_rank==0)//Avoid redundant printing
+            {
+                *_runLogFile<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
+                *_runLogFile<<"!!!!!!!!!!!!! Itérations maximales "<<_maxPetscIts<<" atteintes, résidu="<<residu<<", précision demandée= "<<_precision<<endl;
+                *_runLogFile<<"Solver used "<<  _ksptype<<", preconditioner "<<_pctype<<", Final number of iteration= "<<_PetscIts<<endl;
+                _runLogFile->close();
+            }
+            if( reason == -3)
+                cout<<"Maximum number of iterations "<<_maxPetscIts<<" reached"<<endl;
+            else if( reason == -11)
+                cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
+            else if( reason == -5)
+                cout<<"!!!!!!! Generic breakdown of the linear solver (Could be due to a singular matrix or preconditioner)!!!!!!"<<endl;
+            else
+            {
+                cout<<"PETSc divergence reason  "<< reason <<endl;
+                cout<<"Final iteration= "<<_PetscIts<<". Maximum allowed was " << _maxPetscIts<<endl;
+            }
+            converged = false;
+        
+        }
+        else
+        {
+            if( _MaxIterLinearSolver < _PetscIts)
+                _MaxIterLinearSolver = _PetscIts;
+
+            
+            VecAXPY(_newtonVariation,  -1, _primitiveVars );//DELTA U = U^n - U^{n+1}
+			VecScale(_newtonVariation, -1.0 ); //DELTA U = - (U^n - U^{n+1})
+
+            VecNorm(_newtonVariation,NORM_INFINITY,&_erreur_rel);
+    
+            if(_verbose)
+                PetscPrintf(PETSC_COMM_WORLD,"Fin calcul de la variation relative, erreur maximale : %1.2e\n", _erreur_rel );
+
+            stop=false;
+            converged = (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
+        }
+	}	
 	
-	VecCreate(PETSC_COMM_SELF, & V);
-	VecCreate(PETSC_COMM_SELF, & W);
-	VecSetSizes(V, PETSC_DECIDE, _globalNbUnknowns);
-	VecSetSizes(W, PETSC_DECIDE, _Nmailles);
-	VecSetFromOptions(V);
-	VecSetFromOptions(W);
+	return converged;
 
-	// Minimum size of mesh volumes
-	MatGetDiagonal(_InvVol,V);
-	VecMax(V, NULL, &maxInvVol);
-	_minCell = 1.0/maxInvVol;
-	//Maximum size of surfaces
-	MatGetDiagonal(_InvSurface, W);
-	VecMin(W, NULL, &minInvSurf);
-	_maxPerim = 1.0/minInvSurf;
+}
+void WaveStaggered::validateTimeStep(){
+	//Calcul de la variation Un+1-Un
+	_erreur_rel= 0;
+	double x, dx;
+	for(int j=0; j<_globalNbUnknowns; j++){
+		VecGetValues(_newtonVariation, 1, &j, &dx);
+		VecGetValues(_primitiveVars, 1, &j, &x);
+		if (fabs(x)< _precision){
+			if(_erreur_rel < fabs(dx)){
+				_erreur_rel = fabs(dx);
+			}
+		}
+		else if(_erreur_rel < fabs(dx/x))
+			_erreur_rel = fabs(dx/x);
+	}
+	_isStationary =_erreur_rel <_precision;
+	_time+=_dt;
+	_nbTimeStep++;
+	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
+		save();
+}
 
-	VecDestroy(& V);
-	VecDestroy(& W); 
+bool WaveStaggered::initTimeStep(double dt){
+	_dt = dt;
+	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
+}
+
+void WaveStaggered::abortTimeStep(){
+	_dt = 0;
 }
 
 void WaveStaggered::ComputeEnergyAtTimeT(){
@@ -901,108 +955,11 @@ double WaveStaggered::det(const std::vector<double> & mat){
 }
 
 
-bool WaveStaggered::iterateTimeStep(bool &converged){
-	bool stop=false;
-	if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
-		_maxvp=0.;
-		computeTimeStep(stop);//This compute timestep is just to update the linear system. The time step was imposed before starting the Newton iterations
-	}
-	if(stop){//Le compute time step ne s'est pas bien passé
-		cout<<"ComputeTimeStep failed"<<endl;
-		converged=false;
-		return false;
-	}
-	computeNewtonVariation();
-	//converged=convergence des iterations
-	if(_timeScheme == Explicit)
-		converged=true;
-	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
-	
-	return converged;
-
-}
-
-void WaveStaggered::computeNewtonVariation(){
-	if(_timeScheme == Explicit){	
-		VecCopy(_b,_newtonVariation);
-		VecScale(_newtonVariation, _dt);
-		if(_verbose && (_nbTimeStep-1)%_freqSave ==0){
-			cout<<"Vecteur _newtonVariation =_b*dt"<<endl;
-			VecView(_newtonVariation,PETSC_VIEWER_STDOUT_SELF);
-			cout << endl;
-		}
-	}
-}
-
-void WaveStaggered::validateTimeStep(){
-	//Calcul de la variation Un+1-Un
-	_erreur_rel= 0;
-	double x, dx;
-	for(int j=0; j<_globalNbUnknowns; j++){
-		VecGetValues(_newtonVariation, 1, &j, &dx);
-		VecGetValues(_primitiveVars, 1, &j, &x);
-		if (fabs(x)< _precision){
-			if(_erreur_rel < fabs(dx)){
-				_erreur_rel = fabs(dx);
-			}
-		}
-		else if(_erreur_rel < fabs(dx/x))
-			_erreur_rel = fabs(dx/x);
-	}
-	_isStationary =_erreur_rel <_precision;
-	_time+=_dt;
-	_nbTimeStep++;
-	if (_nbTimeStep%_freqSave ==0 || _isStationary || _time>=_timeMax || _nbTimeStep>=_maxNbOfTimeStep)
-		save();
-}
 
 
-bool WaveStaggered::initTimeStep(double dt){
-	_dt = dt;
-	return _dt>0;//No need to call MatShift as the linear system matrix is filled at each Newton iteration (unlike linear problem)
-}
 
-void WaveStaggered::abortTimeStep(){
-	_dt = 0;
-}
 
-void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells){ 
-	for (int j=0;j<M.getNumberOfFaces() ; j++){
-		Face my_face=M.getFace(j);
-		double e;
-		double tol = 1.0/(ncells *4);
-		if (Direction == 'x')
-			e=my_face.x();
-		else if (Direction == 'y' && _Ndim ==2)
-			e=my_face.y();
-		if (my_face.getNumberOfCells() ==1 ){ 
-			if( (_Ndim==2) &&  e>tol && e< (1.0-tol) ){
-				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
-					Face face_i=M.getFace(iface);
-					double ei;
-					if (Direction == 'x')
-						ei=face_i.x();
-					else if (Direction == 'y')
-						ei=face_i.y();
-					if (face_i.getNumberOfCells() ==1 && iface !=j && ( abs(e-ei)<tol) && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ 
-						_FacePeriodicMap[j]=iface;
-						setInteriorIndex(j);
-					}
-				}
-			}
-			else if (_Ndim == 1){
-				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
-					Face face_i=M.getFace(iface);
-					if (face_i.getNumberOfCells() ==1 && iface !=j && (_FacePeriodicMap.find(iface) == _FacePeriodicMap.end())){ 
-						_FacePeriodicMap[j]=iface;
-						setInteriorIndex(j);
-					}
-				}	
-			}	
-		}
-	}
-	_indexFacePeriodicSet = true;
-}
+
 
 vector<string> WaveStaggered::getInputFieldsNames(){
 	vector<string> result(1);
@@ -1014,6 +971,104 @@ void WaveStaggered::setInputField(const string& nameField, Field& inputField ){}
 double WaveStaggered::getTimeStep(){
 	return _dt;
 }
+
+void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
+
+	_ExactVelocityInftyAtCells = atCells;
+
+	_ExactVelocityInftyAtCells.setName("_ExactVelocityInftyAtCells");
+	_time=_ExactVelocityInftyAtCells.getTime();
+	_mesh=_ExactVelocityInftyAtCells.getMesh();
+	_ExactVelocityInftyAtCells.setInfoOnComponent(0,"ExactVelocityInfty_x(m/s)");
+	_ExactVelocityInftyAtCells.setInfoOnComponent(1,"ExactVelocityInfty_y(m/s)");
+	string prim(_path+"/");
+	prim+=_fileName;
+	switch(_saveFormat)
+	{
+	case VTK :
+		_ExactVelocityInftyAtCells.writeVTK(prim+"_ExactVelocityInftyAtCells");
+		break;
+	}
+}
+
+
+void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ 
+	assert( atFaces.getTypeOfField() == FACES);
+	assert( atCells.getTypeOfField() == CELLS);
+	for (int l=0; l < _Nmailles ; l++){
+		for (int k=0; k< 3; k++){
+			atCells(l, k) =0;
+		}
+	}
+	for (int i = 0 ; i < _Nfaces ; i++){
+		Face Fj = _mesh.getFace(i);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		double orien1 = getOrientation(i,Ctemp1);
+		
+		std::vector<double> M1(_Ndim), M2(_Ndim);
+		Point xK = Ctemp1.getBarryCenter();
+		Point xsigma = Fj.getBarryCenter();
+
+		M1[0] = orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());
+		if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
+
+		if (Fj.getNumberOfCells() == 2){
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			xK = Ctemp2.getBarryCenter();
+			double orien2 = getOrientation(i,Ctemp2);
+
+			M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
+			if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
+		
+			for (int k=0; k< _Ndim; k++){
+				atCells(idCells[0], k) += orien1 *  atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+				atCells(idCells[1], k) += orien2 * atFaces(i) * M2[k]/Ctemp2.getMeasure(); 
+			}
+		}
+		else if  (Fj.getNumberOfCells() == 1){
+			for (int k=0; k< _Ndim; k++)
+				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+		}
+	}
+	string prim(_path+"/");
+	string primCells = prim +_fileName + atCells.getName();
+	string primFaces = prim + _fileName  +atFaces.getName();
+	cout << primFaces <<endl;
+	cout << primCells <<endl;
+
+	switch(_saveFormat)
+	{
+	case VTK :
+		atCells.writeVTK(primCells);
+		atFaces.writeVTK(primFaces);
+		break;
+	}
+}
+
+std::vector<double> WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells ){
+	double errorface =0;
+	double errorcell =0;
+	std::vector<double> Error(2);
+	for (int j=0; j < _Nfaces; j++){
+		PetscInt I = _Nmailles + j;
+		double InvD_sigma;
+		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
+		double Dsigma = 1/InvD_sigma;
+		errorface += Dsigma * (_Velocity(j) - ExactVelocityInftyAtFaces(j))*(_Velocity(j) - ExactVelocityInftyAtFaces(j));
+	}
+	for (int j=0; j < _Nmailles; j++){
+		double InvK;
+		MatGetValues(_InvVol, 1, &j,1, &j, &InvK);
+		double K = 1/InvK;
+		for (int k =0; k < _Ndim; k++)
+			errorcell += K * (_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k))*(_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k));
+	}
+	Error[0] = sqrt(errorface);
+	Error[1] = sqrt(errorcell);
+	return Error;
+}
+
 
 void WaveStaggered::terminate(){ 
 	delete[]_vec_normal;
@@ -1159,15 +1214,16 @@ void WaveStaggered::save(){
 		switch(_saveFormat)
 		{
 		case VTK :
-			_Velocity_at_Cells.writeVTK(prim+"_Velocity at cells");
+			_Velocity_at_Cells.writeVTK(prim+"_VelocityAtCells");
 			_Velocity.writeVTK(prim+"_Velocity");
-			_DivVelocity.writeVTK(prim+"Divergence Velocity");
+			_DivVelocity.writeVTK(prim+"DivVelocity");
 			break;
 		case MED :
 			_Velocity.writeMED(prim+"_Velocity");
 			break;
 		case CSV :
 			_Velocity.writeCSV(prim+"_Velocity");
+			_Velocity_at_Cells.writeCSV(prim+"_VelocityAtCells");
 			break;
 		}
 

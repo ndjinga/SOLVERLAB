@@ -69,26 +69,27 @@ def WaveStaggered_1DRiemannProblem():
 				if (j == Ctemp1.getFacesId()[l]):
 					for idim in range(spaceDim):
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
-		myProblem.setOrientation(j,vec_normal_sigma)
+		
 		if(Fj.getNumberOfCells()==2):
+			myProblem.setOrientation(j,vec_normal_sigma)
 			myProblem.setInteriorIndex(j)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
 			Velocity0[j] = initialVelocityForPb(Fj.x())
 		elif (Fj.getNumberOfCells()==1):
-			""" for idim in range(spaceDim):
+			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
-			myProblem.setOrientation(j,vec_normal_sigma) """
+			myProblem.setOrientation(j,vec_normal_sigma)
 			if ( j== nx ): 
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
+				myProblem.setSteggerBoundIndex(j) 
 				wallVelocityMap[j] = initialVelocityForPb(Fj.x()) ;
 				wallPressureMap[j] = initialPressure(Fj.x()) ;
 			
-
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
@@ -106,7 +107,7 @@ def WaveStaggered_1DRiemannProblem():
 	freqSave = 1;
 	cfl = 0.4 
 	maxTime = 20;
-	precision = 1e-6;
+	precision = 1e-10;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -138,13 +139,13 @@ def WaveStaggered_1DRiemannProblem():
 	Tmax = myProblem.getTime();
 	myProblem.terminate();
 	time = 0
-	i=1
+	i=0
 	if not os.path.exists("WaveStaggered_"+fileName):
 		os.mkdir("WaveStaggered_"+fileName)
 	while time < Tmax:
-		velocitydata = pd.read_csv("WaveStaggered_"+fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
+		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
-		pressuredata = pd.read_csv("WaveStaggered_"+fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
+		pressuredata = pd.read_csv(fileName + "_Pressure_" + str(i)+ ".csv", sep='\s+')
 		pressuredata.columns =['x','pressure', 'index']
 		
 		pressure = np.zeros(nx)
