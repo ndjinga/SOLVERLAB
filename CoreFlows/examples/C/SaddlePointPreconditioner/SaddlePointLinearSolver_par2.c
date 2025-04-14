@@ -1,4 +1,4 @@
-static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Parameters : \n -f0 : matrix fileName \n -nU :number of velocity lines \n -nP : number of pressure lines \n -mat_type : PETSc matrix type \n";
+static char help[] = "Read a PETSc matrix from a file Parameters : \n -f0 : matrix fileName (mandatory) \n -nU : number of velocity lines (mandatory) \n -nP : number of pressure lines (mandatory) \n -mat_type : PETSc matrix type (optional) \n";
 
 /*************************************************************************************************/
 /* Parallel implementation of a new preconditioner for the linear system A_{input} X_{output} = b_{input} */
@@ -6,17 +6,17 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                                                                                               */
 /* Input  : - Matrix A_{input}    (system matrix, loaded from a file)                            */
 /*          - Vector b_{input}    (right hand side, made up for testing)                         */
-/* Output : - Vector X_{output}   (unknown vector, to be determined                              */
+/* Output : - Vector X_{output}   (unknown vector, to be determined)                             */
 /*                                                                                               */
 /* Auxilliary variables : - A_hat (transformed matrix)                                           */
 /*                        - X_hat (unknown of the transformed system)                            */
 /*                        - b_hat (RHS of the transformed system)                                */
 /*                        - Pmat  (preconditioning matrix)                                       */
 /*                        - M submatrix u-u of A_{input}                                         */
-/*                        - G submatrix u-p of A_{input}                                         */
-/*                        - D submatrix p-u of A_{input}                                         */
-/*                        - C submatrix p-p of A_{input}                                         */
-/*                        - R submatrix neither p nor u - neither p nor u of A_{input}           */
+/*                        - G submatrix u-p of A_{input}                                                  */
+/*                        - D submatrix p-u of A_{input}                                                  */
+/*                        - C submatrix p-p of A_{input}                                                  */
+/*                        - R submatrix (neither p nor u lines) - (neither p nor u columns) of A_{input}  */
 /*                                                                                               */
 /*                                 * M G X *                                                     */
 /*                        A     = *  D C X  *                                                    */
@@ -36,22 +36,36 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 #include <petscksp.h>
 
 int main( int argc, char **args ){
-	PetscInitialize(&argc,&args, (char*)0,help);
-	PetscMPIInt    size;        /* size of communicator */
-	PetscMPIInt    rank;        /* processor rank */
-	MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
-	MPI_Comm_size(PETSC_COMM_WORLD,&size);
+  /*
+    Every PETSc routine should begin with the PetscInitialize() routine.
+    argc, argv - These command line arguments are taken to extract the options
+                 supplied to PETSc and options supplied to MPI.
+    help       - When PETSc executable is invoked with the option -help,
+                 it prints the various options that can be applied at
+                 runtime.  The user can use the "help" variable place
+                 additional help messages in this printout.
+  */
+ 	PetscInitialize(&argc,&args, (char*)0,help);
+	PetscMPIInt    size;        // size of communicator
+	PetscMPIInt    rank;        // rank of processor 
+	MPI_Comm_rank(PETSC_COMM_WORLD,&rank);// Get rank of processor 
+	MPI_Comm_size(PETSC_COMM_WORLD,&size);// Get size of communicator
 	PetscErrorCode ierr=0;
 
-//##### Load the matrix A in the file given in the command line
+//##### Load the matrix A from the file given in the command line
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
 	Mat A_input;
 	PetscBool flg;
 
-	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);
+	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);//Get the file name from command line
+	if( !flg )//Check file name was found
+	{
+          PetscErrorPrintf(PETSC_COMM_WORLD," Error : no file name provided. Use the keyword -f0 followed by the file name in the command line.\n");	
+          return  PETSC_ERR_ARG_WRONG;
+        }
 	PetscStrcpy(mat_type,MATAIJ);// Default value for PETSc Matrix type
-	PetscOptionsGetString(NULL,NULL,"-mat_type",mat_type,sizeof(mat_type),NULL);
+	PetscOptionsGetString(NULL,NULL,"-mat_type",mat_type,sizeof(mat_type),NULL);//Changes the value of mat_type if given in the command line
 
 	PetscPrintf(PETSC_COMM_WORLD,"Loading Matrix type %s from file %s on %d processor(s)...\n", mat_type, file[0], size);	
 	PetscViewerCreate(PETSC_COMM_WORLD, &viewer);	
@@ -64,9 +78,8 @@ int main( int argc, char **args ){
 	MatLoad(A_input,viewer);
 	PetscViewerDestroy(&viewer);
 	PetscPrintf(PETSC_COMM_WORLD,"... matrix Loaded \n");	
-	PetscBarrier(NULL);
 
-//####	Decompose the matrix A_input into 9=3x3 blocks and extract the 4 blocks M, G, D, C
+//####	Decompose the matrix A_input into 9=3x3 blocks and extract the 5 blocks M, G, D, C and Remaining_Diagonal_Block
 	Mat M, G, D, C, Remaining_Diagonal_Block;
 	PetscInt nrows, ncolumns;//Total number of rows and columns of A_input
 	PetscInt irow_min, irow_max, nb_local_lines;//min and max indices of rows stored locally on this process
