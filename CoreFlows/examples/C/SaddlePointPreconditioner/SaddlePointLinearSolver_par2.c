@@ -1,4 +1,4 @@
-static char help[] = "Read a PETSc matrix from a file Parameters : \n -f0 : matrix fileName (mandatory) \n -nU : number of velocity lines (mandatory) \n -nP : number of pressure lines (mandatory) \n -mat_type : PETSc matrix type (optional) \n";
+static char help[] = "Read a PETSc matrix from a file Parameters : \n -f0 : matrix fileName (mandatory) \n -nU : global number of velocity lines (assumption of contiguous velocity line numbers) \n -nP : global number of pressure lines ( (assumption of contiguous pressure line numbers)) \n -mat_type : PETSc matrix type (optional) \n";
 
 /*************************************************************************************************/
 /* Parallel implementation of a new preconditioner for the linear system A_{input} X_{output} = b_{input} */
@@ -56,10 +56,10 @@ int main( int argc, char **args ){
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
 	Mat A_input;
-	PetscBool flg;
+	PetscBool setFileName;
 
-	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&flg);//Get the file name from command line
-	if( !flg )//Check file name was found
+	PetscOptionsGetString(NULL,NULL,"-f0",file[0],PETSC_MAX_PATH_LEN,&setFileName);//Get the file name from command line
+	if( !setFileName )//Check file name was found
 	{
           PetscErrorPrintf(PETSC_COMM_WORLD," Error : no file name provided. Use the keyword -f0 followed by the file name in the command line.\n");	
           return  PETSC_ERR_ARG_WRONG;
@@ -85,32 +85,41 @@ int main( int argc, char **args ){
 	PetscInt irow_min, irow_max, nb_local_lines;//min and max indices of rows stored locally on this process
 	IS is_U,is_P, is_neither_U_nor_P;
 	PetscInt n_u, n_p, n_neither_U_nor_P;//Total number of velocity (n_u), pressure (n_p) and remaining (n_neither_U_nor_P) lines. n=matrix size = n_u+ n_p+ n_neither_U_nor_P
+	PetscBool setNbU, setNbP;
 
-	/* build is_U and is_P if they are not given
-	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,NULL);
-	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,NULL);
-	//pressure indices come after the velocity indices
-	PetscInt min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
+	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
+	nb_local_lines = irow_max - irow_min;
+	MatGetSize( A_input, &nrows, &ncolumns);
+	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
+	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,setNbU);
+	PetscOptionsGetInt(NULL,NULL,"-nP",&n_p,setNbP);
+
+	if( setNbU && setNbP ) //build is_U and is_P as a stride
+	/* 
+	//Contiguous velocity lines followed by contiguous pressure lines : pressure indices must come after the velocity indices
+	PetscInt min_pressure_lines = irow_min < n_u ? n_u : irow_max;//max(irow_min, n_u)
 	PetscInt max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
 	//velocity (resp. pressure) indices are assumed to be consecutive, and nu+np = irow_max - irow_min
 	PetscInt nb_pressure_lines = irow_max >= n_u ? irow_max - min_pressure_lines : 0;
 	PetscInt nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
 	ISCreateStride(PETSC_COMM_WORLD, nb_velocity_lines, max_velocity_lines - nb_velocity_lines, 1, &is_U);
 	ISCreateStride(PETSC_COMM_WORLD, nb_pressure_lines, min_pressure_lines                    , 1, &is_P);
+	PetscPrintf(PETSC_COMM_WORLD,"-nU and -nP set, so contiguous velocity line numbers followed by contiguous pressure line numbers);	
+	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, local nb_pressure_lines = %d, local nb_velocity_lines = %d \n", rank, irow_min, irow_max, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
 	*/
-	
+	}
+	else
+	{
 	ISGetSize(is_U, &n_u);//Total number of velocity (n_u) lines.
-	ISGetSize(is_P, &n_p);//Total number of pressure lines.
+	ISGetSize(is_P, &n_p);//Total number of pressure (n_p) lines.
 	ISGetSize(is_neither_U_nor_P, n_neither_U_nor_P);//Total number of remaining lines.
 
-	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
-	nb_local_lines = irow_max - irow_min;
-	MatGetSize( A_input, &nrows, &ncolumns);
-	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
+	PetscPrintf(PETSC_COMM_WORLD,"-nU and -nP not set (isU and isP set ?) so possibly non contiguous velocity and pressure lines);	
+	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d\n", rank, irow_min, irow_max);
+	}
 	PetscCheck( n_u+n_p + n_neither_U_nor_P = ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but %d velocity lines, %d pressure lines and %d remaining lines declared : n_u+n_p +n_neither_U_nor_P=%d, is not equal to the number of lines %d\n", ncolumns, n_u,n_p,n_neither_U_nor_P,n_u+n_p +n_neither_U_nor_P,ncolumns);
 
-	PetscPrintf(PETSC_COMM_WORLD,"The matrix has %d lines : %d velocity lines, %d pressure and %d remaining lines\n", n, n_u,n_p,n_neither_U_nor_P);
-	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, nb_pressure_lines = %d, nb_velocity_lines = %d \n", rank, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
+	PetscPrintf(PETSC_COMM_WORLD,"The global matrix has %d lines : %d velocity lines, %d pressure and %d remaining lines\n", n, n_u,n_p,n_neither_U_nor_P);
 	
 	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 5 blocks M,G,D,C,R :\n M G *\n D C *\n * * R\n");
 	
