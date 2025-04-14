@@ -583,81 +583,87 @@ IF(MEDCOUPLING_USE_64BIT_IDS)
   SET(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DMEDCOUPLING_USE_64BIT_IDS)
 ENDIF(MEDCOUPLING_USE_64BIT_IDS)
 
-####################
-# Final operations #
-####################
+###########################################
+# Final operations : Paraview then Python #
+###########################################
 
-# Paraview variables to choose python version and for env_SOLVERLAB.sh
-if  ( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
-  if  ( PARAVIEW_ROOT_DIR )
-    set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
-    set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
-  else( PARAVIEW_ROOT_DIR )
-    set( PARAVIEW_ROOT_DIR      $ENV{PARAVIEW_ROOT_DIR} )
-    set( PARAVIEW_INCLUDE_DIR   $ENV{PARAVIEW_ROOT_DIR}/include)
-    set( PARAVIEW_LIBRARIES_DIR $ENV{PARAVIEW_ROOT_DIR}/lib)
-  endif( PARAVIEW_ROOT_DIR )
-else( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
-  message(STATUS "PARAVIEW_ROOT_DIR not set. Trying to detect paraview in the system.")
-  set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
-  set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/:/usr/lib/x86_64-linux-gnu)
-endif( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
+if ( SOLVERLAB_WITH_POSTPRO )
+  # Set Paraview variables to choose correct python version
+  if  ( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
+    if  ( PARAVIEW_ROOT_DIR )
+      set( PARAVIEW_INCLUDE_DIR   ${PARAVIEW_ROOT_DIR}/include)
+      set( PARAVIEW_LIBRARIES_DIR ${PARAVIEW_ROOT_DIR}/lib)
+    else( PARAVIEW_ROOT_DIR )
+      set( PARAVIEW_ROOT_DIR      $ENV{PARAVIEW_ROOT_DIR} )
+      set( PARAVIEW_INCLUDE_DIR   $ENV{PARAVIEW_ROOT_DIR}/include)
+      set( PARAVIEW_LIBRARIES_DIR $ENV{PARAVIEW_ROOT_DIR}/lib)
+    endif( PARAVIEW_ROOT_DIR )
+  else( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
+    message(STATUS "PARAVIEW_ROOT_DIR not set. Trying to detect paraview in the system.")
+    set( PARAVIEW_INCLUDE_DIR /usr/include/paraview/)
+    set( PARAVIEW_LIBRARIES_DIR /usr/lib/paraview/:/usr/lib64/paraview/:/usr/lib64/vtk/:/usr/lib/vtk/:/usr/lib/x86_64-linux-gnu)
+  endif( PARAVIEW_ROOT_DIR OR DEFINED ENV{PARAVIEW_ROOT_DIR})
 
-if  ( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
-  if   ( NOT DEFINED PARAVIEW_VERSION )
-    set( PARAVIEW_VERSION  $ENV{PARAVIEW_VERSION})
-  endif( NOT DEFINED PARAVIEW_VERSION )
-  message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
-else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
-  set( PARAVIEW_SUFFIXES paraview-5.0 paraview-5.1 paraview-5.2 paraview-5.3 paraview-5.4 paraview-5.5 paraview-5.6 paraview-5.7 paraview-5.8 paraview-5.9 paraview-5.10 paraview-5.11 paraview-5.12 paraview-5.13 paraview-5.14 paraview-5.15)
+  if  ( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
+    if   ( NOT DEFINED PARAVIEW_VERSION )
+      set( PARAVIEW_VERSION  $ENV{PARAVIEW_VERSION})
+    endif( NOT DEFINED PARAVIEW_VERSION )
+    message(STATUS "ParaView version is ${PARAVIEW_VERSION}" )
+  else( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
+    set( PARAVIEW_SUFFIXES paraview-5.0 paraview-5.1 paraview-5.2 paraview-5.3 paraview-5.4 paraview-5.5 paraview-5.6 paraview-5.7 paraview-5.8 paraview-5.9 paraview-5.10 paraview-5.11 paraview-5.12 paraview-5.13 paraview-5.14 paraview-5.15)
   
-  # vtkPVVersion.h replaces vtkPVConfig.h from paraview 5.11 onwards
-  find_file( vtkPVVersion_file vtkPVVersion.h HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
-  #extraction of the paraview version"
-  set( PARAVIEW_VERSION  "0.0")
-  IF   ( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
-    # use vtkPVConfig.h instead of vtkPVVersion.h for paraview prior to version 5.11
-    find_file( vtkPVConfig_file vtkPVConfig.h  HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
-    IF   ( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
-      message(WARNING "Could not find ParaView configuration file vtkPVVersion.h nor vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR} and subdirectories  ${PARAVIEW_SUFFIXES}. Postprocessing may not work")
-    ELSE ( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
-      message( STATUS "Found vtkPVConfig.h in ${vtkPVConfig_file}")
-      file(STRINGS ${vtkPVConfig_file} vtkPVConfig)
-      FOREACH(line ${vtkPVConfig})
+    # vtkPVVersion.h replaces vtkPVConfig.h from paraview 5.11 onwards
+    find_file( vtkPVVersion_file vtkPVVersion.h HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
+    #extraction of the paraview version"
+    IF   ( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
+      # use vtkPVConfig.h instead of vtkPVVersion.h for paraview prior to version 5.11
+      find_file( vtkPVConfig_file vtkPVConfig.h  HINTS ${PARAVIEW_INCLUDE_DIR} PATH_SUFFIXES ${PARAVIEW_SUFFIXES})
+      IF   ( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
+        message(WARNING "Could not find any of ParaView configuration files vtkPVVersion.h or vtkPVConfig.h in folder ${PARAVIEW_INCLUDE_DIR} and subdirectories  ${PARAVIEW_SUFFIXES}. Postprocessing may not work")
+      ELSE ( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
+        message( STATUS "Found vtkPVConfig.h in ${vtkPVConfig_file}")
+        file(STRINGS ${vtkPVConfig_file} vtkPVConfig)
+        FOREACH(line ${vtkPVConfig})
+          string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
+          IF(NOT ${pos} EQUAL -1)
+            string(LENGTH ${line} line_length)#length of the tarball
+            MATH(EXPR start_pv_version "${line_length}-6")#line ends with "x.y.z", that counts for 7 characters
+            string(SUBSTRING ${line} ${start_pv_version} 5 PARAVIEW_VERSION)
+            break()
+          ENDIF(NOT ${pos} EQUAL -1)
+        ENDFOREACH(line ${vtkPVConfig})
+        message(STATUS "ParaView detected, version is ${PARAVIEW_VERSION}" )
+      ENDIF( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
+    ELSE( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
+      message( STATUS "Found vtkPVVersion.h in ${vtkPVVersion_file}")
+      file(STRINGS ${vtkPVVersion_file} vtkPVVersion)
+      FOREACH(line ${vtkPVVersion})
         string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
         IF(NOT ${pos} EQUAL -1)
           string(LENGTH ${line} line_length)#length of the tarball
-          MATH(EXPR start_pv_version "${line_length}-6")#line ends with "x.y.z", that counts for 7 characters
-          string(SUBSTRING ${line} ${start_pv_version} 5 PARAVIEW_VERSION)
+          MATH(EXPR start_pv_version "${line_length}-7")#line ends with "x.y.z", that counts for 7 characters
+          string(SUBSTRING ${line} ${start_pv_version} 6 PARAVIEW_VERSION)
           break()
         ENDIF(NOT ${pos} EQUAL -1)
-      ENDFOREACH(line ${vtkPVConfig})
+      ENDFOREACH(line ${vtkPVVersion})
       message(STATUS "ParaView detected, version is ${PARAVIEW_VERSION}" )
-    ENDIF( ${vtkPVConfig_file} STREQUAL "vtkPVConfig_file-NOTFOUND" )
-  ELSE( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
-    message( STATUS "Found vtkPVVersion.h in ${vtkPVVersion_file}")
-    file(STRINGS ${vtkPVVersion_file} vtkPVVersion)
-    FOREACH(line ${vtkPVVersion})
-      string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
-      IF(NOT ${pos} EQUAL -1)
-        string(LENGTH ${line} line_length)#length of the tarball
-        MATH(EXPR start_pv_version "${line_length}-7")#line ends with "x.y.z", that counts for 7 characters
-        string(SUBSTRING ${line} ${start_pv_version} 6 PARAVIEW_VERSION)
-        break()
-      ENDIF(NOT ${pos} EQUAL -1)
-    ENDFOREACH(line ${vtkPVVersion})
-    message(STATUS "ParaView detected, version is ${PARAVIEW_VERSION}" )
-  ENDIF( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
-endif( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
+    ENDIF( ${vtkPVVersion_file} STREQUAL "vtkPVVersion_file-NOTFOUND" )
+  endif( DEFINED PARAVIEW_VERSION OR DEFINED ENV{PARAVIEW_VERSION} )
+endif ( SOLVERLAB_WITH_POSTPRO )
 
-#Choose python 2 or 3  
-IF   ( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )#Use python 3, use VERSION_GREATER_EQUAL if cmake >=3.7
+#Choose python 2 or 3 depending on PARAVIEW_VERSION for compatibility issues
+if   ( DEFINED PARAVIEW_VERSION )  
+  IF   ( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )#Use python 3, use VERSION_GREATER_EQUAL if cmake >=3.7
+    SET(PYTHON2OR3 "3")
+    message(STATUS "PARAVIEW_VERSION greater than 5.6. We need python3 for postprocessing scripts.")
+  ELSE ( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )#Use python 2
+    SET(PYTHON2OR3 "2")
+    message(STATUS "PARAVIEW_VERSION smaller than 5.6. We need python2 for postprocessing scripts.")
+  ENDIF( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )
+else  ( DEFINED PARAVIEW_VERSION )
   SET(PYTHON2OR3 "3")
-  message(STATUS "PARAVIEW_VERSION greater than 5.6. We need python3 for postprocessing scripts.")
-ELSE ( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )#Use python 2
-  SET(PYTHON2OR3 "2")
-  message(STATUS "PARAVIEW_VERSION smaller than 5.6. We need python2 for postprocessing scripts.")
-ENDIF( ${PARAVIEW_VERSION} VERSION_GREATER "5.6" OR ${PARAVIEW_VERSION} VERSION_EQUAL "5.6" )
+  message(STATUS "PARAVIEW_VERSION not defined. We choose python version 3 for postprocessing.")
+endif ( DEFINED PARAVIEW_VERSION )
 
 # Find python
 IF   ( PYTHON_ROOT_DIR OR DEFINED ENV{PYTHON_ROOT_DIR})
@@ -681,40 +687,42 @@ ELSE (${CMAKE_VERSION} VERSION_GREATER "3.12.0")
   set(Python_VERSION_MINOR ${PYTHON_VERSION_MINOR})
 ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.12.0")
 
-message(STATUS "Python version found is ${Python_VERSION}")
+message(STATUS "Python ${PYTHON2OR3} version found is ${Python_VERSION}")
 
-#Matplotlib root dir
-IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
-    set(MATPLOTLIB_ROOT_DIR $ENV{MATPLOTLIB_ROOT_DIR} )
-ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
+if ( SOLVERLAB_WITH_POSTPRO )
+  #Matplotlib root dir
+  IF   ( NOT DEFINED MATPLOTLIB_ROOT_DIR )
+      set(MATPLOTLIB_ROOT_DIR $ENV{MATPLOTLIB_ROOT_DIR} )
+  ENDIF( NOT DEFINED MATPLOTLIB_ROOT_DIR )
 
-#Paraview library paths
-set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
-set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}/dist-packages/:/usr/lib/python${Python_VERSION_MAJOR}/dist-packages/paraview/:/usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/:${MATPLOTLIB_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages:${PYQT5_ROOT_DIR}:${PYQT5_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
+  #Paraview library paths
+  set (PV_LIB_DIR    /usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:${MATPLOTLIB_ROOT_DIR}/lib/:${PARAVIEW_LIBRARIES_DIR})
+  set (PV_PYTHON_DIR /usr/lib/python${Python_VERSION_MAJOR}/dist-packages/:/usr/lib/python${Python_VERSION_MAJOR}/dist-packages/paraview/:/usr/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/dist-packages/paraview/:/usr/lib64/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtk/:/usr/lib64/paraview/site-packages/:/usr/lib64/paraview/site-packages/paraview/:/usr/lib64/paraview/site-packages/vtk/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/paraview/:/usr/lib64/paraview/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules:/usr/lib/paraview/site-packages/paraview:/usr/lib/paraview/site-packages/paraview/vtk:${PARAVIEW_ROOT_DIR}/lib/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/:${PARAVIEW_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/vtkmodules/:${MATPLOTLIB_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages:${PYQT5_ROOT_DIR}:${PYQT5_ROOT_DIR}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
 
-# Detection of python-paraview
-string(REPLACE ":" ";"  PV_PYTHON_DIR_PATHS "${PV_PYTHON_DIR}")# use semicolon instead of colon in PATH search
-find_file(python-paraview simple.py PATHS ${PV_PYTHON_DIR_PATHS})
-if( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
-  message(WARNING "Python Paraview library not found. Post processing will fail in SOLVERLAB scripts.")
-  set( PRELOAD_NETCDF_ON_UBUNTU20 OFF)
-  set( NETCDF_LIBRARY_ON_UBUNTU20 "" )
-else( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
-  if(    ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
-    message ( STATUS "Using system Paraview python libraries on Ubuntu 20.04 requires the presence and preload of library netcdf (bug in linkage)." )
-    if(    EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
-      set( NETCDF_LIBRARY_ON_UBUNTU20 /usr/lib/x86_64-linux-gnu/libnetcdf.so )
-      set(PRELOAD_NETCDF_ON_UBUNTU20 ON)
-      message ( STATUS "Library netcdf found at ${NETCDF_LIBRARY_ON_UBUNTU20}. Paraview python libraries should be functional." )
-    else(  EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
-      message ( WARNING "Library netcdf not found in system. Paraview python libraries may not be functional (bug in linkage)." )
+  # Detection of python-paraview
+  string(REPLACE ":" ";"  PV_PYTHON_DIR_PATHS "${PV_PYTHON_DIR}")# use semicolon instead of colon in PATH search
+  find_file(python-paraview simple.py PATHS ${PV_PYTHON_DIR_PATHS})
+  if( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
+    message(WARNING "Python Paraview library not found. Post processing will fail in SOLVERLAB scripts.")
+    set( PRELOAD_NETCDF_ON_UBUNTU20 OFF)
+    set( NETCDF_LIBRARY_ON_UBUNTU20 "" )
+  else( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
+    if(    ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
+      message ( STATUS "Using system Paraview python libraries on Ubuntu 20.04 requires the presence and preload of library netcdf (bug in linkage)." )
+      if(    EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
+        set( NETCDF_LIBRARY_ON_UBUNTU20 /usr/lib/x86_64-linux-gnu/libnetcdf.so )
+        set(PRELOAD_NETCDF_ON_UBUNTU20 ON)
+        message ( STATUS "Library netcdf found at ${NETCDF_LIBRARY_ON_UBUNTU20}. Paraview python libraries should be functional." )
+      else(  EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
+        message ( WARNING "Library netcdf not found in system. Paraview python libraries may not be functional (bug in linkage)." )
+        set(PRELOAD_NETCDF_ON_UBUNTU20 OFF)
+      endif( EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
+    else(  ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
+      message(STATUS "Python Paraview library found. Post processing will work in SOLVERLAB scripts.")
       set(PRELOAD_NETCDF_ON_UBUNTU20 OFF)
-    endif( EXISTS "/usr/lib/x86_64-linux-gnu/libnetcdf.so" )
-  else(  ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
-    message(STATUS "Python Paraview library found. Post processing will work in SOLVERLAB scripts.")
-    set(PRELOAD_NETCDF_ON_UBUNTU20 OFF)
-  endif( ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
-endif( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
+    endif( ${python-paraview} STREQUAL "/usr/lib/python3/dist-packages/paraview/simple.py" )
+  endif( ${python-paraview} STREQUAL "python-paraview-NOTFOUND" )
+endif ( SOLVERLAB_WITH_POSTPRO )
 
 # Find SWIG
 IF   ( DEFINED SWIG_ROOT_DIR OR DEFINED ENV{SWIG_ROOT_DIR})
