@@ -12,7 +12,7 @@ geompy = geomBuilder.New(theStudy)
 # Créer les points du grand parallélogramme
 P0 = geompy.MakeVertex(0, 0, 0)
 P1 = geompy.MakeVertex(0.5, 1, 0)
-P2 = geompy.MakeVertex(1.5, 1, 0)
+P2 = geompy.MakeVertex(0.65, 1, 0)
 P3 = geompy.MakeVertex(1, 0, 0)
 # Créer les arêtes du grand parallélogramme
 L0 = geompy.MakeLineTwoPnt(P0, P1)
@@ -40,7 +40,7 @@ Mesh = smesh.Mesh(Face)
 
 # Définir les hypothèses de maillage
 algo = Mesh.Segment()
-algo.NumberOfSegments(40)  # Divise chaque côté en 2 segments pour un maillage uniforme
+algo.NumberOfSegments(3)  # Divise chaque côté en 2 segments pour un maillage uniforme
 
 # Créer des éléments quadrangulaires
 algo2D = Mesh.Quadrangle()
@@ -48,8 +48,8 @@ algo2D = Mesh.Quadrangle()
 isDone = Mesh.Compute()
 
 # Exporter le maillage pour vérification
-smesh.SetName(Mesh, 'Parallelogram_Mesh')
+smesh.SetName(Mesh, 'Trapezoid_Mesh')
 smesh.SetName(algo, 'Segment_Hypothesis')
 
 # Exportation du maillage en format .med
-Mesh.ExportMED('./Parallelogram_Mesh40.med')
+Mesh.ExportMED('./Trapezoid_Mesh3.med')

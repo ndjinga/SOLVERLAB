@@ -16,7 +16,7 @@ def WaveStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=200;
+	nx=400;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -98,15 +98,15 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Explicit);
+	myProblem.setTimeScheme(svl.Implicit);
 
     
     # name of result file
 	fileName = "1DLeftWall";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 200;
-	freqSave = 5;
+	MaxNbOfTimeStep = 50;
+	freqSave = 1;
 	cfl = 0.4 
 	maxTime = 20;
 	precision = 1e-6;
@@ -142,8 +142,8 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.terminate();
 	time = 0
 	i=0
-	if not os.path.exists(fileName):
-		os.mkdir(fileName)
+	if not os.path.exists("WaveStaggered_"+fileName):
+		os.mkdir("WaveStaggered_"+fileName)
 	while time < Tmax:
 		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
@@ -167,7 +167,7 @@ def WaveStaggered_1DRiemannProblem():
 		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 		plt.legend()
 		plt.title("Data at time step"+str(i))
-		plt.savefig(fileName + "/Data at time step"+str(i))
+		plt.savefig("WaveStaggered_"+fileName + "/Data at time step"+str(i))
 		i+=freqSave
 		time += freqSave*dt
 

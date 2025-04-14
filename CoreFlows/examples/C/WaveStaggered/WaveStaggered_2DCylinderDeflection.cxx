@@ -112,17 +112,16 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit);
-    
+	myProblem.setTimeScheme(Implicit);    
     // name of result file
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10000000	;
+	unsigned MaxNbOfTimeStep = 1000000	;
 	int freqSave = 500;
 	double cfl = 0.5;
-	double maxTime = 100;
-	double precision = 1e-10;
+	double maxTime = 50;
+	double precision = 1e-5;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

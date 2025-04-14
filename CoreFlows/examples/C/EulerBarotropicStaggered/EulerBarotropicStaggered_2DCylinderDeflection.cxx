@@ -89,16 +89,16 @@ int main(int argc, char** argv)
 			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
 		}
 		else if (Fj.getNumberOfCells()==1){
-			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
+			/* if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
 			}
-			else {
+			else { */
 				// if face is on exterior (stegger condition) 			
 				myProblem.setSteggerBoundIndex(j);								
 				wallVelocityMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
 				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
-			} 
+			//} 
 			ExactVelocityAtFaces[j] = wallVelocityMap[j];
 		}
 	}
@@ -116,9 +116,9 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000	;
-	int freqSave = 100	;
-	double cfl = 0.99;
+	unsigned MaxNbOfTimeStep = 100	;
+	int freqSave = 1		;
+	double cfl = 0.3;
 	double maxTime = 50;
 	double precision = 1e-6;
 

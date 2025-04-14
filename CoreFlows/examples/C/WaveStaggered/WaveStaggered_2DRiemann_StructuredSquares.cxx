@@ -6,14 +6,24 @@ using namespace std;
 
 double initialPressure( double z, double discontinuity){
 	if (z < discontinuity)
-		return 1;
+		return 5;
 	else
-		return 1;
+		return 6;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
 	if (z < discontinuity){
+		if (Direction == 'x'){
+			vec[0] = -1;
+			vec[1] = 0;
+		}
+		if (Direction == 'y'){
+			vec[0] = 0;
+			vec[1] = -1;
+		}
+	}
+	else{
 		if (Direction == 'x'){
 			vec[0] = 1;
 			vec[1] = 0;
@@ -21,16 +31,6 @@ std::vector<double> initialVelocity(double z, double discontinuity, char Directi
 		if (Direction == 'y'){
 			vec[0] = 0;
 			vec[1] = 1;
-		}
-	}
-	else{
-		if (Direction == 'x'){
-			vec[0] = 2;
-			vec[1] = 0;
-		}
-		if (Direction == 'y'){
-			vec[0] = 0;
-			vec[1] = 2;
 		}
 	}
 	return vec;
@@ -63,7 +63,7 @@ int main(int argc, char** argv){
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=3;
+			nx=100;
 			ny=3;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
@@ -71,7 +71,7 @@ int main(int argc, char** argv){
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=50;
+			ny=100;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 			ncells = ny;
 		}
@@ -144,16 +144,16 @@ int main(int argc, char** argv){
 		myProblem.setboundaryVelocity(wallVelocityMap);
 
 		// set the numerical method
-		myProblem.setTimeScheme(Explicit);
+		myProblem.setTimeScheme(Implicit);
 		
 		// name of result file
 		string fileName = "WaveStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 10000000;
+		unsigned MaxNbOfTimeStep = 25;
 		int freqSave = 1;
 		double cfl = 0.5;
-		double maxTime = 0.07;
+		double maxTime = 1.4;
 		double precision = 1e-11;
 
 		myProblem.setCFL(cfl);

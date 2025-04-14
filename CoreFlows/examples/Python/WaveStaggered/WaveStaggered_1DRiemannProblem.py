@@ -32,21 +32,17 @@ def WaveStaggered_1DRiemannProblem():
 		
 	def initialPressure(x):
 		if x < discontinuity:
-			return 1
+			return 5
+		elif discontinuity < x:
+			return 6
+
+	def initialVelocity(x): # in order to compute exacte solution at the wall bond cond
+		if x < discontinuity:
+			return -1
 		elif discontinuity < x:
 			return 1
 
-	def initialVelocity(x): # in order to compute exacte solution at the wall bond cond
-		if x < xsup:
-			return 1
-		elif xsup <= x:
-			return -1
 
-	def initialVelocityForPb(x): # in order to test th wall boundary cond
-		if x < discontinuity:
-			return 1
-		elif discontinuity <= x:
-			return 1
 	
 	# Define the exact solution of the 1d Problem 
 	def ExactPressure(x,t):
@@ -56,7 +52,7 @@ def WaveStaggered_1DRiemannProblem():
 		return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
-	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
+	Velocity0 = svl.Field("velocity", svl.FACES, M, 1); 
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
 	
@@ -71,25 +67,22 @@ def WaveStaggered_1DRiemannProblem():
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 		
 		if(Fj.getNumberOfCells()==2):
+			myProblem.setInteriorIndex(j);
 			myProblem.setOrientation(j,vec_normal_sigma)
-			myProblem.setInteriorIndex(j)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
-			Velocity0[j] = initialVelocityForPb(Fj.x())
+			Velocity0[j] = initialVelocity(Fj.x())
 		elif (Fj.getNumberOfCells()==1):
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if ( j== nx ): 
-				myProblem.setWallBoundIndex(j) 
-				wallVelocityMap[j] = 0
-			else :
-				myProblem.setSteggerBoundIndex(j) 
-				wallVelocityMap[j] = initialVelocityForPb(Fj.x()) ;
-				wallPressureMap[j] = initialPressure(Fj.x()) ;
+			myProblem.setSteggerBoundIndex(j) 
+			wallVelocityMap[j] =initialVelocity(Fj.x()) ;
+			wallPressureMap[j] = initialPressure(Fj.x()) ;
 			
+
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Velocity0);
 	myProblem.setboundaryPressure(wallPressureMap);
@@ -97,9 +90,10 @@ def WaveStaggered_1DRiemannProblem():
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Implicit);
+
     
     # name of result file
-	fileName = "1DRightWall";
+	fileName = "1DRiemannProblem";
 
     # simulation parameters 
 	MaxNbOfTimeStep = 50;
