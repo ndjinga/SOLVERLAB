@@ -20,15 +20,10 @@ def WaveStaggered_1DRiemannProblem():
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
-    # set the limit field for each boundary
 	kappa = 1;
 	rho = 1;
 	c = math.sqrt(kappa/rho)
 	myProblem = svl.WaveStaggered(spaceDim, rho, kappa);
-
-    # Prepare for the initial condition
-
-	print("Building initial data " ); 
 		
 	def initialPressure(x):
 		if x < discontinuity:
@@ -41,8 +36,6 @@ def WaveStaggered_1DRiemannProblem():
 			return -1
 		elif discontinuity < x:
 			return 1
-
-
 	
 	# Define the exact solution of the 1d Problem 
 	def ExactPressure(x,t):
@@ -79,7 +72,7 @@ def WaveStaggered_1DRiemannProblem():
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
 			myProblem.setSteggerBoundIndex(j) 
-			wallVelocityMap[j] =initialVelocity(Fj.x()) ;
+			wallVelocityMap[j] = initialVelocity(Fj.x()) ;
 			wallPressureMap[j] = initialPressure(Fj.x()) ;
 			
 
@@ -113,8 +106,6 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.savePressure();
 	myProblem.setVerbose(False);
 
- 
- 
     # evolution
 	myProblem.initialize();
 

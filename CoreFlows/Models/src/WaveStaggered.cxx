@@ -483,59 +483,33 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
 					}
 				}	
-			
 			}
-			else if (IsSteggerBound || IsWallBound ) { // && (periodicFaceNotComputed == false) if boundary face and face index is different from periodic faces not computed 
-				/***************** Pressure equation ******************/
+			else if (IsSteggerBound || IsWallBound ) { 
 				MatSetValue(_A, idCells[0], IndexFace, -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-				MatSetValue(_A, idCells[0], idCells[0], -_d*_c *Fj.getMeasure(), ADD_VALUES );
-				//TODO fonctionne que en explicit
-				if (_timeScheme == Explicit)
-					MatSetValue(_A, IndexFace, idCells[0], _kappa *  getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-	
 				if (IsWallBound ){
 					VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
 					_pExt =  _pInt; 
 				}
-				else if (IsSteggerBound) _pExt = getboundaryPressure().find(j)->second; 
-
-				VecSetValue(_BoundaryTerms, idCells[0], _d * _c * Fj.getMeasure()* _pExt, ADD_VALUES );
-				//TODO fonctionne que en explicit
-				if (_timeScheme == Explicit)
+				else if (IsSteggerBound){
+					_pExt = getboundaryPressure().find(j)->second; 
+					MatSetValue(_A, IndexFace, idCells[0], _kappa *  getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
 					VecSetValue(_BoundaryTerms, IndexFace,   -getOrientation(j, Ctemp1) * Fj.getMeasure()* _pExt * _kappa , ADD_VALUES );
+					MatSetValue(_A, idCells[0], idCells[0], -_d*_c *Fj.getMeasure(), ADD_VALUES );
+					VecSetValue(_BoundaryTerms, idCells[0], _d * _c * Fj.getMeasure()* _pExt, ADD_VALUES );
+				}
 			}	
 		}
-		
 		MatAssemblyBegin(_A,MAT_FINAL_ASSEMBLY);
 		MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
 		VecAssemblyBegin(_BoundaryTerms);
 		VecAssemblyEnd(_BoundaryTerms);
-
 		Mat Prod;
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
 		MatDestroy(& Prod);
-
 		ComputeMinCellMaxPerim();
 	}
-		
-	if (_isWall && _nbTimeStep >0 ){	
-		for (int j=0; j<_Nfaces;j++){
-			Face Fj = _mesh.getFace(j);
-			if (Fj.getNumberOfCells()==1) { 
-				if (std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(), j)!=_WallBoundFaceSet.end()){
-					std::vector< int > idCells = Fj.getCellsId();
-					VecGetValues(_primitiveVars,1,&idCells[0],&_pExt);
-					VecSetValue(_BoundaryTerms, idCells[0], _d * _c *Fj.getMeasure()*_pExt, INSERT_VALUES );
-					if (_timeScheme == Explicit) 
-						VecSetValue(_BoundaryTerms, _Nmailles + j,  -Fj.getMeasure()*_pExt * _kappa * getOrientation(j, _mesh.getCell(idCells[0])), INSERT_VALUES ); //TODO fonctionne que en explicit
-				} 
-			}	
-		}
-		VecAssemblyBegin(_BoundaryTerms);
-		VecAssemblyEnd(_BoundaryTerms);
-	}
-
+			
 	double dt;
 	Vec Prod2;
 	VecDuplicate(_BoundaryTerms, &Prod2);
@@ -622,20 +596,17 @@ bool WaveStaggered::iterateTimeStep(bool &converged){
 #endif
         if(_conditionNumber)  KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
 		KSPSolve(_ksp, _b, _primitiveVars);
-
         KSPConvergedReason reason;
         KSPGetConvergedReason(_ksp,&reason);
         KSPGetIterationNumber(_ksp, &_PetscIts);
         double residu;
         KSPGetResidualNorm(_ksp,&residu);
 
-        if (reason!=2 and reason!=3)
-        {
+        if (reason!=2 and reason!=3) {
             PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.\n");
             PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2e, précision demandée= %1.2e.\n",_maxPetscIts,residu,_precision);
             PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d.\n",_ksptype,_pctype,_PetscIts);
-            if(_mpi_rank==0)//Avoid redundant printing
-            {
+            if(_mpi_rank==0){//Avoid redundant printing 
                 *_runLogFile<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
                 *_runLogFile<<"!!!!!!!!!!!!! Itérations maximales "<<_maxPetscIts<<" atteintes, résidu="<<residu<<", précision demandée= "<<_precision<<endl;
                 *_runLogFile<<"Solver used "<<  _ksptype<<", preconditioner "<<_pctype<<", Final number of iteration= "<<_PetscIts<<endl;
@@ -644,38 +615,17 @@ bool WaveStaggered::iterateTimeStep(bool &converged){
             if( reason == -3)		cout<<"Maximum number of iterations "<<_maxPetscIts<<" reached"<<endl;
             else if( reason == -11) cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
             else if( reason == -5)  cout<<"!!!!!!! Generic breakdown of the linear solver (Could be due to a singular matrix or preconditioner)!!!!!!"<<endl;
-            else
-            {
+            else{
                 cout<<"PETSc divergence reason  "<< reason <<endl;
                 cout<<"Final iteration= "<<_PetscIts<<". Maximum allowed was " << _maxPetscIts<<endl;
             }
             converged = false;
-        
         }
-        else
-        {
+        else {
             if( _MaxIterLinearSolver < _PetscIts)  _MaxIterLinearSolver = _PetscIts;
-
-			
-            VecAXPY(_newtonVariation,  -1, _primitiveVars );//DELTA U = U^n - U^{n+1}
-			VecScale(_newtonVariation, -1.0 ); //DELTA U = - (U^n - U^{n+1})       
-			_erreur_rel= 0;
-			double x, dx;
-			for(int j=0; j<_globalNbUnknowns; j++){
-				VecGetValues(_newtonVariation, 1, &j, &dx);
-				VecGetValues(_primitiveVars, 1, &j, &x);
-				if (fabs(x)< _precision){
-					if(_erreur_rel < fabs(dx)){
-						_erreur_rel = fabs(dx);
-					}
-				}
-				else if(_erreur_rel < fabs(dx/x))
-					_erreur_rel = fabs(dx/x);
-			}
-
-
-            stop=false;
-            converged =  true ; //TODO (_erreur_rel <= _precision) ;//converged=convergence des iterations de Newton
+            VecAXPY(_newtonVariation,  -1, _primitiveVars );	//DELTA U = U^n - U^{n+1}
+			VecScale(_newtonVariation, -1.0 );					//DELTA U = - (U^n - U^{n+1})       
+            converged =  true ; //TODO (_erreur_rel <= _precision) ;
         }
 	}	
 	

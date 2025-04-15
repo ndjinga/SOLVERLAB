@@ -319,6 +319,33 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							double weight = (_Ndim ==2) ? ( (K.getNumberOfFaces() == 4) ? 1/4.0 : 1/6.0 ) : 1/2.0;
 							Convection +=  1.0/IntegrationNodes.size() * weight * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * rho * Contraction(utensorielu, GradientPsi_j_in_Xf); 	
 						}
+
+						//TODO change integration formula ?	
+						/* if (fabs( HessienneTransfo(0, K_Nodes)[_Ndim-1] ) < 1e-11){
+							IntegrationNodes.resize(1);
+							Weights.resize(1);
+							Weights[0] = 1.0;
+							IntegrationNodes[0] = Facef.getBarryCenter();
+						}
+						else {
+							IntegrationNodes.resize( 2 ) ; //Facef.getNumberOfNodes()
+							Weights.resize(2);
+							for (int i =0; i <Facef.getNumberOfNodes(); i++){
+								IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
+								Weights[i] = 1.0/Facef.getNumberOfNodes() ; //6.0;
+							}
+							IntegrationNodes[2] = Facef.getBarryCenter();
+							Weights[2] = 4.0/6.0 ;
+
+						}
+
+						for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
+							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, idCells[nei], IntegrationNodes[inteNode] ); 
+							std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
+							std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 
+							double Normalisation = (_Ndim ==2) ? ( (K.getNumberOfFaces() == 4) ? 1/4.0 : 1/6.0 ) : 1/2.0;
+							Convection +=  Weights[inteNode] * Normalisation * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * rho * Contraction(utensorielu, GradientPsi_j_in_Xf); 	
+						} */
 						
 						//************* (_Ndim-1)-dimensional terms *************//
 						if (IsfInterior){											
@@ -395,6 +422,85 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				// LaplacianPressure
 				MatSetValue(_A, idCells[0], idCells[0], -( abs(u)+_c ) * Fj.getMeasure()/2.0, ADD_VALUES );
 				VecSetValue(_BoundaryTerms, idCells[0], ( abs(u)+_c ) * Fj.getMeasure()/2.0 * rhoExt, ADD_VALUES );
+
+				Convection= 0; 
+				std::vector<Cell> Support_j;
+				Cell K = _mesh.getCell(idCells[0]); 
+				Support_j.push_back(K);
+				std::vector<int> idFaces = K.getFacesId();
+				VecGetValues(_primitiveVars,1,&idCells[0],&rho);
+				
+				for (int f =0; f <K.getNumberOfFaces(); f ++){
+					bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
+					bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
+					bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end();
+					std::map<int,int>::iterator it = _FacePeriodicMap.begin();
+					while ( ( idFaces[f] !=it->second) && (it !=_FacePeriodicMap.end() ) )it++;
+
+					Face Facef = _mesh.getFace( idFaces[f] );
+					std::vector< int> idCellsOfFacef =  Facef.getCellsId();
+					std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
+					I = _Nmailles + idFaces[f];
+					VecGetValues(_primitiveVars,1,&I	,&u);
+
+				
+					std::vector<Node> K_Nodes;
+					for (int i=0; i < K.getNodesId().size(); i++)
+						K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
+					
+					std::vector< Point > IntegrationNodes;
+					if (fabs( HessienneTransfo(0, K_Nodes)[_Ndim-1] ) < 1e-11){
+						IntegrationNodes.resize(1);
+						IntegrationNodes[0] = Facef.getBarryCenter();
+					}
+					else {
+						IntegrationNodes.resize( Facef.getNumberOfNodes() );
+						for (int i =0; i <Facef.getNumberOfNodes(); i++)
+							IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
+					}
+
+					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
+						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, idCells[0], IntegrationNodes[inteNode] ); 
+						std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
+						std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[0], Support_j, Fj,j, IntegrationNodes[inteNode]  ); 
+						double weight = (_Ndim ==2) ? ( (K.getNumberOfFaces() == 4) ? 1/4.0 : 1/6.0 ) : 1/2.0;
+						Convection +=  1.0/IntegrationNodes.size() * weight * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * rho * Contraction(utensorielu, GradientPsi_j_in_Xf); 	
+					}
+					
+				
+					if (IsfInterior){											
+						if ( _FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()  )
+							idCellsOfFacef.push_back( _mesh.getFace( _FacePeriodicMap.find(idFaces[f])->second ).getCellsId()[0]  );
+						VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoExt);	
+					}
+					else if (it != _FacePeriodicMap.end())
+						idCellsOfFacef.push_back( _mesh.getFace( it->first ).getCellsId()[0]  );
+					else if (IsWallBound) rhoExt = rhoInt;
+					else if (IsSteggerBound) rhoExt = getboundaryPressure().find(j)->second;
+					
+					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
+						std::vector<double> jumpPsi(_Ndim, 0.0);
+						std::vector<double> meanRhoU(_Ndim, 0.0);
+						
+						for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
+							Cell Neibourg_of_f = _mesh.getCell(idCellsOfFacef[ncell]);
+							Face Facef_physical = (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[0] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
+							Face Facej_physical_2 = (_FacePeriodicMap.find(j) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[0] ?  _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
+							std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Fj,j, IntegrationNodes[inteNode] ); 
+							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
+							for (int ndim =0; ndim < _Ndim; ndim ++ ){
+								jumpPsi[ndim] += getOrientation( idFaces[f],Neibourg_of_f) *  Psi_j_in_Xf[ndim];  
+								meanRhoU[ndim] += velocityRT_in_Xf[ndim]/idCellsOfFacef.size(); //TODO what about outside ? should we impose the whole vector ?
+							}
+						}
+						double dotprod =0;
+						double factor = ((idFaces[f] == j) || it->first == j ) ? 1.0/2.0 : 1.0;	//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
+						for (int ndim =0; ndim < _Ndim; ndim ++ )
+							dotprod  += 1.0/IntegrationNodes.size() * u * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * (rho + rhoExt)/2.0 * factor ; //TODO moyenne de rho à mettre dans meanrhoU	
+						Convection -= dotprod; 
+					}
+				}
+				cout << Convection <<endl;
 			}	
 		}
 

@@ -116,9 +116,9 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 100	;
+	unsigned MaxNbOfTimeStep = 2	;
 	int freqSave = 1		;
-	double cfl = 0.3;
+	double cfl = 0.99;
 	double maxTime = 50;
 	double precision = 1e-6;
 
