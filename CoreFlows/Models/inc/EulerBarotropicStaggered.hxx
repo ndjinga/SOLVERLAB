@@ -59,6 +59,7 @@ public :
     }
 
     void UpdateDualDensity();
+    void computeNewtonVariation(); 
     bool iterateTimeStep(bool &converged);
     std::vector<double>  getTimeEvol();
     void Rhomax_Umax_Cmax();

@@ -500,7 +500,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						Convection -= dotprod; 
 					}
 				}
-				cout << Convection <<endl;
+				//cout << Convection <<endl;
 			}	
 		}
 
@@ -769,6 +769,14 @@ void EulerBarotropicStaggered::Rhomax_Umax_Cmax(){
 	}
 	_c =  _compressibleFluid->vitesseSon(_rhoMax); 	 
 }
+
+
+void EulerBarotropicStaggered::computeNewtonVariation(){
+	if(_timeScheme == Explicit){	
+		VecCopy(_b,_newtonVariation);
+		VecScale(_newtonVariation, _dt);
+	}
+} 
 
 bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 	bool stop=false;
