@@ -324,8 +324,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						}
 						else if (it != _FacePeriodicMap.end())
 							idCellsOfFacef.push_back( _mesh.getFace( it->first ).getCellsId()[0]  );
-						else if (IsWallBound) rhoExt = rhoInt;
-						else if (IsSteggerBound) rhoExt = getboundaryPressure().find(j)->second;
+						else if (IsWallBound) rhoExt = rho;
+						else if (IsSteggerBound) rhoExt = getboundaryPressure().find(idFaces[f])->second;
+				
 						
 						for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
 							std::vector<double> jumpPsi(_Ndim, 0.0);
@@ -338,16 +339,17 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 								std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Facej_physical_2,j, IntegrationNodes[inteNode] ); 
 								std::vector<double> velocityRT_in_Xf = MomentumRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
 								for (int ndim =0; ndim < _Ndim; ndim ++ ){
-									jumpPsi[ndim] += getOrientation( idFaces[f],Neibourg_of_f) *  Psi_j_in_Xf[ndim];  
-									meanRhoU[ndim] += velocityRT_in_Xf[ndim]/2.0; //TODO what about outside ? 
+									jumpPsi[ndim] += Psi_j_in_Xf[ndim] * ( IsInterior ? getOrientation( idFaces[f],Neibourg_of_f) : 1.0 ) ;  
+									meanRhoU[ndim] += velocityRT_in_Xf[ndim]/idCellsOfFacef.size(); //TODO what about outside ? 
 								}
 							}
 							double dotprod =0;
 							//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
 							double factor = ((idFaces[f] == j) || it->first == j ) ? 1.0/2.0 : 1.0;	
 							for (int ndim =0; ndim < _Ndim; ndim ++ )
-								dotprod  += 1.0/IntegrationNodes.size() * q * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * 2.0/(rho +rhoExt) * factor ; 	
+								dotprod  += 1.0/IntegrationNodes.size() * q * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * 2.0* (1.0/rho +1.0/rhoExt) * factor ; 	
 							Convection -= dotprod; 		
+							cout << idFaces[f]<< " ,  dotprod = "<< dotprod <<endl;
 						}
 					}
 				} 

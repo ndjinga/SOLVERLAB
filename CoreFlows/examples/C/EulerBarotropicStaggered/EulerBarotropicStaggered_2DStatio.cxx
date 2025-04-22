@@ -10,8 +10,8 @@ double initialPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = -4 ; 
-	vec[1] = 50;
+	vec[0] = 1 ; 
+	vec[1] = 0;
 	return vec;
 }
 
@@ -30,8 +30,6 @@ int main(int argc, char** argv)
 	
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
-	double r0 = 0.8;
-	double r1 = 6;
 
 	Mesh M;
 	// ./resources/AnnulusSpiderWeb5x16.med or ./resources/AnnulusTriangles60.med
@@ -47,9 +45,9 @@ int main(int argc, char** argv)
 	//Initial field creation
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallPressureMap;
-	std::map<int ,double> wallVelocityMap ;
+	std::map<int ,double> wallMomentumMap ;
 	Field Pressure0("pressure", CELLS, M, 1);
-	Field Velocity0("velocity", FACES, M, 1);
+	Field Momentum0("velocity", FACES, M, 1);
 	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
@@ -69,20 +67,19 @@ int main(int argc, char** argv)
 			myProblem.setInteriorIndex(j);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
-			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
-		}
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialPressure(Ctemp1.x(),Ctemp1.y()) + initialPressure(Ctemp2.x(),Ctemp2.y())  )/2.0;
+			}
 		else if (Fj.getNumberOfCells()==1){			
-			myProblem.setSteggerBoundIndex(j);								
-			wallVelocityMap[j] = dotprod( initialVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
-			wallPressureMap[j] = initialPressure(Fj.x(),Fj.y());
+			myProblem.setSteggerBoundIndex(j);	
+			wallMomentumMap[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma )*initialPressure(Fj.x(), Fj.y()) ;
+			wallPressureMap[j] = initialPressure(Fj.x(), Fj.y()) ;
 		}
 	}
-
 		
 	myProblem.setInitialField(Pressure0);
-	myProblem.setInitialField(Velocity0);
+	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallPressureMap);
-	myProblem.setboundaryVelocity(wallVelocityMap);
+	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method
 	myProblem.setTimeScheme(Explicit);
