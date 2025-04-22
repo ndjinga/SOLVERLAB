@@ -42,11 +42,7 @@ public :
 
 	//! system initialisation
 	void initialize();
-
-	/** \fn terminate
-     * \brief empties the memory
-     * @param void
-     *  */
+    void save();
     void terminate();
     double computeTimeStep(bool & stop);
 
@@ -68,23 +64,22 @@ public :
     std::vector<double> HessienneTransfo(const int component, const std::vector<Node> &K_Nodes);
     std::vector<double> Gradient_ReferenceBasisFunctionRaviartThomas(int i, const std::vector<Node> &K_Nodes, const Point & Xhat );
     std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, int idcell,  std::vector<Cell> Support, Face Facej, int j, Point X);
-    std::vector<double> VelocityRaviartThomas_at_point_X(Cell K, int idcell, Point X);
+    std::vector<double> MomentumRaviartThomas_at_point_X(Cell K, int idcell, Point X);
+
     // operation on matrices
     std::vector<double> TensorProduct(std::vector<double> &u, std::vector<double> &v); //returns u tenso v
     double Contraction(std::vector<double> &u, std::vector<double> &v); // returns contraction of two order 2 tensors
     std::vector<double> Inverse(std::vector<double> &u); // returns (u^{-1})^t
 
-    double getOrientationNode(int n, int j); //n is a norde, j a face, gives back sign( (x_n - x_j). n_sigma^perp    )
+    double getOrientationNode(int n, int j); //n is a node, j a face, gives back sign( (x_n - x_j). n_sigma^perp    )
      
 protected :
     /** Fluid equation of state **/
     vector<    Fluide* > _fluides;//
 	BarotropicLaw   *_compressibleFluid;
-	double _Tref, _Pref; //EOS reference temperature &pressure
-
-    PetscReal _rhoMax, _uMax;
-    Vec _DualDensity,_Conv ;
-	Mat _InvVolPrim, _InvVolDual, _DivRhoU, _LaplacianVelocity, _InvDualDensity  ;
+	
+    PetscReal _rhoMax, _uMax; //TODO à supprimer
+    Vec _DualDensity, _velocityVec, _Conv ;
 	double _c;
 	std::vector<double> _Entropy, _Time;
     std::map< int , std::map< int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >> _PhysicalPsif,_GradientPhysicalPsif;

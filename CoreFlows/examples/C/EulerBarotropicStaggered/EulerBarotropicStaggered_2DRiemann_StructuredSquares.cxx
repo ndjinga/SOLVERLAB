@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 		double discontinuity;
 		int nx, ny, ncells;
 		if (Direction == 'x'){
-			nx=50	;
+			nx=200	;
 			ny=2;
 			discontinuity = (inf + sup)/2.0 +  0.75/nx;
 			ncells = nx;
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=50;
+			ny=200;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 			ncells = ny;
 		}
@@ -89,9 +89,9 @@ int main(int argc, char** argv)
 		//Initial field creation
 		cout << "Building initial data" << endl;
 		std::map<int ,double> wallPressureMap;
-		std::map<int ,double> wallVelocityMap ;
+		std::map<int ,double> wallMomentumMap ;
 		Field Pressure0("pressure", CELLS, M, 1);
-		Field Velocity0("velocity", FACES, M, 1);
+		Field Momentum0("velocity", FACES, M, 1);
 
 		assert(fabs(inf)<1e-11);
 		assert(fabs(sup - 1.0)<1e-11);
@@ -125,21 +125,21 @@ int main(int argc, char** argv)
 				}
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				Velocity0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma );
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordRight,discontinuity) )/2.0;
 			}
 			else if (Fj.getNumberOfCells()==1  ){ 
 				// if periodic check that the boundary face is the computed (avoid passing twice ) 
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 					myProblem.setSteggerBoundIndex(j);	
-				wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) ;
+				wallMomentumMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma )*initialPressure(coordFace,discontinuity) ;
 				wallPressureMap[j] = initialPressure(coordFace,discontinuity);
 			}
 		}
 		
 		myProblem.setInitialField(Pressure0);
-		myProblem.setInitialField(Velocity0);
+		myProblem.setInitialField(Momentum0);
 		myProblem.setboundaryPressure(wallPressureMap);
-		myProblem.setboundaryVelocity(wallVelocityMap);
+		myProblem.setboundaryVelocity(wallMomentumMap);
 
 		// set the numerical method
 		myProblem.setTimeScheme(Explicit);
@@ -148,8 +148,8 @@ int main(int argc, char** argv)
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 200000000;
-		int freqSave = 1;
+		unsigned MaxNbOfTimeStep = 100000000;
+		int freqSave = 20;
 		double cfl = 0.99;
 		double maxTime = 0.07;
 		double precision = 1e-10;

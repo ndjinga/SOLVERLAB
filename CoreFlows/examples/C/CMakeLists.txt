@@ -154,6 +154,7 @@ CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DRie
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DCylinderDeflection.cxx  "${libs_for_tests}" "C++ fv Euler barotropic Staggered 2d cylinder coreflows" )
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DWall_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Eulerbarotropic Staggered structured coreflows" )
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DRealRiemann_Cartesian.cxx  "${libs_for_tests}" "C++ fv Eulerbarotropic Staggered structured coreflows" )
+CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DStatio.cxx  "${libs_for_tests}" "C++ fv Euler barotropic Staggered 2d cylinder coreflows" )
 
 
 if( SOLVERLAB_WITH_MPI )#Tests parallèles

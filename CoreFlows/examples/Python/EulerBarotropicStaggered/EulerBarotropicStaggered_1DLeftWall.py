@@ -49,9 +49,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			return initialVelocity_Right
 
 	Density0 = svl.Field("Density", svl.CELLS, M, 1);
-	Velocity0 = svl.Field("velocity", svl.FACES, M, 1); 
+	Momentum0 = svl.Field("Momentum", svl.FACES, M, 1); 
 	wallDensityMap = {};
-	wallVelocityMap = {}; 
+	wallMomentumMap = {}; 
 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
@@ -59,9 +59,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		vec_normal_sigma = np.zeros(2)
 		Ctemp1 = M.getCell(idCells[0]);
 		for l in range( Ctemp1.getNumberOfFaces()) :
-				if (j == Ctemp1.getFacesId()[l]):
-					for idim in range(spaceDim):
-						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
+			if (j == Ctemp1.getFacesId()[l]):
+				for idim in range(spaceDim):
+					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 		
 		if(Fj.getNumberOfCells()==2):	
 			myProblem.setInteriorIndex(j);
@@ -69,7 +69,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			Ctemp2 = M.getCell(idCells[1]);
 			Density0[idCells[0]] = initialDensity(Ctemp1.x()) ;
 			Density0[idCells[1]] = initialDensity(Ctemp2.x());
-			Velocity0[j] = initialVelocityForPb(Fj.x())
+			Momentum0[j] = initialVelocityForPb(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Ctemp2.x()))/2.0
 		elif (Fj.getNumberOfCells()==1):
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
@@ -77,16 +77,16 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			myProblem.setOrientation(j,vec_normal_sigma)
 			if (j == 0 ):
 				myProblem.setWallBoundIndex(j) 
-				wallVelocityMap[j] =0
+				wallMomentumMap[j] =0
 			else : 
 				myProblem.setSteggerBoundIndex(j) 
-				wallVelocityMap[j] =initialVelocityForPb(Fj.x())
+				wallMomentumMap[j] = initialVelocityForPb(Fj.x()) * (+ initialDensity(Ctemp1.x())  +initialDensity(Fj.x())  )/2
 				wallDensityMap[j] = initialDensity(Fj.x()) ;
 			
 	myProblem.setInitialField(Density0);
-	myProblem.setInitialField(Velocity0);
+	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallDensityMap);
-	myProblem.setboundaryVelocity(wallVelocityMap);
+	myProblem.setboundaryVelocity(wallMomentumMap);
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);

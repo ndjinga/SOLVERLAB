@@ -17,7 +17,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=200 ;
+	nx=200	 ;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -41,16 +41,16 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		elif discontinuity < x:
 			return initialDensity_Right
 
-	def initialVelocityForPb(x): # in order to test th wall boundary cond
+	def initialVelocity(x): # in order to test th wall boundary cond
 		if x < discontinuity:
 			return initialVelocity_Left
 		elif discontinuity <= x:
 			return initialVelocity_Right
 
 	Density0 = svl.Field("Density", svl.CELLS, M, 1);
-	Velocity0 = svl.Field("velocity", svl.FACES, M, 1); 
+	Momentum0 = svl.Field("Momentum", svl.FACES, M, 1); 
 	wallDensityMap = {};
-	wallVelocityMap = {}; 
+	wallMomentumMap = {}; 
 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
@@ -68,7 +68,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			Ctemp2 = M.getCell(idCells[1]);
 			Density0[idCells[0]] = initialDensity(Ctemp1.x()) ;
 			Density0[idCells[1]] = initialDensity(Ctemp2.x());
-			Velocity0[j] = initialVelocityForPb(Fj.x()) #TODO times normal sigma
+			Momentum0[j] = initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Ctemp2.x()))/2.0 #TODO times normal sigma
 		elif (Fj.getNumberOfCells()==1):
 			# Since we plot the values of the veloccity at the faces every velocity if oriented to the right n_sigma =1
 			for idim in range(spaceDim):
@@ -76,13 +76,13 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
 			myProblem.setSteggerBoundIndex(j) 
-			wallVelocityMap[j] =initialVelocityForPb(Fj.x())
+			wallMomentumMap[j] =initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Fj.x()) )/2.0
 			wallDensityMap[j] = initialDensity(Fj.x()) ;
 			
 	myProblem.setInitialField(Density0);
-	myProblem.setInitialField(Velocity0);
+	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallDensityMap);
-	myProblem.setboundaryVelocity(wallVelocityMap);
+	myProblem.setboundaryVelocity(wallMomentumMap);
 
     # set the numerical method
 	myProblem.setTimeScheme(svl.Explicit);
@@ -92,7 +92,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
     # simulation parameters 
 	MaxNbOfTimeStep = 10000;
-	freqSave = 80;
+	freqSave = 100;
 	cfl = 0.3
 	maxTime = 0.07;
 	precision = 1e-10;
