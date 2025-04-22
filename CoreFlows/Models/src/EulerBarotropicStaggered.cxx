@@ -302,14 +302,20 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 						
 						std::vector< Point > IntegrationNodes;
+						std::vector< double > Weights;
+
 						if (fabs( HessienneTransfo(0, K_Nodes)[_Ndim-1] ) < 1e-11){
 							IntegrationNodes.resize(1);
-							IntegrationNodes[0] = Facef.getBarryCenter();
+							Weights.resize(1);
+							IntegrationNodes[0] = K.getBarryCenter();
+							Weights[0] = 1.0;
 						}
 						else {
 							IntegrationNodes.resize( Facef.getNumberOfNodes() );
-							for (int i =0; i <Facef.getNumberOfNodes(); i++)
+							for (int i =0; i <Facef.getNumberOfNodes(); i++){
 								IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
+								Weights[i] = (2 - _Ndim)/2.0 + (_Ndim - 1)/4.0; 
+							}
 						}
 
 						for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
@@ -317,36 +323,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
 							std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 
 							double weight = (_Ndim ==2) ? ( (K.getNumberOfFaces() == 4) ? 1/4.0 : 1/6.0 ) : 1/2.0;
-							Convection +=  1.0/IntegrationNodes.size() * weight * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * rho * Contraction(utensorielu, GradientPsi_j_in_Xf); 	
+							Convection +=  Weights[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * rho * Contraction(utensorielu, GradientPsi_j_in_Xf); 	
 						}
-
-						//TODO change integration formula ?	
-						/* if (fabs( HessienneTransfo(0, K_Nodes)[_Ndim-1] ) < 1e-11){
-							IntegrationNodes.resize(1);
-							Weights.resize(1);
-							Weights[0] = 1.0;
-							IntegrationNodes[0] = Facef.getBarryCenter();
-						}
-						else {
-							IntegrationNodes.resize( 2 ) ; //Facef.getNumberOfNodes()
-							Weights.resize(2);
-							for (int i =0; i <Facef.getNumberOfNodes(); i++){
-								IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
-								Weights[i] = 1.0/Facef.getNumberOfNodes() ; //6.0;
-							}
-							IntegrationNodes[2] = Facef.getBarryCenter();
-							Weights[2] = 4.0/6.0 ;
-
-						}
-
-						for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
-							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, idCells[nei], IntegrationNodes[inteNode] ); 
-							std::vector<double> utensorielu = TensorProduct(velocityRT_in_Xf, velocityRT_in_Xf);
-							std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 
-							double Normalisation = (_Ndim ==2) ? ( (K.getNumberOfFaces() == 4) ? 1/4.0 : 1/6.0 ) : 1/2.0;
-							Convection +=  Weights[inteNode] * Normalisation * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * rho * Contraction(utensorielu, GradientPsi_j_in_Xf); 	
-						} */
-						
+					
 						//************* (_Ndim-1)-dimensional terms *************//
 						if (IsfInterior){											
 							if ( _FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()  )
@@ -374,7 +353,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 								}
 							}
 							double dotprod =0;
-							double factor = ((idFaces[f] == j) || it->first == j ) ? 1.0/2.0 : 1.0;	//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
+							//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
+							double factor = ((idFaces[f] == j) || it->first == j ) ? 1.0/2.0 : 1.0;	
 							for (int ndim =0; ndim < _Ndim; ndim ++ )
 								dotprod  += 1.0/IntegrationNodes.size() * u * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * (rho + rhoExt)/2.0 * factor ; //TODO moyenne de rho à mettre dans meanrhoU	
 							Convection -= dotprod; 
@@ -423,6 +403,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				MatSetValue(_A, idCells[0], idCells[0], -( abs(u)+_c ) * Fj.getMeasure()/2.0, ADD_VALUES );
 				VecSetValue(_BoundaryTerms, idCells[0], ( abs(u)+_c ) * Fj.getMeasure()/2.0 * rhoExt, ADD_VALUES );
 
+				
+				//TODO Convection on the boundary ?
 				Convection= 0; 
 				std::vector<Cell> Support_j;
 				Cell K = _mesh.getCell(idCells[0]); 
@@ -449,15 +431,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 					
 					std::vector< Point > IntegrationNodes;
-					if (fabs( HessienneTransfo(0, K_Nodes)[_Ndim-1] ) < 1e-11){
-						IntegrationNodes.resize(1);
-						IntegrationNodes[0] = Facef.getBarryCenter();
-					}
-					else {
-						IntegrationNodes.resize( Facef.getNumberOfNodes() );
-						for (int i =0; i <Facef.getNumberOfNodes(); i++)
-							IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
-					}
+					IntegrationNodes.resize( Facef.getNumberOfNodes() );
+					for (int i =0; i <Facef.getNumberOfNodes(); i++)
+						IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
+
 
 					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
 						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(K, idCells[0], IntegrationNodes[inteNode] ); 
@@ -481,26 +458,24 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
 						std::vector<double> jumpPsi(_Ndim, 0.0);
 						std::vector<double> meanRhoU(_Ndim, 0.0);
-						
-						for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
-							Cell Neibourg_of_f = _mesh.getCell(idCellsOfFacef[ncell]);
-							Face Facef_physical = (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[0] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
-							Face Facej_physical_2 = (_FacePeriodicMap.find(j) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[0] ?  _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
-							std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Fj,j, IntegrationNodes[inteNode] ); 
-							std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
-							for (int ndim =0; ndim < _Ndim; ndim ++ ){
-								jumpPsi[ndim] += getOrientation( idFaces[f],Neibourg_of_f) *  Psi_j_in_Xf[ndim];  
-								meanRhoU[ndim] += velocityRT_in_Xf[ndim]/idCellsOfFacef.size(); //TODO what about outside ? should we impose the whole vector ?
-							}
+						Cell Neibourg_of_f = _mesh.getCell(idCellsOfFacef[0]);
+						Face Facef_physical = (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[0] != idCells[0] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
+						Face Facej_physical_2 = (_FacePeriodicMap.find(j) != _FacePeriodicMap.end()) && idCellsOfFacef[0] != idCells[0] ?  _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
+						std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[0], Support_j, Fj,j, IntegrationNodes[inteNode] ); 
+						std::vector<double> velocityRT_in_Xf = VelocityRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[0], IntegrationNodes[inteNode]  ); 
+						for (int ndim =0; ndim < _Ndim; ndim ++ ){
+							jumpPsi[ndim] += Psi_j_in_Xf[ndim];  
+							meanRhoU[ndim] += velocityRT_in_Xf[ndim]/idCellsOfFacef.size(); 
 						}
+
 						double dotprod =0;
-						double factor = ((idFaces[f] == j) || it->first == j ) ? 1.0/2.0 : 1.0;	//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
 						for (int ndim =0; ndim < _Ndim; ndim ++ )
-							dotprod  += 1.0/IntegrationNodes.size() * u * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * (rho + rhoExt)/2.0 * factor ; //TODO moyenne de rho à mettre dans meanrhoU	
+							dotprod  += 1.0/IntegrationNodes.size() * u * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * (rho + rhoExt)/2.0  ; 
 						Convection -= dotprod; 
 					}
 				}
 				//cout << Convection <<endl;
+				//VecSetValue(_Conv, IndexFace, Convection, ADD_VALUES );
 			}	
 		}
 

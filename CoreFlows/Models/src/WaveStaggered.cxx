@@ -74,9 +74,6 @@ bool  WaveStaggered::IsFaceBoundaryComputedInPeriodic(int j ) {
 	return  std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
 }
 
-/* std::map<int,int>  WaveStaggered::getFacePeriodicMap() const{
-	return _FacePeriodicMap;
-} */
 
 void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 	for (int idim = 0; idim < _Ndim; ++idim)
@@ -358,7 +355,7 @@ void WaveStaggered::initialize(){
 	save();//save initial data
 }
 
-
+//TOD0 integration formula is not good 
 double WaveStaggered::MassLumping(const Cell &K, const int &idcell, const Face & Facej, const int &j){
 	double masslumping_on_K =0;
 	std::vector<Cell> Support_f, Support_j ;
