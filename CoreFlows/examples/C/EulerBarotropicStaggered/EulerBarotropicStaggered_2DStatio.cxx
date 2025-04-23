@@ -5,13 +5,13 @@
 using namespace std;
 
 double initialPressure( double x, double y){
-	return 10;
+	return 432;
 }
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 1 ; 
-	vec[1] = 0;
+	vec[0] = -667.18; 
+	vec[1] = 1888.0789;
 	return vec;
 }
 
@@ -25,22 +25,35 @@ double dotprod(std::vector<double> vector1, std::vector<double> vector2){
 
 int main(int argc, char** argv)
 {
-	//Preprocessing: mesh and group creation
 	int spaceDim = 2;
-	
-	// Prepare for the mesh
-	cout << "Building mesh" << endl;
-
 	Mesh M;
-	// ./resources/AnnulusSpiderWeb5x16.med or ./resources/AnnulusTriangles60.med
-	cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
-	cout << "Loading of a mesh named "<<argv[1] << endl;
-	string filename = argv[1];
-	M=Mesh(filename);
-
 	double a = 1.0;
 	double gamma = 2.0;
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
+	if (argc>1  ){
+		// ./resources/AnnulusSpiderWeb5x16.med or ./resources/AnnulusTriangles60.med
+		cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
+		cout << "Loading of a mesh named "<<argv[1] << endl;
+		string filename = argv[1];
+		M=Mesh(filename);
+
+	}
+	else{
+		PetscInitialize(&argc, &argv, 0,0);
+		// Prepare for the mesh
+		cout << "Building mesh" << endl;
+		cout << "Construction of a cartesian mesh" << endl;
+		double inf = 0.0;
+		double sup = 1.0;
+		int ncells = 3;
+		M=Mesh(inf,sup,ncells,inf,sup,ncells);
+
+		assert(fabs(inf)<1e-11);
+		assert(fabs(sup - 1.0)<1e-11);
+		myProblem.setPeriodicFaces(M, 'x', ncells); //Only works on [0,1]² -> not useful to adapt
+	}
+
+	
 
 	//Initial field creation
 	cout << "Building initial data" << endl;
@@ -70,12 +83,13 @@ int main(int argc, char** argv)
 			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialPressure(Ctemp1.x(),Ctemp1.y()) + initialPressure(Ctemp2.x(),Ctemp2.y())  )/2.0;
 			}
 		else if (Fj.getNumberOfCells()==1){			
-			myProblem.setSteggerBoundIndex(j);	
+			if (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
+				myProblem.setSteggerBoundIndex(j);	
 			wallMomentumMap[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma )*initialPressure(Fj.x(), Fj.y()) ;
 			wallPressureMap[j] = initialPressure(Fj.x(), Fj.y()) ;
 		}
 	}
-		
+
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallPressureMap);
@@ -85,14 +99,14 @@ int main(int argc, char** argv)
 	myProblem.setTimeScheme(Explicit);
     
     // name of result file
-	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
+	string fileName = "EulerBarotropicStaggered_2DStatio";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 2	;
+	unsigned MaxNbOfTimeStep = 1	;
 	int freqSave = 1		;
 	double cfl = 0.99;
 	double maxTime = 50;
-	double precision = 1e-11;
+	double precision = 1e-9;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

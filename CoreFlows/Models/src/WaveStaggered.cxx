@@ -53,6 +53,15 @@ std::map<int,double>  WaveStaggered::getboundaryPressure() const {
 		return _boundaryPressure;
 }
 
+
+std::map<int,int>  WaveStaggered::getFacePeriodicMap() const {
+		return _FacePeriodicMap;
+}
+
+std::vector<int>  WaveStaggered::getSteggerBoundFaceSet() const {
+		return _SteggerBoundFaceSet;
+}
+
 void WaveStaggered::setWallBoundIndex(int j ){
 	_WallBoundFaceSet.push_back(j);
 	_isWall = true;
@@ -68,10 +77,10 @@ bool  WaveStaggered::IsFaceBoundaryNotComputedInPeriodic(int j ) {
 	std::map<int,int>::iterator it = _FacePeriodicMap.begin();
 	while ( ( j !=it->second) && (it !=_FacePeriodicMap.end() ) )
 		it++;
-	return (it !=  _FacePeriodicMap.end());
+	return _indexFacePeriodicSet && (it !=  _FacePeriodicMap.end());
 }
 bool  WaveStaggered::IsFaceBoundaryComputedInPeriodic(int j ) {
-	return  std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+	return _FacePeriodicMap.find(j) != _FacePeriodicMap.end() &&  (std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end()) ;
 }
 
 
@@ -100,10 +109,23 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 		else if ((_FacePeriodicMap.find(l) != _FacePeriodicMap.end()) && (_FacePeriodicMap.find(l)->second == Cint.getFacesId()[m])){
 			for (int idim = 0; idim < _Ndim; ++idim)
 				vec[idim] = Cint.getNormalVector(m,idim);
+			checktouternormal = ( _mesh.getFace(_FacePeriodicMap.find(l)->second ).x()  - Cint.x() ) *vec[0];
+			if(_Ndim ==2) checktouternormal+= ( _mesh.getFace(_FacePeriodicMap.find(l)->second ).y() - Cint.y()  ) *vec[1];
+			if (checktouternormal <-1e-11){
+				for (int idim = 0; idim < _Ndim; ++idim)
+					vec[idim] = -Cint.getNormalVector(m,idim);
+			}
 		}
 		else if (it !=_FacePeriodicMap.end() && ( it->first == Cint.getFacesId()[m])){
 			for (int idim = 0; idim < _Ndim; ++idim)
 				vec[idim] = Cint.getNormalVector(m,idim);
+			checktouternormal = ( _mesh.getFace(it->first ).x()  - Cint.x() ) *vec[0];
+			if(_Ndim ==2) checktouternormal+= ( _mesh.getFace(it->first ).y() - Cint.y()  ) *vec[1];
+			if (checktouternormal <-1e-11){
+				for (int idim = 0; idim < _Ndim; ++idim)
+					vec[idim] = -Cint.getNormalVector(m,idim);
+
+			}
 
 		}
 	}
