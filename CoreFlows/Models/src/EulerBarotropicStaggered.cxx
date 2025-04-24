@@ -61,7 +61,6 @@ void EulerBarotropicStaggered::initialize(){
 	
 
 	/**********Petsc structures:  ****************/
-	
 	//creation des vecteurs
 	VecCreate(PETSC_COMM_SELF, & _primitiveVars);//Current primitive variables at Newton iteration k between time steps n and n+1
 	VecSetSizes(_primitiveVars, PETSC_DECIDE, _globalNbUnknowns);
@@ -84,29 +83,12 @@ void EulerBarotropicStaggered::initialize(){
 	VecAssemblyBegin(_primitiveVars);
 	VecAssemblyEnd(_primitiveVars);
 
-	VecCreate(PETSC_COMM_SELF, & _DualDensity);//Current primitive variables at Newton iteration k between time steps n and n+1
-	VecSetSizes(_DualDensity, PETSC_DECIDE, _Nfaces);
-	VecSetFromOptions(_DualDensity);
-	VecZeroEntries(_DualDensity);
-
-	VecCreate(PETSC_COMM_SELF, & _velocityVec);//Current primitive variables at Newton iteration k between time steps n and n+1
-	VecSetSizes(_velocityVec, PETSC_DECIDE, _Nfaces);
-	VecSetFromOptions(_velocityVec);
-	VecZeroEntries(_velocityVec);
-
-	//************ Time independent matrices ********** //
 	// matrice des Inverses Volumes V^{-1}
 	MatCreate(PETSC_COMM_SELF, &_InvVol); 
 	MatSetSizes(_InvVol, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 	MatSetFromOptions(_InvVol);
 	MatSetUp(_InvVol);
 	MatZeroEntries(_InvVol);
-
-	// matrix minus GRADIENT (we will impose to be 0 on faces so that u^n+1 = u^n at the _Boundary)
-	MatCreate(PETSC_COMM_SELF, & _DivTranspose); 
-	MatSetSizes(_DivTranspose, PETSC_DECIDE, PETSC_DECIDE, _Nfaces, _Nmailles );
-	MatSetFromOptions(_DivTranspose);
-	MatSetUp(_DivTranspose);
 
 	// matrice des Inverses de Surfaces
 	MatCreate(PETSC_COMM_SELF, & _InvSurface); 
@@ -115,14 +97,13 @@ void EulerBarotropicStaggered::initialize(){
 	MatSetUp(_InvSurface);
 	MatZeroEntries(_InvSurface);
 
-	// matrice DIVERGENCE (|K|div(u))
-	MatCreate(PETSC_COMM_SELF, & _Div); 
-	MatSetSizes(_Div, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces );
-	MatSetFromOptions(_Div);
-	MatSetUp(_Div);
+	// matrix LAPLACIAN Pressure (without boundary terms)
+	MatCreate(PETSC_COMM_SELF, & _LaplacianPressure); 
+	MatSetSizes(_LaplacianPressure, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
+	MatSetFromOptions(_LaplacianPressure);
+	MatSetUp(_LaplacianPressure);
 
 	// *************** Time dependent matrices ************ //
-	// Création matrice Q tq U^n+1 - U^n = dt V^{-1} _A U^n pour schéma explicite
 	MatCreate(PETSC_COMM_SELF, & _A); 
 	MatSetSizes(_A, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
 	MatSetFromOptions(_A);
@@ -134,26 +115,8 @@ void EulerBarotropicStaggered::initialize(){
 	VecSetFromOptions(_BoundaryTerms);
 	VecSetUp(_BoundaryTerms);
 	VecZeroEntries(_BoundaryTerms);
-	
-	// Vector CONVECTION 
-	VecCreate(PETSC_COMM_SELF, & _Conv); 
-	VecSetSizes(_Conv, PETSC_DECIDE, _globalNbUnknowns); 
-	VecSetFromOptions(_Conv);
-	VecSetUp(_Conv);
-
-	// matrix LAPLACIAN Pressure (without boundary terms)
-	MatCreate(PETSC_COMM_SELF, & _LaplacianPressure); 
-	MatSetSizes(_LaplacianPressure, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles ); 
-	MatSetFromOptions(_LaplacianPressure);
-	MatSetUp(_LaplacianPressure);
 
 	AssembleMetricsMatrices();
-
-	if(_system){
-		cout << "Variables primitives initiales : " << endl;
-		VecView(_primitiveVars,  PETSC_VIEWER_STDOUT_WORLD);
-		cout << endl;
-	}
 
 	/* if(_mpi_size>1 && _mpi_rank == 0)
     	VecCreateSeq(PETSC_COMM_SELF, _globalNbUnknowns, &_primitiveVars_seq);//For saving results on proc 0
@@ -165,8 +128,40 @@ void EulerBarotropicStaggered::initialize(){
 	_runLogFile->close();
 
 	_initializedMemory=true;
-	UpdateDualDensity();
+	
+	
+	
+	VecCreate(PETSC_COMM_SELF, & _DualDensity);//Current primitive variables at Newton iteration k between time steps n and n+1
+	VecSetSizes(_DualDensity, PETSC_DECIDE, _Nfaces);
+	VecSetFromOptions(_DualDensity);
+	VecZeroEntries(_DualDensity);
+
+	UpdateDualDensity();	
+
+	if (_timeScheme == Implicit) {
+		MatCreate(PETSC_COMM_SELF, & _JacobianMatrix); 
+		MatSetSizes(_JacobianMatrix, PETSC_DECIDE, PETSC_DECIDE, _globalNbUnknowns, _globalNbUnknowns );
+		MatSetFromOptions(_JacobianMatrix);
+		MatSetUp(_JacobianMatrix);
+	}
+
+	//************ Time independent matrices ********** //
+
+	// matrix minus GRADIENT (we will impose to be 0 on faces so that u^n+1 = u^n at the _Boundary)
+	// Vector CONVECTION 
+	VecCreate(PETSC_COMM_SELF, & _Conv); 
+	VecSetSizes(_Conv, PETSC_DECIDE, _globalNbUnknowns); 
+	VecSetFromOptions(_Conv);
+	VecSetUp(_Conv);
+	// Vector Pressure gradient
+	VecCreate(PETSC_COMM_SELF, & _GradPressure); 
+	VecSetSizes(_GradPressure, PETSC_DECIDE, _globalNbUnknowns); 
+	VecSetFromOptions(_GradPressure);
+	VecSetUp(_GradPressure);
+	VecZeroEntries(_GradPressure);
+
 	save();//save initial data
+
 }
 
 
@@ -231,253 +226,254 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 
 	Rhomax_Umax_Cmax();
 	VecZeroEntries(_Conv);
+	VecZeroEntries(_b);
 	VecZeroEntries(_BoundaryTerms);
+	VecZeroEntries(_GradPressure);
 	MatZeroEntries(_A);
-	PetscScalar rho,p, u, Convection, rhoInt, rhoExt, q;
+	if (_timeScheme == Implicit)
+		MatZeroEntries(_JacobianMatrix);
+	PetscScalar rho,p, u, Convection, rhoInt, rhoExt, q, WaveVelocity;
 	
+	for (int j=0; j<_Nfaces ; j++){	 
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
 	
-	if (_timeScheme == Explicit ){ 
-		for (int j=0; j<_Nfaces ; j++){	 
-			Face Fj = _mesh.getFace(j);
-			std::vector< int > idCells = Fj.getCellsId();
-			Cell Ctemp1 = _mesh.getCell(idCells[0]);
-		
-			PetscInt IndexFace = _Nmailles + j;
-			PetscInt I;
-			VecGetValues(_primitiveVars,1,&IndexFace,&q);
+		PetscInt IndexFace = _Nmailles + j;
+		PetscInt I;
+		VecGetValues(_primitiveVars,1,&IndexFace,&q);
 
-			bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-			bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
-			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;			
 
-			if (IsInterior){
-				if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  ) 
-					idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
-				Cell Ctemp2 = _mesh.getCell(idCells[1]);
-		
-				// -DivRhoU_{idcell[1], j}, -DivRhoU_{idcell[0], j}, (IndexFace = ncells + j)
-				MatSetValue(_A, idCells[0], IndexFace,  -getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
-				MatSetValue(_A, idCells[1], IndexFace,  -getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  
-				// LaplacianPressure
-				MatSetValue(_A, idCells[0], idCells[0], -(abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES ); 
-				MatSetValue(_A, idCells[0], idCells[1],  (abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES );  
-				MatSetValue(_A, idCells[1], idCells[1], -(abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES ); 
-				MatSetValue(_A, idCells[1], idCells[0],  (abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES );  
-
-				/*************** Momentum conservation equation *****************/
-				if (_nbTimeStep == 0){
-					MatSetValue(_DivTranspose, j, idCells[0], getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES );
-					MatSetValue(_DivTranspose, j, idCells[1], getOrientation(j,Ctemp2) * Fj.getMeasure(), ADD_VALUES ); 
-				}
-				/*************(-1) x CONVECTION (is not computed in 3 space dimensions)********************/ 
-				Convection= 0; 
-				std::vector<Cell> Support_j;
-				Support_j.push_back(_mesh.getCell(idCells[0]));
-				Support_j.push_back(_mesh.getCell(idCells[1]));
-
-				for (int nei =0; nei <2; nei ++){ // we are in the case where an interior face has two neighbours
-					Cell K = _mesh.getCell(idCells[nei]); 
-					std::vector<int> idFaces = K.getFacesId();
-					VecGetValues(_primitiveVars,1,&idCells[nei],&rho);
-					//If  the face is periodic and K isn't the direct neighbour of Fj, recover the geometric informations of the associated periodic cell 
-					Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
-					
-					for (int f =0; f <K.getNumberOfFaces(); f ++){
-						bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
-						bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
-						bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end();
-						std::map<int,int>::iterator it = _FacePeriodicMap.begin();
-						while ( ( idFaces[f] !=it->second) && (it !=_FacePeriodicMap.end() ) )it++;
-
-						Face Facef = _mesh.getFace( idFaces[f] );
-						std::vector< int> idCellsOfFacef =  Facef.getCellsId();
-						std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
-						I = _Nmailles + idFaces[f];
-						VecGetValues(_primitiveVars,1,&I	,&q);
-						double gradiv = -( _c + _uMax)/2.0 * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[nei]] : 1.0);
-						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
-
-						//************* _Ndim-dimensional terms *************//
-						std::vector<Node> K_Nodes;
-						for (int i=0; i < K.getNodesId().size(); i++)
-							K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
-						
-						std::vector< Point > IntegrationNodes(Facef.getNumberOfNodes());
-						std::vector< double > Weights(Facef.getNumberOfNodes());
-						for (int i =0; i <Facef.getNumberOfNodes(); i++){
-							IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
-							//In quads it's 1/8 (instead of 1/4 given by trapezoid formula given on reference elem) since the loop on the face then on the faces'nodes implies that the integral is computed twice 
-							//TODO -> to improve & what about triangles
-							Weights[i] = 1.0/(K.getNumberOfFaces() * _Ndim ) ; 
-						}
+		if (IsInterior){
+			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  ) 
+				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 	
-						for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
-							std::vector<double> MomentumRT_in_Xf = MomentumRaviartThomas_at_point_X(K, idCells[nei], IntegrationNodes[inteNode] ); 
-							std::vector<double> qtensorielq = TensorProduct(MomentumRT_in_Xf, MomentumRT_in_Xf);
-							std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 	
-							Convection +=  Weights[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * 1.0/rho * Contraction(qtensorielq, GradientPsi_j_in_Xf); 	
-						}
-						//************* (_Ndim-1)-dimensional terms *************//
-						std::vector<double> rhoMean;
-						rhoMean.push_back( rho );
-						if (IsfInterior){											
-							if ( _FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()  )
-								idCellsOfFacef.push_back( _mesh.getFace( _FacePeriodicMap.find(idFaces[f])->second ).getCellsId()[0]  );
-							VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoExt);	
-							rhoMean.push_back( rhoExt ) ;
-						}
-						if (it != _FacePeriodicMap.end()){   
-							idCellsOfFacef.push_back( _mesh.getFace( it->first ).getCellsId()[0]  ); 
-							VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoExt);	
-							rhoMean.push_back( rhoExt );
-						}
-						if (IsfWallBound) {
-							rhoMean.resize(1);
-							rhoMean[0] = rho ;
-						}
-						
-						if (IsfSteggerBound){
-							rhoMean.resize(1);
-							rhoMean[0] = getboundaryPressure().find(idFaces[f])->second ;
-						}	
+			// -DivRhoU_{idcell[1], j}, -DivRhoU_{idcell[0], j}, (IndexFace = ncells + j)
+			MatSetValue(_A, idCells[0], IndexFace,  -getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
+			MatSetValue(_A, idCells[1], IndexFace,  -getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  
 
-						for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
-							std::vector<double> jumpPsi(_Ndim, 0.0);
-							std::vector<double> meanRhoU(_Ndim, 0.0);
-							
-							for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
-								Cell Neibourg_of_f    = _mesh.getCell(idCellsOfFacef[ncell]);
-								Face Facef_physical   =   (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
-								Face Facej_physical_on_K_ncell =   (_FacePeriodicMap.find(j)          != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(j)->second )         :  Fj_physical;
-								for (int i =0; i <Facef.getNumberOfNodes(); i++)
-									IntegrationNodes[i] = _mesh.getNode( Facef_physical.getNodesId()[i] ).getPoint();
-								std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Facej_physical_on_K_ncell,j, IntegrationNodes[inteNode] ); 
-								std::vector<double> velocityRT_in_Xf = MomentumRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
-								for (int ndim =0; ndim < _Ndim; ndim ++ ){
-									jumpPsi[ndim] += Psi_j_in_Xf[ndim] * ( ((it != _FacePeriodicMap.end()) && it->first == j) || IsfInterior ? getOrientation( idFaces[f],Neibourg_of_f) : 1.0 ) ;  
-									meanRhoU[ndim] += velocityRT_in_Xf[ndim]/idCellsOfFacef.size() * 1.0/rhoMean[ncell];
-								}
-							}
-							double dotprod =0;
-							//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
-							for (int ndim =0; ndim < _Ndim; ndim ++ )
-								dotprod  += 1.0/IntegrationNodes.size() * q * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * ( ((idFaces[f] == j) || ((it != _FacePeriodicMap.end()) && it->first == j) ) ? 1.0/2.0 : 1.0 ) ; 	
-							Convection -= dotprod; 		
-						}
-					}
-				} 
-				VecSetValue(_Conv, IndexFace, Convection, ADD_VALUES );
+			// LaplacianPressure
+			WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) ) : (abs( _Velocity(j) )+ _c );
+			MatSetValue(_A, idCells[0], idCells[0], -WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES ); 
+			MatSetValue(_A, idCells[0], idCells[1],  WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES );  
+			MatSetValue(_A, idCells[1], idCells[1], -WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES ); 
+			MatSetValue(_A, idCells[1], idCells[0],  WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES );  
 
-				// *************** Grad^perp tilde (Grad^per)^*  ************//
-				/* if (_Ndim ==2 ){
-					double Inv_Dsigma, length_sigma_perp,  Inv_Df, length_f_perp;
-					MatGetValues(_InvVol, 1, &IndexFace, 1, &IndexFace, &Inv_Dsigma);
-					length_sigma_perp = 1/(Inv_Dsigma * Fj.getMeasure());
-					//TODO periodic
-					std::vector<int> idNodesSigma = Fj.getNodesId();
-					for (int n=0; n < idNodesSigma.size() ; n++){
-						std::vector<int> idFacesn = _mesh.getNode( idNodesSigma[n] ).getFacesId();
-						double measureBoundaryDualVolumOfN =0;
-						for (int f=0; f< idFacesn.size(); f++){
-							Face FaceOfNodeN =  _mesh.getFace( idFacesn[f] );
-							for (int cell=0; cell < FaceOfNodeN.getNumberOfCells(); cell++){
-								Cell K = _mesh.getCell( FaceOfNodeN.getCellsId()[cell] );
-								measureBoundaryDualVolumOfN += sqrt( (K.x() -  FaceOfNodeN.x())*(K.x() -  FaceOfNodeN.x()) + (K.y() -  FaceOfNodeN.y())*(K.y() -  FaceOfNodeN.y()));
-							}
-						}
-						for (int f=0; f< idFacesn.size(); f++){
-							int I_f = _Nmailles + idFacesn[f];
-							MatGetValues(_InvVol, 1, &I_f, 1, &I_f, &Inv_Df);
-							length_f_perp = 1/(Inv_Df * _mesh.getFace(idFacesn[f]).getMeasure());
-							double rotrot = _rhoMax * _uMax/2.0 *length_sigma_perp * getOrientationNode(idNodesSigma[n],j) * length_f_perp * getOrientationNode(idNodesSigma[n], idFacesn[f])/measureBoundaryDualVolumOfN; 
-							MatSetValue(_A, IndexFace, I_f, rotrot, ADD_VALUES ); 
-
-						}
-					}
-				} */
+			if (_timeScheme == Implicit){
+				double rhoL, rhoR;
+				VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
+				VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
+				MatSetValue(_JacobianMatrix, idCells[0], IndexFace,  getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
+				MatSetValue(_JacobianMatrix, idCells[1], IndexFace,  getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  
+				MatSetValue(_JacobianMatrix, IndexFace, idCells[0],  -pow(_compressibleFluid->vitesseSon(rhoL), 2) * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES );
+				MatSetValue(_JacobianMatrix, IndexFace, idCells[1],  -pow(_compressibleFluid->vitesseSon(rhoR), 2) * getOrientation(j,Ctemp2) * Fj.getMeasure(), ADD_VALUES ); 
 			}
-			else if (IsWallBound || IsSteggerBound ) { 
-				/****************** Density conservation equation *********************/
-				VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);		
-				MatSetValue(_A, idCells[0], IndexFace, -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-				if (IsSteggerBound){
-					MatSetValue(_A, idCells[0], idCells[0], -( abs(_Velocity(j) )+_c ) * Fj.getMeasure()/2.0, ADD_VALUES );
-					VecSetValue(_BoundaryTerms, idCells[0], ( abs(_Velocity(j) )+_c ) * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
-				} 
-			}	
+			
+			/*************(-1) x CONVECTION (is not computed in 3 space dimensions)********************/ 
+			Convection= 0; 
+			std::vector<Cell> Support_j;
+			Support_j.push_back(_mesh.getCell(idCells[0]));
+			Support_j.push_back(_mesh.getCell(idCells[1]));
+
+			for (int nei =0; nei <2; nei ++){ // we are in the case where an interior face has two neighbours
+				Cell K = _mesh.getCell(idCells[nei]); 
+				std::vector<int> idFaces = K.getFacesId();
+				VecGetValues(_primitiveVars,1,&idCells[nei],&rho);
+				//If  the face is periodic and K isn't the direct neighbour of Fj, recover the geometric informations of the associated periodic cell 
+				Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[nei] ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
+				
+				for (int f =0; f <K.getNumberOfFaces(); f ++){
+					bool IsfInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),idFaces[f] ) != _InteriorFaceSet.end() ;
+					bool IsfWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),idFaces[f] ) != _WallBoundFaceSet.end() ;
+					bool IsfSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),idFaces[f] ) != _SteggerBoundFaceSet.end();
+					std::map<int,int>::iterator it = _FacePeriodicMap.begin();
+					while ( ( idFaces[f] !=it->second) && (it !=_FacePeriodicMap.end() ) )it++;
+
+					Face Facef = _mesh.getFace( idFaces[f] );
+					std::vector< int> idCellsOfFacef =  Facef.getCellsId();
+					std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
+					I = _Nmailles + idFaces[f];
+					VecGetValues(_primitiveVars,1,&I	,&q);
+					WaveVelocity = (_timeScheme == Implicit ) ? _uMax/2.0 : ( _c + _uMax)/2.0 ;
+					double gradiv = - WaveVelocity * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[nei]] : 1.0);
+					MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
+
+					//************* _Ndim-dimensional terms *************//
+					std::vector<Node> K_Nodes;
+					for (int i=0; i < K.getNodesId().size(); i++)
+						K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
+					
+					std::vector< Point > IntegrationNodes(Facef.getNumberOfNodes());
+					std::vector< double > Weights(Facef.getNumberOfNodes());
+					for (int i =0; i <Facef.getNumberOfNodes(); i++){
+						IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
+						//In quads it's 1/8 (instead of 1/4 given by trapezoid formula given on reference elem) since the loop on the face then on the faces'nodes implies that the integral is computed twice 
+						//TODO -> to improve & what about triangles
+						Weights[i] = 1.0/(K.getNumberOfFaces() * _Ndim ) ; 
+					}
+
+					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
+						std::vector<double> MomentumRT_in_Xf = MomentumRaviartThomas_at_point_X(K, idCells[nei], IntegrationNodes[inteNode] ); 
+						std::vector<double> qtensorielq = TensorProduct(MomentumRT_in_Xf, MomentumRT_in_Xf);
+						std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 	
+						Convection +=  Weights[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * 1.0/rho * Contraction(qtensorielq, GradientPsi_j_in_Xf); 	
+					}
+					//************* (_Ndim-1)-dimensional terms *************//
+					std::vector<double> rhoMean;
+					rhoMean.push_back( rho );
+					if (IsfInterior){											
+						if ( _FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()  )
+							idCellsOfFacef.push_back( _mesh.getFace( _FacePeriodicMap.find(idFaces[f])->second ).getCellsId()[0]  );
+						VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoExt);	
+						rhoMean.push_back( rhoExt ) ;
+					}
+					if (it != _FacePeriodicMap.end()){   
+						idCellsOfFacef.push_back( _mesh.getFace( it->first ).getCellsId()[0]  ); 
+						VecGetValues(_primitiveVars,1,&idCellsOfFacef[1],&rhoExt);	
+						rhoMean.push_back( rhoExt );
+					}
+					if (IsfWallBound) {
+						rhoMean.resize(1);
+						rhoMean[0] = rho ;
+					}
+					
+					if (IsfSteggerBound){
+						rhoMean.resize(1);
+						rhoMean[0] = getboundaryPressure().find(idFaces[f])->second ;
+					}	
+
+					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
+						std::vector<double> jumpPsi(_Ndim, 0.0);
+						std::vector<double> meanRhoU(_Ndim, 0.0);
+						
+						for (int ncell =0; ncell < idCellsOfFacef.size(); ncell ++){
+							Cell Neibourg_of_f    = _mesh.getCell(idCellsOfFacef[ncell]);
+							Face Facef_physical   =   (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
+							Face Facej_physical_on_K_ncell =   (_FacePeriodicMap.find(j)          != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(j)->second )         :  Fj_physical;
+							for (int i =0; i <Facef.getNumberOfNodes(); i++)
+								IntegrationNodes[i] = _mesh.getNode( Facef_physical.getNodesId()[i] ).getPoint();
+							std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Facej_physical_on_K_ncell,j, IntegrationNodes[inteNode] ); 
+							std::vector<double> velocityRT_in_Xf = MomentumRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
+							for (int ndim =0; ndim < _Ndim; ndim ++ ){
+								jumpPsi[ndim] += Psi_j_in_Xf[ndim] * ( ((it != _FacePeriodicMap.end()) && it->first == j) || IsfInterior ? getOrientation( idFaces[f],Neibourg_of_f) : 1.0 ) ;  
+								meanRhoU[ndim] += velocityRT_in_Xf[ndim]/idCellsOfFacef.size() * 1.0/rhoMean[ncell];
+							}
+						}
+						double dotprod =0;
+						//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
+						for (int ndim =0; ndim < _Ndim; ndim ++ )
+							dotprod  += 1.0/IntegrationNodes.size() * q * Facef.getMeasure() * jumpPsi[ndim] * meanRhoU[ndim] * ( ((idFaces[f] == j) || ((it != _FacePeriodicMap.end()) && it->first == j) ) ? 1.0/2.0 : 1.0 ) ; 	
+						Convection -= dotprod; 		
+					}
+				}
+			} 
+			VecSetValue(_Conv, IndexFace, Convection, ADD_VALUES );
+
+			// *************** Grad^perp tilde (Grad^per)^*  ************//
+			/* if (_Ndim ==2 ){
+				double Inv_Dsigma, length_sigma_perp,  Inv_Df, length_f_perp;
+				MatGetValues(_InvVol, 1, &IndexFace, 1, &IndexFace, &Inv_Dsigma);
+				length_sigma_perp = 1/(Inv_Dsigma * Fj.getMeasure());
+				//TODO periodic
+				std::vector<int> idNodesSigma = Fj.getNodesId();
+				for (int n=0; n < idNodesSigma.size() ; n++){
+					std::vector<int> idFacesn = _mesh.getNode( idNodesSigma[n] ).getFacesId();
+					double measureBoundaryDualVolumOfN =0;
+					for (int f=0; f< idFacesn.size(); f++){
+						Face FaceOfNodeN =  _mesh.getFace( idFacesn[f] );
+						for (int cell=0; cell < FaceOfNodeN.getNumberOfCells(); cell++){
+							Cell K = _mesh.getCell( FaceOfNodeN.getCellsId()[cell] );
+							measureBoundaryDualVolumOfN += sqrt( (K.x() -  FaceOfNodeN.x())*(K.x() -  FaceOfNodeN.x()) + (K.y() -  FaceOfNodeN.y())*(K.y() -  FaceOfNodeN.y()));
+						}
+					}
+					for (int f=0; f< idFacesn.size(); f++){
+						int I_f = _Nmailles + idFacesn[f];
+						MatGetValues(_InvVol, 1, &I_f, 1, &I_f, &Inv_Df);
+						length_f_perp = 1/(Inv_Df * _mesh.getFace(idFacesn[f]).getMeasure());
+						double rotrot = _rhoMax * _uMax/2.0 *length_sigma_perp * getOrientationNode(idNodesSigma[n],j) * length_f_perp * getOrientationNode(idNodesSigma[n], idFacesn[f])/measureBoundaryDualVolumOfN; 
+						MatSetValue(_A, IndexFace, I_f, rotrot, ADD_VALUES ); 
+
+					}
+				}
+			} */
 		}
-
-		VecAssemblyBegin(_BoundaryTerms);
-		VecAssemblyEnd(_BoundaryTerms);
-		MatAssemblyBegin(_DivTranspose, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_DivTranspose, MAT_FINAL_ASSEMBLY);
-		VecAssemblyBegin(_Conv);
-		VecAssemblyEnd(_Conv);	
-		MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
-		MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
-
-		Vec Au;
-		VecDuplicate(_b, &Au);
-		MatMult(_A,_primitiveVars, Au);
-		MatMult(_InvVol,Au, _b); 
-
-		/***********Adding boundary terms to density equation, convection term and pressure gradient to momentum equation **************/
-		//TODO : créer vecteur dans intialize() et les supprimer dans terminate()
-		Vec Temporary1, Temporary2, Pressure, GradPressure;
-		VecCreate(PETSC_COMM_SELF, & Temporary2);
-		VecDuplicate(_BoundaryTerms, & Temporary1);
-		VecSetSizes(Temporary2, PETSC_DECIDE, _Nfaces);
-		VecSetFromOptions(Temporary2);
-		//add boundary terms : AU^n + V^{-1}Boundterms //
-		MatMult(_InvVol, _BoundaryTerms, Temporary1); 
-		VecAXPY(_b,     1, Temporary1); 
-		//add convection terms  : AU^n + V^{-1}Boundterms - V^{-1}_Conv//
-		MatMult(_InvVol, _Conv, Temporary1); 
-		VecAXPY(_b,     1, Temporary1); 
-		//Extract pressure to multiply by _DivTranspose = -grad //
-		VecCreate(PETSC_COMM_SELF, & Pressure); 
-		VecSetSizes(Pressure, PETSC_DECIDE, _Nmailles); 
-		VecSetFromOptions(Pressure);
-		VecSetUp(Pressure);
-		for (int i=0; i <_Nmailles; i++){
-			VecGetValues(_primitiveVars,1,&i,&rho);
-			p =  _compressibleFluid->getPressure(rho); 				
-			VecSetValues(Pressure, 1,&i, &p, INSERT_VALUES );
-		}														
-		//add pressure gradient : AU^n+ V^{-1}Boundterms - V^{-1}_Conv - V^{-1}GradPressure//
-		MatMult(_DivTranspose, Pressure, Temporary2); 						
-		double *Product = new double[_Nfaces]; //TODO  can we avoid creating a pointer only to insert in the bigger Vector ?
-		PetscScalar gradp;
-		for (int i=0; i <_Nfaces; i++){
-			VecGetValues(Temporary2,1,&i,&gradp);
-			Product[i] = gradp; 
-		}
-		VecDuplicate(_primitiveVars, &GradPressure);
-		VecZeroEntries(GradPressure);
-		int *indices2 = new int[_Nfaces];
-		std::iota(indices2, indices2 + _Nfaces, _Nmailles);
-		VecSetValues(GradPressure, _Nfaces, indices2, Product, INSERT_VALUES);	
-
-		MatMult(_InvVol, GradPressure, Temporary1);
-		VecAXPY(_b,     1, Temporary1); 
-
-		VecDestroy(& Temporary1);
-		VecDestroy(& Temporary2);
-		VecDestroy(& Au); 
-		VecDestroy(& GradPressure);
-		VecDestroy(& Pressure);	
-		delete[] indices2;
-		delete[] Product;
-		
+		else if (IsWallBound || IsSteggerBound ) { 
+			/****************** Density conservation equation *********************/
+			VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);		
+			MatSetValue(_A, idCells[0], IndexFace, -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+			if (IsSteggerBound){
+				WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) ) : (abs( _Velocity(j) )+ _c );
+				MatSetValue(_A, idCells[0], idCells[0], -WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES );
+				VecSetValue(_BoundaryTerms, idCells[0],  WaveVelocity * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
+			} 
+		}	
 	}
-	if (_nbTimeStep == 0)
-		ComputeMinCellMaxPerim(); 
-	double numax = _Ndim*2;	
-	
-	double dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) * 2 ) ;
-	double PreviousTime = _Time.back();
-	_Time.push_back(PreviousTime+ dt);
-	
+
+	VecAssemblyBegin(_BoundaryTerms);
+	VecAssemblyEnd(_BoundaryTerms);
+	VecAssemblyBegin(_Conv);
+	VecAssemblyEnd(_Conv);	
+	MatAssemblyBegin(_A, MAT_FINAL_ASSEMBLY);
+	MatAssemblyEnd(_A, MAT_FINAL_ASSEMBLY);
+	if (_timeScheme == Implicit){
+		MatAssemblyBegin(_JacobianMatrix, MAT_FINAL_ASSEMBLY);
+		MatAssemblyEnd(_JacobianMatrix, MAT_FINAL_ASSEMBLY);
+	}
+
+	Vec Au;
+	VecDuplicate(_b, &Au);
+	MatMult(_A,_primitiveVars, Au); //TODO AU at initialize ?
+
+	/***********Adding boundary terms to density equation, convection term and pressure gradient to momentum equation **************/
+	// Add convection terms  : AU^n + Boundterms - _Conv
+	VecAXPY(Au,     1, _BoundaryTerms); 
+	VecAXPY(Au,     1, _Conv); 
+	//Add pressure gradient : AU^n+ Boundterms - _Conv - GradPressure 
+	for (int j =0; j <_Nfaces ; j++){
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		Cell Ctemp1 = _mesh.getCell(idCells[0]);
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+		PetscInt IndexFace = _Nmailles + j;		
+		if (IsInterior){
+			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  ) 
+				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
+			VecGetValues(_primitiveVars,1,&idCells[1],&rhoExt);
+			VecSetValue(_GradPressure, IndexFace, getOrientation(j,Ctemp1) * Fj.getMeasure() *_compressibleFluid->getPressure(rhoInt) , ADD_VALUES );
+			VecSetValue(_GradPressure, IndexFace, getOrientation(j,Ctemp2) * Fj.getMeasure() *_compressibleFluid->getPressure(rhoExt) , ADD_VALUES );
+		}
+	}
+	VecAXPY(Au,     1, _GradPressure); 
+	//Multiply by inverse volums V^{-1}( AU^n + Boundterms - _Conv - GradPressure  )
+	MatMult(_InvVol, Au, _b);
+
+	if (_nbTimeStep == 0)	ComputeMinCellMaxPerim(); 
+	double dt ;
+	if (_timeScheme == Implicit){
+		Mat Prod;
+		MatMatMult(_InvVol, _JacobianMatrix, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
+		MatCopy(Prod,_A, DIFFERENT_NONZERO_PATTERN); 
+		MatDestroy(& Prod);
+		//TODO create Prod at init in WaveStaggered
+		dt =   _minCell / (_maxPerim * _uMax * 2.0  ) ;
+		MatScale(_A,  dt);
+		MatShift(_A,  1);
+		MatView(_A, PETSC_VIEWER_STDOUT_WORLD);
+	}
+	else if (_timeScheme == Explicit){
+		dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) * 2 ) ;
+	}
+	VecScale(_b, dt);
+
+	_Time.push_back(_Time.back() + dt);	
+	VecDestroy(& Au); 
+
 	return dt; 
 }
 
@@ -670,35 +666,10 @@ void EulerBarotropicStaggered::Rhomax_Umax_Cmax(){
 	_c =  _compressibleFluid->vitesseSon(_rhoMax); 	 
 }
 
-
-void EulerBarotropicStaggered::computeNewtonVariation(){
-	if(_timeScheme == Explicit){	
-		VecCopy(_b,_newtonVariation);
-		VecScale(_newtonVariation, _dt);
-	}
-} 
-
 bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
-	bool stop=false;
-
-	if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
-		_maxvp=0.;
-		computeTimeStep(stop);//This compute timestep is just to update the linear system. The time step was imposed before starting the Newton iterations
-	}
-	if(stop){//Le compute time step ne s'est pas bien passé
-		cout<<"ComputeTimeStep failed"<<endl;
-		converged=false;
-		return false;
-	}
-	computeNewtonVariation();
-	//converged=convergence des iterations
-	if(_timeScheme == Explicit)
-		converged=true;
-
-	PetscScalar q, rho_sigma, u;	
-	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk + deltaV 
+	bool ok = WaveStaggered::iterateTimeStep(converged);
+	PetscScalar q, rho_sigma, u;
 	UpdateDualDensity(); // \rho^{n+1}_K -> \rho^{n+1}_\sigma 
-
 	for (int f=0; f< _Nfaces; f++){
 		bool IsWallBound =    std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),f ) != _WallBoundFaceSet.end() ;
 		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),f ) != _SteggerBoundFaceSet.end() ;	
@@ -709,7 +680,7 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 			VecSetValue(_primitiveVars, I, _Velocity(f) * rho_sigma , INSERT_VALUES); 
 		}
 	}
-	return converged;
+	return ok;
 }
 
 void EulerBarotropicStaggered::save(){
@@ -875,29 +846,26 @@ void EulerBarotropicStaggered::save(){
 }
 
 void EulerBarotropicStaggered::terminate(){ 
-	VecDestroy(& _Conv); 
-	VecDestroy(& _DualDensity);
-	delete _compressibleFluid;
-	_compressibleFluid = nullptr;
-	delete[]_vec_normal;
 	VecDestroy(&_newtonVariation);
 	VecDestroy(&_primitiveVars);
 	VecDestroy(&_b);
-	MatDestroy(& _A); 
-
 	MatDestroy(&_InvVol); 
 	MatDestroy(& _InvSurface);
-
-	MatDestroy(& _Div); 
 	MatDestroy(&_LaplacianPressure);
-	VecDestroy(& _BoundaryTerms);	
-
-	MatDestroy(& _DivTranspose); 
+	VecDestroy(& _BoundaryTerms);
 	// 	PCDestroy(_pc);
 	KSPDestroy(&_ksp);
-
 	if(_mpi_size>1 && _mpi_rank == 0)
         VecDestroy(&_primitiveVars_seq);
+	delete[]_vec_normal;
+
+
+	if (_timeScheme == Implicit) MatDestroy(& _JacobianMatrix);
+	VecDestroy(& _Conv); 
+	VecDestroy(& _DualDensity);
+	VecDestroy(& _GradPressure);	
+	delete _compressibleFluid;
+	_compressibleFluid = nullptr;
 	
 }
 

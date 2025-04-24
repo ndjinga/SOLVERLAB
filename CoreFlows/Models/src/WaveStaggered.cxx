@@ -53,15 +53,6 @@ std::map<int,double>  WaveStaggered::getboundaryPressure() const {
 		return _boundaryPressure;
 }
 
-
-std::map<int,int>  WaveStaggered::getFacePeriodicMap() const {
-		return _FacePeriodicMap;
-}
-
-std::vector<int>  WaveStaggered::getSteggerBoundFaceSet() const {
-		return _SteggerBoundFaceSet;
-}
-
 void WaveStaggered::setWallBoundIndex(int j ){
 	_WallBoundFaceSet.push_back(j);
 	_isWall = true;
@@ -505,16 +496,9 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			}
 			else if (IsSteggerBound || IsWallBound ) { 
 				MatSetValue(_A, idCells[0], IndexFace, -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-				if (IsWallBound ){
-					VecGetValues(_primitiveVars,1,&idCells[0],&_pInt);
-					_pExt =  _pInt; 
-				}
-				else if (IsSteggerBound){
-					_pExt = getboundaryPressure().find(j)->second; 
-					MatSetValue(_A, IndexFace, idCells[0], _kappa *  getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
-					VecSetValue(_BoundaryTerms, IndexFace,   -getOrientation(j, Ctemp1) * Fj.getMeasure()* _pExt * _kappa , ADD_VALUES );
-					MatSetValue(_A, idCells[0], idCells[0], -_d*_c *Fj.getMeasure(), ADD_VALUES );
-					VecSetValue(_BoundaryTerms, idCells[0], _d * _c * Fj.getMeasure()* _pExt, ADD_VALUES );
+				if (IsSteggerBound){
+					MatSetValue(_A, idCells[0], idCells[0], -_d * _c * Fj.getMeasure(), ADD_VALUES );
+					VecSetValue(_BoundaryTerms, idCells[0],  _d * _c * Fj.getMeasure() * getboundaryPressure().find(j)->second, ADD_VALUES );
 				}
 			}	
 		}
@@ -586,7 +570,7 @@ void WaveStaggered::ComputeMinCellMaxPerim(){
 
 void WaveStaggered::computeNewtonVariation(){
 	if(_timeScheme == Explicit)
-		VecCopy(_b,_newtonVariation); //DELTA U = _b = delta t*  Au + delta t * V^{-1}_Boundterms
+		VecCopy(_b,_newtonVariation); //DELTA U = _b = delta t*  V^{-1}Au + delta t * V^{-1}_Boundterms
 	else if (_timeScheme == Implicit)
 		VecCopy(_primitiveVars, _newtonVariation); //DELTA U = U^n
 }

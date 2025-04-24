@@ -55,7 +55,7 @@ public :
     }
 
     void UpdateDualDensity();
-    void computeNewtonVariation(); 
+    //void computeNewtonVariation(); 
     bool iterateTimeStep(bool &converged);
     std::vector<double>  getTimeEvol();
     void Rhomax_Umax_Cmax();
@@ -78,9 +78,9 @@ protected :
     vector<    Fluide* > _fluides;//
 	BarotropicLaw   *_compressibleFluid;
 	
-    PetscReal _rhoMax, _uMax; //TODO à supprimer
-    Vec _DualDensity, _velocityVec, _Conv ;
-	double _c;
+    Vec _DualDensity, _Conv, _GradPressure ;
+    Mat _JacobianMatrix;
+	double _c, _rhoMax, _uMax;
 	std::vector<double> _Entropy, _Time;
     std::map< int , std::map< int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >> _PhysicalPsif,_GradientPhysicalPsif;
     //  map< idcell, map< idface, pair< K, [(x_0, nabla Psi_sigma_|K (x_0) ), ..., (x_f, nabla Psi_sigma_|K (x_f) )] >>>

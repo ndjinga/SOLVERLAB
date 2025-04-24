@@ -97,7 +97,6 @@ public :
 	void ComputeEnergyAtTimeT();
 	/*******Periodicity related ********/
 	void setPeriodicFaces(	Mesh &M, const char &Direction, int ncells);
-	std::map<int,int>  getFacePeriodicMap() const;
 	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
 	bool  IsFaceBoundaryComputedInPeriodic(int j );
 
@@ -106,7 +105,6 @@ public :
 	void setSteggerBoundIndex(int j ); //Imposed pressure and velocity
 	void setInteriorIndex(int j ); //To avoid complicated implementation in periodic
 	std::map<int,double>  getboundaryPressure() const;
-	std::vector<int>  getSteggerBoundFaceSet() const ;
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
 	
