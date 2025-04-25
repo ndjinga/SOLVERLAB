@@ -45,6 +45,7 @@ public :
     void save();
     void terminate();
     double computeTimeStep(bool & stop);
+    void computeNewtonVariation();
 
     BarotropicLaw getBarotropicEOS(int i){
         BarotropicLaw * result = dynamic_cast<BarotropicLaw*>(_fluides[i]); 

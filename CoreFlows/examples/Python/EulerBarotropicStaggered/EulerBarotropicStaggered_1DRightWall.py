@@ -89,7 +89,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	myProblem.setboundaryVelocity(wallMomentumMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Explicit);
+	myProblem.setTimeScheme(svl.Implicit);
     
     # name of result file
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";

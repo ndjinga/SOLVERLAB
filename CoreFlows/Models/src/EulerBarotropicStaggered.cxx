@@ -267,6 +267,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				double rhoL, rhoR;
 				VecGetValues(_primitiveVars,1,&idCells[0],&rhoL);
 				VecGetValues(_primitiveVars,1,&idCells[1],&rhoR);
+				MatSetValue(_JacobianMatrix, idCells[0], idCells[0],  _c * Fj.getMeasure()/2.0, ADD_VALUES ); 
+				MatSetValue(_JacobianMatrix, idCells[0], idCells[1], -_c * Fj.getMeasure()/2.0, ADD_VALUES );  
+				MatSetValue(_JacobianMatrix, idCells[1], idCells[1],  _c * Fj.getMeasure()/2.0, ADD_VALUES ); 
+				MatSetValue(_JacobianMatrix, idCells[1], idCells[0], -_c * Fj.getMeasure()/2.0, ADD_VALUES );  
 				MatSetValue(_JacobianMatrix, idCells[0], IndexFace,  getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
 				MatSetValue(_JacobianMatrix, idCells[1], IndexFace,  getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  
 				MatSetValue(_JacobianMatrix, IndexFace, idCells[0],  -pow(_compressibleFluid->vitesseSon(rhoL), 2) * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES );
@@ -405,10 +409,14 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			/****************** Density conservation equation *********************/
 			VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);		
 			MatSetValue(_A, idCells[0], IndexFace, -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+			if (_timeScheme == Implicit)
+				MatSetValue(_JacobianMatrix, idCells[0], IndexFace,  getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
 			if (IsSteggerBound){
 				WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) ) : (abs( _Velocity(j) )+ _c );
 				MatSetValue(_A, idCells[0], idCells[0], -WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES );
 				VecSetValue(_BoundaryTerms, idCells[0],  WaveVelocity * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
+				if (_timeScheme == Implicit)
+					VecSetValue(_BoundaryTerms, idCells[0],  _c * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );	
 			} 
 		}	
 	}
@@ -461,10 +469,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 		MatCopy(Prod,_A, DIFFERENT_NONZERO_PATTERN); 
 		MatDestroy(& Prod);
 		//TODO create Prod at init in WaveStaggered
-		dt =   _minCell / (_maxPerim * _uMax * 2.0  ) ;
+
+		dt =   _minCell / (_maxPerim * _uMax  * 2 ) ;
 		MatScale(_A,  dt);
 		MatShift(_A,  1);
-		MatView(_A, PETSC_VIEWER_STDOUT_WORLD);
+		
 	}
 	else if (_timeScheme == Explicit){
 		dt = _cfl * _minCell / (_maxPerim * (_uMax + _c) * 2 ) ;
@@ -666,8 +675,59 @@ void EulerBarotropicStaggered::Rhomax_Umax_Cmax(){
 	_c =  _compressibleFluid->vitesseSon(_rhoMax); 	 
 }
 
+void EulerBarotropicStaggered::computeNewtonVariation(){
+	if(_timeScheme == Explicit)
+		VecCopy(_b,_newtonVariation); //DELTA U = _b = delta t*  V^{-1}Au + delta t * V^{-1}_Boundterms
+	else if (_timeScheme == Implicit){
+		#if PETSC_VERSION_GREATER_3_5
+        KSPSetOperators(_ksp, _A, _A);
+#else
+        KSPSetOperators(_ksp, _A, _A,SAME_NONZERO_PATTERN);
+#endif
+        if(_conditionNumber)  KSPSetComputeEigenvalues(_ksp,PETSC_TRUE);
+		KSPSolve(_ksp, _b, _newtonVariation);
+        KSPConvergedReason reason;
+        KSPGetConvergedReason(_ksp,&reason);
+        KSPGetIterationNumber(_ksp, &_PetscIts);
+        double residu;
+        KSPGetResidualNorm(_ksp,&residu);
+
+        if (reason!=2 and reason!=3) {
+            PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc.\n");
+            PetscPrintf(PETSC_COMM_WORLD,"!!!!!!!!!!!!! Itérations maximales %d atteintes, résidu = %1.2e, précision demandée= %1.2e.\n",_maxPetscIts,residu,_precision);
+            PetscPrintf(PETSC_COMM_WORLD,"Solver used %s, preconditioner %s, Final number of iteration = %d.\n",_ksptype,_pctype,_PetscIts);
+            if(_mpi_rank==0){//Avoid redundant printing 
+                *_runLogFile<<"!!!!!!!!!!!!! Erreur système linéaire : pas de convergence de Petsc."<<endl;
+                *_runLogFile<<"!!!!!!!!!!!!! Itérations maximales "<<_maxPetscIts<<" atteintes, résidu="<<residu<<", précision demandée= "<<_precision<<endl;
+                *_runLogFile<<"Solver used "<<  _ksptype<<", preconditioner "<<_pctype<<", Final number of iteration= "<<_PetscIts<<endl;
+                _runLogFile->close();
+            }
+            if( reason == -3)		cout<<"Maximum number of iterations "<<_maxPetscIts<<" reached"<<endl;
+            else if( reason == -11) cout<<"!!!!!!! Construction of preconditioner failed !!!!!!"<<endl;
+            else if( reason == -5)  cout<<"!!!!!!! Generic breakdown of the linear solver (Could be due to a singular matrix or preconditioner)!!!!!!"<<endl;
+            else{
+                cout<<"PETSc divergence reason  "<< reason <<endl;
+                cout<<"Final iteration= "<<_PetscIts<<". Maximum allowed was " << _maxPetscIts<<endl;
+            }
+        }
+        else if( _MaxIterLinearSolver < _PetscIts)  _MaxIterLinearSolver = _PetscIts;
+	}
+}
+	
 bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
-	bool ok = WaveStaggered::iterateTimeStep(converged);
+	bool stop=false;
+	if(_NEWTON_its>0){//Pas besoin de computeTimeStep à la première iteration de Newton
+		_maxvp=0.;
+		computeTimeStep(stop);//This compute timestep is just to update the linear system. The time step was imposed before starting the Newton iterations
+	}
+	if(stop){//Le compute time step ne s'est pas bien passé
+		cout<<"ComputeTimeStep failed"<<endl;
+		converged=false;
+		return false;
+	}
+	computeNewtonVariation();
+	converged=true;
+	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
 	PetscScalar q, rho_sigma, u;
 	UpdateDualDensity(); // \rho^{n+1}_K -> \rho^{n+1}_\sigma 
 	for (int f=0; f< _Nfaces; f++){
@@ -679,8 +739,8 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 			VecGetValues(_DualDensity, 1,&f, &rho_sigma);
 			VecSetValue(_primitiveVars, I, _Velocity(f) * rho_sigma , INSERT_VALUES); 
 		}
-	}
-	return ok;
+	}	
+	return converged;//TODO not good
 }
 
 void EulerBarotropicStaggered::save(){
