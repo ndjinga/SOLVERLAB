@@ -257,11 +257,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			MatSetValue(_A, idCells[1], IndexFace,  -getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  
 
 			// LaplacianPressure
-			WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) ) : (abs( _Velocity(j) )+ _c );
-			MatSetValue(_A, idCells[0], idCells[0], -WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES ); 
-			MatSetValue(_A, idCells[0], idCells[1],  WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES );  
-			MatSetValue(_A, idCells[1], idCells[1], -WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES ); 
-			MatSetValue(_A, idCells[1], idCells[0],  WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES );  
+			MatSetValue(_A, idCells[0], idCells[0], -(abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES ); 
+			MatSetValue(_A, idCells[0], idCells[1],  (abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES );  
+			MatSetValue(_A, idCells[1], idCells[1], -(abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES ); 
+			MatSetValue(_A, idCells[1], idCells[0],  (abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES );  
 
 			if (_timeScheme == Implicit){
 				double rhoL, rhoR;
@@ -412,11 +411,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			if (_timeScheme == Implicit)
 				MatSetValue(_JacobianMatrix, idCells[0], IndexFace,  getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
 			if (IsSteggerBound){
-				WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) ) : (abs( _Velocity(j) )+ _c );
-				MatSetValue(_A, idCells[0], idCells[0], -WaveVelocity * Fj.getMeasure()/2.0, ADD_VALUES );
-				VecSetValue(_BoundaryTerms, idCells[0],  WaveVelocity * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
-				if (_timeScheme == Implicit)
-					VecSetValue(_BoundaryTerms, idCells[0],  _c * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );	
+				MatSetValue(_A, idCells[0], idCells[0], -(abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0, ADD_VALUES );
+				VecSetValue(_BoundaryTerms, idCells[0],  (abs( _Velocity(j) )+ _c ) * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
 			} 
 		}	
 	}

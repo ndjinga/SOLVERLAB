@@ -91,8 +91,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 10000;
-	freqSave = 50;
+	MaxNbOfTimeStep = 1000000;
+	freqSave = 80;
 	cfl = 0.3
 	maxTime = 0.07;
 	precision = 1e-10;
