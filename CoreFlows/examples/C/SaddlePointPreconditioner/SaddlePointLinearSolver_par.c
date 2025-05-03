@@ -208,9 +208,10 @@ int main( int argc, char **args ){
 
 	// Finalisation of the preconditioner	
 	IS is_U_hat,is_P_hat;
-	
-	ISCreateStride(PETSC_COMM_WORLD, n_u, n_p, 1, &is_U_hat);
-	ISCreateStride(PETSC_COMM_WORLD, n_p, 0, 1, &is_P_hat);
+	//Nouveaux numéros de lignes pour les vitesses et les pressions
+	ISCreateStride(PETSC_COMM_WORLD, nb_velocity_lines, max_velocity_lines - nb_velocity_lines + nb_pressure_lines, 1, &is_U_hat);//décalage i -> i + nb_pressure_lines
+	ISCreateStride(PETSC_COMM_WORLD, nb_pressure_lines, min_pressure_lines - nb_velocity_lines                    , 1, &is_P_hat);//décalage i -> i - nb_velocity_lines
+
 
 //##### Call KSP solver and monitor convergence
 	double residu, abstol, rtol=1e-7, dtol;
@@ -219,7 +220,7 @@ int main( int argc, char **args ){
 	KSP ksp;
 	KSP * kspArray;
 	KSPType type, type1, type2;
-	PC pc, pc1,pc2;
+	PC pc, pc1, pc2;
 	PCType pctype, pctype1, pctype2;
 	
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
@@ -228,25 +229,27 @@ int main( int argc, char **args ){
 	KSPSetOperators(ksp,A_hat,Pmat);
 	KSPSetTolerances(ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT, PETSC_DEFAULT);
 	KSPGetPC(ksp,&pc);
+
 	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner...\n");
-	if( size==1 )
+	PCSetType(pc,PCFIELDSPLIT);
+	PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
+	PCFieldSplitSetIS(pc, "0",is_P_hat);
+	PCFieldSplitSetIS(pc, "1",is_U_hat);
+	PCFieldSplitGetSubKSP( pc, &nblocks, &kspArray);
+	KSPSetType( kspArray[0], KSPGMRES);
+	KSPGetPC(kspArray[0], &pc1);
+	KSPGetPC(kspArray[1], &pc2);
+	PCSetType( pc1, PCGAMG);
+	PCGAMGSetType( pc1, PCGAMGAGG);
+
+	if( size==1 )//sequentiel : direct solver available
 	{
-		PCSetType(pc,PCFIELDSPLIT);
-		PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
-		PCFieldSplitSetIS(pc, "0",is_P_hat);
-		PCFieldSplitSetIS(pc, "1",is_U_hat);
-		PCFieldSplitGetSubKSP( pc, &nblocks, &kspArray);
-		KSPSetType( kspArray[0], KSPGMRES);
-		KSPSetType( kspArray[1], KSPPREONLY);
-		KSPGetPC(kspArray[0],&pc1);
-		KSPGetPC(kspArray[1],&pc2);
-		PCSetType( pc1, PCGAMG);
-		PCSetType( pc2, PCLU);
-		PCGAMGSetType( pc1, PCGAMGAGG);
+		KSPSetType( kspArray[1], KSPPREONLY);//Use a direct solver since the matrix is diagonal and sequential
+		PCSetType( pc2, PCCHOLESKY);//Use a direct solver since the matrix is diagonal and sequential
 		//PetscOptionsSetValue(NULL,"-fieldsplit_0_ksp_type","gmres");	
 		//PetscOptionsSetValue(NULL,"-fieldsplit_0_pc_type","gamg");
 		//PetscOptionsSetValue(NULL,"-fieldsplit_0_pc_gamg_type","agg");
-		//PetscOptionsSetValue(NULL,"-fieldsplit_1_pc_type","lu");
+		//PetscOptionsSetValue(NULL,"-fieldsplit_1_pc_type","cholesky");
 		//PetscOptionsSetValue(NULL,"-fieldsplit_1_ksp_type","preonly");	
 	}
 	else
