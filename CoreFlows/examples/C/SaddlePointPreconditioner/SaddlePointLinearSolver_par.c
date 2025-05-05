@@ -111,15 +111,12 @@ int main( int argc, char **args ){
 	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
 	Vec X_array[2];
 	PetscScalar y[nb_pressure_lines];
-	PetscInt i_p[nb_pressure_lines];
+	PetscInt  i_p[nb_pressure_lines];
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
-	VecCreate(PETSC_COMM_WORLD,&b_input);
-	VecSetSizes(b_input,PETSC_DECIDE,n_u+n_p);
-	VecSetFromOptions(b_input);
+	MatCreateVecs(A_input,&b_input,&X_anal);// parallel distribution of vectors should optimise the computation A_input*X_anal=b_input
 	
-	VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
-	VecDuplicate(b_input,&X_hat);// X_hat will store the numerical solution of the transformed system
+	VecDuplicate(X_anal ,&X_hat);//X_anal will store the exact solution X_hat will store the numerical solution of the transformed system
 	VecDuplicate(b_input,&b_hat);// b_hat will store the right hand side of the transformed system
 
 	VecSet(X_anal,0.0);
@@ -145,7 +142,6 @@ int main( int argc, char **args ){
 
 	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &b_hat);//This may generate an error message : "Nest vector argument 3 not setup "
 	VecConcatenate(2, X_array, &b_hat, NULL);
-	
 
 //##### Application of the transformation A -> A_hat
 	// Declaration
@@ -162,12 +158,23 @@ int main( int argc, char **args ){
 	//Extraction of the diagonal of M
 	MatCreateVecs(M,NULL,&v);//v has the parallel distribution of M
 	MatGetDiagonal(M,v);
-	//Create the matrix 2*diag(M). Why not use MatCreateDiagonal ???
+	
+	MatDuplicate(M, MAT_DO_NOT_COPY_VALUES, &diag_2M);
+	MatEliminateZeros(diag_2M, PETSC_TRUE);
+	MatDiagonalSet(diag_2M, v,  INSERT_VALUES);
+	MatScale(diag_2M,2);//store 2*diagonal part of M
+	//Create the matrix 2*diag(M). Why not use MatCreateDiagonal ??? Problem of conversion from MATCONSTANTDIAGONAL to MATAIJ
 	//MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
 	//MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
+	/*  Problem of conversion from MATDIAGONAL to MATAIJ
 	MatCreateDiagonal(v,&diag_2M);
 	MatScale(diag_2M,2);//store 2*diagonal part of M
-	MatConvert(diag_2M,  MATAIJ, MAT_INPLACE_MATRIX, &diag_2M);
+	PetscPrintf(PETSC_COMM_WORLD,"Printing matrix diag_2M before conversion \n");
+	MatView( diag_2M, PETSC_VIEWER_STDOUT_WORLD);
+	MatConvert(diag_2M,  MATAIJ, MAT_INITIAL_MATRIX, &diag_2Maij);
+	PetscPrintf(PETSC_COMM_WORLD,"Printing matrix diag_2M after conversion \n");
+	MatView( diag_2Maij, PETSC_VIEWER_STDOUT_WORLD);
+	*/
 	VecReciprocal(v);
 	
 	// Creation of D_M_inv_G = D_M_inv*G
@@ -349,7 +356,7 @@ int main( int argc, char **args ){
 	VecConcatenate(2, X_output_array, &X_output, NULL);
 	
 //##### Compute the error and check it is small
-	Vec X_anal_p, X_anal_u;//Pressure and velocity components of the analitic solution
+	Vec X_anal_p, X_anal_u;//Pressure and velocity components of the analytic solution
 	double error, error_p, error_u;
 	
 	VecGetSubVector( X_anal, is_P, &X_anal_p);
