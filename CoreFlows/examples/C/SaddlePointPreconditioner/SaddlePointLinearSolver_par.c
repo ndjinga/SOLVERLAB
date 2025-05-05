@@ -9,7 +9,6 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                                                                                               */
 /* Auxilliary variables : - A_hat (transformed matrix)                                           */
 /*                        - X_hat (unknown of the transformed system)                            */
-/*                        - b_hat (RHS of the transformed system)                                */
 /*                        - Pmat  (preconditioning matrix)                                       */
 /*                        - M top    left  submatrix of A_{input}                                */
 /*                        - G top    right submatrix of A_{input}                                */
@@ -20,13 +19,13 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                        A     = *       *                                                      */
 /*                                 *D   C*                                                       */
 /*                                                                                               */
-/*                                 *C_hat  -D*                                                   */
-/*                        A_hat = *           *                                                  */
-/*                                 *G_hat   M*                                                   */
+/*                                 *M    G_hat*                                                   */
+/*                        A_hat = *            *                                                  */
+/*                                 *-D   C_hat*                                                   */
 /*                                                                                               */
-/*                                 *C_hat        0   *                                           */
+/*                                 *2 diag(M)  G_hat*                                           */
 /*                        Pmat  = *                   *                                          */
-/*                                 *G_hat   2 diag(M)*                                           */
+/*                                 *0          C_hat*                                           */
 /*                                                                                               */
 /*************************************************************************************************/
 
@@ -108,40 +107,31 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"Size of D : %d,%d\n", size1,size2);
 
 //##### Definition of the right hand side to test the preconditioner
-	Vec b_input, b_input_p, b_input_u, b_hat, X_hat, X_anal;
-	Vec X_array[2];
+	Vec b_input, X_hat, X_anal;
 	PetscScalar y[nb_pressure_lines];
 	PetscInt  i_p[nb_pressure_lines];
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
 	MatCreateVecs(A_input,&b_input,&X_anal);// parallel distribution of vectors should optimise the computation A_input*X_anal=b_input
 	
-	VecDuplicate(X_anal ,&X_hat);//X_anal will store the exact solution X_hat will store the numerical solution of the transformed system
-	VecDuplicate(b_input,&b_hat);// b_hat will store the right hand side of the transformed system
+	//VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
+	VecDuplicate(X_anal ,&X_hat);// X_hat will store the numerical solution of the transformed system
 
 	VecSet(X_anal,0.0);
 
 	for (int i = min_pressure_lines;i<irow_max;i++){
-		y[i-n_u]=1.0/i;
+		y[i-n_u]=1.0/i;//valeur second membre à imposer ici
 		i_p[i-n_u]=i;
 	}
 	
 	VecSetValues(X_anal,nb_pressure_lines,i_p,y,INSERT_VALUES);
-	VecAssemblyBegin(X_anal);
-	VecAssemblyEnd(X_anal);
+	VecAssemblyBegin(X_anal );
+	VecAssemblyEnd(  X_anal );
 	VecNormalize( X_anal, NULL);
+
 	MatMult( A_input, X_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
 	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on processed 0
-
-	//Swap the pressure and velocity components
-	VecGetSubVector( b_input, is_P, &b_input_p);
-	VecGetSubVector( b_input, is_U, &b_input_u);
-	X_array[0] = b_input_p;
-	X_array[1] = b_input_u;
-
-	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &b_hat);//This may generate an error message : "Nest vector argument 3 not setup "
-	VecConcatenate(2, X_array, &b_hat, NULL);
 
 //##### Application of the transformation A -> A_hat
 	// Declaration
@@ -153,8 +143,6 @@ int main( int argc, char **args ){
 	VecScatter scat;//tool to redistribute a vector on the processors
 	IS is_to, is_from;
 	
-	Mat_array[3]=M;//Bottom left block of A_hat
-
 	//Extraction of the diagonal of M
 	MatCreateVecs(M,NULL,&v);//v has the parallel distribution of M
 	MatGetDiagonal(M,v);
@@ -193,32 +181,45 @@ int main( int argc, char **args ){
 	// Creation of C_hat
 	MatMatMult(D,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);//C_hat contains D*D_M_inv*G
 	MatAXPY(C_hat,1.0,C,SUBSET_NONZERO_PATTERN);//C_hat contains C + D*D_M_inv*G
-	Mat_array[0]=C_hat;//Top left block of A_hat
 
 	// Creation of G_hat
 	MatMatMult(M,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&G_hat);//G_hat contains M*D_M_inv*G
 	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);//G_hat contains G - M*D_M_inv*G
-	Mat_array[2]=G_hat;//Bottom left block of A_hat
 
 	// Creation of -D
 	MatScale(D,-1.0);
-	Mat_array[1]=D;//Top right block of A_hat
 
+	//Creation of global matrices using MatCreateNest
+	if( size==1 )
+	{
+	Mat_array[3]=C_hat;//Top left block of A_hat
+	Mat_array[2]=D;//Top right block of A_hat
+	Mat_array[1]=G_hat;//Bottom left block of A_hat
+	Mat_array[0]=M;//Bottom left block of A_hat
 	// Creation of A_hat = transformed+ reordered A_input
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&A_hat);
 
 	// Creation of Pmat
-	Mat_array[3]=diag_2M;
+	Mat_array[0]=diag_2M;
 	Mat_array[1]=NULL;//Cancel top right block
 	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&Pmat);
-
-
-	// Finalisation of the preconditioner	
-	IS is_U_hat,is_P_hat;
-	//Nouveaux numéros de lignes pour les vitesses et les pressions
-	ISCreateStride(PETSC_COMM_WORLD, nb_velocity_lines, max_velocity_lines - nb_velocity_lines + nb_pressure_lines, 1, &is_U_hat);//décalage i -> i + nb_pressure_lines
-	ISCreateStride(PETSC_COMM_WORLD, nb_pressure_lines, min_pressure_lines - nb_velocity_lines                    , 1, &is_P_hat);//décalage i -> i - nb_velocity_lines
-
+	}
+	else// bug ordonancement matnest en parallèle ?
+	{
+	Mat_array[0]=C_hat;//Top left block of A_hat
+	Mat_array[1]=D;//Top right block of A_hat
+	Mat_array[2]=G_hat;//Bottom left block of A_hat
+	Mat_array[3]=M;//Bottom left block of A_hat
+	//Creation IS pour que la creation du matnest se passe bien
+	IS IS_array[2];
+	IS_array[0]=is_P;
+	IS_array[1]=is_U;	
+	MatCreateNest(PETSC_COMM_WORLD,2,IS_array,2,IS_array,Mat_array,&A_hat);
+	// Creation of Pmat
+	Mat_array[3]=diag_2M;
+	Mat_array[2]=NULL;//Cancel top right block
+	MatCreateNest(PETSC_COMM_WORLD,2,IS_array,2,IS_array,Mat_array,&Pmat);
+	}
 
 //##### Call KSP solver and monitor convergence
 	double residu, abstol, rtol=1e-7, dtol;
@@ -240,41 +241,44 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"Setting the preconditioner...\n");
 	PCSetType(pc,PCFIELDSPLIT);
 	PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
-	PCFieldSplitSetIS(pc, "0",is_P_hat);
-	PCFieldSplitSetIS(pc, "1",is_U_hat);
+	PCFieldSplitSetIS(pc, "0",is_U);
+	PCFieldSplitSetIS(pc, "1",is_P);
 	PCFieldSplitGetSubKSP( pc, &nblocks, &kspArray);
 	KSPSetType( kspArray[0], KSPGMRES);
+	KSPSetType( kspArray[1], KSPGMRES);
 	KSPGetPC(kspArray[0], &pc1);
 	KSPGetPC(kspArray[1], &pc2);
-	PCSetType( pc1, PCGAMG);
-	PCGAMGSetType( pc1, PCGAMGAGG);
+	PCSetType( pc1, PCBJACOBI);
+	PCSetType( pc2, PCGAMG);
+	PCGAMGSetType( pc2, PCGAMGAGG);
 
-	if( size==1 )//sequentiel : direct solver available
-	{
-		KSPSetType( kspArray[1], KSPPREONLY);//Use a direct solver since the matrix is diagonal and sequential
-		PCSetType( pc2, PCCHOLESKY);//Use a direct solver since the matrix is diagonal and sequential
+/*		
+		KSP * subKSP;
+		PC subpc;
+		int nlocal;//nb local blocs (should equal 1)
+		
+		//PCSetUp(pc2);
+		KSPSetUp(kspArray[1]);//to set the block Jacobi data structures (including creation of an internal KSP context for each block)
+		PCBJacobiGetSubKSP( pc2,&nlocal,NULL,&subKSP);
+		PetscPrintf(PETSC_COMM_SELF,"Number of local jacobi blocks : %d\n", nlocal);
+
+		KSPSetType(subKSP[0], KSPPREONLY);//local block solver is same as global
+		KSPGetPC(subKSP[0],&subpc);
+		PCSetType(subpc,PCLU);
+
 		//PetscOptionsSetValue(NULL,"-fieldsplit_0_ksp_type","gmres");	
 		//PetscOptionsSetValue(NULL,"-fieldsplit_0_pc_type","gamg");
 		//PetscOptionsSetValue(NULL,"-fieldsplit_0_pc_gamg_type","agg");
-		//PetscOptionsSetValue(NULL,"-fieldsplit_1_pc_type","cholesky");
-		//PetscOptionsSetValue(NULL,"-fieldsplit_1_ksp_type","preonly");	
-	}
-	else
-	{
-		//PCSetType(pc, PCBJACOBI);//Global preconditioner is block jacobi
 		//PetscOptionsSetValue(NULL,"-sub_pc_type ","lu");
 		//PetscOptionsSetValue(NULL,"-sub_ksp_type ","preonly");	
-		//PCSetType(pc,PCFIELDSPLIT);
-		//PCFieldSplitSetIS(pc, "0",is_P_hat);
-		//PCFieldSplitSetIS(pc, "1",is_U_hat);
-		//PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
-	}
+*/		
+
 	PCSetFromOptions(pc);
 	PCSetUp(pc);
 	KSPSetFromOptions(ksp);
 	KSPSetUp(ksp);
 	PetscPrintf(PETSC_COMM_WORLD,"Solving the linear system...\n");
-	KSPSolve(ksp,b_hat,X_hat);
+	KSPSolve(ksp,b_input,X_hat);
 
 	//Extract informations about the convergence
 	KSPConvergedReason reason;
@@ -339,8 +343,8 @@ int main( int argc, char **args ){
 	Vec X_u;//Velocity components of the transformed unknown
 	Vec X_output, X_output_array[2];
 	
-	VecGetSubVector( X_hat, is_P_hat, &X_hat_p);
-	VecGetSubVector( X_hat, is_U_hat, &X_hat_u);
+	VecGetSubVector( X_hat, is_P, &X_hat_p);
+	VecGetSubVector( X_hat, is_U, &X_hat_u);
 
 	VecDuplicate(X_hat_u,&X_u);
 	VecDuplicate(X_hat_p,&X_p);
@@ -354,7 +358,7 @@ int main( int argc, char **args ){
 
 	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &X_output);//This generate an error message : "Nest vector argument 3 not setup "
 	VecConcatenate(2, X_output_array, &X_output, NULL);
-	
+
 //##### Compute the error and check it is small
 	Vec X_anal_p, X_anal_u;//Pressure and velocity components of the analytic solution
 	double error, error_p, error_u;
@@ -387,15 +391,12 @@ int main( int argc, char **args ){
 	MatDestroy(&Pmat);
 	
 	VecDestroy(&b_input);
-	VecDestroy(&b_hat);
 	VecDestroy(&X_hat);
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
 
 	ISDestroy(&is_U);
 	ISDestroy(&is_P);
-	ISDestroy(&is_U_hat);
-	ISDestroy(&is_P_hat);
 
 	KSPDestroy(&ksp);
 	VecScatterDestroy(&scat);
