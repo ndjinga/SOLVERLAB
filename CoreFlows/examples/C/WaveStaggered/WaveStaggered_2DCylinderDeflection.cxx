@@ -6,8 +6,8 @@ using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * cos(2*theta));
-	vec[1] =  r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * sin(2*theta));
+	vec[0] = (1 - r0*r0/(r*r) * cos(2*theta)); //r1*r1/(r1*r1 -r0*r0)*
+	vec[1] =  (- r0*r0/(r*r) * sin(2*theta)); //r1*r1/(r1*r1 -r0*r0)*
 	return vec;
 }
 
@@ -112,16 +112,16 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Implicit);    
+	myProblem.setTimeScheme(Explicit);    
     // name of result file
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000	;
-	int freqSave = 500;
+	int freqSave = 1000;
 	double cfl = 0.5;
-	double maxTime = 50;
-	double precision = 1e-5;
+	double maxTime = 20;
+	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
@@ -144,6 +144,9 @@ int main(int argc, char** argv)
 		cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
 	cout << "------------ End of calculation !!! -----------" << endl;
+	cout << "\nRelative Boundary Velocity error = "<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
+	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[0] <<endl;
+	cout << "Error L2 of interpolated velocity at cells= "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[1] <<endl;
 	myProblem.terminate();
 	
 

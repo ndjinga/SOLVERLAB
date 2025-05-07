@@ -83,7 +83,7 @@ public :
 	void  abortTimeStep();
 	bool  initTimeStep( double dt);
 
-		vector<string> getInputFieldsNames();
+	vector<string> getInputFieldsNames();
 	void setInputField(const string& nameField, Field& inputField );
 
     void savePressure(bool save_p=true){
@@ -103,8 +103,9 @@ public :
 	/******* Boundary conditions ********/
 	void setWallBoundIndex(int j );
 	void setSteggerBoundIndex(int j ); //Imposed pressure and velocity
-	void setInteriorIndex(int j ); //To avoid complicated implementation in periodic
+	void setInteriorIndex(int j );     
 	std::map<int,double>  getboundaryPressure() const;
+	std::map<int,double>  getboundaryVelocity() const;
 	void  setboundaryPressure(map< int, double> BoundaryPressure);
 	void  setboundaryVelocity(map< int, double> BoundaryVelocity);
 	
@@ -114,6 +115,7 @@ public :
 
 	/***********Post Pro *************/
 	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
+	double ErrorInftyVelocityBoundary(const std::map<int ,double> &BoundaryVelocity );
 	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
 	void AssembleMetricsMatrices();
 	//TODO à supprimer ?
@@ -139,16 +141,20 @@ public :
 protected :
 	Field _Velocity, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate;
 	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq ;
-	Mat _InvVol,_InvSurface, _Div, _LaplacianPressure, _DivTranspose,  _GradDivTilde ; // matrice Q such that U^n+1 = (Id + dt V^-1 _A)U^n for explicit scheme
+	Mat _InvVol,_InvSurface, _Div, _LaplacianPressure, _DivTranspose,  _GradDivTilde ; 
+
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;
 	double *_vec_normal;
+
 	PetscScalar _pExt, _pInt;
+
 	bool _savePressure, _saveVelocity, _BasisFunctionAlreadyComputed;
-	std::map<int, double>  _boundaryPressure;
+	std::map<int, double>  _boundaryPressure, _boundaryVelocity;
 	std::map<int, std::vector<double> > _vec_sigma; // arbitrary degree of liberty associated to a face
 	std::map<int,int> _FacePeriodicMap;
 	std::vector<int>_WallBoundFaceSet, _SteggerBoundFaceSet, _InteriorFaceSet; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
 	bool _facesBoundinit,_indexFacePeriodicSet, _isWall; // To ensure that the boundary velocity is initialized after the initial velocity 
+
 	std::vector<double> _Energy, _Time;
 	std::map< int , std::map< int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >> _PhysicalPsif;
 				
