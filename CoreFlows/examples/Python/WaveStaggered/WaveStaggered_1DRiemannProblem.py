@@ -7,16 +7,24 @@ from  matplotlib import pyplot as plt
 import pandas as pd
 import os 
 import numpy as np
+import sys
 
 
 def WaveStaggered_1DRiemannProblem():
 
+	timeIntegration = sys.argv[1]
+	if (timeIntegration != "Exp" and timeIntegration != "Imp" ):
+		print("ERROR : type 'Exp' for explicit time integration or 'Imp' for implicit time integration ")
+		sys.exit(1)
 	spaceDim = 1;
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=400;
+	if timeIntegration == 'Exp' : 
+		nx=400;
+	if timeIntegration == 'Imp' : 
+		nx=4000;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -67,6 +75,9 @@ def WaveStaggered_1DRiemannProblem():
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
 			Velocity0[j] = initialVelocity(Fj.x())
 		elif (Fj.getNumberOfCells()==1):
+			# setting u_0 and p_0 on boundary faces and cells
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x());
+			Velocity0[j] = initialVelocity(Fj.x())
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
@@ -82,14 +93,16 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Explicit);
-
+	if timeIntegration == 'Exp' : 
+		myProblem.setTimeScheme(svl.Explicit);
+	elif timeIntegration == 'Imp' : 
+		myProblem.setTimeScheme(svl.Implicit);
     
     # name of result file
 	fileName = "1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 50;
+	MaxNbOfTimeStep = 100;
 	freqSave = 1;
 	cfl = 0.4 
 	maxTime = 20;

@@ -144,7 +144,6 @@ add_test(NAME WaveSystem_3DFV_SphericalExplosion_CDMATH_TETRAHEDRON.exe    COMMA
 set_property (TEST WaveSystem_3DFV_SphericalExplosion_CDMATH_TETRAHEDRON.exe PROPERTY LABELS "C++ wave 3D fv riemann tetrahedra TETRAHEDRON cdmath")     
 
 #################### Wave staggered
-CreateTestExecAndInstall(WaveStaggered/WaveStaggered_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
 CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DCylinderDeflection.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
 CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DStatio.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
 CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DRiemann_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )

@@ -7,16 +7,30 @@ from  matplotlib import pyplot as plt
 import pandas as pd
 import os 
 import numpy as np
+import sys
 
 
 def WaveStaggered_1DRiemannProblem():
+
+	wall = sys.argv[1]  # Premier argument après le nom du script
+	timeIntegration = sys.argv[2]
+	
+	if (wall != "l" and wall != "r" ):
+		print("ERROR : type 'l' for wall boundary condition on the left side or 'r' for wall boundary condition on the right side")
+		sys.exit(1)
+	if (timeIntegration != "Exp" and timeIntegration != "Imp" ):
+		print("ERROR : type 'Exp' for explicit time integration or 'Imp' for implicit time integration ")
+		sys.exit(1)
 
 	spaceDim = 1;
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=400;
+	if timeIntegration == 'Exp' : 
+		nx=400;
+	if timeIntegration == 'Imp' : 
+		nx=4000;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -32,21 +46,28 @@ def WaveStaggered_1DRiemannProblem():
 		
 	def initialPressure(x):
 		if x < discontinuity:
-			return 1
+			return 6
 		elif discontinuity < x:
-			return 1
+			return 6
 
 	def initialVelocity(x): # in order to compute exacte solution at the wall bond cond
-		if x < xsup:
-			return 1
-		elif xsup <= x:
-			return -1
+		if wall =='l':
+			if x < xinf:
+				return -2
+			elif xinf <= x:
+				return 2
+		elif wall == 'r':
+			if x < xsup:
+				return 2
+			elif xsup <= x:
+				return -2
 
 	def initialVelocityForPb(x): # in order to test th wall boundary cond
 		if x < discontinuity:
-			return 1
+			return 2
 		elif discontinuity <= x:
-			return 1
+			return 2
+
 	
 	# Define the exact solution of the 1d Problem 
 	def ExactPressure(x,t):
@@ -56,10 +77,14 @@ def WaveStaggered_1DRiemannProblem():
 		return (initialVelocity(x - c * t) + initialVelocity(x + c * t))/2.0 + rho*c*(initialPressure(x-c*t) -initialPressure(x+c*t))/2.0
 
 	Pressure0 = svl.Field("pressure", svl.CELLS, M, 1);
-	Velocity0 = svl.Field("velocity", svl.FACES, M, 1);
+	Velocity0 = svl.Field("velocity", svl.FACES, M, 1); 
 	wallPressureMap = {};
 	wallVelocityMap = {}; 
-	
+	if wall =='l':
+		indexWall = 0
+	elif wall =='r':
+		indexWall = M.getNumberOfCells()
+
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
@@ -71,18 +96,23 @@ def WaveStaggered_1DRiemannProblem():
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 		
 		if(Fj.getNumberOfCells()==2):
+			# setting u_0 and p_0 on interior faces and cells
+			myProblem.setInteriorIndex(j);
 			myProblem.setOrientation(j,vec_normal_sigma)
-			myProblem.setInteriorIndex(j)
 			Ctemp2 = M.getCell(idCells[1]);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x()) ;
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x());
 			Velocity0[j] = initialVelocityForPb(Fj.x())
 		elif (Fj.getNumberOfCells()==1):
+			# setting u_0 and p_0 on boundary faces and cells
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x());
+			Velocity0[j] = initialVelocityForPb(Fj.x())
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if ( j== nx ): 
+			# setting p_b and u_b
+			if ( j== indexWall ): 
 				myProblem.setWallBoundIndex(j) 
 				wallVelocityMap[j] = 0
 			else :
@@ -96,14 +126,17 @@ def WaveStaggered_1DRiemannProblem():
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Implicit);
-    
+	if timeIntegration == 'Exp' : 
+		myProblem.setTimeScheme(svl.Explicit);
+	elif timeIntegration == 'Imp' : 
+		myProblem.setTimeScheme(svl.Implicit);
     # name of result file
-	fileName = "1DRightWall";
+	fileName = "1DWall";
+	freqSave = 20;	
 
     # simulation parameters 
-	MaxNbOfTimeStep = 50;
-	freqSave = 1;
+	
+	MaxNbOfTimeStep = 2000;
 	cfl = 0.4 
 	maxTime = 20;
 	precision = 1e-6;

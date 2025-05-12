@@ -34,7 +34,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 }
 
 void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
-	if (_facesBoundinit == true){ 
+	/* if (_facesBoundinit == true){ 
 		std::map<int,double>::iterator it;
 		for( it= BoundaryVelocity.begin(); it != BoundaryVelocity.end(); it++){
 			_Velocity( it->first ) = it->second; 
@@ -44,7 +44,7 @@ void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity
 		*_runLogFile<<"WaveStaggered::setboundaryVelocity should be called after WaveStaggered::setInitialField(Velocity)"<<endl;
 		_runLogFile->close();
 		throw CdmathException("WaveStaggered::setboundaryVelocity should be called after WaveStaggered::setInitialField(Velocity)");
-	}
+	} */
 	_boundaryVelocity = BoundaryVelocity;
 }
 void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure){
@@ -501,14 +501,18 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			else if (IsSteggerBound || IsWallBound ) { 
 				//MatSetValue(_A, idCells[0], IndexFace, -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
 				if (IsSteggerBound){
-					// pressure equation
+					//********* pressure equation *************//
 					MatSetValue(_A, idCells[0], IndexFace,  -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0, ADD_VALUES );
 					VecSetValue(_BoundaryTerms, idCells[0], -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0 * getboundaryVelocity().find(j)->second, ADD_VALUES );
 					MatSetValue(_A, idCells[0], idCells[0], -_d * _c * Fj.getMeasure(), ADD_VALUES );
 					VecSetValue(_BoundaryTerms, idCells[0],  _d * _c * Fj.getMeasure() * getboundaryPressure().find(j)->second, ADD_VALUES );
-					// Velocity equation
+					//************* Velocity equation *************//
+					// pressure gradient
 					MatSetValue(_A, IndexFace , idCells[0],  _kappa * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0, ADD_VALUES );
 					VecSetValue(_BoundaryTerms, IndexFace , -_kappa * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
+					// jump velocity
+					MatSetValue(_A, IndexFace , IndexFace,  -_c/2.0  * Fj.getMeasure(), ADD_VALUES );
+					VecSetValue(_BoundaryTerms, IndexFace , _c/2.0 * Fj.getMeasure()* getboundaryVelocity().find(j)->second, ADD_VALUES ); 
 					
 					Cell K = _mesh.getCell(idCells[0]); 
 					std::vector<int> idFaces = K.getFacesId();
@@ -523,7 +527,11 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						double gradiv = - _d * _c * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[0]] : 1.0);
 						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
 					}
-
+				}
+				if (IsWallBound){
+					//************* Velocity equation *************//
+					// jump velocity
+					MatSetValue(_A, IndexFace , IndexFace, -_c * Fj.getMeasure(), ADD_VALUES );
 				}
 			}	
 		}

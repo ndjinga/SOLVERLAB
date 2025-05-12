@@ -80,6 +80,8 @@ int main(int argc, char** argv)
 			Velocity0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma );
 			}
 		else if (Fj.getNumberOfCells()==1){			
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
+			Velocity0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma );
 			if (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 				myProblem.setSteggerBoundIndex(j);	
 			wallVelocityMap[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma );

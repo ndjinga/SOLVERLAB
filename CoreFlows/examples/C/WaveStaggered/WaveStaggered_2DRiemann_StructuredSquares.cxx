@@ -131,6 +131,8 @@ int main(int argc, char** argv){
 				Velocity0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma  );
 			}
 			else if (Fj.getNumberOfCells()==1  ){ // If boundary face and if periodic check that the boundary face is the computed (avoid passing twice ) 
+				Pressure0[idCells[0]] = initialPressure(coordFace,discontinuity);
+				Velocity0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma  );
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 					myProblem.setSteggerBoundIndex(j);	
 				wallVelocityMap[j] = dotprod( initialVelocity(coordFace,discontinuity, Direction),vec_normal_sigma);

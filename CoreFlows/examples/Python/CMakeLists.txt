@@ -157,8 +157,8 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DEF_Ro
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_StructuredCubes.py "Python fv stationary diffusion 3D dirichlet unstructured cubes CUBE coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_UnstructuredTetras.py "Python fv stationary diffusion 3D dirichlet unstructured tetrahedra CUBE coreflows")
 
-CreatePythonTest(WaveStaggered/WaveStaggered_1DRightWall.py "Python fv Wave staggered 1D for wall boundary conditions on right wall structured coreflows")
-CreatePythonTest(WaveStaggered/WaveStaggered_1DLeftWall.py "Python fv Wave staggered 1D test for wall boundary conditions on left wall structured coreflows")
+
+CreatePythonTest(WaveStaggered/WaveStaggered_1DWall.py "Python fv Wave staggered 1D test for wall boundary conditions on left wall structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_1DRiemannProblem.py "Python fv Wave staggered 1D test for wall boundary conditions on left wall structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DCylinderMeshConvergence.py "Python fv Wave staggered mesh convergence structured coreflows")
 

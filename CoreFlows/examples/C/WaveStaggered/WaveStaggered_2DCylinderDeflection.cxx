@@ -95,6 +95,8 @@ int main(int argc, char** argv)
 			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
 		}
 		else if (Fj.getNumberOfCells()==1){
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
+			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
