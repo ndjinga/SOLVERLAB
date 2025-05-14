@@ -500,6 +500,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 			}
 			else if (IsSteggerBound || IsWallBound ) { 
 				//MatSetValue(_A, idCells[0], IndexFace, -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+				
 				if (IsSteggerBound){
 					//********* pressure equation *************//
 					MatSetValue(_A, idCells[0], IndexFace,  -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0, ADD_VALUES );
@@ -529,7 +530,7 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					}
 				}
 				if (IsWallBound){
-					//************* Velocity equation *************//
+					// Velocity equation
 					// jump velocity
 					MatSetValue(_A, IndexFace , IndexFace, -_c * Fj.getMeasure(), ADD_VALUES );
 				}
@@ -545,7 +546,17 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatDestroy(& Prod);
 		ComputeMinCellMaxPerim();
 	}
-			
+	/* if (_Time.back() >20 ){
+		for (int j=0; j<_Nfaces;j++){
+			bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
+			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
+			if (  IsWallBound && fabs(_Velocity(j)) > 1e-3  )
+				cout << _Velocity(j)<< " for wall "<<endl;
+			if (  IsSteggerBound  && fabs(_Velocity(j) - _vec_sigma.find(j)->second[0]) > 1e-3 )
+				cout << _Velocity(j)<< " for (1,0).n_sigma = "<< _vec_sigma.find(j)->second[0] <<endl;
+		
+		}
+	} */
 	double dt;
 	Vec Prod2;
 	VecDuplicate(_BoundaryTerms, &Prod2);
@@ -570,6 +581,8 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);
 	ComputeEnergyAtTimeT();
+	
+	
 	return dt ;
 }
 
@@ -1054,8 +1067,8 @@ double WaveStaggered::ErrorInftyVelocityBoundary(const std::map<int ,double> &Bo
 	double errorboundary =0;
 	for (int j=0; j < _Nfaces; j++){
 		bool is_j_Interior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-		if ( !is_j_Interior && (  errorboundary - fabs(_Velocity(j) -  BoundaryVelocity.find(j)->second )/fabs( BoundaryVelocity.find(j)->second ) )<1e-11 ) ;
-			errorboundary = fabs(_Velocity(j) -   BoundaryVelocity.find(j)->second  )/fabs( BoundaryVelocity.find(j)->second ) ; 
+		if ( !is_j_Interior && (  errorboundary - fabs(_Velocity(j) -  BoundaryVelocity.find(j)->second )) ) ;
+			errorboundary = fabs(_Velocity(j) -   BoundaryVelocity.find(j)->second  ) ; 
 	}
 	return errorboundary;
 }

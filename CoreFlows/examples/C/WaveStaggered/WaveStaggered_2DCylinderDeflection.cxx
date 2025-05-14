@@ -97,6 +97,7 @@ int main(int argc, char** argv)
 		else if (Fj.getNumberOfCells()==1){
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
 			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
+
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
@@ -114,15 +115,15 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit);    
+	myProblem.setTimeScheme(Explicit	);    
     // name of result file
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000	;
-	int freqSave = 1000;
+	int freqSave = 10000;
 	double cfl = 0.5;
-	double maxTime = 20;
+	double maxTime = 100;
 	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);
@@ -146,7 +147,7 @@ int main(int argc, char** argv)
 		cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
 	cout << "------------ End of calculation !!! -----------" << endl;
-	cout << "\nRelative Boundary Velocity error = "<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
+	cout << "\n Boundary Velocity error = "<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
 	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[0] <<endl;
 	cout << "Error L2 of interpolated velocity at cells= "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[1] <<endl;
 	myProblem.terminate();
