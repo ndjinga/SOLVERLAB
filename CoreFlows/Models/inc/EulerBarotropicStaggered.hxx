@@ -73,6 +73,9 @@ public :
     std::vector<double> Inverse(std::vector<double> &u); // returns (u^{-1})^t
 
     double getOrientationNode(int n, int j); //n is a node, j a face, gives back sign( (x_n - x_j). n_sigma^perp    )
+
+    std::map<int, std::vector<double> >  getboundaryVelocityVector() const;
+	void setboundaryVelocityVector(int j,  std::vector<double>  boundaryVelocityVector);
      
 protected :
     /** Fluid equation of state **/
@@ -84,6 +87,7 @@ protected :
 	double _c, _rhoMax, _uMax;
 	std::vector<double> _Entropy, _Time;
     std::map< int , std::map< int, std::vector< std::pair<std::vector<double>, std::vector<double> > >  >> _PhysicalPsif,_GradientPhysicalPsif;
+    std::map< int ,std::vector<double> > _boundaryVelocityVector;
     //  map< idcell, map< idface, pair< K, [(x_0, nabla Psi_sigma_|K (x_0) ), ..., (x_f, nabla Psi_sigma_|K (x_f) )] >>>
     
 

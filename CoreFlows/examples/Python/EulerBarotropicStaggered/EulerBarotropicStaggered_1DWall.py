@@ -8,9 +8,16 @@ import pandas as pd
 import os 
 import numpy as np
 import exact_rs_euler_barotropic
+import sys
 
 
 def EulerBarotropicStaggered_1DRiemannProblem():
+
+	wall = sys.argv[1]  # Premier argument après le nom du script
+	
+	if (wall != "l" and wall != "r" ):
+		print("ERROR : type 'l' for wall boundary condition on the left side or 'r' for wall boundary condition on the right side")
+		sys.exit(1)
 
 	spaceDim = 1;
     # Prepare for the mesh
@@ -42,7 +49,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		elif discontinuity < x:
 			return initialDensity_Right
 
-	def initialVelocityForPb(x): # in order to test th wall boundary cond
+	def initialVelocity(x): # in order to test th wall boundary cond
 		if x < discontinuity:
 			return initialVelocity_Left
 		elif discontinuity <= x:
@@ -51,7 +58,12 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	Density0 = svl.Field("Density", svl.CELLS, M, 1);
 	Momentum0 = svl.Field("Momentum", svl.FACES, M, 1); 
 	wallDensityMap = {};
-	wallMomentumMap = {}; 
+	wallVelocityMap = {}; 
+
+	if wall =='l':
+		indexWall = 0
+	elif wall =='r':
+		indexWall = M.getNumberOfCells()
 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
@@ -69,34 +81,40 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			Ctemp2 = M.getCell(idCells[1]);
 			Density0[idCells[0]] = initialDensity(Ctemp1.x()) ;
 			Density0[idCells[1]] = initialDensity(Ctemp2.x());
-			Momentum0[j] = initialVelocityForPb(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Ctemp2.x()))/2.0
+			Momentum0[j] = initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Ctemp2.x()))/2.0
 		elif (Fj.getNumberOfCells()==1):
+			wallVelocityVector = np.zeros(1)
+			Density0[idCells[0]] = initialDensity(Ctemp1.x());
+			Momentum0[j] = initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Fj.x()))/2.0 #TODO times normal sigma
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
-			if (j == M.getNumberOfFaces()-1 ):
+			if (j== indexWall ):
 				myProblem.setWallBoundIndex(j) 
-				wallMomentumMap[j] =0
-			else :  
+				wallVelocityMap[j] =0
+				wallVelocityVector[0] = 0
+			else : 
 				myProblem.setSteggerBoundIndex(j) 
-				wallMomentumMap[j] = initialVelocityForPb(Fj.x()) * (+ initialDensity(Ctemp1.x())  +initialDensity(Fj.x())  )/2
+				wallVelocityMap[j] = initialVelocity(Fj.x()) 
 				wallDensityMap[j] = initialDensity(Fj.x()) ;
+				wallVelocityVector[0] = initialVelocity(Fj.x()) 
+			myProblem.setboundaryVelocityVector(j, wallVelocityVector)
 			
 	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallDensityMap);
-	myProblem.setboundaryVelocity(wallMomentumMap);
+	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Implicit);
+	myProblem.setTimeScheme(svl.Explicit);
     
     # name of result file
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 20000;
-	freqSave = 400;
+	MaxNbOfTimeStep = 300;
+	freqSave = 30;
 	cfl = 0.5
 	maxTime = 0.1;
 	precision = 1e-10;
@@ -129,7 +147,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		
 	Tmax = myProblem.getTime();
 	time = myProblem.getTimeEvol();
-
+	
 	
 	if not os.path.exists(fileName):
 		os.mkdir(fileName)
@@ -140,12 +158,15 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	Densitydata = pd.read_csv(fileName + "_Pressure_" + str(len(time) -1)+ ".csv", sep='\s+')
 	Densitydata.columns =['x','pressure', 'index']
 	
-	myEOS = myProblem.getBarotropicEOS(0)#
-	initialPressure_Right = myEOS.getPressure(initialDensity_Right)
+	myEOS = myProblem.getBarotropicEOS(0)	
+	initialPressure_Left  = myEOS.getPressure(initialDensity_Left)
 	a = myEOS.constante("a");
 	gamma = myEOS.constante("gamma");
-	initalVelocityWall = -initialVelocity_Left
-	exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, gamma, a , [initialPressure_Right , initialVelocity_Left ], [ initialPressure_Right, initalVelocityWall ], xsup, nx)
+	
+	if wall == 'l':
+		exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, gamma, a , [initialPressure_Left , -initialVelocity_Right ], [ initialPressure_Left, initialVelocity_Right ], xinf, nx)
+	elif wall == 'r':
+		exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, gamma, a , [initialPressure_Left , initialVelocity_Left ], [ initialPressure_Left, -initialVelocity_Left ], xsup, nx)
 	
 	plt.figure()
 	plt.subplot(121)
@@ -158,8 +179,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	plt.legend()
 	plt.title("Data at time step"+str(len(time) -1)+"t ="+str(Tmax))
 	plt.savefig(fileName + "/Data at time step"+str(len(time) -1))
-	
+
 	myProblem.terminate();
+
 	return ok
 
 if __name__ == """__main__""":

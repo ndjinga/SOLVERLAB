@@ -17,7 +17,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup=1
-	nx=250	 ;
+	nx=5;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -29,11 +29,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the initial condition
 
 	print("Building initial data " ); 
-	initialDensity_Left = 12
+	initialDensity_Left = 1
 	initialDensity_Right = 1
 
-	initialVelocity_Left = 1.5
-	initialVelocity_Right = -3
+	initialVelocity_Left = 1
+	initialVelocity_Right = 2
 
 	def initialDensity(x):
 		if x < discontinuity:
@@ -50,12 +50,13 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	Density0 = svl.Field("Density", svl.CELLS, M, 1);
 	Momentum0 = svl.Field("Momentum", svl.FACES, M, 1); 
 	wallDensityMap = {};
-	wallMomentumMap = {}; 
+	wallVelocityMap = {}; 
 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
 		idCells = Fj.getCellsId();
-		vec_normal_sigma = np.zeros(2)
+		vec_normal_sigma = np.zeros(1)
+		
 		Ctemp1 = M.getCell(idCells[0]);
 		for l in range( Ctemp1.getNumberOfFaces()) :
 			if (j == Ctemp1.getFacesId()[l]):
@@ -70,29 +71,34 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			Density0[idCells[1]] = initialDensity(Ctemp2.x());
 			Momentum0[j] = initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Ctemp2.x()))/2.0 #TODO times normal sigma
 		elif (Fj.getNumberOfCells()==1):
+			wallVelocityVector = np.zeros(1)
+			Density0[idCells[0]] = initialDensity(Ctemp1.x());
+			Momentum0[j] = initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Fj.x()))/2.0 #TODO times normal sigma
 			# Since we plot the values of the veloccity at the faces every velocity if oriented to the right n_sigma =1
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
 					vec_normal_sigma[idim] = -vec_normal_sigma[idim]
 			myProblem.setOrientation(j,vec_normal_sigma)
 			myProblem.setSteggerBoundIndex(j) 
-			wallMomentumMap[j] =initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Fj.x()) )/2.0
+			wallVelocityMap[j] =initialVelocity(Fj.x())
 			wallDensityMap[j] = initialDensity(Fj.x()) ;
-			
+			wallVelocityVector[0] = initialVelocity(Fj.x()) 
+			myProblem.setboundaryVelocityVector(j, wallVelocityVector)
+		
 	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallDensityMap);
-	myProblem.setboundaryVelocity(wallMomentumMap);
+	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Implicit);
+	myProblem.setTimeScheme(svl.Explicit);
     
     # name of result file
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 1000000;
-	freqSave = 80;
+	MaxNbOfTimeStep = 1;
+	freqSave = 1;
 	cfl = 0.3
 	maxTime = 0.07;
 	precision = 1e-10;
@@ -127,7 +133,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	if not os.path.exists(fileName):
 		os.mkdir(fileName)
 
-	""" i=freqSave
+	i = freqSave
 	while time[i] <= Tmax:
 		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
 		velocitydata.columns =['x','velocity', 'index']
@@ -152,9 +158,9 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		plt.legend()
 		plt.title("Data at time step"+str(i)+"t ="+str(time[i]))
 		plt.savefig(fileName + "/Data at time step"+str(i))
-		i+= freqSave """
+		i+= freqSave
 	
-	#print only at final time 
+	""" #print only at final time 
 	velocitydata = pd.read_csv(fileName + "_Velocity_" + str(len(time) -1)+ ".csv", sep='\s+')
 	#velocitydata.columns =['x','velocityx', 'velocityy', 'velocityz', 'index']
 	velocitydata.columns =['x','velocity', 'index']
@@ -180,7 +186,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
 	plt.legend()
 	plt.title("Data at time step"+str(len(time) -1)+"t ="+str(Tmax))
-	plt.savefig(fileName + "/Data at time step"+str(len(time) -1))
+	plt.savefig(fileName + "/Data at time step"+str(len(time) -1)) """
 
 	myProblem.terminate();
 	return ok
