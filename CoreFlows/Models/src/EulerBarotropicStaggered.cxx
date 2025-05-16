@@ -309,7 +309,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 	
 					Convection +=  Weights[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * 1.0/rho * Contraction(qtensorielq, GradientPsi_j_in_Xf); 	
 				}
-				cout <<j<< " Convection = " << Convection<< endl;
  				
 				//************* (_Ndim-1)-dimensional terms *************//
 				std::vector<double> rhoMean;
@@ -374,7 +373,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				}	
 			}
 		} 
-		cout <<j<< "Fj.x() = "<< Fj.x() <<" Convection before adding it = " << Convection<< endl;
 		VecSetValue(_Conv, IndexFace, Convection, ADD_VALUES );
 
 		// Density equation 
@@ -763,6 +761,7 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 	converged=true;
 	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
 
+	UpdateDualDensity();
 	/* PetscScalar q, rho_sigma, u;
 	UpdateDualDensity(); // \rho^{n+1}_K -> \rho^{n+1}_\sigma 
 	for (int f=0; f< _Nfaces; f++){
