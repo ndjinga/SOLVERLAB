@@ -286,9 +286,9 @@ int main( int argc, char **args ){
 	KSPGetIterationNumber(ksp,&iter);
 	
 	if (reason>0)
-		PetscPrintf(PETSC_COMM_WORLD, "Linear system converged in %d iterations \n", iter);
+		PetscPrintf(PETSC_COMM_WORLD, "\nLinear system converged in %d iterations \n", iter);
 	else
-		PetscPrintf(PETSC_COMM_WORLD, "!!!!!!!!!!!!!!!!!! Linear system diverged  after %d iterations !!!!!!!!!!!!!!\n", iter);
+		PetscPrintf(PETSC_COMM_WORLD, "\n!!!!!!!!!!!!!!!!!! Linear system diverged  after %d iterations !!!!!!!!!!!!!!\n", iter);
 		
 	KSPGetResidualNorm( ksp, &residu);
 	KSPGetTolerances( ksp, &rtol, &abstol, &dtol, &numberMaxOfIter);
@@ -368,14 +368,14 @@ int main( int argc, char **args ){
 
 	VecAXPY(  X_p, -1, X_anal_p);
 	VecNorm(  X_p, NORM_2, &error_p);
-	PetscPrintf(PETSC_COMM_WORLD,"L2 Error p : ||X_anal_p - X_num_p|| = %e\n", error_p);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error on pressure p : ||X_anal_p - X_num_p|| = %e\n", error_p);
 	VecAXPY(  X_u, -1, X_anal_u);
 	VecNorm(  X_u, NORM_2, &error_u);
-	PetscPrintf(PETSC_COMM_WORLD,"L2 Error u : ||X_anal_u - X_num_u|| = %e \n", error_u);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error on velocity u : ||X_anal_u - X_num_u|| = %e \n", error_u);
 
 	VecAXPY(X_output, -1, X_anal);
 	VecNorm( X_output, NORM_2, &error);
-	PetscPrintf(PETSC_COMM_WORLD,"L2 Error : ||X_anal - X_num|| = %e, (remember ||X_anal||=1)\n", error);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 total Error : ||X_anal - X_num|| = %e, (remember ||X_anal||=1)\n", error);
 
 	PetscCheck( error < 1.e-5, PETSC_COMM_WORLD, ierr, "Linear system did not return accurate solution. Error is too high\n");
 	
