@@ -823,8 +823,7 @@ SparseMatrixPetsc::computeSVD(int nsv, double ** valS, double ***vecS, SVDWhich 
   MatAssemblyBegin(_mat,MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(  _mat,MAT_FINAL_ASSEMBLY);
 
-  MatCreateVecs(_mat,&u,NULL);
-  MatCreateVecs(_mat,NULL,&v);
+  MatCreateVecs(_mat,&u,&v);
   
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 Create the singular value solver and set various options
