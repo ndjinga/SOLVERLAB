@@ -284,7 +284,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 				I = _Nmailles + idFaces[f];
 				VecGetValues(_primitiveVars,1,&I	,&q);
-				WaveVelocity = (_timeScheme == Implicit ) ? _uMax/2.0 : ( _c + _uMax); ///2.0 ;
+				WaveVelocity = (_timeScheme == Implicit ) ? _uMax : ( _c + _uMax); ///2.0 ;
 				// gradDiv //
 				double gradiv = - WaveVelocity * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[nei]] : 1.0);
 				MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
@@ -408,6 +408,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					dotprodPhysicalFlux += Facef.getMeasure() * getOrientation(idFaces[f], interiorCell ) * _compressibleFluid->getPressure( getboundaryPressure().find(idFaces[f])->second ) * ((idFaces[f] == j) ? 1.0 : 0.0 );
 					dotprodMomentumQ_Int += Momentum_Tangent_Q_int;
 					Convection -= dotprodPhysicalFlux + dotprodMomentumRho_b + dotprodMomentumQ_b + dotprodMomentumRho_Int + dotprodMomentumQ_Int; 
+
+					if (_timeScheme == Implicit){
+						MatSetValue(_JacobianMatrix, IndexFace, idCells[0], dotprodMomentumRho_Int, ADD_VALUES ); 
+						MatSetValue(_JacobianMatrix, IndexFace, I, dotprodMomentumQ_Int, ADD_VALUES );  
+					}
 				}	
 			}
 		} 
@@ -425,7 +430,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			MatSetValue(_A, idCells[1], IndexFace,  -getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  	
 
 			// LaplacianPressure
-			double WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) )/2.0 + _c :  ( abs( _Velocity(j) ) + _c ); ///2.0 ; 
+			double WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) ) + _c :  ( abs( _Velocity(j) ) + _c ); ///2.0 ; 
 			MatSetValue(_A, idCells[0], idCells[0], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 
 			MatSetValue(_A, idCells[0], idCells[1],   WaveVelocity * Fj.getMeasure(), ADD_VALUES );  
 			MatSetValue(_A, idCells[1], idCells[1], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 
@@ -487,8 +492,16 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			double boundValue =getboundaryPressure().find(j)->second * u_b * (1 - (U_Minus_C_Plus  - U_Plus_C_Plus )/(2.0 * c_b ) )
 			 					- (U_Minus_C_Plus * lambdaPlus - U_Plus_C_Plus * lambdaMinus )/(2.0 * c_b ) * getboundaryPressure().find(j)->second ;
 			VecSetValue(_BoundaryTerms, idCells[0], -Fj.getMeasure()* boundValue  , ADD_VALUES );
+
+			if (_timeScheme == Implicit){
+				MatSetValue(_JacobianMatrix, IndexFace, idCells[0],  -pow(_compressibleFluid->vitesseSon(rhoInt), 2) * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES );
+				MatSetValue(_JacobianMatrix, idCells[0], idCells[0], Fj.getMeasure()*(U_Minus_C_Plus * lambdaPlus - U_Plus_C_Plus * lambdaMinus )/(2.0 * c_b ), ADD_VALUES ); 
+				MatSetValue(_JacobianMatrix, idCells[0], IndexFace,  Fj.getMeasure()*getOrientation(j,Ctemp1)*(U_Minus_C_Plus  - U_Plus_C_Plus )/(2.0 * c_b ), ADD_VALUES );  
+			}
 		}	
 	}
+	
+			
 
 	VecAssemblyBegin(_BoundaryTerms);
 	VecAssemblyEnd(_BoundaryTerms);
