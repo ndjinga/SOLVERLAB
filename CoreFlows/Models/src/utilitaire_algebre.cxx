@@ -1066,8 +1066,8 @@ int roots_polynoms::rpoly(double *op, int degree, double *zeror, double *zeroi)
  			{Lmin = L[j]; imin = j;}
 
  		//on met la vp � zero si elle est trop petite
- 		if( fabs(Lmin.real()) < epsilon) Lmin.real()=0;
- 		if( fabs(Lmin.imag()) < epsilon) Lmin.imag()=0;
+ 		if( fabs(Lmin.real()) < epsilon) Lmin.real(0);
+ 		if( fabs(Lmin.imag()) < epsilon) Lmin.imag(0);
 
  		switch (i) {
  		case 0: {
