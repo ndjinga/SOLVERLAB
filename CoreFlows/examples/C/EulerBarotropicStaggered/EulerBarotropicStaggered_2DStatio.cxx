@@ -58,10 +58,11 @@ int main(int argc, char** argv)
 	//Initial field creation
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallPressureMap;
-	std::map<int ,double> wallMomentumMap ;
+	std::map<int ,double> wallVelocityMap ;
 	Field Pressure0("pressure", CELLS, M, 1);
 	Field Momentum0("velocity", FACES, M, 1);
 	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
+	std::vector<double> wallVelocityVector(spaceDim);
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -83,17 +84,23 @@ int main(int argc, char** argv)
 			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialPressure(Ctemp1.x(),Ctemp1.y()) + initialPressure(Ctemp2.x(),Ctemp2.y())  )/2.0;
 			}
 		else if (Fj.getNumberOfCells()==1){			
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x() , Ctemp1.y() );
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * (initialPressure(Ctemp1.x() , Ctemp1.y() ) + initialPressure(Fj.x(),Fj.x()))/2.0;
 			if (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 				myProblem.setSteggerBoundIndex(j);	
-			wallMomentumMap[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma )*initialPressure(Fj.x(), Fj.y()) ;
+			// Boundary normal velocity, pressure and full velocity vector
+			wallVelocityMap[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma );
 			wallPressureMap[j] = initialPressure(Fj.x(), Fj.y()) ;
+			for (int idm = 0; idm <spaceDim; idm ++)
+				wallVelocityVector[idm] = initialVelocity(Fj.x(), Fj.y())[idm];
+			myProblem.setboundaryVelocityVector(j, wallVelocityVector);
 		}
 	}
 
 	myProblem.setInitialField(Pressure0);
 	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallPressureMap);
-	myProblem.setboundaryVelocity(wallMomentumMap);
+	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
 	myProblem.setTimeScheme(Explicit);

@@ -89,9 +89,11 @@ int main(int argc, char** argv)
 		//Initial field creation
 		cout << "Building initial data" << endl;
 		std::map<int ,double> wallPressureMap;
-		std::map<int ,double> wallMomentumMap ;
+		std::map<int ,double> wallVelocityMap ;
 		Field Pressure0("pressure", CELLS, M, 1);
 		Field Momentum0("velocity", FACES, M, 1);
+		std::vector<double> wallVelocityVector(spaceDim);
+	
 
 		assert(fabs(inf)<1e-11);
 		assert(fabs(sup - 1.0)<1e-11);
@@ -128,18 +130,24 @@ int main(int argc, char** argv)
 				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordRight,discontinuity) )/2.0;
 			}
 			else if (Fj.getNumberOfCells()==1  ){ 
+				coordLeft = (Direction == 'x') ?  Ctemp1.x() : Ctemp1.y(); ;
+				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordRight,discontinuity) )/2.0;
 				// if periodic check that the boundary face is the computed (avoid passing twice ) 
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 					myProblem.setSteggerBoundIndex(j);	
-				wallMomentumMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma )*initialPressure(coordFace,discontinuity) ;
-				wallPressureMap[j] = initialPressure(coordFace,discontinuity);
+				// Boundary normal velocity, pressure and full velocity vector
+				wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma );
+				wallPressureMap[j] = initialPressure(Fj.x(), Fj.y()) ;
+				for (int idm = 0 ;idm <spaceDim; idm ++)
+					wallVelocityVector[idm] = initialVelocity(coordFace, discontinuity, Direction)[idm];
+				myProblem.setboundaryVelocityVector(j, wallVelocityVector);
 			}
 		}
-		
 		myProblem.setInitialField(Pressure0);
 		myProblem.setInitialField(Momentum0);
 		myProblem.setboundaryPressure(wallPressureMap);
-		myProblem.setboundaryVelocity(wallMomentumMap);
+		myProblem.setboundaryVelocity(wallVelocityMap);
 
 		// set the numerical method
 		myProblem.setTimeScheme(Explicit);
