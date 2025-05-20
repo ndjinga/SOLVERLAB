@@ -74,7 +74,7 @@ int main(int argc, char** argv)
 		}
 		else if (Direction == 'y'){
 			nx=2;
-			ny=200;
+			ny=50;
 			discontinuity = (inf + sup)/2.0 +  0.75/ny;
 			ncells = ny;
 		}
@@ -112,11 +112,17 @@ int main(int argc, char** argv)
 				}
 			}
 			myProblem.setOrientation(j,vec_normal_sigma);
+			std::vector< int > nodes =  Fj.getNodesId();
+			Node vertex1  = M.getNode( nodes[0] );
+			Node vertex2 = M.getNode( nodes[1] );
+			double D_sigmaL = fabs( (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) ) /2.0 ;
+
 			if (Direction == 'x')  	   coordFace = Fj.x();
 			else if (Direction == 'y') coordFace = Fj.y() ;
 			if(Fj.getNumberOfCells()==2 ){ 
 				myProblem.setInteriorIndex(j);
 				Cell Ctemp2 = M.getCell(idCells[1]);
+				double D_sigmaR = fabs( (Ctemp2.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) ) /2.0 ;
 				if (Direction == 'x'){
 					coordLeft = Ctemp1.x();
 					coordRight = Ctemp2.x();
@@ -127,18 +133,20 @@ int main(int argc, char** argv)
 				}
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordRight,discontinuity) )/2.0;
+				// Interpolation must be consistent with the one done in UpdateDualDensity
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (D_sigmaL * initialPressure(coordLeft,discontinuity) + D_sigmaR * initialPressure(coordRight,discontinuity) )/(D_sigmaL +  D_sigmaR);
 			}
 			else if (Fj.getNumberOfCells()==1  ){ 
 				coordLeft = (Direction == 'x') ?  Ctemp1.x() : Ctemp1.y(); ;
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
-				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordRight,discontinuity) )/2.0;
+				// Interpolation must be consistent with the one done in UpdateDualDensity
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordFace,discontinuity) )/2.0;
 				// if periodic check that the boundary face is the computed (avoid passing twice ) 
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 					myProblem.setSteggerBoundIndex(j);	
 				// Boundary normal velocity, pressure and full velocity vector
 				wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma );
-				wallPressureMap[j] = initialPressure(Fj.x(), Fj.y()) ;
+				wallPressureMap[j] = initialPressure(coordFace,  discontinuity) ;
 				for (int idm = 0 ;idm <spaceDim; idm ++)
 					wallVelocityVector[idm] = initialVelocity(coordFace, discontinuity, Direction)[idm];
 				myProblem.setboundaryVelocityVector(j, wallVelocityVector);
@@ -150,14 +158,14 @@ int main(int argc, char** argv)
 		myProblem.setboundaryVelocity(wallVelocityMap);
 
 		// set the numerical method
-		myProblem.setTimeScheme(Explicit);
+		myProblem.setTimeScheme(Implicit);
 		
 		// name of result file
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
 
 		// parameters calculation
-		unsigned MaxNbOfTimeStep = 100000000;
-		int freqSave = 20;
+		unsigned MaxNbOfTimeStep = 10000;
+		int freqSave = 50;
 		double cfl = 0.99;
 		double maxTime = 0.07;
 		double precision = 1e-10;

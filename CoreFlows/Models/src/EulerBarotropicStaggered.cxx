@@ -157,6 +157,7 @@ void EulerBarotropicStaggered::initialize(){
 	VecZeroEntries(_GradPressure);
 
 	save();//save initial data
+	//VecView(_primitiveVars,PETSC_VIEWER_STDOUT_WORLD);
 
 }
 
@@ -231,6 +232,7 @@ double EulerBarotropicStaggered::getOrientationNode(int n, int j) {
 
 double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 
+	
 	Rhomax_Umax_Cmax();
 	VecZeroEntries(_Conv);
 	VecZeroEntries(_b);
@@ -284,7 +286,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 				I = _Nmailles + idFaces[f];
 				VecGetValues(_primitiveVars,1,&I	,&q);
-				WaveVelocity = (_timeScheme == Implicit ) ? _uMax : ( _c + _uMax); ///2.0 ;
+				WaveVelocity = (_timeScheme == Implicit ) ? _uMax : ( _c + _uMax); 
 				// gradDiv //
 				double gradiv = - WaveVelocity * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[nei]] : 1.0);
 				MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
@@ -338,7 +340,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							std::vector<double> MomenentumRT_in_Xf = MomentumRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
 							for (int ndim =0; ndim < _Ndim; ndim ++ ){
 								jumpPsi[ndim] += Psi_j_in_Xf[ndim]*getOrientation( idFaces[f],Neibourg_of_f)  ; //* ( ((it != _FacePeriodicMap.end()) && it->first == j) || IsfInterior ? getOrientation( idFaces[f],Neibourg_of_f) : 1.0 ) ;  
-								meanRhoU[ndim] += MomenentumRT_in_Xf[ndim]/idCellsOfFacef.size() * 1.0/rhoMean[ncell];
+								meanRhoU[ndim] += MomenentumRT_in_Xf[ndim]/2.0 * 1.0/rhoMean[ncell];
 							}
 						}
 						double dotprod =0;
@@ -348,8 +350,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						Convection -= Facef.getMeasure() * q* getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) * dotprod /IntegrationNodes.size(); 	
 					}
 				}
-				else if (IsfWall && (idFaces[f] == j ))
+				else if (IsfWall && (idFaces[f] == j )){
 					Convection -= _compressibleFluid->vitesseSon(rho) * Facef.getMeasure() * q;
+					if (_timeScheme == Implicit)
+						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * _compressibleFluid->vitesseSon(rho), ADD_VALUES ); 
+				}
+					
 				else if (IsfSteggerBound){
 					Cell interiorCell = _mesh.getCell( idCellsOfFacef[0]);
 					double u_b = getboundaryVelocity().find(idFaces[f])->second * getOrientation(idFaces[f], interiorCell ); 
@@ -362,7 +368,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				
 					VecGetValues(_primitiveVars,1,&idCellsOfFacef[0],&rhoInt);	
 					VecGetValues(_primitiveVars,1,&I,&q);	
-					std::vector<double> tangent(_Ndim), lambdaPlusVector(_Ndim), lambdaMinusVector(_Ndim), MomentumMass(_Ndim);
+					std::vector<double> tangent(_Ndim,0.0), lambdaPlusVector(_Ndim,0.0), lambdaMinusVector(_Ndim,0.0), MomentumMass(_Ndim,0.0);
 					if (_Ndim ==1){
 						tangent[0] =0;
 					}
@@ -377,6 +383,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						lambdaPlusVector[ndim] =  getboundaryVelocityVector().find(idFaces[f])->second[ndim]  + c_b * _vec_sigma.find(idFaces[f])->second[ndim]  * getOrientation(idFaces[f], interiorCell);
 						lambdaMinusVector[ndim] = getboundaryVelocityVector().find(idFaces[f])->second[ndim]  - c_b * _vec_sigma.find(idFaces[f])->second[ndim]  * getOrientation(idFaces[f], interiorCell) ;
 					}
+
 					for (int ndim =0; ndim < _Ndim; ndim ++ )
 						MomentumMass[ndim] =  U_Minus_C_Plus * lambdaMinusVector[ndim] * lambdaPlus/(2*c_b) - U_Plus * u_tangent * tangent[ndim]- U_Plus_C_Plus * lambdaMinusVector[ndim] * lambdaMinus/(2*c_b);
 					std::vector<double> Integral_of_Psi_j(_Ndim, 0.0);
@@ -389,26 +396,24 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							Momentum_Tangent_Q_int_1 +=  MomentumRaviartThomas_at_point_X(interiorCell,idCellsOfFacef[0], IntegrationNodes[inteNode]  )[dim] * tangent[dim];
 							Momentum_Tangent_Q_int_2 +=  PhysicalBasisFunctionRaviartThomas(interiorCell, idCellsOfFacef[0], Support_j, Fj ,j, IntegrationNodes[inteNode] )[dim]* tangent[dim];
 						}
-						Momentum_Tangent_Q_int += Facef.getMeasure() * (Momentum_Tangent_Q_int_1 + Momentum_Tangent_Q_int_2)/IntegrationNodes.size();
+						Momentum_Tangent_Q_int += U_Plus * Facef.getMeasure() * (Momentum_Tangent_Q_int_1 * Momentum_Tangent_Q_int_2)/IntegrationNodes.size();
 					}
-
 					double dotprodPhysicalFlux    = 0; 	 // F(U_b, n)
 					double dotprodMomentumRho_b   = 0; 	 // contribution in rho_b of A^+(U_b, n)(rho_b, q_b)
 					double dotprodMomentumQ_b     = 0;	 // contribution in q_b of A^+(U_b, n)(rho_b, q_b)
 					double dotprodMomentumRho_Int = 0;	 // contribution in rho_int of A^+(U_b, n)(rho_int, q_int)
 					double dotprodMomentumQ_Int   = 0;	 // contribution in q_int of A^+(U_b, n)(rho_int, q_int)
 					for (int ndim =0; ndim < _Ndim; ndim ++ ){
-						dotprodPhysicalFlux    += Integral_of_Psi_j[ndim] * getboundaryPressure().find(idFaces[f])->second * u_b * getboundaryVelocityVector().find(idFaces[f])->second[ndim]   ;
+						dotprodPhysicalFlux    +=  Integral_of_Psi_j[ndim] * getboundaryPressure().find(idFaces[f])->second * u_b * getboundaryVelocityVector().find(idFaces[f])->second[ndim]   ;
 						dotprodMomentumRho_b   += -Integral_of_Psi_j[ndim] * MomentumMass[ndim] * getboundaryPressure().find(idFaces[f])->second   ;
 						dotprodMomentumQ_b     += -Integral_of_Psi_j[ndim] *(   ( (-1) * U_Minus_C_Plus * lambdaMinusVector[ndim]/(2*c_b)  + U_Plus_C_Plus * lambdaPlusVector[ndim]/(2*c_b)) * getboundaryPressure().find(idFaces[f])->second * u_b
-												 + U_Plus * getboundaryPressure().find(idFaces[f])->second * u_tangent * tangent[ndim]  ); 
-						dotprodMomentumRho_Int += Integral_of_Psi_j[ndim] * MomentumMass[ndim] * rhoInt;
-						dotprodMomentumQ_Int   += Integral_of_Psi_j[ndim] *(   (( (-1) * U_Minus_C_Plus * lambdaMinusVector[ndim]/(2*c_b)  + U_Plus_C_Plus * lambdaPlusVector[ndim]/(2*c_b)) )* q * getOrientation(idFaces[f] , interiorCell) );
+												+ U_Plus * getboundaryPressure().find(idFaces[f])->second * u_tangent * tangent[ndim]  ); 
+						dotprodMomentumRho_Int +=  Integral_of_Psi_j[ndim] * MomentumMass[ndim] * rhoInt;
+						dotprodMomentumQ_Int   +=  Integral_of_Psi_j[ndim] *(   (( (-1) * U_Minus_C_Plus * lambdaMinusVector[ndim]/(2*c_b)  + U_Plus_C_Plus * lambdaPlusVector[ndim]/(2*c_b)) )* q * getOrientation(idFaces[f] , interiorCell) );
 					}
-					dotprodPhysicalFlux += Facef.getMeasure() * getOrientation(idFaces[f], interiorCell ) * _compressibleFluid->getPressure( getboundaryPressure().find(idFaces[f])->second ) * ((idFaces[f] == j) ? 1.0 : 0.0 );
+					dotprodPhysicalFlux  += Facef.getMeasure() * getOrientation(idFaces[f], interiorCell ) * _compressibleFluid->getPressure( getboundaryPressure().find(idFaces[f])->second ) * ((idFaces[f] == j) ? 1.0 : 0.0 );
 					dotprodMomentumQ_Int += Momentum_Tangent_Q_int;
-					Convection -= dotprodPhysicalFlux + dotprodMomentumRho_b + dotprodMomentumQ_b + dotprodMomentumRho_Int + dotprodMomentumQ_Int; 
-
+					Convection 			 -= dotprodPhysicalFlux + dotprodMomentumRho_b + dotprodMomentumQ_b + dotprodMomentumRho_Int + dotprodMomentumQ_Int; 
 					if (_timeScheme == Implicit){
 						MatSetValue(_JacobianMatrix, IndexFace, idCells[0], dotprodMomentumRho_Int, ADD_VALUES ); 
 						MatSetValue(_JacobianMatrix, IndexFace, I, dotprodMomentumQ_Int, ADD_VALUES );  
@@ -420,17 +425,12 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 
 		// Density equation 
 		if (IsInterior){
-			/* if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  ) 
-				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  ); */
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-	
 			// -DivRhoU_{idcell[1], j}, -DivRhoU_{idcell[0], j}, (IndexFace = ncells + j)
-			//TODO 
 			MatSetValue(_A, idCells[0], IndexFace,  -getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
 			MatSetValue(_A, idCells[1], IndexFace,  -getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  	
-
 			// LaplacianPressure
-			double WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) ) + _c :  ( abs( _Velocity(j) ) + _c ); ///2.0 ; 
+			double WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) )/2.0 + _c :  ( abs( _Velocity(j) ) + _c ); ///2.0 ; 
 			MatSetValue(_A, idCells[0], idCells[0], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 
 			MatSetValue(_A, idCells[0], idCells[1],   WaveVelocity * Fj.getMeasure(), ADD_VALUES );  
 			MatSetValue(_A, idCells[1], idCells[1], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 
@@ -501,8 +501,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 		}	
 	}
 	
-			
-
 	VecAssemblyBegin(_BoundaryTerms);
 	VecAssemblyEnd(_BoundaryTerms);
 	VecAssemblyBegin(_Conv);
@@ -817,18 +815,6 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 	VecAXPY(_primitiveVars, 1, _newtonVariation);//Vk+1=Vk+relaxation*deltaV
 
 	UpdateDualDensity();
-	/* PetscScalar q, rho_sigma, u;
-	UpdateDualDensity(); // \rho^{n+1}_K -> \rho^{n+1}_\sigma 
-	for (int f=0; f< _Nfaces; f++){
-		bool IsWallBound =    std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),f ) != _WallBoundFaceSet.end() ;
-		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),f ) != _SteggerBoundFaceSet.end() ;	
-		PetscInt I = _Nmailles +f;
-		if (IsWallBound) VecSetValue(_primitiveVars, I, 0, INSERT_VALUES); 
-		else if (IsSteggerBound){
-			VecGetValues(_DualDensity, 1,&f, &rho_sigma);
-			VecSetValue(_primitiveVars, I, _Velocity(f) * rho_sigma , INSERT_VALUES); 
-		}
-	}	 */
 	return converged;//TODO not good
 }
 
@@ -901,7 +887,6 @@ void EulerBarotropicStaggered::save(){
 			int I= _Nmailles + j;
 			double rho_sigma, q;
 			VecGetValues(_DualDensity, 1,&j, &rho_sigma);
-
 			if (_mpi_size > 1)
 				VecGetValues(_primitiveVars_seq,1,&I,&q);
 			else

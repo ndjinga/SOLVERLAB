@@ -45,24 +45,23 @@ int main(int argc, char** argv)
 		cout << "Construction of a cartesian mesh" << endl;
 		double inf = 0.0;
 		double sup = 1.0;
-		int ncells = 3;
+		int ncells = 10;
 		M=Mesh(inf,sup,ncells,inf,sup,ncells);
 
 		assert(fabs(inf)<1e-11);
 		assert(fabs(sup - 1.0)<1e-11);
-		myProblem.setPeriodicFaces(M, 'x', ncells); //Only works on [0,1]² -> not useful to adapt
+		//myProblem.setPeriodicFaces(M, 'x', ncells); //Only works on [0,1]² -> not useful to adapt //TODO
 	}
-
-	
 
 	//Initial field creation
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallPressureMap;
 	std::map<int ,double> wallVelocityMap ;
+	std::vector<double> wallVelocityVector(spaceDim);
 	Field Pressure0("pressure", CELLS, M, 1);
 	Field Momentum0("velocity", FACES, M, 1);
 	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
-	std::vector<double> wallVelocityVector(spaceDim);
+
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -81,10 +80,11 @@ int main(int argc, char** argv)
 			myProblem.setInteriorIndex(j);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialPressure(Ctemp1.x(),Ctemp1.y()) + initialPressure(Ctemp2.x(),Ctemp2.y())  )/2.0;
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialPressure(Ctemp1.x(),Ctemp1.y()) + initialPressure(Ctemp2.x(),Ctemp2.y())  )/2;
 			}
 		else if (Fj.getNumberOfCells()==1){			
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x() , Ctemp1.y() );
+			// Interpolation must be consistent with the one done in UpdateDualDensity
 			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * (initialPressure(Ctemp1.x() , Ctemp1.y() ) + initialPressure(Fj.x(),Fj.x()))/2.0;
 			if (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 				myProblem.setSteggerBoundIndex(j);	
@@ -103,7 +103,7 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit);
+	myProblem.setTimeScheme(Implicit);
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DStatio";
