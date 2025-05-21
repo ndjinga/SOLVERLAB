@@ -560,10 +560,31 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 	// Saving the Field
 	_Velocity_0_Psi.setTime(_time,_nbTimeStep);
 	_Velocity_0_Psi.setInfoOnComponent(0,"(Velocity_0)_Psi. n_sigma_(m/s)");
-	/* string prim(_path+"/");///Results
-	prim+=_fileName;
-	_Velocity_0_Psi.writeVTK(prim+"_(Velocity_0)_Psi"); */
 
+	//check that it is divergence free
+	for (int m=0; m <_Nmailles; m++){
+		double div = 0;
+		Cell K = _mesh.getCell(m);
+		std::vector<int> idFaces = K.getFacesId();
+		for (int f=0; f<K.getNumberOfFaces(); f++){
+			Face Facef = _mesh.getFace(idFaces[f] );
+			div += Facef.getMeasure() * getOrientation(idFaces[f], K) * _Velocity_0_Psi(idFaces[f]);	
+		}
+		if (fabs(div)>1e-10)
+			cout << " div = "<< div <<endl;
+	}
+	//check that it is equal to u_b on d\Omega
+	for (int j=0; j<_Nfaces;j++){ 
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+		double delta;
+		if ( !IsInterior ){	 //TODO periodic ?
+			delta = fabs(getboundaryVelocity().find(j)->second - _Velocity_0_Psi(j));
+		}
+		if (fabs(delta)>1e-10)
+			cout << " tr(ub - u_psi) = "<< delta <<endl;
+	}
     // Delete
     VecDestroy(&phi);
     VecDestroy(&b);
@@ -840,13 +861,44 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 	double E = 0;
 	double pb = getboundaryPressure().begin()->second;	//Warning pb should be constant
 
+	/* double flux = 0;
+	for (int m=0; m<_Nmailles; m++){
+		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
+		for (int f=0; f <idFaces.size(); f++ ){
+			if ( _mesh.getFace(idFaces[f]).getNumberOfCells() == 2){
+				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * _Velocity(idFaces[f]);
+			}
+			else
+				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) *( _Velocity(idFaces[f]) + getboundaryVelocity().find(idFaces[f])->second)/2.0;
+			
+		}
+
+	}
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		if (Fj.getNumberOfCells() == 2){
+			for (int c=0; c< Fj.getNumberOfCells(); c++){
+				flux -= (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[c])) * _Pressure(idCells[c]);
+			}
+		}
+		if (Fj.getNumberOfCells() == 1){
+			flux += (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[0])) * (pb - _Pressure(idCells[0]))/2.0 ;
+		}
+	}
+	cout << "flux ="<< flux <<endl; */
+
 	for (int j=0; j<_Nfaces;j++){
 		Face Fj = _mesh.getFace(j);
 		PetscInt I = _Nmailles + j;
 		std::vector< int > idCells = Fj.getCellsId();
 		Cell Ctemp1 = _mesh.getCell(idCells[0]);
 		PetscScalar InvD_sigma, InvCell1measure, InvCell2measure, pressure_in, pressure_out, velocity;
-		
+
+		/* double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
+		double theta = atan(Fj.y()/Fj.x());
+		double dotprodExact = pow(r1,2)/(pow(r1,2) - pow(r0,2))*( (1 - pow(r0,2)/pow(r,2) * cos(2*theta)) *_vec_sigma.find(j)->second[0] - pow(r0,2)/pow(r,2) * sin(2*theta) *_vec_sigma.find(j)->second[1]  ); 
+		*/
 		if (Fj.getNumberOfCells()==2  ){	// Fj is inside the domain or is a boundary periodic face (computed)
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 			MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
@@ -1112,7 +1164,7 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 }
 
 
-void WaveStaggered::InterpolateFromFacesToCells(const std::vector<double> &atFaces){ 
+void WaveStaggered::InterpolateFromFacesToCells(std::vector<double> atFaces){ 
 	assert( atFaces.size() == _mesh.getNumberOfFaces() ) ;
 	Field atCells("ExactVelocity", CELLS, _mesh, 3);
 	for (int l=0; l < _Nmailles ; l++){
@@ -1175,12 +1227,19 @@ double WaveStaggered::ErrorL2VelocityAtFaces(const std::vector<double> &ExactVel
 	return errorface;
 }
 
-double WaveStaggered::ErrorInftyVelocityBoundary(const std::map<int ,double> &BoundaryVelocity ){
+double WaveStaggered::ErrorInftyVelocityBoundary( std::map<int ,double> &BoundaryVelocity ){
+	std::map<int, double>::iterator it = BoundaryVelocity.begin();
 	double errorboundary =0;
 	for (int j=0; j < _Nfaces; j++){
 		bool is_j_Interior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-		if ( !is_j_Interior && (  errorboundary - fabs(_Velocity(j) -  BoundaryVelocity.find(j)->second )) ) ;
-			errorboundary = fabs(_Velocity(j) -   BoundaryVelocity.find(j)->second  ) ; 
+		if ( _mesh.getFace(j).getNumberOfCells() == 1){
+			/* cout <<"vel = "<<	 _Velocity(j) << "  "<< BoundaryVelocity.find(j)->second <<endl;
+			cout << "diff = "<< _Velocity(j) -BoundaryVelocity.find(j)->second<< endl;
+			cout <<" diff^2 = "<< (_Velocity(j) -BoundaryVelocity.find(j)->second)*(_Velocity(j) -BoundaryVelocity.find(j)->second)<<endl; */
+			double diff = _Velocity(j) -   BoundaryVelocity.find(j)->second  ;
+			errorboundary += pow(diff, 2) ;
+			//cout <<"error boundary = "<< errorboundary<<endl;
+			}  
 	}
 	return errorboundary;
 }
@@ -1216,8 +1275,40 @@ void WaveStaggered::save(){
 
 	string prim(_path+"/");///Results
 	prim+=_fileName;
+	double pb = getboundaryPressure().begin()->second;	//Warning pb should be constant
 
-	if (_nbTimeStep >0) cout <<" Relative Energy( "<< _time <<") = "<< std::setprecision(15) << std::fixed<< _Energy.back() <<endl;
+	double flux = 0;
+	for (int m=0; m<_Nmailles; m++){
+		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
+		for (int f=0; f <idFaces.size(); f++ ){
+			if ( _mesh.getFace(idFaces[f]).getNumberOfCells() == 2){
+				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * _Velocity(idFaces[f]);
+			}
+			else
+				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) *( _Velocity(idFaces[f]) + getboundaryVelocity().find(idFaces[f])->second)/2.0;
+			
+		}
+
+	}
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		if (Fj.getNumberOfCells() == 2){
+			for (int c=0; c< Fj.getNumberOfCells(); c++){
+				flux -= (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[c])) * _Pressure(idCells[c]);
+			}
+		}
+		if (Fj.getNumberOfCells() == 1){
+			flux += (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[0])) * (pb - _Pressure(idCells[0]))/2.0 ;
+		}
+	}
+
+	if (_nbTimeStep >2){
+		if (fabs(flux)>1e-11 || ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13 ){
+			cout <<" Relative Energy( "<< _time <<") = "<<_Energy.back()<<" with flux ="<< flux  <<endl;
+			cout <<"d_t E =  "<< (_Energy.back() -_Energy[_Energy.size() - 2])/_dt<<endl; //std::setprecision(15) << std::fixed<< 
+		}
+	} 
 
 	if(_mpi_size>1){
         VecScatterBegin(_scat,_primitiveVars,_primitiveVars_seq,INSERT_VALUES,SCATTER_FORWARD);

@@ -116,8 +116,8 @@ public :
 
 	/***********Post Pro *************/
 	double ErrorL2VelocityAtFaces(const std::vector<double> &ExactVelocity);
-	double ErrorInftyVelocityBoundary(const std::map<int ,double> &BoundaryVelocity );
-	void InterpolateFromFacesToCells(const std::vector<double> &atFaces);
+	double ErrorInftyVelocityBoundary( std::map<int ,double> &BoundaryVelocity );
+	void InterpolateFromFacesToCells(std::vector<double> atFaces);
 	void AssembleMetricsMatrices();
 	//TODO à supprimer ?
 	void setExactVelocityFieldAtCells(const Field &atCells);

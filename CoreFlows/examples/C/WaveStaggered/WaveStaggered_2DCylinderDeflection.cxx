@@ -1,13 +1,14 @@
 #include "WaveStaggered.hxx"
 #include "math.h"
 #include <cassert>
+#include <iomanip>	
 
 using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * cos(2*theta)); 
-	vec[1] = r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * sin(2*theta)); 
+	vec[0] = pow(r1,2)/(pow(r1,2) - pow(r0,2))*(1 - pow(r0,2)/pow(r,2) * cos(2*theta)); 
+	vec[1] = pow(r1,2)/(pow(r1,2) - pow(r0,2))*(  - pow(r0,2)/pow(r,2) * sin(2*theta)); 
 	return vec;
 }
 
@@ -114,13 +115,13 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Implicit	);    
+	myProblem.setTimeScheme(Explicit	);    
     // name of result file
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 100000	;
-	int freqSave = 200;
+	int freqSave = 400;
 	double cfl = 0.5;
 	double maxTime = 100;
 	double precision = 1e-10;
@@ -143,10 +144,10 @@ int main(int argc, char** argv)
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;
 	else
-		cout << "Simulation "<<fileName<<"  failed ! " << endl;
+		cout << "Simulation "<<fileName<<"  failed ! " << endl; 
 
 	cout << "------------ End of calculation !!! -----------" << endl;
-	cout << "\n Boundary Velocity error = "<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
+	cout << "\nBoundary Velocity error = "<< std::setprecision(17) << std::fixed<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
 	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorL2VelocityAtFaces(ExactVelocityAtFaces) <<endl;
 	//cout << "Error L2 of interpolated velocity at cells= "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[1] <<endl;
 	myProblem.terminate();
