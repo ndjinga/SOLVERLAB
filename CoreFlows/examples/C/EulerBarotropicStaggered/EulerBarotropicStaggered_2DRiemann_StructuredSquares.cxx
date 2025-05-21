@@ -2,6 +2,7 @@
 #include "math.h"
 #include <cassert>
 #include <cstdlib>
+#include <chrono>
 
 using namespace std;
 
@@ -49,7 +50,9 @@ double dotprod(std::vector<double> vector, std::vector<double> normal){
 }
 
 int main(int argc, char** argv)
-{
+{	
+	auto start = std::chrono::high_resolution_clock::now();
+
 	if (argc<2 || (*(argv[1]) != 'x' && *(argv[1]) != 'y') ){
 		cout << "ERROR : you have to give a direction for the pseudo 1d Riemann problem, either 'x' or 'y' ";
 	}
@@ -112,17 +115,13 @@ int main(int argc, char** argv)
 				}
 			}
 			myProblem.setOrientation(j,vec_normal_sigma);
-			std::vector< int > nodes =  Fj.getNodesId();
-			Node vertex1  = M.getNode( nodes[0] );
-			Node vertex2 = M.getNode( nodes[1] );
-			double D_sigmaL = fabs( (Ctemp1.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp1.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) ) /2.0 ;
-
+		
 			if (Direction == 'x')  	   coordFace = Fj.x();
 			else if (Direction == 'y') coordFace = Fj.y() ;
+
 			if(Fj.getNumberOfCells()==2 ){ 
 				myProblem.setInteriorIndex(j);
 				Cell Ctemp2 = M.getCell(idCells[1]);
-				double D_sigmaR = fabs( (Ctemp2.x() - vertex1.x() )* (vertex2.y() - vertex1.y() ) - (Ctemp2.y() - vertex1.y() )* (vertex2.x() - vertex1.x() ) ) /2.0 ;
 				if (Direction == 'x'){
 					coordLeft = Ctemp1.x();
 					coordRight = Ctemp2.x();
@@ -133,13 +132,11 @@ int main(int argc, char** argv)
 				}
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				// Interpolation must be consistent with the one done in UpdateDualDensity
-				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (D_sigmaL * initialPressure(coordLeft,discontinuity) + D_sigmaR * initialPressure(coordRight,discontinuity) )/(D_sigmaL +  D_sigmaR);
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) +  initialPressure(coordRight,discontinuity) );
 			}
 			else if (Fj.getNumberOfCells()==1  ){ 
 				coordLeft = (Direction == 'x') ?  Ctemp1.x() : Ctemp1.y(); ;
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
-				// Interpolation must be consistent with the one done in UpdateDualDensity
 				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordFace,discontinuity) )/2.0;
 				// if periodic check that the boundary face is the computed (avoid passing twice ) 
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
@@ -190,6 +187,11 @@ int main(int argc, char** argv)
 			cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
 		cout << "------------ End of calculation !!! -----------" << endl;
+
+		auto end = std::chrono::high_resolution_clock::now();
+    	std::chrono::duration<double, std::milli> duration = end - start;
+    	std::cout << "Execution time: " << duration.count() << " ms" << std::endl;
+
 		myProblem.terminate();
 	}
 		

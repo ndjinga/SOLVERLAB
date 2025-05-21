@@ -95,6 +95,7 @@ public :
 
 
 	void ComputeEnergyAtTimeT();
+	void computeHodgeDecompositionWithBoundaries();
 	/*******Periodicity related ********/
 	void setPeriodicFaces(	Mesh &M, const char &Direction, int ncells);
 	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
@@ -114,9 +115,9 @@ public :
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
 
 	/***********Post Pro *************/
-	std::vector<double> ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells );
+	double ErrorL2VelocityAtFaces(const std::vector<double> &ExactVelocity);
 	double ErrorInftyVelocityBoundary(const std::map<int ,double> &BoundaryVelocity );
-	void InterpolateFromFacesToCells(const Field &atFaces, Field &atCells);
+	void InterpolateFromFacesToCells(const std::vector<double> &atFaces);
 	void AssembleMetricsMatrices();
 	//TODO à supprimer ?
 	void setExactVelocityFieldAtCells(const Field &atCells);
@@ -139,7 +140,7 @@ public :
 
 
 protected :
-	Field _Velocity, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate;
+	Field _Velocity, _Velocity_0_Psi, _Velocity_0_Psi_at_Cells, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate ;
 	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq ;
 	Mat _InvVol,_InvSurface, _Div, _LaplacianPressure, _DivTranspose,  _GradDivTilde ; 
 

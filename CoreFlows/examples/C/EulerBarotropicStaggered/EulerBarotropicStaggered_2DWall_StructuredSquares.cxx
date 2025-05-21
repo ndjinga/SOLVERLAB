@@ -2,6 +2,7 @@
 #include "math.h"
 #include <cassert>
 #include <cstdlib>
+#include <chrono>
 
 using namespace std;
 
@@ -50,6 +51,7 @@ double dotprod(std::vector<double> vector, std::vector<double> normal){
 
 int main(int argc, char** argv)
 {
+	auto start = std::chrono::high_resolution_clock::now();
 	if (argc<3 ||  ( (*(argv[1]) != 'x' && *(argv[1]) != 'y') && (*(argv[2]) != 'l' && *(argv[2]) != 'r') ) ){
 		cout << "ERROR : you have to give a direction for the pseudo 1d Riemann problem, either 'x' or 'y' AND the side of the boundary condition, either 'l' for left side or 'r' for the right side";
 	}
@@ -196,6 +198,11 @@ int main(int argc, char** argv)
 			cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
 		cout << "------------ End of calculation !!! -----------" << endl;
+			
+		auto end = std::chrono::high_resolution_clock::now();
+    	std::chrono::duration<double, std::milli> duration = end - start;
+    	std::cout << "Execution time: " << duration.count() << " ms" << std::endl;
+
 		myProblem.terminate();
 	}
 		

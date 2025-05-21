@@ -6,8 +6,8 @@ using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = (1 - r0*r0/(r*r) * cos(2*theta)); //r1*r1/(r1*r1 -r0*r0)*
-	vec[1] =  (- r0*r0/(r*r) * sin(2*theta)); //r1*r1/(r1*r1 -r0*r0)*
+	vec[0] = r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * cos(2*theta)); 
+	vec[1] = r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * sin(2*theta)); 
 	return vec;
 }
 
@@ -67,8 +67,7 @@ int main(int argc, char** argv)
 	std::map<int ,double> wallVelocityMap ;
 	Field Pressure0("pressure", CELLS, M, 1);
 	Field Velocity0("velocity", FACES, M, 1);
-	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
-	Field ExactVelocityInterpolate("ExactVelocityInterpolate", CELLS, M, 3);
+	std::vector<double> ExactVelocityAtFaces(M.getNumberOfFaces());
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -115,13 +114,13 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit	);    
+	myProblem.setTimeScheme(Implicit	);    
     // name of result file
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000	;
-	int freqSave = 10000;
+	unsigned MaxNbOfTimeStep = 100000	;
+	int freqSave = 200;
 	double cfl = 0.5;
 	double maxTime = 100;
 	double precision = 1e-10;
@@ -139,7 +138,7 @@ int main(int argc, char** argv)
 	
 	// evolution
 	myProblem.initialize();
-	myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces, ExactVelocityInterpolate);
+	myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces);
 	bool ok = myProblem.run();
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;
@@ -148,8 +147,8 @@ int main(int argc, char** argv)
 
 	cout << "------------ End of calculation !!! -----------" << endl;
 	cout << "\n Boundary Velocity error = "<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
-	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[0] <<endl;
-	cout << "Error L2 of interpolated velocity at cells= "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[1] <<endl;
+	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorL2VelocityAtFaces(ExactVelocityAtFaces) <<endl;
+	//cout << "Error L2 of interpolated velocity at cells= "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[1] <<endl;
 	myProblem.terminate();
 	
 

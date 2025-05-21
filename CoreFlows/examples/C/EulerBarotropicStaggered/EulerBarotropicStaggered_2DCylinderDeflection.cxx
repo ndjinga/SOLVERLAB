@@ -1,13 +1,14 @@
 #include "EulerBarotropicStaggered.hxx"
 #include "math.h"
 #include <cassert>
+#include <chrono>
 
 using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = sqrt( 1*1) * 1e-4 * (1 - r0*r0/(r*r) * cos(2*theta)); //r1*r1/(r1*r1 -r0*r0)*
-	vec[1] = sqrt(1*1) * 1e-4 * (- r0*r0/(r*r) * sin(2*theta)); // r1*r1/(r1*r1 -r0*r0)*
+	vec[0] = sqrt( 1*1) * 1e-4 *r1*r1/(r1*r1 -r0*r0)* (1 - r0*r0/(r*r) * cos(2*theta)); 
+	vec[1] = sqrt(1*1) * 1e-4  *r1*r1/(r1*r1 -r0*r0)* (- r0*r0/(r*r) * sin(2*theta));  
 	return vec;
 }
 
@@ -21,13 +22,13 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(2 * 1*1) *1e-1 ; 
+	vec[0] = sqrt(2 * 1*1) *1e-3 ; 
 	vec[1] = 0;
 	return vec;
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
-	vec[0] =   sqrt(2 * 1*1) *1e-1 ; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
+	vec[0] =   sqrt(2 * 1*1) *1e-3; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
 	vec[1] = 0;
 	return vec;
 }
@@ -42,6 +43,8 @@ double dotprod(std::vector<double> vector1, std::vector<double> vector2){
 
 int main(int argc, char** argv)
 {
+    auto start = std::chrono::high_resolution_clock::now();
+   
 	//Preprocessing: mesh and group creation
 	int spaceDim = 2;
 	
@@ -64,9 +67,10 @@ int main(int argc, char** argv)
 	//Initial field creation
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallPressureMap;
-	std::map<int ,double> wallVelocityMap ;
+	std::map<int ,double> wallMomentumMap ;
+	std::vector<double> wallVelocityVector(spaceDim);
 	Field Pressure0("pressure", CELLS, M, 1);
-	Field Velocity0("velocity", FACES, M, 1);
+	Field Momentum0("velocity", FACES, M, 1);
 	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
@@ -86,28 +90,35 @@ int main(int argc, char** argv)
 			myProblem.setInteriorIndex(j);
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
 			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
-			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialPressure(Ctemp1.x(),Ctemp1.y()) + initialPressure(Ctemp2.x(),Ctemp2.y())  )/2;
 		}
 		else if (Fj.getNumberOfCells()==1){
+			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * initialPressure(Fj.x(),Fj.y());
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
-				wallVelocityMap[j] =  0;
+				wallMomentumMap[j] =  0;
+				for (int idm = 0; idm <spaceDim; idm ++)
+					wallVelocityVector[idm] = 0;
+			
 			}
-			else {
-				// if face is on exterior (stegger condition) 			
+			else {		
 				myProblem.setSteggerBoundIndex(j);								
-				wallVelocityMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
+				wallMomentumMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
 				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
+				for (int idm = 0; idm <spaceDim; idm ++)
+					wallVelocityVector[idm] = initialVelocity(Fj.x(), Fj.y())[idm];
 			} 
-			ExactVelocityAtFaces[j] = wallVelocityMap[j];
+			ExactVelocityAtFaces[j] = wallMomentumMap[j];
+			myProblem.setboundaryVelocityVector(j, wallVelocityVector);
 		}
 	}
 
 		
 	myProblem.setInitialField(Pressure0);
-	myProblem.setInitialField(Velocity0);
+	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallPressureMap);
-	myProblem.setboundaryVelocity(wallVelocityMap);
+	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method
 	myProblem.setTimeScheme(Explicit);
@@ -116,8 +127,8 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 2	;
-	int freqSave = 1		;
+	unsigned MaxNbOfTimeStep = 1000000	;
+	int freqSave = 100	;
 	double cfl = 0.99;
 	double maxTime = 50;
 	double precision = 1e-6;
@@ -136,7 +147,7 @@ int main(int argc, char** argv)
 	// evolution
 	myProblem.initialize();
 	Field ExactVelocityInterpolate("ExactVelocityInterpolate", CELLS, M, 3);
-	myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces, ExactVelocityInterpolate);
+	//myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces, ExactVelocityInterpolate);
 	bool ok = myProblem.run();
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;
@@ -144,6 +155,12 @@ int main(int argc, char** argv)
 		cout << "Simulation "<<fileName<<"  failed ! " << endl;
 
 	cout << "------------ End of calculation !!! -----------" << endl;
+
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+    std::cout << "Execution time: " << duration.count() << " ms" << std::endl;
+
 	myProblem.terminate();
 	
 

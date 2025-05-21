@@ -6,6 +6,7 @@
 #include "StiffenedGas.hxx"
 #include <numeric>
 #include <math.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -369,6 +370,9 @@ void WaveStaggered::initialize(){
 	_runLogFile->close();
 
 	_initializedMemory=true;
+
+	computeHodgeDecompositionWithBoundaries();
+
 	save();//save initial data
 }
 
@@ -446,6 +450,134 @@ void WaveStaggered::AssembleMetricsMatrices(){
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
 }
 
+
+
+void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
+	assert(_nbTimeStep == 0);
+    Mat B, Btranspose, HodgeLaplacian;
+    Vec phi, b, nullVec, Bu, u_0, u_phi;
+    KSP ksp;
+    MatNullSpace nullspace;
+
+	//Transfer u_0 into PETSC VEC
+	VecCreateSeq(PETSC_COMM_SELF, _Nfaces, &u_0);
+	VecZeroEntries(u_0);
+	for(int i =0; i<_Nfaces; i++)
+		VecSetValue(u_0, i, _Velocity(i), INSERT_VALUES);
+	
+    //Hodge Laplacian is created from BB^t with B =-div 
+    MatCreate(PETSC_COMM_WORLD, &HodgeLaplacian);
+    MatSetSizes(HodgeLaplacian, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nmailles);
+    MatSetFromOptions(HodgeLaplacian);
+    MatSetUp(HodgeLaplacian);
+
+	MatCreate(PETSC_COMM_WORLD, &B);
+    MatSetSizes(B, PETSC_DECIDE, PETSC_DECIDE, _Nmailles, _Nfaces);
+    MatSetFromOptions(B);
+    MatSetUp(B);
+	MatZeroEntries(B); 
+
+	for (int j=0; j<_Nfaces;j++){ 
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+		if ( IsInterior ){	 //TODO periodic ?
+			Cell Ctemp1 = _mesh.getCell(idCells[0]);
+			Cell Ctemp2 = _mesh.getCell(idCells[1]);
+			MatSetValue(B, idCells[0], j ,  -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+			MatSetValue(B, idCells[1], j , - getOrientation(j,Ctemp2) * Fj.getMeasure(), ADD_VALUES );  
+		}
+	}
+    MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
+	MatTranspose(B, MAT_INITIAL_MATRIX, &Btranspose);
+	MatMatMult(B,Btranspose, MAT_INITIAL_MATRIX, PETSC_DETERMINE, &HodgeLaplacian);
+
+    // Eliminating constants from the kernel
+    VecCreateSeq(PETSC_COMM_SELF, _Nmailles, &nullVec);
+    VecSet(nullVec, 1.0);  
+	VecNormalize(nullVec, NULL);
+   	MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, 1, &nullVec, &nullspace);
+    MatSetNullSpace(HodgeLaplacian, nullspace);
+
+    // Source term
+		// -/int_{\partial \Omega} u_b\cdot n d\Gamma
+    VecCreateSeq(PETSC_COMM_SELF, _Nmailles, &b);
+	VecZeroEntries(b);
+	VecDuplicate(b, &Bu);
+    for (PetscInt i = 0; i < _Nmailles; ++i) {
+		Cell K = _mesh.getCell(i);
+		std::vector<int> FacesOfKi = K.getFacesId();
+		for (int nei =0; nei <FacesOfKi.size(); nei ++){
+			if (_mesh.getFace(FacesOfKi[nei]).getNumberOfCells() ==1 )
+				VecSetValue(b, i, -_mesh.getFace(FacesOfKi[nei]).getMeasure() * getboundaryVelocity().find(FacesOfKi[nei])->second * getOrientation(FacesOfKi[nei], K) , ADD_VALUES);
+		}  
+    }
+    VecAssemblyBegin(b);
+    VecAssemblyEnd(b);
+		// /int_\Omega u_0 \cdot (-div)^*f dx
+	MatMult(B, u_0, Bu);
+	VecAXPY(b, 1, Bu);
+
+    // Project source term on range of HodgeLaplacian
+    MatNullSpaceRemove(nullspace, b);
+
+    VecDuplicate(b, &phi);
+
+    // --- Solver KSP ---
+    KSPCreate(PETSC_COMM_WORLD, &ksp);
+    KSPSetOperators(ksp, HodgeLaplacian, HodgeLaplacian);
+    KSPSetType(ksp, KSPCG);
+    KSPSetFromOptions(ksp);
+    KSPSetTolerances(ksp, 1e-10, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+	PC pc;
+	KSPGetPC(ksp, &pc);
+	PCSetType(pc, PCJACOBI);
+    KSPSetUp(ksp);
+
+    KSPSolve(ksp, b, phi);
+
+	// Construct (u_0)_psi := u_0  -  (Bphi + tr(u - u_b) )
+		// First  u_phi := (Bphi + tr(u - u_b) )
+	VecDuplicate(u_0, &u_phi);
+	MatMultTranspose(B, phi, u_phi);
+	for (int j=0; j<_Nfaces;j++){ 
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+		if ( !IsInterior )	 //TODO periodic ?
+			VecSetValue(u_phi, j , _Velocity(j) - getboundaryVelocity().find(j)->second ,INSERT_VALUES);
+	}
+		//Then (u_0)_psi := u_0  -  u_phi
+	_Velocity_0_Psi = Field("(Velocity_0)_Psi", FACES, _mesh,3);
+	_Velocity_0_Psi_at_Cells = Field("Velocity_Psi", CELLS, _mesh,3);
+	double u_0_j, u_phi_j;
+	for (int j=0; j<_Nfaces;j++){ 
+		VecGetValues(u_0, 1, &j, &u_0_j);
+		VecGetValues(u_phi, 1, &j, &u_phi_j);
+		_Velocity_0_Psi(j) = u_0_j - u_phi_j;
+	}
+	// Saving the Field
+	_Velocity_0_Psi.setTime(_time,_nbTimeStep);
+	_Velocity_0_Psi.setInfoOnComponent(0,"(Velocity_0)_Psi. n_sigma_(m/s)");
+	/* string prim(_path+"/");///Results
+	prim+=_fileName;
+	_Velocity_0_Psi.writeVTK(prim+"_(Velocity_0)_Psi"); */
+
+    // Delete
+    VecDestroy(&phi);
+    VecDestroy(&b);
+	VecDestroy(&Bu);
+	VecDestroy(&u_0);
+	VecDestroy(&u_phi);
+    VecDestroy(&nullVec);
+    MatDestroy(&HodgeLaplacian);
+	MatDestroy(&B);
+	MatDestroy(&Btranspose);
+	//MatDestroy(&C);
+    MatNullSpaceDestroy(&nullspace);
+    KSPDestroy(&ksp);
+}
 
 double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will not contribute to the Newton scheme
 	//The matrices are assembled only in the first time step since linear problem
@@ -544,19 +676,12 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
 		MatDestroy(& Prod);
+
+
 		ComputeMinCellMaxPerim();
+
 	}
-	/* if (_Time.back() >20 ){
-		for (int j=0; j<_Nfaces;j++){
-			bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
-			bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
-			if (  IsWallBound && fabs(_Velocity(j)) > 1e-3  )
-				cout << _Velocity(j)<< " for wall "<<endl;
-			if (  IsSteggerBound  && fabs(_Velocity(j) - _vec_sigma.find(j)->second[0]) > 1e-3 )
-				cout << _Velocity(j)<< " for (1,0).n_sigma = "<< _vec_sigma.find(j)->second[0] <<endl;
-		
-		}
-	} */
+
 	double dt;
 	Vec Prod2;
 	VecDuplicate(_BoundaryTerms, &Prod2);
@@ -581,7 +706,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 	double PreviousTime = _Time.back();
 	_Time.push_back(PreviousTime+ dt);
 	ComputeEnergyAtTimeT();
-	
 	
 	return dt ;
 }
@@ -714,6 +838,8 @@ void WaveStaggered::abortTimeStep(){
 
 void WaveStaggered::ComputeEnergyAtTimeT(){
 	double E = 0;
+	double pb = getboundaryPressure().begin()->second;	//Warning pb should be constant
+
 	for (int j=0; j<_Nfaces;j++){
 		Face Fj = _mesh.getFace(j);
 		PetscInt I = _Nmailles + j;
@@ -730,9 +856,9 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 			VecGetValues(_primitiveVars, 1, &idCells[1], &pressure_out );
 			VecGetValues(_primitiveVars, 1, &I, &velocity );
 
-			double pressure_int=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ;
-			double pressure_ext=  1/(InvCell2measure*Ctemp2.getNumberOfFaces()) * (pressure_out)*(pressure_out);
-			double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
+			double pressure_int=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) *pow( (pressure_in - pb) ,2) ;
+			double pressure_ext=  1/(InvCell2measure*Ctemp2.getNumberOfFaces()) *pow( (pressure_out - pb) ,2) ;
+			double velocity_part = 1/(InvD_sigma) *pow( (velocity - _Velocity_0_Psi(j)) ,2) ; 
 			E += pressure_int + pressure_ext + velocity_part ;
 						
 		}
@@ -742,8 +868,8 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 			VecGetValues(_primitiveVars, 1, &idCells[0], &pressure_in );
 			VecGetValues(_primitiveVars, 1, &I, &velocity );
 
-			double pressure_part_cellint=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) * (pressure_in)*(pressure_in) ; 
-			double velocity_part = 1/(InvD_sigma) * (velocity)*(velocity);
+			double pressure_part_cellint=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) *pow( (pressure_in - pb) ,2) ;
+			double velocity_part = 1/(InvD_sigma) *pow( (velocity - _Velocity_0_Psi(j)) ,2) ; 
 			E += pressure_part_cellint + velocity_part ;
 		}	
 	}
@@ -986,9 +1112,9 @@ void WaveStaggered::setExactVelocityFieldAtCells(const Field &atCells){
 }
 
 
-void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atCells){ 
-	assert( atFaces.getTypeOfField() == FACES);
-	assert( atCells.getTypeOfField() == CELLS);
+void WaveStaggered::InterpolateFromFacesToCells(const std::vector<double> &atFaces){ 
+	assert( atFaces.size() == _mesh.getNumberOfFaces() ) ;
+	Field atCells("ExactVelocity", CELLS, _mesh, 3);
 	for (int l=0; l < _Nmailles ; l++){
 		for (int k=0; k< 3; k++){
 			atCells(l, k) =0;
@@ -1016,51 +1142,37 @@ void WaveStaggered::InterpolateFromFacesToCells(const Field &atFaces, Field &atC
 			if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
 		
 			for (int k=0; k< _Ndim; k++){
-				atCells(idCells[0], k) += orien1 *  atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
-				atCells(idCells[1], k) += orien2 * atFaces(i) * M2[k]/Ctemp2.getMeasure(); 
+				atCells(idCells[0], k) += orien1 *  atFaces[i] * M1[k]/Ctemp1.getMeasure(); 
+				atCells(idCells[1], k) += orien2 * atFaces[i] * M2[k]/Ctemp2.getMeasure(); 
 			}
 		}
 		else if  (Fj.getNumberOfCells() == 1){
 			for (int k=0; k< _Ndim; k++)
-				atCells(idCells[0], k) += atFaces(i) * M1[k]/Ctemp1.getMeasure(); 
+				atCells(idCells[0], k) += atFaces[i] * M1[k]/Ctemp1.getMeasure(); 
 		}
 	}
 	string prim(_path+"/");
 	string primCells = prim +_fileName + atCells.getName();
-	string primFaces = prim + _fileName  +atFaces.getName();
-	cout << primFaces <<endl;
 	cout << primCells <<endl;
 
 	switch(_saveFormat)
 	{
 	case VTK :
 		atCells.writeVTK(primCells);
-		atFaces.writeVTK(primFaces);
 		break;
 	}
 }
 
-std::vector<double> WaveStaggered::ErrorL2VelocityInfty(const Field &ExactVelocityInftyAtFaces, const Field &ExactVelocityInftyAtCells ){
+double WaveStaggered::ErrorL2VelocityAtFaces(const std::vector<double> &ExactVelocity){
 	double errorface =0;
-	double errorcell =0;
-	std::vector<double> Error(2);
 	for (int j=0; j < _Nfaces; j++){
 		PetscInt I = _Nmailles + j;
 		double InvD_sigma;
 		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
 		double Dsigma = 1/InvD_sigma;
-		errorface += Dsigma * (_Velocity(j) - ExactVelocityInftyAtFaces(j))*(_Velocity(j) - ExactVelocityInftyAtFaces(j));
+		errorface += Dsigma * (_Velocity(j) - ExactVelocity[j])*(_Velocity(j) - ExactVelocity[j]);
 	}
-	for (int j=0; j < _Nmailles; j++){
-		double InvK;
-		MatGetValues(_InvVol, 1, &j,1, &j, &InvK);
-		double K = 1/InvK;
-		for (int k =0; k < _Ndim; k++)
-			errorcell += K * (_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k))*(_Velocity_at_Cells(j,k) - ExactVelocityInftyAtCells(j,k));
-	}
-	Error[0] = sqrt(errorface);
-	Error[1] = sqrt(errorcell);
-	return Error;
+	return errorface;
 }
 
 double WaveStaggered::ErrorInftyVelocityBoundary(const std::map<int ,double> &BoundaryVelocity ){
@@ -1104,6 +1216,8 @@ void WaveStaggered::save(){
 
 	string prim(_path+"/");///Results
 	prim+=_fileName;
+
+	if (_nbTimeStep >0) cout <<" Relative Energy( "<< _time <<") = "<< std::setprecision(15) << std::fixed<< _Energy.back() <<endl;
 
 	if(_mpi_size>1){
         VecScatterBegin(_scat,_primitiveVars,_primitiveVars_seq,INSERT_VALUES,SCATTER_FORWARD);
@@ -1151,11 +1265,13 @@ void WaveStaggered::save(){
 	if(_saveVelocity  ){ 
 
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
+		if (_nbTimeStep == 0) _Velocity_0_Psi_at_Cells.setTime(_time,_nbTimeStep);
 		_DivVelocity.setTime(_time,_nbTimeStep);
 		for (int l=0; l < _Nmailles ; l++){
 			_DivVelocity(l) =0;
 			for (int k=0; k< 3; k++){
 				_Velocity_at_Cells(l, k) =0;
+				if (_nbTimeStep == 0) _Velocity_0_Psi_at_Cells(l, k) =0;
 			}
 		}
 
@@ -1194,6 +1310,10 @@ void WaveStaggered::save(){
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
 					_Velocity_at_Cells(idCells[1], k) += _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
+					if (_nbTimeStep == 0){
+						_Velocity_0_Psi_at_Cells(idCells[0], k) += _Velocity_0_Psi(i) * M1[k]/Ctemp1.getMeasure(); 
+						_Velocity_0_Psi_at_Cells(idCells[1], k) += _Velocity_0_Psi(i) * M2[k]/Ctemp2.getMeasure(); 
+					}
 				}
 				_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/Ctemp1.getMeasure();
 				_DivVelocity( idCells[1]) += orien2 * Fj.getMeasure() * _Velocity(i)/Ctemp2.getMeasure();
@@ -1202,6 +1322,8 @@ void WaveStaggered::save(){
 			else if  (Fj.getNumberOfCells() == 1){
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
+					if (_nbTimeStep == 0) _Velocity_0_Psi_at_Cells(idCells[0], k) += _Velocity_0_Psi(i) * M1[k]/Ctemp1.getMeasure();
+
 				}
 				_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/Ctemp1.getMeasure();
 			}
@@ -1214,11 +1336,14 @@ void WaveStaggered::save(){
 		_Velocity_at_Cells.setInfoOnComponent(0,"Velocity at cells x_(m/s)");
 		_Velocity_at_Cells.setInfoOnComponent(1,"Velocity at cells y_(m/s)");
 		_DivVelocity.setInfoOnComponent(0,"divergence velocity (s^-1)");
+		_Velocity_0_Psi_at_Cells.setInfoOnComponent(0,"x_(m/s)");
+		_Velocity_0_Psi_at_Cells.setInfoOnComponent(1,"y_(m/s)");
 	
 		switch(_saveFormat)
 		{
 		case VTK :
 			_Velocity_at_Cells.writeVTK(prim+"_VelocityAtCells");
+			_Velocity_0_Psi_at_Cells.writeVTK(prim+"_Velocity_0_Psi_AtCells");
 			_Velocity.writeVTK(prim+"_Velocity");
 			_DivVelocity.writeVTK(prim+"DivVelocity");
 			break;

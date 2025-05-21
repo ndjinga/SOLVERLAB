@@ -128,8 +128,7 @@ int main(int argc, char** argv)
 	
 	// evolution
 	myProblem.initialize();
-	Field ExactVelocityInterpolate("ExactVelocityInterpolate", CELLS, M, 3);
-	myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces, ExactVelocityInterpolate);
+	
 	bool ok = myProblem.run();
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;
