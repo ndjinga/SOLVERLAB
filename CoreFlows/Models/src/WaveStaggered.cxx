@@ -462,8 +462,9 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 	//Transfer u_0 into PETSC VEC
 	VecCreateSeq(PETSC_COMM_SELF, _Nfaces, &u_0);
 	VecZeroEntries(u_0);
-	for(int i =0; i<_Nfaces; i++)
+	for(int i =0; i<_Nfaces; i++){
 		VecSetValue(u_0, i, _Velocity(i), INSERT_VALUES);
+	}
 	
     //Hodge Laplacian is created from BB^t with B =-div 
     MatCreate(PETSC_COMM_WORLD, &HodgeLaplacian);
@@ -861,33 +862,6 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 	double E = 0;
 	double pb = getboundaryPressure().begin()->second;	//Warning pb should be constant
 
-	/* double flux = 0;
-	for (int m=0; m<_Nmailles; m++){
-		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
-		for (int f=0; f <idFaces.size(); f++ ){
-			if ( _mesh.getFace(idFaces[f]).getNumberOfCells() == 2){
-				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * _Velocity(idFaces[f]);
-			}
-			else
-				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) *( _Velocity(idFaces[f]) + getboundaryVelocity().find(idFaces[f])->second)/2.0;
-			
-		}
-
-	}
-	for (int j=0; j<_Nfaces;j++){
-		Face Fj = _mesh.getFace(j);
-		std::vector< int > idCells = Fj.getCellsId();
-		if (Fj.getNumberOfCells() == 2){
-			for (int c=0; c< Fj.getNumberOfCells(); c++){
-				flux -= (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[c])) * _Pressure(idCells[c]);
-			}
-		}
-		if (Fj.getNumberOfCells() == 1){
-			flux += (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[0])) * (pb - _Pressure(idCells[0]))/2.0 ;
-		}
-	}
-	cout << "flux ="<< flux <<endl; */
-
 	for (int j=0; j<_Nfaces;j++){
 		Face Fj = _mesh.getFace(j);
 		PetscInt I = _Nmailles + j;
@@ -1269,45 +1243,61 @@ void WaveStaggered::terminate(){
         VecDestroy(&_primitiveVars_seq);
 }
 
-void WaveStaggered::save(){
-    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
-    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
-
-	string prim(_path+"/");///Results
-	prim+=_fileName;
-	double pb = getboundaryPressure().begin()->second;	//Warning pb should be constant
-
+void WaveStaggered::RelativeEnergyBalanceEq(){
 	double flux = 0;
+	double residual =0;
+	double pb = getboundaryPressure().begin()->second;
 	for (int m=0; m<_Nmailles; m++){
 		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
+		double divtilde =0;
 		for (int f=0; f <idFaces.size(); f++ ){
 			if ( _mesh.getFace(idFaces[f]).getNumberOfCells() == 2){
 				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * _Velocity(idFaces[f]);
 			}
 			else
 				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) *( _Velocity(idFaces[f]) + getboundaryVelocity().find(idFaces[f])->second)/2.0;
-			
+			divtilde += sqrt(_perimeters[m]) * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * (_Velocity(idFaces[f]) - _Velocity_0_Psi(idFaces[f]));
 		}
-
+		residual -= pow(divtilde, 2);
 	}
 	for (int j=0; j<_Nfaces;j++){
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
+		double grad = 0;
+		double velocityjump =0;
 		if (Fj.getNumberOfCells() == 2){
 			for (int c=0; c< Fj.getNumberOfCells(); c++){
 				flux -= (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[c])) * _Pressure(idCells[c]);
+				grad +=  sqrt(Fj.getMeasure()) * getOrientation(j, _mesh.getCell(idCells[c])) *( _Pressure(idCells[c]) - pb);
 			}
 		}
 		if (Fj.getNumberOfCells() == 1){
-			flux += (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[0])) * (pb - _Pressure(idCells[0]))/2.0 ;
+			flux += (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[0])) * (pb- _Pressure(idCells[0]))/2.0 ;
+			grad += sqrt(Fj.getMeasure()) *( _Pressure(idCells[0]) -pb ) ;
+			velocityjump = sqrt(Fj.getMeasure()) * (_Velocity(j) - _Velocity_0_Psi(j) );
 		}
+		residual -= pow(grad,2) + pow(velocityjump,2);
 	}
+	PetscReal norm;
+	VecNorm(_newtonVariation, NORM_2, &norm);
+	cout << "|| U^n+1 - U^n || = " <<norm <<endl;
+	cout << "flux = "<< flux <<" residual = "<< residual <<",  cfl*|| U^n+1 - U^n ||  ="<< _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm<<  ",  sum = "<<residual + _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm  <<endl;
+}
 
-	if (_nbTimeStep >2){
-		if (fabs(flux)>1e-11 || ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13 ){
-			cout <<" Relative Energy( "<< _time <<") = "<<_Energy.back()<<" with flux ="<< flux  <<endl;
-			cout <<"d_t E =  "<< (_Energy.back() -_Energy[_Energy.size() - 2])/_dt<<endl; //std::setprecision(15) << std::fixed<< 
-		}
+
+
+void WaveStaggered::save(){
+    PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
+    *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
+
+	string prim(_path+"/");///Results
+	prim+=_fileName;
+
+	RelativeEnergyBalanceEq();
+	if (_nbTimeStep >2 && ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13){
+		
+		cout <<" Relative Energy( "<< _time <<") = "<<_Energy.back() <<endl;
+		cout <<"d_t E =  "<< (_Energy.back() -_Energy[_Energy.size() - 2])/_dt<<endl; 	//std::setprecision(15) << std::fixed<< 
 	} 
 
 	if(_mpi_size>1){

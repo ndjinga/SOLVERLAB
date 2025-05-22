@@ -100,7 +100,6 @@ int main(int argc, char** argv)
 				wallMomentumMap[j] =  0;
 				for (int idm = 0; idm <spaceDim; idm ++)
 					wallVelocityVector[idm] = 0;
-			
 			}
 			else {		
 				myProblem.setSteggerBoundIndex(j);								
@@ -121,7 +120,7 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit);
+	myProblem.setTimeScheme(Implicit);
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";

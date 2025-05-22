@@ -117,6 +117,7 @@ public :
 	/***********Post Pro *************/
 	double ErrorL2VelocityAtFaces(const std::vector<double> &ExactVelocity);
 	double ErrorInftyVelocityBoundary( std::map<int ,double> &BoundaryVelocity );
+	void RelativeEnergyBalanceEq();
 	void InterpolateFromFacesToCells(std::vector<double> atFaces);
 	void AssembleMetricsMatrices();
 	//TODO à supprimer ?
