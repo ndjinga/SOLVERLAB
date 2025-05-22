@@ -22,13 +22,13 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(2 * 1*1) *1e-3 ; 
+	vec[0] = sqrt(2 * 1*1) *1e-1 ; 
 	vec[1] = 0;
 	return vec;
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
-	vec[0] =   sqrt(2 * 1*1) *1e-3; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
+	vec[0] =   sqrt(2 * 1*1) *1e-1; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
 	vec[1] = 0;
 	return vec;
 }
@@ -120,7 +120,7 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Implicit);
+	myProblem.setTimeScheme(Explicit);
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";

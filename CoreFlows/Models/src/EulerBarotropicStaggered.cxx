@@ -366,6 +366,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					double U_Plus =  std::max(u_b, 0.0);
 					double U_Plus_C_Plus =  std::max(lambdaPlus, 0.0);
 				
+				
 					VecGetValues(_primitiveVars,1,&idCellsOfFacef[0],&rhoInt);	
 					VecGetValues(_primitiveVars,1,&I,&q);	
 					std::vector<double> tangent(_Ndim,0.0), lambdaPlusVector(_Ndim,0.0), lambdaMinusVector(_Ndim,0.0), MomentumMass(_Ndim,0.0);
@@ -385,7 +386,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					}
 
 					for (int ndim =0; ndim < _Ndim; ndim ++ )
-						MomentumMass[ndim] =  U_Minus_C_Plus * lambdaMinusVector[ndim] * lambdaPlus/(2*c_b) - U_Plus * u_tangent * tangent[ndim]- U_Plus_C_Plus * lambdaMinusVector[ndim] * lambdaMinus/(2*c_b);
+						MomentumMass[ndim] =  U_Minus_C_Plus * lambdaMinusVector[ndim] * lambdaPlus/(2*c_b) - U_Plus * u_tangent * tangent[ndim]- U_Plus_C_Plus * lambdaPlusVector[ndim] * lambdaMinus/(2*c_b);
 					std::vector<double> Integral_of_Psi_j(_Ndim, 0.0);
 					double Momentum_Tangent_Q_int=0;
 					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){

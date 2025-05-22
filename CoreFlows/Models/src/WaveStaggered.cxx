@@ -1293,8 +1293,8 @@ void WaveStaggered::save(){
 	string prim(_path+"/");///Results
 	prim+=_fileName;
 
-	RelativeEnergyBalanceEq();
-	if (_nbTimeStep >2 && ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13){
+	//RelativeEnergyBalanceEq();
+	if (_nbTimeStep >2 ){//&& ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13
 		
 		cout <<" Relative Energy( "<< _time <<") = "<<_Energy.back() <<endl;
 		cout <<"d_t E =  "<< (_Energy.back() -_Energy[_Energy.size() - 2])/_dt<<endl; 	//std::setprecision(15) << std::fixed<< 

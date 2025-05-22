@@ -101,11 +101,13 @@ int main(int argc, char** argv)
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
+				cout << " r = "<< sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )<<endl;
 			}
 			else {// if face is on exterior (stegger condition) 			
 				myProblem.setSteggerBoundIndex(j);								
 				wallVelocityMap[j] = dotprod( initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
 				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
+				cout << " r = "<< sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )<<endl;
 			}
 		}
 	}
@@ -120,8 +122,8 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1	;
-	int freqSave = 1;//400;
+	unsigned MaxNbOfTimeStep = 1000000	;
+	int freqSave = 400;
 	double cfl = 0.5;
 	double maxTime = 100;
 	double precision = 1e-10;
