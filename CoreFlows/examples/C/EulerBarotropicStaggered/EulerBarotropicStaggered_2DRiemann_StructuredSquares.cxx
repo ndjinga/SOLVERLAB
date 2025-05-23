@@ -132,7 +132,7 @@ int main(int argc, char** argv)
 				}
 				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
 				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) +  initialPressure(coordRight,discontinuity) );
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) +  initialPressure(coordRight,discontinuity) )/2.0;
 			}
 			else if (Fj.getNumberOfCells()==1  ){ 
 				coordLeft = (Direction == 'x') ?  Ctemp1.x() : Ctemp1.y(); ;
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
 		myProblem.setboundaryVelocity(wallVelocityMap);
 
 		// set the numerical method
-		myProblem.setTimeScheme(Implicit);
+		myProblem.setTimeScheme(Explicit);
 		
 		// name of result file
 		string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";

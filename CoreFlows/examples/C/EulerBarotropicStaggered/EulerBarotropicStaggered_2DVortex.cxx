@@ -9,21 +9,28 @@
 # define u0  M_ref * sqrt(2*rho0)
 # define alpha 2
 # define r0 	0.45
-# define rbarmax sqrt(- pow(alpha,2) + sqrt(1 + pow(alpha,4)) )
+# define rbarmax      sqrt(- pow(alpha,2) + sqrt(1 + pow(alpha,4)) )
 # define xc 0.5
 # define yc 0.5
-# define lambda_max 2 * alpha *rbarmax/(1-pow(rbarmax,2)) * exp(- pow(alpha, 2)/(1 - pow(rbarmax,2) ) )
+# define lambda_max     2 * alpha *rbarmax/(1-pow(rbarmax,2)) * exp(- pow(alpha, 2)/(1 - pow(rbarmax,2) ) )
 
 using namespace std;
 
 double rhoVortex( double x, double y ){
-	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) )/r0;
+	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) ); ///r0;
+	//cout <<exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  )<<endl;
+	if (exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) ) )*pow( M_ref/lambda_max, 2) > 1 )	{
+		cout << x <<" "<<y<<endl;
+		cout << rbar<< "   "<< sqrt(pow(x- xc,2) +pow(y- yc,2) )<<endl;
+	}
+		
+ 	//cout << exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) ) )*pow( M_ref/lambda_max, 2)  <<endl;
 	return  rho0 * ( 1 -  pow( M_ref/lambda_max, 2) * exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  ) ) ;
 	
 }
 
 std::vector<double> VelocityVortex(double x, double y ){
-	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) )/r0;
+	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) );///r0;
 	std::vector<double> vec(2);
 	vec[0] =  u0 * y * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
 	vec[0] = -u0 * x * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
@@ -31,7 +38,7 @@ std::vector<double> VelocityVortex(double x, double y ){
 }
 
 double rhoLowMach( double x, double y ){
-	double xbar = x/0.05;
+	double xbar = x;///0.05;
 	return rho0 * (1 + M_ref * exp(1 - 1/(1-pow(xbar,2)) ) );
 	
 }
@@ -67,8 +74,9 @@ int main(int argc, char** argv)
 	double supx = 1.1;
 	double infy = 0.0;
 	double supy = 1.0;
-
-	Mesh M=Mesh(infx, supx, 480, infy, supy, 400);
+	int nx = 100; //480;
+	int ny = 4; //400
+	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
@@ -126,14 +134,14 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
 	// set the numerical method
-	myProblem.setTimeScheme(Implicit);
+	myProblem.setTimeScheme(Explicit);
 	
 	// name of result file
-	string fileName = "EulerBarotropicStaggered_2DRiemann_StructuredSquares";
+	string fileName = "EulerBarotropicStaggered_2DVortex";
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 10000;
-	int freqSave = 50;
+	int freqSave = 1;
 	double cfl = 0.99;
 	double maxTime = 3.5;
 	double precision = 1e-10;

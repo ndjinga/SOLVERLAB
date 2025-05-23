@@ -120,7 +120,7 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit);
+	myProblem.setTimeScheme(Implicit);
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";

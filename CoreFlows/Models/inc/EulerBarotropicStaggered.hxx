@@ -81,6 +81,7 @@ protected :
     /** Fluid equation of state **/
     vector<    Fluide* > _fluides;//
 	BarotropicLaw   *_compressibleFluid;
+    Field _MachNumber;
 	
     Vec _DualDensity, _Conv, _GradPressure ;
     Mat _JacobianMatrix;

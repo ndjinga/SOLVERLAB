@@ -54,7 +54,8 @@ void EulerBarotropicStaggered::initialize(){
 		
 	for(int i =0; i<_Nmailles; i++)
 		initialFieldPressure[i]=_Pressure(i); 
-	
+
+	_MachNumber=Field("Mach number",CELLS,_mesh,1);
 
 	/**********Petsc structures:  ****************/
 	//creation des vecteurs
@@ -351,9 +352,11 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					}
 				}
 				else if (IsfWall && (idFaces[f] == j )){
-					Convection -= _compressibleFluid->vitesseSon(rho) * Facef.getMeasure() * q;
-					if (_timeScheme == Implicit)
+					Convection -= _compressibleFluid->vitesseSon(rho) * Facef.getMeasure() * q ;
+					if (_timeScheme == Implicit){
 						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * _compressibleFluid->vitesseSon(rho), ADD_VALUES ); 
+						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * q/ _compressibleFluid->vitesseSon(rho), ADD_VALUES ); //TODO only works for a =1 , gamma =2	
+					}
 				}
 					
 				else if (IsfSteggerBound){
@@ -930,6 +933,13 @@ void EulerBarotropicStaggered::save(){
 			}
 		}
 
+		/* for (long i = 0; i < _Nmailles; i++){
+			double u2 = 0;
+			for (int ndim=0; ndim <_Ndim; ndim++)
+				u2 += pow( _Velocity_at_Cells(i, ndim) , 2);
+			_MachNumber[i]  = sqrt(u2)/_compressibleFluid->vitesseSon(_Pressure(i)); //TOD what if density is not saved
+		} */
+		_MachNumber.setTime(_time,_nbTimeStep);
 		_Velocity.setTime(_time,_nbTimeStep);
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
 		_DivVelocity.setTime(_time,_nbTimeStep);
@@ -941,6 +951,7 @@ void EulerBarotropicStaggered::save(){
 		switch(_saveFormat)
 		{
 		case VTK :
+			_MachNumber.writeVTK(prim+"_MachNumber");
 			_Velocity_at_Cells.writeVTK(prim+"_VelocityAtCells");
 			_Velocity.writeVTK(prim+"_Velocity");
 			_DivVelocity.writeVTK(prim+"DivVelocity");
