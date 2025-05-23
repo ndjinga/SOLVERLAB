@@ -4,24 +4,42 @@
 #include <cstdlib>
 #include <chrono>
 
+# define M_ref 1e-2
+# define rho0  2
+# define u0  M_ref * sqrt(2*rho0)
+# define alpha 2
+# define r0 	0.45
+# define rbarmax sqrt(- pow(alpha,2) + sqrt(1 + pow(alpha,4)) )
+# define xc 0.5
+# define yc 0.5
+# define lambda_max 2 * alpha *rbarmax/(1-pow(rbarmax,2)) * exp(- pow(alpha, 2)/(1 - pow(rbarmax,2) ) )
+
 using namespace std;
 
 double rhoVortex( double x, double y ){
-	rho0 * ( 1 -  pow(M_ref/lambda_max, 2) * exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  ) ) ;
-	return 
+	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) )/r0;
+	return  rho0 * ( 1 -  pow( M_ref/lambda_max, 2) * exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  ) ) ;
+	
 }
 
 std::vector<double> VelocityVortex(double x, double y ){
+	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) )/r0;
 	std::vector<double> vec(2);
+	vec[0] =  u0 * y * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
+	vec[0] = -u0 * x * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
 	return vec;
 }
 
 double rhoLowMach( double x, double y ){
+	double xbar = x/0.05;
+	return rho0 * (1 + M_ref * exp(1 - 1/(1-pow(xbar,2)) ) );
 	
 }
 
 std::vector<double> VelocityLowMach(double x, double y ){
-	std::vector<double> vec(2);
+	std::vector<double> vec(2); //gamma = 2
+	vec[0] = u0 + ( sqrt(2*rhoLowMach(x,y)) - sqrt(2*rho0));
+	vec[1] = 0;
 	return vec;
 }
 
@@ -45,7 +63,12 @@ int main(int argc, char** argv)
 	cout << "Building mesh" << endl;
 	cout << "Construction of a cartesian mesh" << endl;
 
-	Mesh M=Mesh(-0.1, 1.1, 480, 0,1, 400);
+	double infx = -0.1;
+	double supx = 1.1;
+	double infy = 0.0;
+	double supy = 1.0;
+
+	Mesh M=Mesh(infx, supx, 480, infy, supy, 400);
 	double a = 1.0;
 	double gamma = 2.0;
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
@@ -54,16 +77,14 @@ int main(int argc, char** argv)
 	// set the boundary conditions
 	//Initial field creation
 	cout << "Building initial data" << endl;
-	std::map<int ,double> wallPressureMap;
+	std::map<int ,double> wallDensityMap;
 	std::map<int ,double> wallVelocityMap ;
-	Field Pressure0("pressure", CELLS, M, 1);
+	Field Density0("Density", CELLS, M, 1);
 	Field Momentum0("velocity", FACES, M, 1);
 	std::vector<double> wallVelocityVector(spaceDim);
 
 
-	assert(fabs(inf)<1e-11);//TODO Only works on [0,1]² 
-	assert(fabs(sup - 1.0)<1e-11);//TODO Only works on [0,1]² 
-	myProblem.setPeriodicFaces(M, 'x', 400); //TODO Only works on [0,1]² 
+	myProblem.setPeriodicFaces(M, 'x', 480, infx, infy); 
 
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -79,30 +100,29 @@ int main(int argc, char** argv)
 		myProblem.setOrientation(j,vec_normal_sigma);
 
 		if(Fj.getNumberOfCells()==2 ){ 
-			myProblem.setInteriorIndex(j);
 			Cell Ctemp2 = M.getCell(idCells[1]);
-			Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
-			Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity)
-			Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordRight,discontinuity) );
+			myProblem.setInteriorIndex(j);
+			Density0[idCells[0]] = rhoVortex(Ctemp1.x(),Ctemp1.y()) +  rhoLowMach(Ctemp1.x(),Ctemp1.y());
+			Density0[idCells[1]] = rhoVortex(Ctemp2.x(),Ctemp2.y()) +  rhoLowMach(Ctemp2.x(),Ctemp2.y());
+			Momentum0[j] = ( dotprod(VelocityVortex(Fj.x(),Fj.y()),vec_normal_sigma )+ dotprod(VelocityLowMach(Fj.x(),Fj.y()),vec_normal_sigma ) )* ( Density0[idCells[0]] + Density0[idCells[1]]  )/2;
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
-			Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
-			// Interpolation must be consistent with the one done in UpdateDualDensity
-			Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordFace,discontinuity) )/2.0;
+			Density0[idCells[0]] = rhoVortex(Ctemp1.x(),Ctemp1.y()) +  rhoLowMach(Ctemp1.x(),Ctemp1.y());
+			Momentum0[j] = ( dotprod(VelocityVortex(Fj.x(),Fj.y()),vec_normal_sigma )+ dotprod(VelocityLowMach(Fj.x(),Fj.y()),vec_normal_sigma ) )*Density0[idCells[0]];
 			// if periodic check that the boundary face is the computed (avoid passing twice ) 
 			if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 				myProblem.setSteggerBoundIndex(j);	
-			// Boundary normal velocity, pressure and full velocity vector
-			wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma );
-			wallPressureMap[j] = initialPressure(coordFace,  discontinuity) ;
-			for (int idm = 0 ;idm <spaceDim; idm ++)
-				wallVelocityVector[idm] = initialVelocity(coordFace, discontinuity, Direction)[idm];
+			// Boundary normal velocity, Density and full velocity vector							
+			wallVelocityMap[j] =( dotprod(VelocityVortex(Fj.x(),Fj.y()),vec_normal_sigma )+ dotprod(VelocityLowMach(Fj.x(),Fj.y()),vec_normal_sigma ) );
+			wallDensityMap[j] = Density0[idCells[0]];
+			for (int idm = 0; idm <spaceDim; idm ++)
+				wallVelocityVector[idm] = VelocityVortex(Fj.x(),Fj.y())[idm] + VelocityLowMach(Fj.x(),Fj.y())[idm] ;
 			myProblem.setboundaryVelocityVector(j, wallVelocityVector);
 		}
 	}
-	myProblem.setInitialField(Pressure0);
+	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
-	myProblem.setboundaryPressure(wallPressureMap);
+	myProblem.setboundaryPressure(wallDensityMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
 	// set the numerical method
@@ -115,7 +135,7 @@ int main(int argc, char** argv)
 	unsigned MaxNbOfTimeStep = 10000;
 	int freqSave = 50;
 	double cfl = 0.99;
-	double maxTime = 0.07;
+	double maxTime = 3.5;
 	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);

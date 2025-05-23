@@ -133,7 +133,7 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 }
 
 
-void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells){ 
+void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells, double inf, double sup){ 
 	for (int j=0;j<M.getNumberOfFaces() ; j++){
 		Face my_face=M.getFace(j);
 		double e;
@@ -143,7 +143,7 @@ void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells
 		else if (Direction == 'y' && _Ndim ==2)
 			e=my_face.y();
 		if (my_face.getNumberOfCells() ==1 ){ 
-			if( (_Ndim==2) &&  e>tol && e< (1.0-tol) ){
+			if( (_Ndim==2) &&  e>tol+ inf && e< (sup-tol) ){
 				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
 					Face face_i=M.getFace(iface);
 					double ei;

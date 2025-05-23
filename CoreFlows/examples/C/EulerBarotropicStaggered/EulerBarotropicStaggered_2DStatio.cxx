@@ -48,9 +48,7 @@ int main(int argc, char** argv)
 		int ncells = 10;
 		M=Mesh(inf,sup,ncells,inf,sup,ncells);
 
-		assert(fabs(inf)<1e-11);
-		assert(fabs(sup - 1.0)<1e-11);
-		//myProblem.setPeriodicFaces(M, 'x', ncells); //Only works on [0,1]² -> not useful to adapt //TODO
+		//myProblem.setPeriodicFaces(M, 'x', ncells, inf, sup); //Only works on [0,1]² -> not useful to adapt //TODO
 	}
 
 	//Initial field creation

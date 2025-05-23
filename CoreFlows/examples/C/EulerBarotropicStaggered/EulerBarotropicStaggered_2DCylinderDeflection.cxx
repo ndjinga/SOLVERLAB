@@ -12,23 +12,23 @@ std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	return vec;
 }
 
-double initialPressure( double x, double y){
+double initialDensity( double x, double y){
 	return 1;
 }
 
-double initialBoundPressure( double x, double y){
+double initialBoundDensity( double x, double y){
 	return 1;
 }
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(2 * 1*1) *1e-1 ; 
+	vec[0] = sqrt(2 * 1*1) *0.5;//*1e-1 ; 
 	vec[1] = 0;
 	return vec;
 }
 std::vector<double> initialBoundVelocity(double x, double y){
 	std::vector<double> vec(2);
-	vec[0] =   sqrt(2 * 1*1) *1e-1; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
+	vec[0] =   sqrt(2 * 1*1) *0.5 ;//*1e-1; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
 	vec[1] = 0;
 	return vec;
 }
@@ -66,10 +66,10 @@ int main(int argc, char** argv)
 
 	//Initial field creation
 	cout << "Building initial data" << endl;
-	std::map<int ,double> wallPressureMap;
+	std::map<int ,double> wallDensityMap;
 	std::map<int ,double> wallMomentumMap ;
 	std::vector<double> wallVelocityVector(spaceDim);
-	Field Pressure0("pressure", CELLS, M, 1);
+	Field Density0("Density", CELLS, M, 1);
 	Field Momentum0("velocity", FACES, M, 1);
 	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
 	
@@ -88,13 +88,13 @@ int main(int argc, char** argv)
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
 			myProblem.setInteriorIndex(j);
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
-			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialPressure(Ctemp1.x(),Ctemp1.y()) + initialPressure(Ctemp2.x(),Ctemp2.y())  )/2;
+			Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y());
+			Density0[idCells[1]] = initialDensity(Ctemp2.x(),Ctemp2.y());
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialDensity(Ctemp1.x(),Ctemp1.y()) + initialDensity(Ctemp2.x(),Ctemp2.y())  )/2;
 		}
 		else if (Fj.getNumberOfCells()==1){
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * initialPressure(Fj.x(),Fj.y());
+			Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y());
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * initialDensity(Fj.x(),Fj.y());
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallMomentumMap[j] =  0;
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 			else {		
 				myProblem.setSteggerBoundIndex(j);								
 				wallMomentumMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
-				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
+				wallDensityMap[j] = initialBoundDensity(Fj.x(),Fj.y());
 				for (int idm = 0; idm <spaceDim; idm ++)
 					wallVelocityVector[idm] = initialVelocity(Fj.x(), Fj.y())[idm];
 			} 
@@ -114,9 +114,9 @@ int main(int argc, char** argv)
 	}
 
 		
-	myProblem.setInitialField(Pressure0);
+	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
-	myProblem.setboundaryPressure(wallPressureMap);
+	myProblem.setboundaryPressure(wallDensityMap);
 	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method

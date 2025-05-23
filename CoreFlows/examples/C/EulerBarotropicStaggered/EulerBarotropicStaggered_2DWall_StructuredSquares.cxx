@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 
 		assert(fabs(inf)<1e-11);
 		assert(fabs(sup - 1.0)<1e-11);
-		myProblem.setPeriodicFaces(M, Direction, ncells); //Only works on [0,1]² -> not useful to adapt
+		myProblem.setPeriodicFaces(M, Direction, ncells, inf, sup); //Only works on [0,1]² -> not useful to adapt
 		
 		for (int j=0; j< M.getNumberOfFaces(); j++ ){
 			Face Fj = M.getFace(j);

@@ -97,7 +97,7 @@ public :
 	void ComputeEnergyAtTimeT();
 	void computeHodgeDecompositionWithBoundaries();
 	/*******Periodicity related ********/
-	void setPeriodicFaces(	Mesh &M, const char &Direction, int ncells);
+	void setPeriodicFaces(	Mesh &M, const char &Direction, int ncells, double inf, double sup);
 	bool  IsFaceBoundaryNotComputedInPeriodic(int j );
 	bool  IsFaceBoundaryComputedInPeriodic(int j );
 
