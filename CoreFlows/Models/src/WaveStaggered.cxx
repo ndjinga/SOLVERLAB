@@ -573,6 +573,7 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 		}
 		if (fabs(div)>1e-10)
 			cout << " div = "<< div <<endl;
+		assert( fabs(div)<1e-10 );
 	}
 	//check that it is equal to u_b on d\Omega
 	for (int j=0; j<_Nfaces;j++){ 
@@ -585,7 +586,14 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 		}
 		if (fabs(delta)>1e-10)
 			cout << " tr(ub - u_psi) = "<< delta <<endl;
+		assert(fabs(delta)<1e-10);
+		if (IsInterior){
+			VecGetValues(u_phi, 1, &j, &u_phi_j);
+			double u = _Velocity_0_Psi(j) + u_phi_j;
+			assert( fabs(_Velocity(j) - u) <1e-10 );
+		}
 	}
+	
     // Delete
     VecDestroy(&phi);
     VecDestroy(&b);
@@ -1281,7 +1289,7 @@ void WaveStaggered::RelativeEnergyBalanceEq(){
 	PetscReal norm;
 	VecNorm(_newtonVariation, NORM_2, &norm);
 	cout << "|| U^n+1 - U^n || = " <<norm <<endl;
-	cout << "flux = "<< flux <<" residual = "<< residual <<",  cfl*|| U^n+1 - U^n ||  ="<< _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm<<  ",  sum = "<<residual + _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm  <<endl;
+	cout << "flux = "<< flux <<"        residual = "<< residual <<",         cfl*|| U^n+1 - U^n ||  ="<< _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm<<  ",        sum = "<<residual + _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm  <<endl;
 }
 
 
@@ -1293,7 +1301,7 @@ void WaveStaggered::save(){
 	string prim(_path+"/");///Results
 	prim+=_fileName;
 
-	//RelativeEnergyBalanceEq();
+	RelativeEnergyBalanceEq();
 	if (_nbTimeStep >2 ){//&& ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13
 		
 		cout <<" Relative Energy( "<< _time <<") = "<<_Energy.back() <<endl;
@@ -1387,7 +1395,6 @@ void WaveStaggered::save(){
 
 				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
 				if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
-			
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
 					_Velocity_at_Cells(idCells[1], k) += _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 

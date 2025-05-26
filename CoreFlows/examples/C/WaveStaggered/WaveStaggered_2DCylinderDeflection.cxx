@@ -21,7 +21,7 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 1;
+	vec[0] = 0; //TODO 1 or 0 ?
 	vec[1] = 0;
 	return vec;
 }
@@ -101,13 +101,11 @@ int main(int argc, char** argv)
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
-				cout << " r = "<< sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )<<endl;
 			}
 			else {// if face is on exterior (stegger condition) 			
 				myProblem.setSteggerBoundIndex(j);								
 				wallVelocityMap[j] = dotprod( initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
 				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
-				cout << " r = "<< sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )<<endl;
 			}
 		}
 	}
