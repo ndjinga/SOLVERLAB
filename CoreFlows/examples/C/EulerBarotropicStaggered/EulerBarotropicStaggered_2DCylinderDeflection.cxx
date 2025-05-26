@@ -3,12 +3,13 @@
 #include <cassert>
 #include <chrono>
 
+#define M_ref 1e-2
 using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = sqrt( 1*1) * 1e-4 *r1*r1/(r1*r1 -r0*r0)* (1 - r0*r0/(r*r) * cos(2*theta)); 
-	vec[1] = sqrt(1*1) * 1e-4  *r1*r1/(r1*r1 -r0*r0)* (- r0*r0/(r*r) * sin(2*theta));  
+	vec[0] = sqrt(2*1) * M_ref *r1*r1/(r1*r1 -r0*r0)* (1 - r0*r0/(r*r) * cos(2*theta)); 
+	vec[1] = sqrt(2*1) * M_ref *r1*r1/(r1*r1 -r0*r0)* (  - r0*r0/(r*r) * sin(2*theta));  
 	return vec;
 }
 
@@ -16,19 +17,10 @@ double initialDensity( double x, double y){
 	return 1;
 }
 
-double initialBoundDensity( double x, double y){
-	return 1;
-}
-
+// sqrt(p'(rho_0)) M_\infty
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(2 * 1*1) *0.5;//*1e-1 ; 
-	vec[1] = 0;
-	return vec;
-}
-std::vector<double> initialBoundVelocity(double x, double y){
-	std::vector<double> vec(2);
-	vec[0] =   sqrt(2 * 1*1) *0.5 ;//*1e-1; //sqrt(2 * 1*1) * 1e-4; // sqrt(p'(rho_0)) M_\infty
+	vec[0] = sqrt(2 * 1*1) *M_ref ; 
 	vec[1] = 0;
 	return vec;
 }
@@ -103,8 +95,8 @@ int main(int argc, char** argv)
 			}
 			else {		
 				myProblem.setSteggerBoundIndex(j);								
-				wallMomentumMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
-				wallDensityMap[j] = initialBoundDensity(Fj.x(),Fj.y());
+				wallMomentumMap[j] = dotprod( initialVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
+				wallDensityMap[j] = initialDensity(Fj.x(),Fj.y());
 				for (int idm = 0; idm <spaceDim; idm ++)
 					wallVelocityVector[idm] = initialVelocity(Fj.x(), Fj.y())[idm];
 			} 
@@ -130,7 +122,7 @@ int main(int argc, char** argv)
 	int freqSave = 100	;
 	double cfl = 0.99;
 	double maxTime = 50;
-	double precision = 1e-6;
+	double precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

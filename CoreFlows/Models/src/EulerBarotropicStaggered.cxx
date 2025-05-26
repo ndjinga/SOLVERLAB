@@ -822,6 +822,38 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 	return converged;//TODO not good
 }
 
+std::vector<double> EulerBarotropicStaggered::H_1DensitySemi_Norm__H_divVelocitySemi_Norm(){
+	double H_1_SemiNorm =0;
+	double H_div_SemiNorm =0;
+	for (int j=0; j<_Nfaces;j++){
+		Face Fj = _mesh.getFace(j);
+		std::vector< int > idCells = Fj.getCellsId();
+		double grad = 0;
+		double velocityjump =0;
+		if (Fj.getNumberOfCells() == 2){
+			for (int c=0; c< Fj.getNumberOfCells(); c++)
+				grad +=  sqrt(Fj.getMeasure()) * getOrientation(j, _mesh.getCell(idCells[c])) * _Pressure(idCells[c]);
+		}
+		if (Fj.getNumberOfCells() == 1){
+			grad += sqrt(Fj.getMeasure()) *( _Pressure(idCells[0]) - getboundaryPressure().begin()->second ) ;
+
+		}
+		H_1_SemiNorm += pow(grad,2) ;
+	}
+	for (int m=0; m<_Nmailles; m++){
+		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
+		double divtilde =0;
+		for (int f=0; f <idFaces.size(); f++ )
+			divtilde += 1.0/_mesh.getCell(m).getMeasure() * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * _Velocity(idFaces[f]) ;
+		H_div_SemiNorm += _mesh.getCell(m).getMeasure() * pow(divtilde, 2);
+	}
+	std::vector<double> Semi_Norms(2);
+	Semi_Norms[0] = H_1_SemiNorm;
+	Semi_Norms[1] = H_div_SemiNorm;
+	return Semi_Norms;
+}
+
+
 void EulerBarotropicStaggered::save(){
     PetscPrintf(PETSC_COMM_WORLD,"Saving numerical results at time step number %d \n\n", _nbTimeStep);
     *_runLogFile<< "Saving numerical results at time step number "<< _nbTimeStep << endl<<endl;
@@ -933,12 +965,12 @@ void EulerBarotropicStaggered::save(){
 			}
 		}
 
-		/* for (long i = 0; i < _Nmailles; i++){
+		for (long i = 0; i < _Nmailles; i++){
 			double u2 = 0;
 			for (int ndim=0; ndim <_Ndim; ndim++)
 				u2 += pow( _Velocity_at_Cells(i, ndim) , 2);
 			_MachNumber[i]  = sqrt(u2)/_compressibleFluid->vitesseSon(_Pressure(i)); //TOD what if density is not saved
-		} */
+		}
 		_MachNumber.setTime(_time,_nbTimeStep);
 		_Velocity.setTime(_time,_nbTimeStep);
 		_Velocity_at_Cells.setTime(_time,_nbTimeStep);
@@ -986,6 +1018,7 @@ void EulerBarotropicStaggered::save(){
 					norm = fabs(_DivVelocity(i));	
 			}
 			cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
+			cout << "H^1 density semi norm = "<< H_1DensitySemi_Norm__H_divVelocitySemi_Norm()[0] << "    H_div velocity semi_norm = "<< H_1DensitySemi_Norm__H_divVelocitySemi_Norm()[1] <<endl;
 		}
 	}
 	

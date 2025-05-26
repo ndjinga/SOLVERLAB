@@ -149,11 +149,9 @@ CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DStatio.cxx  "${libs_for_t
 CreateTestExecAndInstall(WaveStaggered/WaveStaggered_2DRiemann_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Wave Staggerd structured coreflows" )
 
 ################### Euler Barotropic staggered
-CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRiemannProblem.cxx  "${libs_for_tests}" "C++ fv Euler barotropic Staggered 1d coreflows" )
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DRiemann_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Eulerbarotropic Staggered structured coreflows" )
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DCylinderDeflection.cxx  "${libs_for_tests}" "C++ fv Euler barotropic Staggered 2d cylinder coreflows" )
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DWall_StructuredSquares.cxx  "${libs_for_tests}" "C++ fv Eulerbarotropic Staggered structured coreflows" )
-CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DRealRiemann_Cartesian.cxx  "${libs_for_tests}" "C++ fv Eulerbarotropic Staggered structured coreflows" )
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DVortex.cxx  "${libs_for_tests}" "C++ fv Eulerbarotropic Staggered structured coreflows" )
 CreateTestExecAndInstall(EulerBarotropicStaggered/EulerBarotropicStaggered_2DStatio.cxx  "${libs_for_tests}" "C++ fv Euler barotropic Staggered 2d cylinder coreflows" )
 

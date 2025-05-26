@@ -17,36 +17,50 @@
 using namespace std;
 
 double rhoVortex( double x, double y ){
-	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) ); ///r0;
-	//cout <<exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  )<<endl;
-	if (exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) ) )*pow( M_ref/lambda_max, 2) > 1 )	{
-		cout << x <<" "<<y<<endl;
-		cout << rbar<< "   "<< sqrt(pow(x- xc,2) +pow(y- yc,2) )<<endl;
-	}
-		
- 	//cout << exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) ) )*pow( M_ref/lambda_max, 2)  <<endl;
-	return  rho0 * ( 1 -  pow( M_ref/lambda_max, 2) * exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  ) ) ;
-	
+	double r = sqrt(pow(x- xc,2) +pow(y- yc,2) );
+	double rbar = r/r0; 
+	if (r<r0)
+		return  rho0 * ( 1 -  pow( M_ref/lambda_max, 2) * exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  ) ) ;
+	else 
+		return rho0;	
 }
 
 std::vector<double> VelocityVortex(double x, double y ){
-	double rbar = sqrt(pow(x- xc,2) +pow(y- yc,2) );///r0;
-	std::vector<double> vec(2);
-	vec[0] =  u0 * y * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
-	vec[0] = -u0 * x * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
+	double r = sqrt(pow(x- xc,2) +pow(y- yc,2) );
+	double rbar = r/r0;
+	std::vector<double> vec(2,0.0);
+	if (r<r0){
+		double expr = exp( - alpha*alpha/(1-rbar*rbar) );
+		double rbarmax2 = pow(rbarmax,2);
+		double umax =  2 * alpha * rbarmax / (1-rbarmax2) * exp( - alpha*alpha/(1-rbarmax2) ) ;
+		double factor = 1.0/umax;
+		double rho  = 1.0  - factor * factor * expr *  expr * M_ref * M_ref ;
+		rho *= rho0;
+		vec[0] = rho * u0 * factor * 2.*alpha*y/r0 * expr / (1-rbar*rbar) ;
+		vec[1] = rho * u0 * (-2.) * factor *alpha*x/r0 * expr / (1-rbar*rbar) ;
+		//vec[0] =  u0 * y * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
+		//vec[1] = -u0 * x * 2 * alpha /(lambda_max * r0 * (1 - pow(rbar,2))) * exp(-  pow(alpha, 2)/(1 - pow(rbar,2) ) );
+	}
 	return vec;
 }
 
 double rhoLowMach( double x, double y ){
-	double xbar = x;///0.05;
-	return rho0 * (1 + M_ref * exp(1 - 1/(1-pow(xbar,2)) ) );
+	double xbar = x/0.05;
+	if ((xbar>-1) && (xbar<1))
+		return rho0 * (1 + M_ref * exp(1 - 1/(1-pow(xbar,2)) ) );
+	else	
+		return 0;
 	
 }
 
 std::vector<double> VelocityLowMach(double x, double y ){
-	std::vector<double> vec(2); //gamma = 2
-	vec[0] = u0 + ( sqrt(2*rhoLowMach(x,y)) - sqrt(2*rho0));
-	vec[1] = 0;
+	std::vector<double> vec(2,0.0); //gamma = 2
+	double xbar = x/0.05;
+	if ((xbar>-1) && (xbar<1)){
+		vec[0] = u0 + ( sqrt(2*rhoLowMach(x,y)) - sqrt(2*rho0));
+		vec[1] = 0;
+	}
+
 	return vec;
 }
 
@@ -74,8 +88,8 @@ int main(int argc, char** argv)
 	double supx = 1.1;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx = 100; //480;
-	int ny = 4; //400
+	int nx = 250;
+	int ny = 250;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -141,7 +155,7 @@ int main(int argc, char** argv)
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 10000;
-	int freqSave = 1;
+	int freqSave = 40;
 	double cfl = 0.99;
 	double maxTime = 3.5;
 	double precision = 1e-10;

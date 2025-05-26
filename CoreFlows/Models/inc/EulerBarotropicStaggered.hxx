@@ -76,6 +76,7 @@ public :
 
     std::map<int, std::vector<double> >  getboundaryVelocityVector() const;
 	void setboundaryVelocityVector(int j,  std::vector<double>  boundaryVelocityVector);
+    std::vector<double> H_1DensitySemi_Norm__H_divVelocitySemi_Norm();
      
 protected :
     /** Fluid equation of state **/
