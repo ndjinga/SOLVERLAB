@@ -141,8 +141,8 @@ public :
 
 
 protected :
-	Field _Velocity, _Velocity_0_Psi, _Velocity_0_Psi_at_Cells, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate ;
-	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq ;
+	Field _Velocity, _Velocity_0_Psi_at_Cells, _Pressure, _Velocity_at_Cells, _DivVelocity, _ExactVelocityInftyAtCells, _ExactVelocityInftyInterpolate ;
+	Vec _newtonVariation, _primitiveVars,  _BoundaryTerms, _primitiveVars_seq,_Velocity_0_Psi ;
 	Mat _InvVol,_InvSurface, _Div, _LaplacianPressure, _DivTranspose,  _GradDivTilde ; 
 
 	double _kappa, _rho,  _c, _d, _maxPerim, _minCell ;

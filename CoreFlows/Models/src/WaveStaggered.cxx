@@ -34,40 +34,14 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 				
 }
 
-void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){
-	/* if (_facesBoundinit == true){ 
-		std::map<int,double>::iterator it;
-		for( it= BoundaryVelocity.begin(); it != BoundaryVelocity.end(); it++){
-			_Velocity( it->first ) = it->second; 
-		}
-	}
-	else{
-		*_runLogFile<<"WaveStaggered::setboundaryVelocity should be called after WaveStaggered::setInitialField(Velocity)"<<endl;
-		_runLogFile->close();
-		throw CdmathException("WaveStaggered::setboundaryVelocity should be called after WaveStaggered::setInitialField(Velocity)");
-	} */
-	_boundaryVelocity = BoundaryVelocity;
-}
-void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure){
-	_boundaryPressure = BoundaryPressure;
-}
-std::map<int,double>  WaveStaggered::getboundaryPressure() const {
-		return _boundaryPressure;
-}
-std::map<int,double>  WaveStaggered::getboundaryVelocity() const {
-		return _boundaryVelocity;
-}
+void  WaveStaggered::setboundaryVelocity(std::map< int, double> BoundaryVelocity){	_boundaryVelocity = BoundaryVelocity; }
+void  WaveStaggered::setboundaryPressure(std::map< int, double> BoundaryPressure){  _boundaryPressure = BoundaryPressure; }
+std::map<int,double>  WaveStaggered::getboundaryPressure() const {  return _boundaryPressure; }
+std::map<int,double>  WaveStaggered::getboundaryVelocity() const {  return _boundaryVelocity; }
 
-void WaveStaggered::setWallBoundIndex(int j ){
-	_WallBoundFaceSet.push_back(j);
-	_isWall = true;
-}
-void WaveStaggered::setSteggerBoundIndex(int j ){
-	_SteggerBoundFaceSet.push_back(j);
-}
-void WaveStaggered::setInteriorIndex(int j ){
-	_InteriorFaceSet.push_back(j);
-}
+void WaveStaggered::setWallBoundIndex(int j ){    _WallBoundFaceSet.push_back(j); }
+void WaveStaggered::setSteggerBoundIndex(int j ){ _SteggerBoundFaceSet.push_back(j); }
+void WaveStaggered::setInteriorIndex(int j ){     _InteriorFaceSet.push_back(j);   }
 
 bool  WaveStaggered::IsFaceBoundaryNotComputedInPeriodic(int j ) {
 	std::map<int,int>::iterator it = _FacePeriodicMap.begin();
@@ -84,7 +58,9 @@ void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 	for (int idim = 0; idim < _Ndim; ++idim)
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
 }
+
 //TODO what about checkorientation in periodic ?
+//TODO make it more effiecient -> at time 0 save orientation in structure map< int jface, std::map<int indexcell; double n_j.n_{cell,j}>>
 double WaveStaggered::getOrientation(int l, Cell Cint) {	
 	double checktouternormal;
 	std::vector<double> vec(_Ndim, 0.0);
@@ -92,11 +68,10 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 	while ( ( l !=it->second) && (it !=_FacePeriodicMap.end() ) )it++;
 	for(int m=0; m<Cint.getNumberOfFaces(); m++){//we look for l the index of the face Fj for the cell Ctemp1
 		if (l == Cint.getFacesId()[m]  ){
-			for (int idim = 0; idim < _Ndim; ++idim)
-				vec[idim] = Cint.getNormalVector(m,idim);
+			for (int idim = 0; idim < _Ndim; ++idim)   vec[idim] = Cint.getNormalVector(m,idim);
 			checktouternormal = ( _mesh.getFace(l).x()  - Cint.x() ) *vec[0];
 			if(_Ndim ==2) checktouternormal+= ( _mesh.getFace(l).y() - Cint.y()  ) *vec[1];
-			if (checktouternormal <-1e-11){
+			if (checktouternormal <-1e-15){
 				for (int idim = 0; idim < _Ndim; ++idim)
 					vec[idim] = -Cint.getNormalVector(m,idim);
 
@@ -107,7 +82,7 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 				vec[idim] = Cint.getNormalVector(m,idim);
 			checktouternormal = ( _mesh.getFace(_FacePeriodicMap.find(l)->second ).x()  - Cint.x() ) *vec[0];
 			if(_Ndim ==2) checktouternormal+= ( _mesh.getFace(_FacePeriodicMap.find(l)->second ).y() - Cint.y()  ) *vec[1];
-			if (checktouternormal <-1e-11){
+			if (checktouternormal <-1e-15){
 				for (int idim = 0; idim < _Ndim; ++idim)
 					vec[idim] = -Cint.getNormalVector(m,idim);
 			}
@@ -117,7 +92,7 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 				vec[idim] = Cint.getNormalVector(m,idim);
 			checktouternormal = ( _mesh.getFace(it->first ).x()  - Cint.x() ) *vec[0];
 			if(_Ndim ==2) checktouternormal+= ( _mesh.getFace(it->first ).y() - Cint.y()  ) *vec[1];
-			if (checktouternormal <-1e-11){
+			if (checktouternormal <-1e-15){
 				for (int idim = 0; idim < _Ndim; ++idim)
 					vec[idim] = -Cint.getNormalVector(m,idim);
 
@@ -277,6 +252,10 @@ void WaveStaggered::initialize(){
 	VecDuplicate(_primitiveVars, &_newtonVariation);//Newton variation Uk+1-Uk 
 	VecDuplicate(_primitiveVars, &_b);//Right hand side of Newton method
 
+	VecCreate(PETSC_COMM_SELF, & _Velocity_0_Psi);
+	VecSetSizes(_Velocity_0_Psi, PETSC_DECIDE, _Nfaces);
+	VecSetFromOptions(_Velocity_0_Psi);
+
 	// transfer information de condition initial vers primitiveVars  
 	int *indices1 = new int[_Nmailles]; 
 	int *indices2 = new int[_Nfaces];
@@ -385,20 +364,34 @@ double WaveStaggered::MassLumping(const Cell &K, const int &idcell, const Face &
 	std::vector<Node> K_Nodes;
 	for (int i=0; i < K.getNodesId().size(); i++)
 		K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
+	
+	/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10 && fabs(Facej.x())<3 ){
+		cout << "\nK = "<< K.x() <<" "<< K.y()<< "  or = "<< getOrientation(j, K)<<endl; 
+		cout << "Fj = ("<<Facej.x()<<" " <<Facej.y()<<") "  <<endl;
+	} */
 
 	for (int l =0; l <K.getNumberOfFaces(); l ++){
 		Point Xl =  _mesh.getFace( K.getFacesId()[l] ).getBarryCenter();
 		double weight = (_Ndim ==2) ? ( (K.getNumberOfFaces() == 4) ? 1/4.0 : 1/6.0 ) : 1/2.0;
 		double Area = fabs( det( JacobianTransfor_K_X( xToxhat(K, Xl, K_Nodes), K_Nodes) ) ) * weight;
 		std::vector<double> Psi_j_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_j, Facej,j, Xl);
+		/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10&& fabs(Facej.x())<3  ){
+			cout <<" Psi_j = ("<< Psi_j_in_Xl[0]<< "  "<<Psi_j_in_Xl[1]<< ") in  ("<< Xl.x()<<" , "<< Xl.y()<<" )" <<endl;
+		} */
 
 		for (int f=0; f <K.getNumberOfFaces(); f ++){
 			Face Facef = _mesh.getFace( K.getFacesId()[f] );
 			std::vector<double> Psi_f_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_f, Facef, K.getFacesId()[f], Xl);
-			for (int e=0; e<_Ndim; e++)
-				masslumping_on_K +=  Area *  Psi_j_in_Xl[e] * Psi_f_in_Xl[e];	
+			/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10&& fabs(Facej.x())<3  )
+				cout <<"Facef = ("<<Facef.x()<<" " <<Facef.y()<<")                       Psi_f = ("<< Psi_f_in_Xl[0]<< "  "<<Psi_f_in_Xl[1]<< ") in  ("<< Xl.x()<<" , "<< Xl.y()<<" )" <<endl; */
+			for (int e=0; e<_Ndim; e++)  masslumping_on_K +=  Area *  Psi_j_in_Xl[e] * Psi_f_in_Xl[e];	
+			/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10&& fabs(Facej.x())<3){
+				cout <<" f = "<<K.getFacesId()[f]<<" dotprod = "<< Psi_j_in_Xl[0] * Psi_f_in_Xl[0] + Psi_j_in_Xl[1] * Psi_f_in_Xl[1] <<endl;
+			} */
+
+
 		} 
-	}		
+	}	
 	return masslumping_on_K;
 }
 
@@ -429,6 +422,8 @@ void WaveStaggered::AssembleMetricsMatrices(){
 			D_sigma_L = MassLumping(Ctemp2, idCells[1], Fj_physical, j);
 			InvPerimeter2 = (_Ndim ==2) ? 1.0/_perimeters(idCells[1]) : 1.0 ;
 			InvVol2 = 1.0/Ctemp2.getMeasure();
+			if (fabs( atan(Fj.y()/Fj.x()) ) <3.14/2 && fabs(Fj.x())<3 && Fj.y() >0 )
+				cout <<"Facej = "<< Fj.x() <<" "<<Fj.y()<<"  mlump = "<<D_sigma_K + D_sigma_L <<endl; 
 
 			InvD_sigma = 1.0/(D_sigma_K + D_sigma_L);
 			MatSetValue(_InvVol, idCells[0],idCells[0], InvVol1 , INSERT_VALUES );
@@ -448,6 +443,7 @@ void WaveStaggered::AssembleMetricsMatrices(){
 	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
+
 }
 
 
@@ -458,13 +454,19 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
     Vec phi, b, nullVec, Bu, u_0, u_phi;
     KSP ksp;
     MatNullSpace nullspace;
+	int IndexFace;
 
 	//Transfer u_0 into PETSC VEC
 	VecCreateSeq(PETSC_COMM_SELF, _Nfaces, &u_0);
 	VecZeroEntries(u_0);
+	double u;
 	for(int i =0; i<_Nfaces; i++){
-		VecSetValue(u_0, i, _Velocity(i), INSERT_VALUES);
+		IndexFace = _Nmailles +i;
+		VecGetValues(_primitiveVars, 1, &IndexFace, &u);	
+		VecSetValue(u_0, i, u, INSERT_VALUES);
 	}
+	VecAssemblyBegin(u_0);
+    VecAssemblyEnd(u_0);
 	
     //Hodge Laplacian is created from BB^t with B =-div 
     MatCreate(PETSC_COMM_WORLD, &HodgeLaplacian);
@@ -546,21 +548,21 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-		if ( !IsInterior )	 //TODO periodic ?
-			VecSetValue(u_phi, j , _Velocity(j) - getboundaryVelocity().find(j)->second ,INSERT_VALUES);
+		if ( !IsInterior ){
+			IndexFace = _Nmailles +j;
+			VecGetValues(_primitiveVars, 1, &IndexFace, &u);	
+			VecSetValue(u_phi, j , u - getboundaryVelocity().find(j)->second ,INSERT_VALUES);
+		}
+			
 	}
 		//Then (u_0)_psi := u_0  -  u_phi
-	_Velocity_0_Psi = Field("(Velocity_0)_Psi", FACES, _mesh,3);
 	_Velocity_0_Psi_at_Cells = Field("Velocity_Psi", CELLS, _mesh,3);
-	double u_0_j, u_phi_j;
+	double u_0_j, u_phi_j, u_psi;
 	for (int j=0; j<_Nfaces;j++){ 
 		VecGetValues(u_0, 1, &j, &u_0_j);
 		VecGetValues(u_phi, 1, &j, &u_phi_j);
-		_Velocity_0_Psi(j) = u_0_j - u_phi_j;
+		VecSetValue(_Velocity_0_Psi, j, u_0_j - u_phi_j, INSERT_VALUES );
 	}
-	// Saving the Field
-	_Velocity_0_Psi.setTime(_time,_nbTimeStep);
-	_Velocity_0_Psi.setInfoOnComponent(0,"(Velocity_0)_Psi. n_sigma_(m/s)");
 
 	//check that it is divergence free
 	for (int m=0; m <_Nmailles; m++){
@@ -569,7 +571,8 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 		std::vector<int> idFaces = K.getFacesId();
 		for (int f=0; f<K.getNumberOfFaces(); f++){
 			Face Facef = _mesh.getFace(idFaces[f] );
-			div += Facef.getMeasure() * getOrientation(idFaces[f], K) * _Velocity_0_Psi(idFaces[f]);	
+			VecGetValues(_Velocity_0_Psi, 1, &idFaces[f], &u_psi);
+			div += Facef.getMeasure() * getOrientation(idFaces[f], K) * u_psi;	
 		}
 		if (fabs(div)>1e-10)
 			cout << " div = "<< div <<endl;
@@ -581,16 +584,20 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 		std::vector< int > idCells = Fj.getCellsId();
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
 		double delta;
+		VecGetValues(_Velocity_0_Psi, 1, &j, &u_psi);
 		if ( !IsInterior ){	 //TODO periodic ?
-			delta = fabs(getboundaryVelocity().find(j)->second - _Velocity_0_Psi(j));
+			delta = fabs(getboundaryVelocity().find(j)->second - u_psi);
 		}
 		if (fabs(delta)>1e-10)
 			cout << " tr(ub - u_psi) = "<< delta <<endl;
 		assert(fabs(delta)<1e-10);
 		if (IsInterior){
 			VecGetValues(u_phi, 1, &j, &u_phi_j);
-			double u = _Velocity_0_Psi(j) + u_phi_j;
-			assert( fabs(_Velocity(j) - u) <1e-10 );
+			double u = u_psi + u_phi_j;
+			double u0;
+			IndexFace = _Nmailles + j ;
+			VecGetValues(_primitiveVars, 1, &IndexFace, &u0);
+			assert( fabs(u0 - u) <1e-10 );
 		}
 	}
 	
@@ -877,10 +884,8 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 		Cell Ctemp1 = _mesh.getCell(idCells[0]);
 		PetscScalar InvD_sigma, InvCell1measure, InvCell2measure, pressure_in, pressure_out, velocity;
 
-		/* double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
-		double theta = atan(Fj.y()/Fj.x());
-		double dotprodExact = pow(r1,2)/(pow(r1,2) - pow(r0,2))*( (1 - pow(r0,2)/pow(r,2) * cos(2*theta)) *_vec_sigma.find(j)->second[0] - pow(r0,2)/pow(r,2) * sin(2*theta) *_vec_sigma.find(j)->second[1]  ); 
-		*/
+		double u0_psi;
+		VecGetValues(_Velocity_0_Psi, 1, &j, &u0_psi);
 		if (Fj.getNumberOfCells()==2  ){	// Fj is inside the domain or is a boundary periodic face (computed)
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 			MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
@@ -892,7 +897,7 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 
 			double pressure_int=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) *pow( (pressure_in - pb) ,2) ;
 			double pressure_ext=  1/(InvCell2measure*Ctemp2.getNumberOfFaces()) *pow( (pressure_out - pb) ,2) ;
-			double velocity_part = 1/(InvD_sigma) *pow( (velocity - _Velocity_0_Psi(j)) ,2) ; 
+			double velocity_part = 1/(InvD_sigma) *pow( (velocity - u0_psi) ,2) ; 
 			E += pressure_int + pressure_ext + velocity_part ;
 						
 		}
@@ -903,7 +908,7 @@ void WaveStaggered::ComputeEnergyAtTimeT(){
 			VecGetValues(_primitiveVars, 1, &I, &velocity );
 
 			double pressure_part_cellint=  1/(InvCell1measure*Ctemp1.getNumberOfFaces()) *pow( (pressure_in - pb) ,2) ;
-			double velocity_part = 1/(InvD_sigma) *pow( (velocity - _Velocity_0_Psi(j)) ,2) ; 
+			double velocity_part = 1/(InvD_sigma) *pow( (velocity - u0_psi) ,2) ; 
 			E += pressure_part_cellint + velocity_part ;
 		}	
 	}
@@ -928,8 +933,8 @@ std::vector<double> WaveStaggered::ReferenceBasisFunctionRaviartThomas(const int
 			double areaKright = fabs( (K_Nodes[2].x()-K_Nodes[3].x())* (K_Nodes[0].y()-K_Nodes[3].y()) - (K_Nodes[2].y()-K_Nodes[3].y())* (K_Nodes[0].x()-K_Nodes[3].x())  )/2.0;
 			double distortedQuadsX = ((K_Nodes[0].x()-K_Nodes[1].x()) * (K_Nodes[3].y()-K_Nodes[2].y()) - (K_Nodes[0].y()-K_Nodes[1].y())* ( K_Nodes[3].x()-K_Nodes[2].x() ) )/(2.0 *(areaKleft+ areaKright) );
 			double distortedQuadsY = ((K_Nodes[1].x()-K_Nodes[2].x()) * (K_Nodes[3].y()-K_Nodes[0].y()) - (K_Nodes[1].y()-K_Nodes[2].y())* ( K_Nodes[3].x()-K_Nodes[0].x() ) )/(2.0 *(areaKleft+ areaKright) );
-			Psihat[0] += distortedQuadsX * Xhat.x() *(Xhat.x() - 1 );
-			Psihat[1] += distortedQuadsY * Xhat.y() *(Xhat.y() - 1 );
+			/* Psihat[0] += distortedQuadsX * Xhat.x() *(Xhat.x() - 1 );
+			Psihat[1] += distortedQuadsY * Xhat.y() *(Xhat.y() - 1 ); */
 		}
 		if ( K_Nodes.size() == 3){
 			if (i ==0){      
@@ -1199,29 +1204,27 @@ void WaveStaggered::InterpolateFromFacesToCells(std::vector<double> atFaces){
 
 double WaveStaggered::ErrorL2VelocityAtFaces(const std::vector<double> &ExactVelocity){
 	double errorface =0;
+	double u,InvD_sigma ;
+	int I;
 	for (int j=0; j < _Nfaces; j++){
-		PetscInt I = _Nmailles + j;
-		double InvD_sigma;
+		I = _Nmailles + j;
 		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
-		double Dsigma = 1/InvD_sigma;
-		errorface += Dsigma * (_Velocity(j) - ExactVelocity[j])*(_Velocity(j) - ExactVelocity[j]);
+		VecGetValues(_primitiveVars, 1, &I, &u);	
+		errorface += 1/InvD_sigma * pow(u - ExactVelocity[j],2);
 	}
 	return errorface;
 }
 
 double WaveStaggered::ErrorInftyVelocityBoundary( std::map<int ,double> &BoundaryVelocity ){
-	std::map<int, double>::iterator it = BoundaryVelocity.begin();
+	int I;
 	double errorboundary =0;
+	double u;
 	for (int j=0; j < _Nfaces; j++){
-		bool is_j_Interior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
+		I = _Nmailles + j;
 		if ( _mesh.getFace(j).getNumberOfCells() == 1){
-			/* cout <<"vel = "<<	 _Velocity(j) << "  "<< BoundaryVelocity.find(j)->second <<endl;
-			cout << "diff = "<< _Velocity(j) -BoundaryVelocity.find(j)->second<< endl;
-			cout <<" diff^2 = "<< (_Velocity(j) -BoundaryVelocity.find(j)->second)*(_Velocity(j) -BoundaryVelocity.find(j)->second)<<endl; */
-			double diff = _Velocity(j) -   BoundaryVelocity.find(j)->second  ;
-			errorboundary += pow(diff, 2) ;
-			//cout <<"error boundary = "<< errorboundary<<endl;
-			}  
+			VecGetValues(_primitiveVars, 1, &I, &u);	
+			errorboundary += _mesh.getFace(j).getMeasure() * pow( u -   _boundaryVelocity.find(j)->second, 2) ;
+		}  
 	}
 	return errorboundary;
 }
@@ -1255,16 +1258,22 @@ void WaveStaggered::RelativeEnergyBalanceEq(){
 	double flux = 0;
 	double residual =0;
 	double pb = getboundaryPressure().begin()->second;
+	double u0_psi, p, u;
+	int I;
 	for (int m=0; m<_Nmailles; m++){
 		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
 		double divtilde =0;
 		for (int f=0; f <idFaces.size(); f++ ){
+			I = _Nmailles + idFaces[f];
+			VecGetValues(_primitiveVars, 1, &m, &p );
+			VecGetValues(_primitiveVars, 1, &I, &u );
+			VecGetValues(_Velocity_0_Psi, 1, &idFaces[f], &u0_psi);
 			if ( _mesh.getFace(idFaces[f]).getNumberOfCells() == 2){
-				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * _Velocity(idFaces[f]);
+				flux += (p - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * u;
 			}
 			else
-				flux += (_Pressure(m) - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) *( _Velocity(idFaces[f]) + getboundaryVelocity().find(idFaces[f])->second)/2.0;
-			divtilde += sqrt(_perimeters[m]) * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * (_Velocity(idFaces[f]) - _Velocity_0_Psi(idFaces[f]));
+				flux += (p - pb )* _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) *( u + getboundaryVelocity().find(idFaces[f])->second)/2.0;
+			divtilde += sqrt(_perimeters[m]) * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * (u - u0_psi);
 		}
 		residual -= pow(divtilde, 2);
 	}
@@ -1273,23 +1282,27 @@ void WaveStaggered::RelativeEnergyBalanceEq(){
 		std::vector< int > idCells = Fj.getCellsId();
 		double grad = 0;
 		double velocityjump =0;
+		I = _Nmailles + j;
+		VecGetValues(_primitiveVars, 1, &I, &u );
+		VecGetValues(_Velocity_0_Psi, 1, &j, &u0_psi);
 		if (Fj.getNumberOfCells() == 2){
 			for (int c=0; c< Fj.getNumberOfCells(); c++){
-				flux -= (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[c])) * _Pressure(idCells[c]);
-				grad +=  sqrt(Fj.getMeasure()) * getOrientation(j, _mesh.getCell(idCells[c])) *( _Pressure(idCells[c]) - pb);
+				VecGetValues(_primitiveVars, 1, &idCells[c], &p );
+				flux -= (u- u0_psi)*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[c])) * p;
+				grad +=  sqrt(Fj.getMeasure()) * getOrientation(j, _mesh.getCell(idCells[c])) *( p - pb);
 			}
 		}
 		if (Fj.getNumberOfCells() == 1){
-			flux += (_Velocity(j) - _Velocity_0_Psi(j))*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[0])) * (pb- _Pressure(idCells[0]))/2.0 ;
-			grad += sqrt(Fj.getMeasure()) *( _Pressure(idCells[0]) -pb ) ;
-			velocityjump = sqrt(Fj.getMeasure()) * (_Velocity(j) - _Velocity_0_Psi(j) );
+			flux += (u- u0_psi)*Fj.getMeasure() * getOrientation(j, _mesh.getCell(idCells[0])) * (pb- p)/2.0 ;
+			grad += sqrt(Fj.getMeasure()) *( p -pb ) ;
+			velocityjump = sqrt(Fj.getMeasure()) * (u -u0_psi );
 		}
 		residual -= pow(grad,2) + pow(velocityjump,2);
 	}
 	PetscReal norm;
 	VecNorm(_newtonVariation, NORM_2, &norm);
-	cout << "|| U^n+1 - U^n || = " <<norm <<endl;
-	cout << "flux = "<< flux <<"        residual = "<< residual <<",         cfl*|| U^n+1 - U^n ||  ="<< _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm<<  ",        sum = "<<residual + _dt * _c *_maxPerim  / (2 * _minCell ) *_d *  norm  <<endl;
+	//cout << "|| U^n+1 - U^n || = " <<norm <<endl;
+	cout << "flux = "<< flux <<"        residual = "<< residual<<endl;
 }
 
 
@@ -1302,10 +1315,8 @@ void WaveStaggered::save(){
 	prim+=_fileName;
 
 	RelativeEnergyBalanceEq();
-	if (_nbTimeStep >2 ){//&& ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13
-		
-		cout <<" Relative Energy( "<< _time <<") = "<<_Energy.back() <<endl;
-		cout <<"d_t E =  "<< (_Energy.back() -_Energy[_Energy.size() - 2])/_dt<<endl; 	//std::setprecision(15) << std::fixed<< 
+	if (_nbTimeStep >2 ){//&& ( (_Energy.back() -_Energy[_Energy.size() - 2])/_dt) >1e-13 //TODO
+		cout <<" Relative Energy( "<< _time <<") = "<<_Energy.back() << " ,  d_t E =  "<< (_Energy.back() -_Energy[_Energy.size() - 2])/_dt<<endl; 	//std::setprecision(15) << std::fixed<< 
 	} 
 
 	if(_mpi_size>1){
@@ -1388,19 +1399,20 @@ void WaveStaggered::save(){
 			M1[0] =  orien1 * Fj.getMeasure()*(xsigma.x()- xK.x());
 			if (_Ndim >1) M1[1] = orien1 * Fj.getMeasure()*(xsigma.y()- xK.y());
 			
+			double u0_psi;
+			VecGetValues(_Velocity_0_Psi, 1, &j, &u0_psi);
 			if (Fj.getNumberOfCells() == 2){
 				Cell Ctemp2 = _mesh.getCell(idCells[1]);
 				double orien2 = getOrientation(i,Ctemp2);
 				Point xK = Ctemp2.getBarryCenter();
-
 				M2[0] = orien2 * Fj.getMeasure()*(xsigma.x()- xK.x());
 				if (_Ndim >1) M2[1] = orien2 * Fj.getMeasure()*(xsigma.y()- xK.y());
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
 					_Velocity_at_Cells(idCells[1], k) += _Velocity(i) * M2[k]/Ctemp2.getMeasure(); 
 					if (_nbTimeStep == 0){
-						_Velocity_0_Psi_at_Cells(idCells[0], k) += _Velocity_0_Psi(i) * M1[k]/Ctemp1.getMeasure(); 
-						_Velocity_0_Psi_at_Cells(idCells[1], k) += _Velocity_0_Psi(i) * M2[k]/Ctemp2.getMeasure(); 
+						_Velocity_0_Psi_at_Cells(idCells[0], k) += u0_psi * M1[k]/Ctemp1.getMeasure(); 
+						_Velocity_0_Psi_at_Cells(idCells[1], k) += u0_psi * M2[k]/Ctemp2.getMeasure(); 
 					}
 				}
 				_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/Ctemp1.getMeasure();
@@ -1410,7 +1422,7 @@ void WaveStaggered::save(){
 			else if  (Fj.getNumberOfCells() == 1){
 				for (int k=0; k< _Ndim; k++){
 					_Velocity_at_Cells(idCells[0], k) += _Velocity(i) * M1[k]/Ctemp1.getMeasure(); 
-					if (_nbTimeStep == 0) _Velocity_0_Psi_at_Cells(idCells[0], k) += _Velocity_0_Psi(i) * M1[k]/Ctemp1.getMeasure();
+					if (_nbTimeStep == 0) _Velocity_0_Psi_at_Cells(idCells[0], k) += u0_psi * M1[k]/Ctemp1.getMeasure();
 
 				}
 				_DivVelocity( idCells[0]) += orien1 * Fj.getMeasure() * _Velocity(i)/Ctemp1.getMeasure();

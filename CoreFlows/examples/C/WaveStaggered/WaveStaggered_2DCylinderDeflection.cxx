@@ -75,16 +75,23 @@ int main(int argc, char** argv)
 		std::vector<int> idCells = Fj.getCellsId();
 		std::vector<double> vec_normal_sigma(2, 0.0) ; 
 		Cell Ctemp1 = M.getCell(idCells[0]);
-		for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
+		 for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 			if (j == Ctemp1.getFacesId()[l]){
 				for (int idim = 0; idim < spaceDim; ++idim)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		myProblem.setOrientation(j,vec_normal_sigma);
+		/* if (  fabs( atan(Fj.y()/Fj.x()) ) <1e-8 ){ //Fj.x() >1e-10 && 
+			cout << "Ctemp1 "<< Ctemp1.x() <<" "<< Ctemp1.y() << " idcell ="<< idCells[0]<<endl;
+			cout << "ve_sigma  = "<< vec_normal_sigma[0]<< " "<< vec_normal_sigma[1] << endl;
+			vec_normal_sigma[0] *= -1;
+			vec_normal_sigma[1] *= -1;
 
+		}  */
+
+		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
-		double theta = atan(Fj.y()/Fj.x());
+		double theta = atan(Fj.y()/Fj.x()); 
 		ExactVelocityAtFaces[j] = dotprod( ExactVelocity(r, theta, r1, r0), vec_normal_sigma); 
 
 		if(Fj.getNumberOfCells()==2){
@@ -120,10 +127,10 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000	;
-	int freqSave = 400;
+	unsigned MaxNbOfTimeStep = 1	;
+	int freqSave = 1;
 	double cfl = 0.5;
-	double maxTime = 100;
+	double maxTime = 40;
 	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);

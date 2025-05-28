@@ -434,7 +434,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			MatSetValue(_A, idCells[0], IndexFace,  -getOrientation(j,Ctemp1) * Fj.getMeasure() , ADD_VALUES ); 
 			MatSetValue(_A, idCells[1], IndexFace,  -getOrientation(j,Ctemp2) * Fj.getMeasure() , ADD_VALUES );  	
 			// LaplacianPressure
-			double WaveVelocity = (_timeScheme == Implicit ) ? abs( _Velocity(j) )/2.0 + _c :  ( abs( _Velocity(j) ) + _c ); ///2.0 ; 
+			double rho_sigma, q;
+			VecGetValues(_DualDensity, 1,&j, &rho_sigma);
+			VecGetValues(_primitiveVars,1,&IndexFace,&q);
+			double WaveVelocity = (_timeScheme == Implicit ) ? abs(q/(rho_sigma * 2.0)) + _c :  ( abs(q/rho_sigma) + _c ); ///2.0 ; 
 			MatSetValue(_A, idCells[0], idCells[0], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 
 			MatSetValue(_A, idCells[0], idCells[1],   WaveVelocity * Fj.getMeasure(), ADD_VALUES );  
 			MatSetValue(_A, idCells[1], idCells[1], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 
@@ -843,8 +846,12 @@ std::vector<double> EulerBarotropicStaggered::H_1DensitySemi_Norm__H_divVelocity
 	for (int m=0; m<_Nmailles; m++){
 		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
 		double divtilde =0;
-		for (int f=0; f <idFaces.size(); f++ )
-			divtilde += 1.0/_mesh.getCell(m).getMeasure() * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * _Velocity(idFaces[f]) ;
+		for (int f=0; f <idFaces.size(); f++ ){
+			double q;
+			int I = _Nmailles+ idFaces[f];
+			VecGetValues(_primitiveVars, 1, &I, &q);
+			divtilde += 1.0/_mesh.getCell(m).getMeasure() * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * q ;
+		}
 		H_div_SemiNorm += _mesh.getCell(m).getMeasure() * pow(divtilde, 2);
 	}
 	std::vector<double> Semi_Norms(2);
@@ -875,17 +882,17 @@ void EulerBarotropicStaggered::save(){
 			
 		_Pressure.setTime(_time,_nbTimeStep);
 		if (_nbTimeStep ==0){
-			_Pressure.setInfoOnComponent(0,"_Pressure (N/m²)");
+			_Pressure.setInfoOnComponent(0,"_Density (N/m²)");
 			switch(_saveFormat)
 			{
 			case VTK :
-				_Pressure.writeVTK(prim+"_Pressure");
+				_Pressure.writeVTK(prim+"_Density");
 				break;
 			case MED :
-				_Pressure.writeMED(prim+"_Pressure");
+				_Pressure.writeMED(prim+"_Density");
 				break;
 			case CSV :
-				_Pressure.writeCSV(prim+"_Pressure");
+				_Pressure.writeCSV(prim+"_Density");
 				break;
 			}
 		}
@@ -893,13 +900,13 @@ void EulerBarotropicStaggered::save(){
 			switch(_saveFormat)
 			{
 			case VTK :
-				_Pressure.writeVTK(prim+"_Pressure",false);
+				_Pressure.writeVTK(prim+"_Density",false);
 				break;
 			case MED :
-				_Pressure.writeMED(prim+"_Pressure",false);
+				_Pressure.writeMED(prim+"_Density",false);
 				break;
 			case CSV :
-				_Pressure.writeCSV(prim+"_Pressure");
+				_Pressure.writeCSV(prim+"_Density");
 				break;
 			}
 		}
@@ -983,6 +990,7 @@ void EulerBarotropicStaggered::save(){
 		switch(_saveFormat)
 		{
 		case VTK :
+			
 			_MachNumber.writeVTK(prim+"_MachNumber");
 			_Velocity_at_Cells.writeVTK(prim+"_VelocityAtCells");
 			_Velocity.writeVTK(prim+"_Velocity");
@@ -997,6 +1005,7 @@ void EulerBarotropicStaggered::save(){
 			break;
 		}
 
+		cout << "H^1 density semi norm = "<< H_1DensitySemi_Norm__H_divVelocitySemi_Norm()[0] << "    H_div velocity semi_norm = "<< H_1DensitySemi_Norm__H_divVelocitySemi_Norm()[1] <<endl;	
 		if (_isStationary || _time == _timeMax){
 			double boundaryIntegral =0;
 			for (int j=0; j<_Nfaces;j++){
@@ -1018,7 +1027,6 @@ void EulerBarotropicStaggered::save(){
 					norm = fabs(_DivVelocity(i));	
 			}
 			cout << "max|div(u)|= "<< norm << " while /int_{/partial /Omega} u_b.n d/gamma = "<< boundaryIntegral <<endl;
-			cout << "H^1 density semi norm = "<< H_1DensitySemi_Norm__H_divVelocitySemi_Norm()[0] << "    H_div velocity semi_norm = "<< H_1DensitySemi_Norm__H_divVelocitySemi_Norm()[1] <<endl;
 		}
 	}
 	

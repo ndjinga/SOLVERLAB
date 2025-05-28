@@ -19,8 +19,16 @@ using namespace std;
 double rhoVortex( double x, double y ){
 	double r = sqrt(pow(x- xc,2) +pow(y- yc,2) );
 	double rbar = r/r0; 
-	if (r<r0)
-		return  rho0 * ( 1 -  pow( M_ref/lambda_max, 2) * exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  ) ) ;
+	if (r<r0){
+		double expr = exp( - alpha*alpha/(1-rbar*rbar) );
+		double rbarmax2 = pow(rbarmax,2);
+		double umax =  2 * alpha * rbarmax / (1-rbarmax2) * exp( - alpha*alpha/(1-rbarmax2) ) ;
+		double factor = 1.0/umax;
+		double rho  = 1.0  - factor * factor * expr *  expr * M_ref * M_ref ;
+		rho *= rho0;
+		return  rho ;//rho0 * ( 1 -  pow( M_ref/lambda_max, 2) * exp(- 2 * pow(alpha, 2)/(1 - pow(rbar,2) )  ) ) ;
+	}
+		
 	else 
 		return rho0;	
 }
@@ -47,7 +55,7 @@ std::vector<double> VelocityVortex(double x, double y ){
 double rhoLowMach( double x, double y ){
 	double xbar = x/0.05;
 	if ((xbar>-1) && (xbar<1))
-		return rho0 * (1 + M_ref * exp(1 - 1/(1-pow(xbar,2)) ) );
+		return rho0 * M_ref * exp(1 - 1/(1-pow(xbar,2)) ) ; //rho0 * (1 + 
 	else	
 		return 0;
 	
@@ -57,7 +65,7 @@ std::vector<double> VelocityLowMach(double x, double y ){
 	std::vector<double> vec(2,0.0); //gamma = 2
 	double xbar = x/0.05;
 	if ((xbar>-1) && (xbar<1)){
-		vec[0] = u0 + ( sqrt(2*rhoLowMach(x,y)) - sqrt(2*rho0));
+		vec[0] = ( sqrt(2*(rho0 +rhoLowMach(x,y))) - sqrt(2*rho0)); //+u0 ?
 		vec[1] = 0;
 	}
 
@@ -88,8 +96,8 @@ int main(int argc, char** argv)
 	double supx = 1.1;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx = 250;
-	int ny = 250;
+	int nx =100;
+	int ny = 20;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -154,8 +162,8 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DVortex";
 
 	// parameters calculation
-	unsigned MaxNbOfTimeStep = 10000;
-	int freqSave = 40;
+	unsigned MaxNbOfTimeStep = 1;
+	int freqSave = 1;
 	double cfl = 0.99;
 	double maxTime = 3.5;
 	double precision = 1e-10;

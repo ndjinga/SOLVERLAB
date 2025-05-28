@@ -3,31 +3,34 @@
 #include <cassert>
 #include <chrono>
 
-#define M_ref 1e-4
+#define M_ref 1e-3
+#define rho_b 2
+#define gamma 2
+#define kappa 1
 using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(2*1) * 1e-4 *r1*r1/(r1*r1 -r0*r0)* (1 - r0*r0/(r*r) * cos(2*theta)); 
-	vec[1] = sqrt(2*1) * 1e-4 *r1*r1/(r1*r1 -r0*r0)* (  - r0*r0/(r*r) * sin(2*theta));  
+	vec[0] = sqrt(gamma * kappa* pow(rho_b, gamma-1) ) * M_ref *r1*r1/(r1*r1 -r0*r0)* (1 - r0*r0/(r*r) * cos(2*theta)); 
+	vec[1] = sqrt(gamma * kappa* pow(rho_b, gamma-1) ) * M_ref *r1*r1/(r1*r1 -r0*r0)* (  - r0*r0/(r*r) * sin(2*theta));  
 	return vec;
 }
 
 double initialDensity( double x, double y){
-	return 1;
+	return rho_b;
 }
 
 // sqrt(p'(rho_0)) M_\infty
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(2 * 1*1) *1e-4 ; 
+	vec[0] = 0; 
 	vec[1] = 0;
 	return vec;
 }
 
 std::vector<double> initialBoundVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(2 * 1*1) *1e-4 ; 
+	vec[0] = sqrt(gamma * kappa* pow(rho_b, gamma-1) ) *M_ref ; 
 	vec[1] = 0;
 	return vec;
 }
@@ -60,7 +63,7 @@ int main(int argc, char** argv)
 	M=Mesh(filename);
 
 	double a = 1.0;
-	double gamma = 2.0;
+	//gamma = 2.0;
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
 
 	//Initial field creation
@@ -83,6 +86,11 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
+		if ( Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){
+			vec_normal_sigma[0] *= -1;
+			vec_normal_sigma[1] *= -1;
+
+		}  
 		myProblem.setOrientation(j,vec_normal_sigma);
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
@@ -102,7 +110,7 @@ int main(int argc, char** argv)
 			}
 			else {		
 				myProblem.setSteggerBoundIndex(j);								
-				wallMomentumMap[j] = dotprod( initialVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
+				wallMomentumMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
 				wallDensityMap[j] = initialDensity(Fj.x(),Fj.y());
 				for (int idm = 0; idm <spaceDim; idm ++)
 					wallVelocityVector[idm] = initialBoundVelocity(Fj.x(), Fj.y())[idm];
@@ -119,17 +127,17 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Implicit);
+	myProblem.setTimeScheme(Explicit	);
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000	;
-	int freqSave = 100	;
+	unsigned MaxNbOfTimeStep = 100000000	;
+	int freqSave = 300	;
 	double cfl = 0.99;
 	double maxTime = 50;
-	double precision = 1e-6;
+	double precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
