@@ -3,7 +3,7 @@
 #include <cassert>
 #include <chrono>
 
-#define M_ref 1e-3
+#define M_ref 1e-4
 #define rho_b 2
 #define gamma 2
 #define kappa 1
@@ -127,20 +127,21 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallMomentumMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit	);
+	myProblem.setTimeScheme(Implicit	);
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 100000000	;
-	int freqSave = 300	;
+	int freqSave = 1	;
 	double cfl = 0.99;
 	double maxTime = 50;
 	double precision = 1e-8;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);
+	myProblem.setLinearSolver(GMRES, LU, 50);
 	myProblem.setMaxNbOfTimeStep(MaxNbOfTimeStep);
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);

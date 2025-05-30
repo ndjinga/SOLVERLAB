@@ -21,7 +21,7 @@ double initialBoundPressure( double x, double y){
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 0; //TODO 1 or 0 ?
+	vec[0] = 0; 
 	vec[1] = 0;
 	return vec;
 }
@@ -81,30 +81,29 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		/* if (  fabs( atan(Fj.y()/Fj.x()) ) <1e-8 ){ //Fj.x() >1e-10 && 
+		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-8 ){ 
 			cout << "Ctemp1 "<< Ctemp1.x() <<" "<< Ctemp1.y() << " idcell ="<< idCells[0]<<endl;
 			cout << "ve_sigma  = "<< vec_normal_sigma[0]<< " "<< vec_normal_sigma[1] << endl;
 			vec_normal_sigma[0] *= -1;
 			vec_normal_sigma[1] *= -1;
 
-		}  */
+		} 
 
 		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
-		double theta = atan(Fj.y()/Fj.x()); 
+		double theta = atan2(Fj.y(),Fj.x()); 
+		if (theta < 0)
+   			theta += 2 * M_PI;
 		ExactVelocityAtFaces[j] = dotprod( ExactVelocity(r, theta, r1, r0), vec_normal_sigma); 
-
+		Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
+		Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
+		
 		if(Fj.getNumberOfCells()==2){
 			Cell Ctemp2 = M.getCell(idCells[1]);
 			myProblem.setInteriorIndex(j);
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
-			Pressure0[idCells[1]] = initialPressure(Ctemp2.x(),Ctemp2.y());
-			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
 		}
 		else if (Fj.getNumberOfCells()==1){
 			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
-			Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
-
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
@@ -127,8 +126,8 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1	;
-	int freqSave = 1;
+	unsigned MaxNbOfTimeStep = 10000000000	;
+	int freqSave = 800;
 	double cfl = 0.5;
 	double maxTime = 40;
 	double precision = 1e-10;

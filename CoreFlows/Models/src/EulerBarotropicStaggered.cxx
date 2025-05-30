@@ -560,9 +560,9 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 		MatMatMult(_InvVol, _JacobianMatrix, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, DIFFERENT_NONZERO_PATTERN); 
 		MatDestroy(& Prod);
-		//TODO create Prod at init in WaveStaggered
+		//TODO create Prod at init in WaveStaggered	
 
-		dt =   _minCell / (_maxPerim * _uMax  * 2 ) ;
+		dt =   _minCell / (_maxPerim * (fabs(_uMax)<1e-5 ? _c : _uMax)  * 2 ) ;
 		MatScale(_A,  dt);
 		MatShift(_A,  1);
 		
@@ -847,10 +847,11 @@ std::vector<double> EulerBarotropicStaggered::H_1DensitySemi_Norm__H_divVelocity
 		std::vector<int> idFaces = _mesh.getCell(m).getFacesId();
 		double divtilde =0;
 		for (int f=0; f <idFaces.size(); f++ ){
-			double q;
+			double q, rho_sigma;
 			int I = _Nmailles+ idFaces[f];
+			VecGetValues(_DualDensity, 1,&idFaces[f], &rho_sigma);
 			VecGetValues(_primitiveVars, 1, &I, &q);
-			divtilde += 1.0/_mesh.getCell(m).getMeasure() * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * q ;
+			divtilde += 1.0/_mesh.getCell(m).getMeasure() * _mesh.getFace(idFaces[f]).getMeasure() * getOrientation(idFaces[f], _mesh.getCell(m)) * q/rho_sigma ;
 		}
 		H_div_SemiNorm += _mesh.getCell(m).getMeasure() * pow(divtilde, 2);
 	}
@@ -934,7 +935,7 @@ void EulerBarotropicStaggered::save(){
 				VecGetValues(_primitiveVars_seq,1,&I,&q);
 			else
 				VecGetValues(_primitiveVars,1,&I,&q);
-
+			
 			_Velocity(i) = q / rho_sigma;
 
 			Face Fj = _mesh.getFace(i);
@@ -972,11 +973,12 @@ void EulerBarotropicStaggered::save(){
 			}
 		}
 
-		for (long i = 0; i < _Nmailles; i++){
+		for (int i = 0; i < _Nmailles; i++){
 			double u2 = 0;
-			for (int ndim=0; ndim <_Ndim; ndim++)
-				u2 += pow( _Velocity_at_Cells(i, ndim) , 2);
-			_MachNumber[i]  = sqrt(u2)/_compressibleFluid->vitesseSon(_Pressure(i)); //TOD what if density is not saved
+			double rho ;
+			VecGetValues(_primitiveVars,1,&i,&rho);
+			for (int ndim=0; ndim <_Ndim; ndim++) u2 += pow( _Velocity_at_Cells(i, ndim) , 2);
+			_MachNumber[i]  = sqrt(u2)/_compressibleFluid->vitesseSon(rho); //TOD what if density is not saved
 		}
 		_MachNumber.setTime(_time,_nbTimeStep);
 		_Velocity.setTime(_time,_nbTimeStep);
