@@ -1193,8 +1193,6 @@ void WaveStaggered::InterpolateFromFacesToCells(std::vector<double> atFaces){
 	}
 	string prim(_path+"/");
 	string primCells = prim +_fileName + atCells.getName();
-	cout << primCells <<endl;
-
 	switch(_saveFormat)
 	{
 	case VTK :
@@ -1203,17 +1201,44 @@ void WaveStaggered::InterpolateFromFacesToCells(std::vector<double> atFaces){
 	}
 }
 
-double WaveStaggered::ErrorL2VelocityAtFaces(const std::vector<double> &ExactVelocity){
-	double errorface =0;
+std::vector<double> WaveStaggered::ErrorVelocity(const std::vector<double> &ExactVelocity){
+	double error_at_face =0;
+	double error_at_cellx = 0;
+	double error_at_celly = 0;
 	double u,InvD_sigma ;
 	int I;
 	for (int j=0; j < _Nfaces; j++){
 		I = _Nmailles + j;
 		MatGetValues(_InvVol, 1, &I,1, &I, &InvD_sigma);
 		VecGetValues(_primitiveVars, 1, &I, &u);	
-		errorface += 1/InvD_sigma * pow(u - ExactVelocity[j],2);
+		error_at_face += 1/InvD_sigma * pow(u - ExactVelocity[j],2);
 	}
-	return errorface;
+	if (_Ndim ==2){
+		for (int m=0; m < _Nmailles; m++){
+			Cell K = _mesh.getCell(m);
+			std:vector<int> FacesOfK = K.getFacesId();
+			double local_error_x = 0;
+			double local_error_y = 0;
+			for (int e =0; e < FacesOfK.size(); e++){
+				Face Fe = _mesh.getFace( FacesOfK[e] );
+				I = _Nmailles + FacesOfK[e] ;
+				VecGetValues(_primitiveVars, 1, &I, &u);
+				double orien = getOrientation(FacesOfK[e],K);
+				local_error_x += Fe.getMeasure()*orien * (Fe.getBarryCenter().x()-  K.getBarryCenter().x()) * (u- ExactVelocity[ FacesOfK[e] ])/K.getMeasure();
+				local_error_y += Fe.getMeasure()*orien * (Fe.getBarryCenter().y()-  K.getBarryCenter().y()) * (u- ExactVelocity[ FacesOfK[e] ])/K.getMeasure();
+
+			}
+			error_at_cellx += K.getMeasure() * pow(local_error_x,2);
+			error_at_celly += K.getMeasure() * pow(local_error_y,2);
+		}
+	}
+	std::vector<double> Error(1 + 2*(_Ndim -1));
+	Error[0] = error_at_face;
+	if (_Ndim ==2){
+		Error[1] = error_at_cellx;
+		Error[2] = error_at_celly;
+	}
+	return Error;
 }
 
 double WaveStaggered::ErrorInftyVelocityBoundary( std::map<int ,double> &BoundaryVelocity ){

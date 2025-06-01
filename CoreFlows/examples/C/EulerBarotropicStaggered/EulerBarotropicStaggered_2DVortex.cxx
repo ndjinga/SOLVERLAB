@@ -24,7 +24,7 @@ double rhoVortex( double x, double y ){
 	double rbar = r/r0; 
 	double expr = exp( - pow(alpha,2)/(1-pow(rbar,2)) );
 	double umax =  2 * alpha * rbarmax / (1-rbarmax2) * exp( - alpha*alpha/(1-rbarmax2) ) ;
-	return  rho0 * (1.0 );// - pow(M_ref * expr/umax,2) ) ;
+	return  rho0 * (1 - pow(M_ref * expr/umax,2) ) ;
 
 }
 std::vector<double> VelocityVortex(double x, double y ){
@@ -34,14 +34,13 @@ std::vector<double> VelocityVortex(double x, double y ){
 	double rbar = r/r0; 
 	double expr = exp( - alpha*alpha/(1-rbar*rbar) );
 	double umax =  2 * alpha * rbarmax / (1-rbarmax2) * exp( - alpha*alpha/(1-rbarmax2) ) ;
-	vec[0] =  y  * u0 ;//* 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax) ;
-	vec[1] = -x  * u0 ;//* 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax); 
+	vec[0] =  y  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax) ;
+	vec[1] = -x  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax); 
 	return vec;
 }
 
 //******************** LOW-MACH WAVE *****************//
 double rhoLowMach( double xbar){  return rho0 * (1 + M_ref * exp(1 - 1/(1-pow(xbar,2))) ) ; }
-
 std::vector<double> VelocityLowMach(double xbar ){
 	std::vector<double> vec(2,0.0); 
 	vec[0] = u0 + 2 *( sqrt( 2*rhoLowMach(xbar) ) - sqrt(2*rho0) ); //gamma = 2
@@ -50,25 +49,15 @@ std::vector<double> VelocityLowMach(double xbar ){
 
 //******************** INITIAL CONDITION*****************//
 double InitialDensity( double x, double y ){
-	double xbar = x/0.05;
-	double r = sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) );
-	/* if (r<r0){
-		
-	}	 */
-	return rhoVortex( x, y);
-	//if ((xbar>-1) && (xbar<1))  return rhoLowMach(xbar);
-	//else                        return rho0;
+	//if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) return rhoVortex( x, y); 
+	if ( fabs(x/0.05)<1 )  						  return rhoLowMach(x/0.05);
+	else                       					  return rho0;
 }
 std::vector<double> InitialVelocity(double x, double y ){
 	std::vector<double> vec(2,0.0); 
-	double xbar = x/0.05;
-	double r = sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) );
-	/* if (r<r0){
-		
-	}	 */
-	return VelocityVortex( x, y);
-	//if ((xbar>-1) && (xbar<1))  return VelocityLowMach( xbar);
-	//else 						return vec;
+	//if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return VelocityVortex( x, y); 
+	if ( fabs(x/0.05)<1 )   						return VelocityLowMach( x/0.05);
+	else 											return vec;
 }
 
 double dotprod(std::vector<double> vector, std::vector<double> normal){
@@ -98,8 +87,8 @@ int main(int argc, char** argv)
 	double supx = 1.1;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx =30;
-	int ny =30;
+	int nx =200;
+	int ny =2;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -116,7 +105,7 @@ int main(int argc, char** argv)
 	std::vector<double> wallVelocityVector(spaceDim);
 
 
-	//myProblem.setPeriodicFaces(M, 'x', 480, infx, infy); 
+	myProblem.setPeriodicFaces(M, 'x', nx, infx, supx); 
 
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -156,18 +145,18 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
 	// set the numerical method
-	myProblem.setTimeScheme(Explicit);
-	myProblem.setLinearSolver(GMRES, LU, 50);
+	myProblem.setTimeScheme(Implicit);
+	myProblem.setLinearSolver(GMRES, LU, 70);
 	
 	// name of result file
 	string fileName = "EulerBarotropicStaggered_2DVortex";
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 10000;
-	int freqSave = 1;
+	int freqSave = 50;
 	double cfl = 0.99;
 	double maxTime = 3.5;
-	double precision = 1e-10;
+	double precision = 1e-9;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

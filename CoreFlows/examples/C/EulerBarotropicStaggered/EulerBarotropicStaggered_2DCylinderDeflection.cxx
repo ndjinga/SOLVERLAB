@@ -69,11 +69,11 @@ int main(int argc, char** argv)
 	//Initial field creation
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallDensityMap;
-	std::map<int ,double> wallMomentumMap ;
+	std::map<int ,double> wallVelocityMap ;
 	std::vector<double> wallVelocityVector(spaceDim);
 	Field Density0("Density", CELLS, M, 1);
 	Field Momentum0("velocity", FACES, M, 1);
-	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
+	std::vector<double> ExactVelocityAtFaces(M.getNumberOfFaces());
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -86,65 +86,64 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		if ( Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){
+		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){ 
 			vec_normal_sigma[0] *= -1;
 			vec_normal_sigma[1] *= -1;
-
-		}  
+		} 
 		myProblem.setOrientation(j,vec_normal_sigma);
+		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
+		double theta = atan2(Fj.y(),Fj.x()); 
+		if (theta < 0) theta += 2 * M_PI;
+		ExactVelocityAtFaces[j] = dotprod( ExactVelocity(r, theta, r1, r0), vec_normal_sigma); 
+
+		Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y());
 		if(Fj.getNumberOfCells()==2){
-			Cell Ctemp2 = M.getCell(idCells[1]);
 			myProblem.setInteriorIndex(j);
-			Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y());
-			Density0[idCells[1]] = initialDensity(Ctemp2.x(),Ctemp2.y());
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( initialDensity(Ctemp1.x(),Ctemp1.y()) + initialDensity(Ctemp2.x(),Ctemp2.y())  )/2;
+			Density0[idCells[1]] = initialDensity(M.getCell(idCells[1]).x(),M.getCell(idCells[1]).y());
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * ( Density0[idCells[0]] + Density0[idCells[1]]  )/2;
 		}
 		else if (Fj.getNumberOfCells()==1){
-			Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y());
 			Momentum0[j] = dotprod(initialVelocity(Fj.x(),Fj.y()),vec_normal_sigma ) * initialDensity(Fj.x(),Fj.y());
-			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
+			if (  sqrt( pow(Fj.x(),2) + pow(Fj.y(),2) )  <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
-				wallMomentumMap[j] =  0;
-				for (int idm = 0; idm <spaceDim; idm ++)
-					wallVelocityVector[idm] = 0;
+				for (int idm = 0; idm <spaceDim; idm ++)	wallVelocityVector[idm] = 0;
 			}
 			else {		
 				myProblem.setSteggerBoundIndex(j);								
-				wallMomentumMap[j] = dotprod( initialBoundVelocity( Fj.x(),Fj.y()), vec_normal_sigma );
 				wallDensityMap[j] = initialDensity(Fj.x(),Fj.y());
-				for (int idm = 0; idm <spaceDim; idm ++)
-					wallVelocityVector[idm] = initialBoundVelocity(Fj.x(), Fj.y())[idm];
+				for (int idm = 0; idm <spaceDim; idm ++)    wallVelocityVector[idm] = initialBoundVelocity(Fj.x(), Fj.y())[idm];
 			} 
-			ExactVelocityAtFaces[j] = wallMomentumMap[j];
+			wallVelocityMap[j] = dotprod( wallVelocityVector, vec_normal_sigma );
 			myProblem.setboundaryVelocityVector(j, wallVelocityVector);
 		}
 	}
 
-		
 	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallDensityMap);
-	myProblem.setboundaryVelocity(wallMomentumMap);
+	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Implicit	);
+
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 100000000	;
-	int freqSave = 1	;
-	double cfl = 0.99;
-	double maxTime = 50;
+	unsigned MaxNbOfTimeStep = 1000000	;
+	double cfl = 100;
 	double precision = 1e-8;
+	int freqSave = 100;
+	double maxTime = 120;
 
-	myProblem.setCFL(cfl);
-	myProblem.setPrecision(precision);
+
+	myProblem.setTimeScheme(Implicit);
 	myProblem.setLinearSolver(GMRES, LU, 50);
-	myProblem.setMaxNbOfTimeStep(MaxNbOfTimeStep);
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
+	myProblem.setCFL(cfl);
+	myProblem.setPrecision(precision);
+	myProblem.setMaxNbOfTimeStep(MaxNbOfTimeStep);
 	myProblem.setFileName(fileName);
 	myProblem.setSaveFileFormat(VTK);
 	myProblem.saveVelocity(true);
@@ -153,9 +152,10 @@ int main(int argc, char** argv)
 	
 	// evolution
 	myProblem.initialize();
-	Field ExactVelocityInterpolate("ExactVelocityInterpolate", CELLS, M, 3);
-	//myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces, ExactVelocityInterpolate);
+	myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces);
 	bool ok = myProblem.run();
+
+
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;
 	else

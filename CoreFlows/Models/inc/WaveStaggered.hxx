@@ -115,7 +115,7 @@ public :
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
 
 	/***********Post Pro *************/
-	double ErrorL2VelocityAtFaces(const std::vector<double> &ExactVelocity);
+	std::vector<double>  ErrorVelocity(const std::vector<double> &ExactVelocity);
 	double ErrorInftyVelocityBoundary( std::map<int ,double> &BoundaryVelocity );
 	void RelativeEnergyBalanceEq();
 	void InterpolateFromFacesToCells(std::vector<double> atFaces);

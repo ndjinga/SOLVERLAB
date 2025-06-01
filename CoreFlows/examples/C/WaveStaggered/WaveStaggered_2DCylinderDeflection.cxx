@@ -12,12 +12,7 @@ std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	return vec;
 }
 
-double initialPressure( double x, double y){
-	return 0;
-}
-double initialBoundPressure( double x, double y){
-	return 0;
-}
+double initialPressure( double x, double y){ return 0; }
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
@@ -81,29 +76,25 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-8 ){ 
-			cout << "Ctemp1 "<< Ctemp1.x() <<" "<< Ctemp1.y() << " idcell ="<< idCells[0]<<endl;
-			cout << "ve_sigma  = "<< vec_normal_sigma[0]<< " "<< vec_normal_sigma[1] << endl;
+		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){ 
 			vec_normal_sigma[0] *= -1;
 			vec_normal_sigma[1] *= -1;
-
 		} 
 
 		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
 		double theta = atan2(Fj.y(),Fj.x()); 
-		if (theta < 0)
-   			theta += 2 * M_PI;
+		if (theta < 0) theta += 2 * M_PI;
+
 		ExactVelocityAtFaces[j] = dotprod( ExactVelocity(r, theta, r1, r0), vec_normal_sigma); 
 		Velocity0[j] = dotprod( initialVelocity(Fj.x(),Fj.y()) ,vec_normal_sigma);
 		Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
 		
 		if(Fj.getNumberOfCells()==2){
-			Cell Ctemp2 = M.getCell(idCells[1]);
 			myProblem.setInteriorIndex(j);
+			Pressure0[idCells[1]] = initialPressure(M.getCell(idCells[1]).x(),M.getCell(idCells[1]).y());
 		}
 		else if (Fj.getNumberOfCells()==1){
-			Pressure0[idCells[0]] = initialPressure(Ctemp1.x(),Ctemp1.y());
 			if (( sqrt( Fj.x()*Fj.x()+ Fj.y()*Fj.y() )  ) <= (r0 +r1)/2.0 ){// if face is on interior (wallbound condition) r_int = 1.2 ou 0.8 selon le maillage
 				myProblem.setWallBoundIndex(j);
 				wallVelocityMap[j] =  0;
@@ -111,7 +102,7 @@ int main(int argc, char** argv)
 			else {// if face is on exterior (stegger condition) 			
 				myProblem.setSteggerBoundIndex(j);								
 				wallVelocityMap[j] = dotprod( initialBoundVelocity(Fj.x(),Fj.y()), vec_normal_sigma);
-				wallPressureMap[j] = initialBoundPressure(Fj.x(),Fj.y());
+				wallPressureMap[j] = initialPressure(Fj.x(),Fj.y());
 			}
 		}
 	}
@@ -126,7 +117,7 @@ int main(int argc, char** argv)
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10000000000	;
+	unsigned MaxNbOfTimeStep = 100000000	;
 	int freqSave = 800;
 	double cfl = 0.5;
 	double maxTime = 40;
@@ -154,7 +145,7 @@ int main(int argc, char** argv)
 
 	cout << "------------ End of calculation !!! -----------" << endl;
 	cout << "\nBoundary Velocity error = "<< std::setprecision(17) << std::fixed<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
-	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorL2VelocityAtFaces(ExactVelocityAtFaces) <<endl;
+	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorVelocity(ExactVelocityAtFaces)[0] <<endl;
 	//cout << "Error L2 of interpolated velocity at cells= "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[1] <<endl;
 	myProblem.terminate();
 	
