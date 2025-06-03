@@ -7,20 +7,20 @@
 #define rho_b 2
 #define gamma 2
 #define kappa 1
+#define c_b sqrt(gamma * kappa* pow(rho_b, gamma-1) )
+#define u0 M_ref * c_b
 using namespace std;
 
 std::vector<double> ExactVelocity(double r, double theta, double r1, double r0){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(gamma * kappa* pow(rho_b, gamma-1) ) * M_ref *r1*r1/(r1*r1 -r0*r0)* (1 - r0*r0/(r*r) * cos(2*theta)); 
-	vec[1] = sqrt(gamma * kappa* pow(rho_b, gamma-1) ) * M_ref *r1*r1/(r1*r1 -r0*r0)* (  - r0*r0/(r*r) * sin(2*theta));  
+	vec[0] = u0 * pow(r1,2)/(pow(r1,2) - pow(r0,2))* (1 - pow(r0,2)/pow(r,2) * cos(2*theta)); 
+	vec[1] = u0 * pow(r1,2)/(pow(r1,2) - pow(r0,2))* (  - pow(r0,2)/pow(r,2) * sin(2*theta));  
 	return vec;
 }
 
-double initialDensity( double x, double y){
-	return rho_b;
-}
+double initialDensity( double x, double y){ return rho_b; }
 
-// sqrt(p'(rho_0)) M_\infty
+
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
 	vec[0] = 0; 
@@ -30,8 +30,8 @@ std::vector<double> initialVelocity(double x,double y){
 
 std::vector<double> initialBoundVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = sqrt(gamma * kappa* pow(rho_b, gamma-1) ) *M_ref ; 
-	vec[1] = 0;
+	vec[0] = u0 ; 
+	vec[1] = 0 ;
 	return vec;
 }
 
@@ -86,6 +86,7 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
+		//TODO orientation
 		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){ 
 			vec_normal_sigma[0] *= -1;
 			vec_normal_sigma[1] *= -1;
@@ -130,11 +131,11 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000	;
+	unsigned MaxNbOfTimeStep = 10000000	;
 	double cfl = 100;
-	double precision = 1e-8;
-	int freqSave = 100;
-	double maxTime = 120;
+	double precision = 1e-11;
+	int freqSave = 500;
+	double maxTime = 50;
 
 
 	myProblem.setTimeScheme(Implicit);
@@ -163,10 +164,10 @@ int main(int argc, char** argv)
 
 	cout << "------------ End of calculation !!! -----------" << endl;
 
-
-    auto end = std::chrono::high_resolution_clock::now();
+	cout << "For "<< M.getNumberOfCells() <<" cells, Velocity error  AT FACES = "<<myProblem.ErrorVelocity(ExactVelocityAtFaces)[0]<< " AT CELLS X = "<<myProblem.ErrorVelocity(ExactVelocityAtFaces)[1]<<" AT CELLS Y = "<<myProblem.ErrorVelocity(ExactVelocityAtFaces)[2]<<endl;
+	auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration = end - start;
-    std::cout << "Execution time: " << duration.count() << " ms" << std::endl;
+    cout << "Execution time: " << duration.count() << " ms" << " or "<< duration.count()/60000.0<<" minutes "<< endl;
 
 	myProblem.terminate();
 	

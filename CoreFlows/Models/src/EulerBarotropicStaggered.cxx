@@ -295,7 +295,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
 				I = _Nmailles + idFaces[f];
 				VecGetValues(_primitiveVars,1,&I	,&q);
-				WaveVelocity = (_timeScheme == Implicit ) ? _uMax : ( _c + _uMax); 
+				WaveVelocity = (_timeScheme == Implicit ) ? _uMax : ( _c + _uMax)/2; //TODO 
 				// gradDiv //
 				double gradiv = - WaveVelocity * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[nei]] : 1.0);
 				MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
@@ -311,8 +311,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
 					//In quads it's 1/8 (instead of 1/4 given by trapezoid formula given on reference elem) since the loop on the face then on the faces'nodes implies that the integral is computed twice 
 					//TODO -> to improve & what about triangles
-					WeightsForVolums[i] =  1.0/(K.getNumberOfFaces() * _Ndim ) ; // (_Ndim == 2) ? 1.0/72.0 : 1/2.0 ;// 
-					WeightsForFaces[i] =  1/2.0; //(_Ndim == 2) ? 1.0/6.0  : 1/2.0; //
+					WeightsForVolums[i] =  (_Ndim==2) ? 1/(K.getNumberOfFaces() *2 ) : 1/2.0 ; // (_Ndim == 2) ? 1.0/72.0 : 1/2.0 ;// 
+					WeightsForFaces[i] = 1/_Ndim ; //(_Ndim == 2) ? 1.0/6.0  : 1/2.0; //
 				}
 				/* if (_Ndim == 2){ 
 					IntegrationNodes[Facef.getNumberOfNodes()] = Facef.getBarryCenter() ;
@@ -456,7 +456,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 			double rho_sigma, q;
 			VecGetValues(_DualDensity, 1,&j, &rho_sigma);
 			VecGetValues(_primitiveVars,1,&IndexFace,&q);
-			double WaveVelocity = (_timeScheme == Implicit ) ? abs(q/(rho_sigma * 2.0)) + _c :  ( abs(q/rho_sigma) + _c ); ///2.0 ; 
+			double WaveVelocity = (_timeScheme == Implicit ) ? abs(q/(rho_sigma * 2.0)) + _c :  ( abs(q/rho_sigma) + _c )/2.0 ; //TODO 1/2
 			MatSetValue(_A, idCells[0], idCells[0], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 
 			MatSetValue(_A, idCells[0], idCells[1],   WaveVelocity * Fj.getMeasure(), ADD_VALUES );  
 			MatSetValue(_A, idCells[1], idCells[1], - WaveVelocity * Fj.getMeasure(), ADD_VALUES ); 

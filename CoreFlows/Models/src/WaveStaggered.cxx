@@ -1233,10 +1233,10 @@ std::vector<double> WaveStaggered::ErrorVelocity(const std::vector<double> &Exac
 		}
 	}
 	std::vector<double> Error(1 + 2*(_Ndim -1));
-	Error[0] = error_at_face;
+	Error[0] = sqrt(error_at_face);
 	if (_Ndim ==2){
-		Error[1] = error_at_cellx;
-		Error[2] = error_at_celly;
+		Error[1] = sqrt(error_at_cellx);
+		Error[2] = sqrt(error_at_celly);
 	}
 	return Error;
 }

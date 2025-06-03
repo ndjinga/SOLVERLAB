@@ -11,16 +11,19 @@ import numpy as np
 
 RHO_b = 2
 GAMMA = 2
-C_b = np.sqrt(GAMMA * pow(RHO_b, GAMMA-1) ) 
+C_b = np.sqrt(GAMMA * RHO_b**(GAMMA-1) )  
 M_REF = 1e-4
 KAPPA = 1
 def EulerBarotropicStaggered_2DCylinderDeflection(n):
 	spaceDim = 2;
 	# Prepare for the mesh
 	print("Building mesh " );
-	nr = 5*n
-	ntheta = 16*n
-	inputfile="/volatile/catB/esteban/Solverlab/INSTALL/share/examples/resources/AnnulusSpiderWeb"+ str(nr)+"x" +str(ntheta)+".med"
+	if (n==0.5):
+		inputfile="/volatile/catB/esteban/Solverlab/INSTALL/share/examples/resources/AnnulusSpiderWeb5x8.med"
+	else : 
+		nr = 5*n
+		ntheta = 16*n
+		inputfile="/volatile/catB/esteban/Solverlab/INSTALL/share/examples/resources/AnnulusSpiderWeb"+ str(nr)+"x" +str(ntheta)+".med"
 	r0 = 0.8
 	r1 = 6
 
@@ -30,7 +33,7 @@ def EulerBarotropicStaggered_2DCylinderDeflection(n):
 	# Prepare for the initial condition
 	# set the boundary conditions
 	def ExactStationnaryVelocity(r, theta, r1, r0):
-		return np.array([M_REF * C_b * r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * math.cos(2*theta)),  r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * math.sin(2*theta))])
+		return np.array([M_REF * C_b * r1*r1/(r1*r1 -r0*r0)*(1 - r0*r0/(r*r) * math.cos(2*theta)), M_REF * C_b *  r1*r1/(r1*r1 -r0*r0)*(- r0*r0/(r*r) * math.sin(2*theta))])
 	def initialDensity(x,y):
 		return RHO_b
 	def initialVelocity(x,y):
@@ -64,7 +67,10 @@ def EulerBarotropicStaggered_2DCylinderDeflection(n):
 			vec_normal_sigma[1] *= -1
 		myProblem.setOrientation(j,vec_normal_sigma)
 
-		ExactVelocity[j] = np.dot(ExactStationnaryVelocity( np.sqrt( Fj.x()**2 + Fj.y()**2 ), np.arctan(Fj.y()/Fj.x()), r1, r0),vec_normal_sigma ) 
+		theta = np.arctan2(Fj.y(), Fj.x())
+		if theta < 0:
+			theta += 2*np.pi
+		ExactVelocity[j] = np.dot(ExactStationnaryVelocity( np.sqrt( Fj.x()**2 + Fj.y()**2 ), theta, r1, r0),vec_normal_sigma ) 
 		Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y()) 
 		
 		if(Fj.getNumberOfCells()==2):
@@ -99,7 +105,7 @@ def EulerBarotropicStaggered_2DCylinderDeflection(n):
 	MaxNbOfTimeStep = 1000000	;
 	cfl = 100;
 	precision = 1e-8;
-	freqSave = 100;
+	freqSave = 300;
 	maxTime = 50;
 
 
@@ -136,24 +142,48 @@ def EulerBarotropicStaggered_2DCylinderDeflection(n):
 	normL2cellsy = normL2[2]
 	return [sizeMesh, normL2faces, normL2cellsx, normL2cellsy]
 
-if __name__ == """__main__""":
+if __name__ == "__main__":
 	NormL2faces = []
 	NormL2cellsx = []
 	NormL2cellsy = []
 	sizeMesh = []
-	for i in range(5):
+	for i in range(-1,2):
 		N = 2**i
+		print(N)
 		result = EulerBarotropicStaggered_2DCylinderDeflection(N)
-		print("mesh size = ", result[0], "L2 error on velocity at infinity at FACES= ", result[1], "L2 error on velocity at infinity at CELLS= ", result[2])
+		print("mesh size = ", result[0], "L2 error on velocity at infinity at FACES= ", result[1], "L2 error on velocity X at infinity at CELLS= ", result[2], "L2 error on velocity Y at infinity at CELLS= ", result[3])
 		sizeMesh.append(result[0])
 		NormL2faces.append(result[1])
 		NormL2cellsx.append(result[2])
 		NormL2cellsy.append(result[3])
+	# Calculs des ordres de convergence
+	orders_faces = []
+	orders_cellsx = []
+	orders_cellsy = []
+	for i in range(1, len(sizeMesh)):
+		ratio = sizeMesh[i] / sizeMesh[i-1]
+		orders_faces.append(np.log(NormL2faces[i-1] / NormL2faces[i]) / np.log(ratio))
+		orders_cellsx.append(np.log(NormL2cellsx[i-1] / NormL2cellsx[i]) / np.log(ratio))
+		orders_cellsy.append(np.log(NormL2cellsy[i-1] / NormL2cellsy[i]) / np.log(ratio))
+
+		print(f"Order (faces):   {orders_faces[-1]:.2f} between mesh {sizeMesh[i-1]} and {sizeMesh[i]}")
+		print(f"Order (cells x): {orders_cellsx[-1]:.2f} between mesh {sizeMesh[i-1]} and {sizeMesh[i]}")
+		print(f"Order (cells y): {orders_cellsy[-1]:.2f} between mesh {sizeMesh[i-1]} and {sizeMesh[i]}")
 	plt.figure()
 	plt.loglog(sizeMesh, NormL2cellsx,label = "L2 error on velocity X component at CELLS")
 	plt.loglog(sizeMesh, NormL2cellsy,label = "L2 error on velocity Y component at CELLS")
 	plt.loglog(sizeMesh, NormL2faces,label = "L2 error on velocity infty at FACES")
 	plt.loglog(sizeMesh, sizeMesh,label = "order 1")
+	plt.loglog(sizeMesh, [e * (sizeMesh[0]/s)**2 for s, e in zip(sizeMesh, NormL2faces)], '--', label = "order 2")
+	mean_order_x = np.mean(orders_cellsx)
+	plt.text(sizeMesh[0], NormL2cellsx[0]*0.5, f" order x: {mean_order_x:.2f}", fontsize=10)
+
+	mean_order_y = np.mean(orders_cellsy)
+	plt.text(sizeMesh[0], NormL2cellsy[0]*0.3, f" order y: {mean_order_y:.2f}", fontsize=10)
+
+	mean_order_faces = np.mean(orders_faces)
+	plt.text(sizeMesh[0], NormL2faces[0]*0.1, f"order faces: {mean_order_faces:.2f}", fontsize=10)
+
 	plt.legend()
 	plt.title("error on the stationnary velocity")
 	plt.savefig("error on the stationnary velocity")
