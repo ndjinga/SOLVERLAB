@@ -312,20 +312,18 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					//In quads it's 1/8 (instead of 1/4 given by trapezoid formula given on reference elem) since the loop on the face then on the faces'nodes implies that the integral is computed twice 
 					//TODO -> to improve & what about triangles
 					WeightsForVolums[i] =  (_Ndim==2) ? 1/(K.getNumberOfFaces() *2 ) : 1/2.0 ; // (_Ndim == 2) ? 1.0/72.0 : 1/2.0 ;// 
-					WeightsForFaces[i] = 1/_Ndim ; //(_Ndim == 2) ? 1.0/6.0  : 1/2.0; //
+					WeightsForFaces[i] = 1.0/_Ndim ; //(_Ndim == 2) ? 1.0/6.0  : 1/2.0; //
 				}
 				/* if (_Ndim == 2){ 
 					IntegrationNodes[Facef.getNumberOfNodes()] = Facef.getBarryCenter() ;
 					WeightsForVolums[Facef.getNumberOfNodes()] = 1.0/9.0  ;
 					WeightsForFaces[Facef.getNumberOfNodes()] = 4.0/6.0  ;
 				} */
-				double inte = 0;
 				for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
 					std::vector<double> MomentumRT_in_Xf = MomentumRaviartThomas_at_point_X(K, idCells[nei], IntegrationNodes[inteNode] ); 
 					std::vector<double> qtensorielq = TensorProduct(MomentumRT_in_Xf, MomentumRT_in_Xf);
 					std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 
 					Convection +=  WeightsForVolums[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * 1.0/rho * Contraction(qtensorielq, GradientPsi_j_in_Xf); 	
-					inte +=WeightsForVolums[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * 1.0/rho * Contraction(qtensorielq, GradientPsi_j_in_Xf); 
 				}
 				
 				//************* (_Ndim-1)-dimensional terms *************//
@@ -343,7 +341,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					rhoMean.push_back( rhoExt );
 				}
 				if (IsfInterior || IsfPeriodicTwin){
-					double p = 0;
 					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
 						std::vector<double> jumpPsi(_Ndim, 0.0);
 						std::vector<double> meanRhoU(_Ndim, 0.0);
@@ -365,14 +362,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						for (int ndim =0; ndim < _Ndim; ndim ++ )
 							dotprod  += jumpPsi[ndim] * meanRhoU[ndim] * ( ((idFaces[f] == j) || ((it != _FacePeriodicMap.end()) && it->first == j) ) ? 1.0/2.0 : 1.0 ) ; 	
 						Convection -= Facef.getMeasure() * q* getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) * dotprod * WeightsForFaces[nei]; 
-						p+=	Facef.getMeasure() * q* getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) * dotprod * WeightsForFaces[nei]; 
 					}
 				}
 				else if (IsfWall && (idFaces[f] == j )){
 					Convection -= _compressibleFluid->vitesseSon(rho) * Facef.getMeasure() * q ;
 					if (_timeScheme == Implicit){
 						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * _compressibleFluid->vitesseSon(rho), ADD_VALUES ); 
-						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * q/ _compressibleFluid->vitesseSon(rho), ADD_VALUES ); //TODO only works for a =1 , gamma =2	
+						//MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * q/ _compressibleFluid->vitesseSon(rho), ADD_VALUES ); //TODO only works for a =1 , gamma =2	
 					}
 				}
 					
@@ -386,13 +382,10 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					double U_Plus =  std::max(u_b, 0.0);
 					double U_Plus_C_Plus =  std::max(lambdaPlus, 0.0);
 				
-				
 					VecGetValues(_primitiveVars,1,&idCellsOfFacef[0],&rhoInt);	
 					VecGetValues(_primitiveVars,1,&I,&q);	
 					std::vector<double> tangent(_Ndim,0.0), lambdaPlusVector(_Ndim,0.0), lambdaMinusVector(_Ndim,0.0), MomentumMass(_Ndim,0.0);
-					if (_Ndim ==1){
-						tangent[0] =0;
-					}
+					if (_Ndim ==1) tangent[0] =0;
 					else if (_Ndim ==2){
 						tangent[0] = -_vec_sigma.find(idFaces[f])->second[1] * getOrientation(idFaces[f], interiorCell);
 						tangent[1] =  _vec_sigma.find(idFaces[f])->second[0] * getOrientation(idFaces[f], interiorCell); 

@@ -103,13 +103,13 @@ def EulerBarotropicStaggered_2DCylinderDeflection(n):
 
     #parameters calculation
 	MaxNbOfTimeStep = 1000000	;
-	cfl = 100;
+	cfl = 0.99;
 	precision = 1e-8;
-	freqSave = 300;
+	freqSave = 10000;
 	maxTime = 50;
 
 
-	myProblem.setTimeScheme(svl.Implicit);
+	myProblem.setTimeScheme(svl.Explicit);
 	myProblem.setLinearSolver(svl.GMRES, svl.LU, 60);
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
