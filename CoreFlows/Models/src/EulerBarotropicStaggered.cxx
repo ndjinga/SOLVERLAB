@@ -311,7 +311,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
 					//In quads it's 1/8 (instead of 1/4 given by trapezoid formula given on reference elem) since the loop on the face then on the faces'nodes implies that the integral is computed twice 
 					//TODO -> to improve & what about triangles
-					WeightsForVolums[i] =  (_Ndim==2) ? 1/(K.getNumberOfFaces() *2 ) : 1/2.0 ; // (_Ndim == 2) ? 1.0/72.0 : 1/2.0 ;// 
+					WeightsForVolums[i] =  (_Ndim==2) ? 1.0/(K.getNumberOfFaces() *2.0 ) : 1.0/2.0 ; // (_Ndim == 2) ? 1.0/72.0 : 1/2.0 ;// 
 					WeightsForFaces[i] = 1.0/_Ndim ; //(_Ndim == 2) ? 1.0/6.0  : 1/2.0; //
 				}
 				/* if (_Ndim == 2){ 
@@ -353,7 +353,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Facej_physical_on_K_ncell,j, IntegrationNodes[inteNode] ); 
 							std::vector<double> MomentumRT_in_Xf = MomentumRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
 							for (int ndim =0; ndim < _Ndim; ndim ++ ){
-								jumpPsi[ndim] += Psi_j_in_Xf[ndim]*getOrientation( idFaces[f],Neibourg_of_f)  ; //* ( ((it != _FacePeriodicMap.end()) && it->first == j) || IsfInterior ? getOrientation( idFaces[f],Neibourg_of_f) : 1.0 ) ;  
+								jumpPsi[ndim] += Psi_j_in_Xf[ndim]*getOrientation( idFaces[f],Neibourg_of_f)  ;   
 								meanRhoU[ndim] += MomentumRT_in_Xf[ndim]/2.0 * 1.0/rhoMean[ncell];
 							}
 						}
@@ -362,6 +362,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						for (int ndim =0; ndim < _Ndim; ndim ++ )
 							dotprod  += jumpPsi[ndim] * meanRhoU[ndim] * ( ((idFaces[f] == j) || ((it != _FacePeriodicMap.end()) && it->first == j) ) ? 1.0/2.0 : 1.0 ) ; 	
 						Convection -= Facef.getMeasure() * q* getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) * dotprod * WeightsForFaces[nei]; 
+
 					}
 				}
 				else if (IsfWall && (idFaces[f] == j )){
@@ -429,7 +430,6 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					dotprodMomentumQ_Int += Momentum_Tangent_Q_int;
 					Convection 			 -= dotprodPhysicalFlux + dotprodMomentumRho_b + dotprodMomentumQ_b + dotprodMomentumRho_Int + dotprodMomentumQ_Int; 
 		
-
 					if (_timeScheme == Implicit){
 						MatSetValue(_JacobianMatrix, IndexFace, idCells[0], dotprodMomentumRho_Int, ADD_VALUES ); 
 						MatSetValue(_JacobianMatrix, IndexFace, I, dotprodMomentumQ_Int, ADD_VALUES );  

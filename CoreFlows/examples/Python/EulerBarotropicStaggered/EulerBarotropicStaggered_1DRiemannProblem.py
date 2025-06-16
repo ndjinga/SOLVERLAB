@@ -16,8 +16,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
     # Prepare for the mesh
 	print("Building mesh " );
 	xinf = 0 ;
-	xsup=1
-	nx=500;
+	xsup= 1
+	nx=200;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -36,46 +36,44 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	initialVelocity_Right = -3
 
 	def initialDensity(x):
-		#return 20
 		if x < discontinuity:
 			return initialDensity_Left
 		elif discontinuity < x:
 			return initialDensity_Right
 
-	def initialVelocity(x): # in order to test th wall boundary cond
-		#return 1 + 1/8 * math.exp( -pow(x-0.5,2)*100)
+	def initialVelocity(x): 
 		if x < discontinuity:
 			return initialVelocity_Left
 		elif discontinuity <= x:
 			return initialVelocity_Right
+	
 
 	Density0 = svl.Field("Density", svl.CELLS, M, 1);
 	Momentum0 = svl.Field("Momentum", svl.FACES, M, 1); 
 	wallDensityMap = {};
 	wallVelocityMap = {}; 
+	wallVelocityVector = np.zeros(1)
+	vec_normal_sigma = np.zeros(1)
 
 	for j in range( M.getNumberOfFaces() ):
 		Fj = M.getFace(j);
-		idCells = Fj.getCellsId();
-		vec_normal_sigma = np.zeros(1)
-		
-		Ctemp1 = M.getCell(idCells[0]);
+		idCells = Fj.getCellsId()
+		Ctemp1 = M.getCell(idCells[0])
 		for l in range( Ctemp1.getNumberOfFaces()) :
 			if (j == Ctemp1.getFacesId()[l]):
 				for idim in range(spaceDim):
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 		
+		Density0[idCells[0]] = initialDensity(Ctemp1.x()) ;
 		if(Fj.getNumberOfCells()==2):	
 			myProblem.setOrientation(j,vec_normal_sigma)
 			myProblem.setInteriorIndex(j);
 			Ctemp2 = M.getCell(idCells[1]);
-			Density0[idCells[0]] = initialDensity(Ctemp1.x()) ;
 			Density0[idCells[1]] = initialDensity(Ctemp2.x());
-			Momentum0[j] = initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Ctemp2.x()))/2.0 #TODO times normal sigma
+			Momentum0[j] = initialVelocity(Fj.x() ) * (initialDensity(Ctemp1.x()) + initialDensity(Ctemp2.x()))/2.0 #TODO times normal sigma
+	
 		elif (Fj.getNumberOfCells()==1):
-			wallVelocityVector = np.zeros(1)
-			Density0[idCells[0]] = initialDensity(Ctemp1.x());
-			Momentum0[j] = initialVelocity(Fj.x()) * (initialDensity(Ctemp1.x()) + initialDensity(Fj.x()))/2.0 #TODO times normal sigma
+			Momentum0[j] = initialVelocity(Fj.x())* (initialDensity(Ctemp1.x()) + initialDensity(Fj.x()))/2.0 #TODO times normal sigma
 			# Since we plot the values of the veloccity at the faces every velocity if oriented to the right n_sigma =1
 			for idim in range(spaceDim):
 				if vec_normal_sigma[idim] < 0:	
@@ -84,7 +82,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 			myProblem.setSteggerBoundIndex(j) 
 			wallVelocityMap[j] = initialVelocity(Fj.x())
 			wallDensityMap[j] = initialDensity(Fj.x()) ;
-			wallVelocityVector[0] = initialVelocity(Fj.x()) 
+			wallVelocityVector[0] = wallVelocityMap[j] 
 			myProblem.setboundaryVelocityVector(j, wallVelocityVector)
 		
 	myProblem.setInitialField(Density0);
@@ -93,16 +91,16 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     # set the numerical method
-	myProblem.setTimeScheme(svl.Implicit);
+	myProblem.setTimeScheme(svl.Explicit);
     
     # name of result file
 	fileName = "EulerBarotropicStaggered_1DRiemannProblem";
 
     # simulation parameters 
-	MaxNbOfTimeStep = 100000;
-	freqSave = 300;
+	MaxNbOfTimeStep = 1;
+	freqSave = 1;
 	cfl = 1
-	maxTime = 0.03;
+	maxTime = 0.2;
 	precision = 1e-10;
 
 	myProblem.setCFL(cfl);
@@ -135,72 +133,10 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	if not os.path.exists(fileName):
 		os.mkdir(fileName)
 
-	""" i = 1 #freqSave
-	while time[i] <= Tmax:
-		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
-		velocitydata.columns =['x','velocity', 'index']
-		Densitydata = pd.read_csv(fileName + "_Density_" + str(i)+ ".csv", sep='\s+')
-		Densitydata.columns =['x','Density', 'index']
-		
-		myEOS = myProblem.getBarotropicEOS(0)	
-		initialPressure_Left  = myEOS.getPressure(initialDensity_Left)
-		initialPressure_Right  = myEOS.getPressure(initialDensity_Right)  
-		a = myEOS.constante("a");
-		gamma = myEOS.constante("gamma");
-		exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, time[i], gamma, a , [initialPressure_Left , initialVelocity_Left ], [ initialPressure_Right, initialVelocity_Right ], (xinf+xsup)/2, nx)
-
-		plt.figure()
-		plt.subplot(121)
-		plt.plot(Densitydata['x'], exactDensity,  label = "exact Density")
-		plt.plot(Densitydata['x'], Densitydata['Density'],  label = "Density results")
-		plt.legend()
-		plt.subplot(122) 
-		plt.plot(Densitydata['x'], exactVelocity,label = "exact velocity")
-		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
-		plt.legend()
-		plt.title("Data at time step"+str(i)+"t ="+str(time[i]))
-		plt.savefig(fileName + "/Data at time step"+str(i))
-		i+= freqSave """
-
-
-	
-	""" #print only at final time 
-	velocitydata = pd.read_csv(fileName + "_Velocity_" + str(len(time) -1)+ ".csv", sep='\s+')
-	#velocitydata.columns =['x','velocityx', 'velocityy', 'velocityz', 'index']
-	velocitydata.columns =['x','velocity', 'index']
-	Densitydata = pd.read_csv(fileName + "_Density_" + str(len(time) -1)+ ".csv", sep='\s+')
-	Densitydata.columns =['x','Density', 'index']
-	
-	print(velocitydata)
-	myEOS = myProblem.getBarotropicEOS(0)	
-	initialPressure_Left  = myEOS.getPressure(initialDensity_Left)
-	initialPressure_Right  = myEOS.getPressure(initialDensity_Right)  
-	a = myEOS.constante("a");
-	gamma = myEOS.constante("gamma");
-	exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, gamma, a , [initialPressure_Left , initialVelocity_Left ], [ initialPressure_Right, initialVelocity_Right ], (xinf+xsup)/2, nx)
-
-	plt.figure()
-	plt.subplot(121)
-	plt.plot(Densitydata['x'], exactDensity,  label = "exact Density")
-	plt.plot(Densitydata['x'], Densitydata['Density'],  label = "density results")
-	plt.legend()
-	plt.subplot(122)
-	plt.plot(Densitydata['x'], exactVelocity,label = "exact velocity")
-	plt.plot(Densitydata['x'], velocitydata['velocityx'],  label = "velocity results")
-	plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
-	plt.legend()
-	plt.title("Data at time step"+str(len(time) -1)+"t ="+str(Tmax))
-	plt.savefig(fileName + "/Data at time step"+str(len(time) -1)) """
-
-
-
-	# Paramètres utilisateur
-	
-	timestep_index = -1  # dernier pas de temps
+	# Print only at final time
+	timestep_index = -1  
 	Density_file = f"{fileName}_Density_{str(len(time)-1)}.csv"
 	velocity_file = f"{fileName}_Velocity_{str(len(time) -1)}.csv"
-
-	# Lecture des données
 	try:
 		velocitydata = pd.read_csv(velocity_file, sep=r'\s+', engine='python', names=['x', 'velocity', 'index'], skiprows=1)
 		Densitydata = pd.read_csv(Density_file, sep=r'\s+', engine='python', names=['x', 'Density', 'index'], skiprows=1)
@@ -208,9 +144,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 		print(f"Fichiers non trouvés : {velocity_file} ou {Density_file}")
 		exit()
 
-	# Tracé
+	# Trace
 	plt.figure(figsize=(12, 5))
-
 	myEOS = myProblem.getBarotropicEOS(0)	
 	initialPressure_Left  = myEOS.getPressure(initialDensity_Left)
 	initialPressure_Right  = myEOS.getPressure(initialDensity_Right)  
@@ -220,7 +155,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 	plt.subplot(1, 2, 1)
 	plt.plot(Densitydata['x'], Densitydata['Density'], label="Density results", color='tab:blue')
-	plt.plot(Densitydata['x'], exactDensity, label="Exact density", color='tab:green')
+	#plt.plot(Densitydata['x'], exactDensity, label="Exact density", color='tab:green')
 	plt.xlabel("x")
 	plt.ylabel("Density")
 	plt.title("Density profil")
@@ -229,7 +164,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 	plt.subplot(1, 2, 2)
 	plt.plot(velocitydata['x'], velocitydata['velocity'], label="Velocity results", color='tab:blue')
-	plt.plot(Densitydata['x'], exactVelocity, label="Exact velocity", color='tab:green')
+	#plt.plot(Densitydata['x'], exactVelocity, label="Exact velocity", color='tab:green')
 	plt.xlabel("x")
 	plt.ylabel("Velocity")
 	plt.title("Velocity profil")
@@ -248,3 +183,30 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 if __name__ == """__main__""":
     EulerBarotropicStaggered_1DRiemannProblem()
+
+""" i = 0#freqSave
+	while time[i] <= Tmax:
+		velocitydata = pd.read_csv(fileName + "_Velocity_" + str(i)+ ".csv", sep='\s+')
+		velocitydata.columns =['x','velocity', 'index']
+		Densitydata = pd.read_csv(fileName + "_Density_" + str(i)+ ".csv", sep='\s+')
+		Densitydata.columns =['x','Density', 'index']
+		
+		myEOS = myProblem.getBarotropicEOS(0)	
+		initialPressure_Left  = myEOS.getPressure(initialDensity_Left)
+		initialPressure_Right  = myEOS.getPressure(initialDensity_Right)  
+		a = myEOS.constante("a");
+		gamma = myEOS.constante("gamma");
+		#exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, time[i], gamma, a , [initialPressure_Left , initialVelocity_Left ], [ initialPressure_Right, initialVelocity_Right ], (xinf+xsup)/2, nx)
+
+		plt.figure()
+		plt.subplot(121)
+		#plt.plot(Densitydata['x'], exactDensity,  label = "exact Density")
+		plt.plot(Densitydata['x'], Densitydata['Density'],  label = "Density results")
+		plt.legend()
+		plt.subplot(122) 
+		#plt.plot(Densitydata['x'], exactVelocity,label = "exact velocity")
+		plt.plot(velocitydata['x'], velocitydata['velocity'],  label = "velocity results")
+		plt.legend()
+		plt.title("Data at time step"+str(i)+"t ="+str(time[i]))
+		plt.savefig(fileName + "/Data at time step"+str(i))
+		i+= freqSave """

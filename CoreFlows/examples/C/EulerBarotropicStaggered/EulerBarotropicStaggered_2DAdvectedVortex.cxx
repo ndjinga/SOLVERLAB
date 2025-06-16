@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <chrono>
 
-# define M_ref 1e-2
+# define M_ref 1 //1e-2
 # define rho0  2
 # define u0  M_ref * sqrt(2*rho0)
 # define alpha 2
@@ -35,34 +35,22 @@ std::vector<double> MomentumVortex(double x, double y ){
 	double expr = exp( - alpha*alpha/(1-rbar*rbar) );
 	double umax =  2 * alpha * rbarmax / (1-rbarmax2) * exp( - alpha*alpha/(1-rbarmax2) ) ;
 	double rho = rho0 * (1 - pow(M_ref * expr/umax,2) ) ;
-	vec[0] =  rho * (y-0.5)  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax) ;
-	vec[1] = -rho * (x-0.5)  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax); 
+	vec[0] = rho0 *u0 + rho * (y-0.5)  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax) ;
+	vec[1] = rho0 *u0 - rho * (x-0.5)  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax); 
 	return vec;
 }
 
-//******************** LOW-MACH WAVE *****************//
-double rhoLowMach( double xbar){  return rho0* (1 + M_ref * exp(1.0 - 1.0/(1-pow(xbar,2))) ) ; }
-
-std::vector<double> MomentumLowMach(double xbar ){
-	std::vector<double> vec(2,0.0); 
-	double rhoLow = rho0* (1 + M_ref * exp(1.0 - 1.0/(1-pow(xbar,2))) );
-	double du = 2 *( sqrt( 2*rhoLow ) - sqrt(2*rho0) );
-	double drho = rho0 *M_ref * exp(1.0 - 1.0/(1.0-pow(xbar,2))) ;
-	vec[0] = rho0 * du + drho * u0 + drho *du;
-	return vec;
-}
 
 //******************** INITIAL CONDITION*****************//
 double InitialDensity( double x, double y ){
-	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) return rhoVortex( x, y); 
-	if ( fabs(x/0.05)<1 )  						  return rhoLowMach(x/0.05); 
+	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) return rhoVortex( x, y);
 	else                       					  return rho0;
 }
 std::vector<double> InitialMomentum(double x, double y ){
 	std::vector<double> vec(2,0.0); 
-	//vec[0] = rho0*u0;
+	vec[0] = rho0 *u0 ;//rho0*u0;
+	vec[1] = rho0 *u0 ;//rho0*u0;
 	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return MomentumVortex( x, y); 
-	if ( fabs(x/0.05)<1 )   						return MomentumLowMach( x/0.05); 
 	else 											return vec;
 }
 
@@ -89,12 +77,12 @@ int main(int argc, char** argv)
 	cout << "Building mesh" << endl;
 	cout << "Construction of a cartesian mesh" << endl;
 
-	double infx = -0.1;
-	double supx = 1.1;
+	double infx = 0.0;
+	double supx = 1.0;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx =120;
-	int ny =50;
+	int nx =40;
+	int ny =40;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -111,7 +99,7 @@ int main(int argc, char** argv)
 	std::vector<double> wallVelocityVector(spaceDim);
 
 
-	myProblem.setPeriodicFaces(M, 'x', nx, infx, supx); 
+	//myProblem.setPeriodicFaces(M, 'x', nx, infx, supx); 
 
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -126,16 +114,13 @@ int main(int argc, char** argv)
 		}
 		myProblem.setOrientation(j,vec_normal_sigma);
 		Density0[idCells[0]] = InitialDensity(Ctemp1.x(),Ctemp1.y());
+		Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
 		if(Fj.getNumberOfCells()==2 ){ 
-			Cell Ctemp2 = M.getCell(idCells[1]);
 			myProblem.setInteriorIndex(j);
-			Density0[idCells[1]] = InitialDensity(Ctemp2.x(),Ctemp2.y());
-			Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
+			Density0[idCells[1]] = InitialDensity( M.getCell(idCells[1]).x(),M.getCell(idCells[1]).y() );
 
-			//cout <<"Fj = "<< Fj.x() <<" " <<Fj.y()<<" q = "<< Momentum0[j]<<endl;
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
-			Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
 			// if periodic check that the boundary face is the computed (avoid passing twice ) 
 			if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 				myProblem.setSteggerBoundIndex(j);	
@@ -153,7 +138,7 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 	
 	// set the numerical method
-	myProblem.setTimeScheme(Implicit);
+	myProblem.setTimeScheme(Explicit);
 	myProblem.setLinearSolver(GMRES, LU, 70);
 	
 	// name of result file
@@ -161,8 +146,8 @@ int main(int argc, char** argv)
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000;
-	int freqSave = 2;
-	double cfl = 10;
+	int freqSave = 50;
+	double cfl = 1;
 	double maxTime = 3.5;
 	double precision = 1e-9;
 
