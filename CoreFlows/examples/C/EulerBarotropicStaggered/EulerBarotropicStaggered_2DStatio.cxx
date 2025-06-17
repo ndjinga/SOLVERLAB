@@ -118,11 +118,11 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DStatio";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 1	;
+	unsigned MaxNbOfTimeStep = 10	;
 	int freqSave = 1		;
 	double cfl = 0.99;
 	double maxTime = 50;
-	double precision = 1e-9;
+	double precision = 1e-12;
 
 	myProblem.setCFL(cfl);
 	myProblem.setPrecision(precision);

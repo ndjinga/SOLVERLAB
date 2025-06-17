@@ -60,7 +60,6 @@ double InitialDensity( double x, double y ){
 }
 std::vector<double> InitialMomentum(double x, double y ){
 	std::vector<double> vec(2,0.0); 
-	//vec[0] = rho0*u0;
 	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return MomentumVortex( x, y); 
 	if ( fabs(x/0.05)<1 )   						return MomentumLowMach( x/0.05); 
 	else 											return vec;
@@ -78,8 +77,7 @@ double dotprod(std::vector<double> vector, std::vector<double> normal){
 
 
 
-int main(int argc, char** argv)
-{	
+int main(int argc, char** argv){	
 	auto start = std::chrono::high_resolution_clock::now();
 	
 	//Preprocessing: mesh and group creation
@@ -93,8 +91,8 @@ int main(int argc, char** argv)
 	double supx = 1.1;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx =120;
-	int ny =50;
+	int nx =200;
+	int ny =200;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -153,7 +151,7 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 	
 	// set the numerical method
-	myProblem.setTimeScheme(Implicit);
+	myProblem.setTimeScheme(Explicit);
 	myProblem.setLinearSolver(GMRES, LU, 70);
 	
 	// name of result file
@@ -161,8 +159,8 @@ int main(int argc, char** argv)
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000;
-	int freqSave = 2;
-	double cfl = 10;
+	int freqSave = 50;
+	double cfl = 1;
 	double maxTime = 3.5;
 	double precision = 1e-9;
 

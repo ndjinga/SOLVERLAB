@@ -4,9 +4,9 @@
 #include <cstdlib>
 #include <chrono>
 
-# define M_ref 1 //1e-2
+# define M_ref 1e-2
 # define rho0  2
-# define u0  M_ref * sqrt(2*rho0)
+# define u0  20*M_ref * sqrt(2*rho0)
 # define alpha 2
 # define r0 	0.45
 # define rbarmax      sqrt(- pow(alpha,2) + sqrt(1 + pow(alpha,4)) )
@@ -24,7 +24,7 @@ double rhoVortex( double x, double y ){
 	double rbar = r/r0; 
 	double expr = exp( - pow(alpha,2)/(1-pow(rbar,2)) );
 	double umax =  2 * alpha * rbarmax / (1-rbarmax2) * exp( - alpha*alpha/(1-rbarmax2) ) ;
-	return  rho0 * (1 - pow(M_ref * expr/umax,2) ) ;
+	return  rho0;// * (1 - pow(M_ref * expr/umax,2) ) ;
 
 }
 std::vector<double> MomentumVortex(double x, double y ){
@@ -34,8 +34,8 @@ std::vector<double> MomentumVortex(double x, double y ){
 	double rbar = r/r0; 
 	double expr = exp( - alpha*alpha/(1-rbar*rbar) );
 	double umax =  2 * alpha * rbarmax / (1-rbarmax2) * exp( - alpha*alpha/(1-rbarmax2) ) ;
-	double rho = rho0 * (1 - pow(M_ref * expr/umax,2) ) ;
-	vec[0] = rho0 *u0 + rho * (y-0.5)  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax) ;
+	double rho = rho0 ;//* (1 - pow(M_ref * expr/umax,2) ) ;
+	vec[0] = -rho0 *u0 + rho * (y-0.5)  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax) ;
 	vec[1] = rho0 *u0 - rho * (x-0.5)  * u0 * 2 * alpha/r0 * expr / ( (1-rbar*rbar) * umax); 
 	return vec;
 }
@@ -48,8 +48,8 @@ double InitialDensity( double x, double y ){
 }
 std::vector<double> InitialMomentum(double x, double y ){
 	std::vector<double> vec(2,0.0); 
-	vec[0] = rho0 *u0 ;//rho0*u0;
-	vec[1] = rho0 *u0 ;//rho0*u0;
+	vec[0] = -rho0 *u0 ;
+	vec[1] = rho0 *u0 ;
 	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return MomentumVortex( x, y); 
 	else 											return vec;
 }
@@ -81,8 +81,8 @@ int main(int argc, char** argv)
 	double supx = 1.0;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx =40;
-	int ny =40;
+	int nx =100;
+	int ny =100;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 	std::vector<double> wallVelocityVector(spaceDim);
 
 
-	//myProblem.setPeriodicFaces(M, 'x', nx, infx, supx); 
+	myProblem.setPeriodicFaces(M, 'x', nx, infx, supx); 
 
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -142,12 +142,12 @@ int main(int argc, char** argv)
 	myProblem.setLinearSolver(GMRES, LU, 70);
 	
 	// name of result file
-	string fileName = "EulerBarotropicStaggered_2DVortex";
+	string fileName = "EulerBarotropicStaggered_2DAdvectedVortex";
 
 	// parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000;
+	unsigned MaxNbOfTimeStep = 1000000000;
 	int freqSave = 50;
-	double cfl = 1;
+	double cfl = 0.99	;
 	double maxTime = 3.5;
 	double precision = 1e-9;
 

@@ -361,7 +361,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 						//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
 						for (int ndim =0; ndim < _Ndim; ndim ++ )
 							dotprod  += jumpPsi[ndim] * meanRhoU[ndim] * ( ((idFaces[f] == j) || ((it != _FacePeriodicMap.end()) && it->first == j) ) ? 1.0/2.0 : 1.0 ) ; 	
-						Convection -= Facef.getMeasure() * q* getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) * dotprod * WeightsForFaces[nei]; 
+						Convection -= Facef.getMeasure() * q* dotprod * WeightsForFaces[inteNode]; // TODO?  *getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) 
 
 					}
 				}
