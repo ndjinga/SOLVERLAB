@@ -296,8 +296,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 				I = _Nmailles + idFaces[f];
 				VecGetValues(_primitiveVars,1,&I	,&q);
 				WaveVelocity = (_timeScheme == Implicit ) ? _uMax : ( _c + _uMax)/2; //TODO 
-				// gradDiv //
-				double gradiv = - WaveVelocity * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[nei]] : 1.0);
+				// gradDiv //TODO what about metric on grad div
+				double gradiv = - WaveVelocity * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /((_Ndim==2 ) ?Fj_physical.getMeasure() : 1.0) ;///( (_Ndim==2 )? _perimeters[idCells[nei]] : 1.0);
 				MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
 
 				//************* _Ndim-dimensional terms *************//

@@ -91,8 +91,8 @@ int main(int argc, char** argv){
 	double supx = 1.1;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx =200;
-	int ny =200;
+	int nx =300;
+	int ny =60;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -129,8 +129,6 @@ int main(int argc, char** argv){
 			myProblem.setInteriorIndex(j);
 			Density0[idCells[1]] = InitialDensity(Ctemp2.x(),Ctemp2.y());
 			Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
-
-			//cout <<"Fj = "<< Fj.x() <<" " <<Fj.y()<<" q = "<< Momentum0[j]<<endl;
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
 			Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
@@ -159,7 +157,7 @@ int main(int argc, char** argv){
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000;
-	int freqSave = 50;
+	int freqSave = 20;
 	double cfl = 1;
 	double maxTime = 3.5;
 	double precision = 1e-9;
