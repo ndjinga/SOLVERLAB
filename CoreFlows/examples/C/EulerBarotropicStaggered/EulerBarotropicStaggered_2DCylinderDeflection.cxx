@@ -132,9 +132,9 @@ int main(int argc, char** argv)
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 10000000	;
-	double cfl = 100;
+	double cfl = 20;
 	double precision = 1e-11;
-	int freqSave = 500;
+	int freqSave = 5;
 	double maxTime = 50;
 
 

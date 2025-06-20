@@ -302,17 +302,17 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 
 				//************* _Ndim-dimensional terms *************//
 
-				int nbInteNodes = Facef.getNumberOfNodes();// + (_Ndim -1);
+				int nbInteNodes = (K.getNumberOfFaces() == 4) ? Facef.getNumberOfNodes() : 1 ;  // + (_Ndim -1);
 				std::vector< Point > IntegrationNodes(nbInteNodes); 
 				std::vector< double > WeightsForVolums(nbInteNodes);
 				std::vector< double > WeightsForFaces(nbInteNodes );
 				
-				for (int i =0; i <Facef.getNumberOfNodes(); i++){
-					IntegrationNodes[i] = _mesh.getNode( Facef.getNodesId()[i] ).getPoint();
+				for (int i =0; i <nbInteNodes; i++){
+					IntegrationNodes[i] = (K.getNumberOfFaces() == 4) ? _mesh.getNode( Facef.getNodesId()[i] ).getPoint() :  Facef.getBarryCenter() ;
 					//In quads it's 1/8 (instead of 1/4 given by trapezoid formula given on reference elem) since the loop on the face then on the faces'nodes implies that the integral is computed twice 
 					//TODO -> to improve & what about triangles
 					WeightsForVolums[i] =  (_Ndim==2) ? 1.0/(K.getNumberOfFaces() *2.0 ) : 1.0/2.0 ; // (_Ndim == 2) ? 1.0/72.0 : 1/2.0 ;// 
-					WeightsForFaces[i] = 1.0/_Ndim ; //(_Ndim == 2) ? 1.0/6.0  : 1/2.0; //
+					WeightsForFaces[i] =  ((K.getNumberOfFaces() == 4)|| (K.getNumberOfFaces() == 2) ) ? 1.0/_Ndim : 1.0  ; //(_Ndim == 2) ? 1.0/6.0  : 1/2.0; //
 				}
 				/* if (_Ndim == 2){ 
 					IntegrationNodes[Facef.getNumberOfNodes()] = Facef.getBarryCenter() ;
@@ -348,8 +348,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							Cell Neibourg_of_f    = _mesh.getCell(idCellsOfFacef[ncell]);
 							Face Facef_physical   =   (_FacePeriodicMap.find(idFaces[f]) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(idFaces[f])->second ):  Facef;
 							Face Facej_physical_on_K_ncell =   (_FacePeriodicMap.find(j) != _FacePeriodicMap.end()) && idCellsOfFacef[ncell] != idCells[nei] ?  _mesh.getFace(_FacePeriodicMap.find(j)->second )         :  Fj_physical;
-							for (int i =0; i <Facef.getNumberOfNodes(); i++) //TODO change in periodic for Face_fphysicalon_K = periodic twin of j
-								IntegrationNodes[i] = _mesh.getNode( Facef_physical.getNodesId()[i] ).getPoint();
+							for (int i =0; i <nbInteNodes; i++) //TODO change in periodic for Face_fphysicalon_K = periodic twin of j
+								IntegrationNodes[i] = (K.getNumberOfFaces() == 4) ? _mesh.getNode( Facef_physical.getNodesId()[i] ).getPoint() :  Facef_physical.getBarryCenter() ; 
 							std::vector<double> Psi_j_in_Xf = PhysicalBasisFunctionRaviartThomas(Neibourg_of_f, idCellsOfFacef[ncell], Support_j, Facej_physical_on_K_ncell,j, IntegrationNodes[inteNode] ); 
 							std::vector<double> MomentumRT_in_Xf = MomentumRaviartThomas_at_point_X(Neibourg_of_f,idCellsOfFacef[ncell], IntegrationNodes[inteNode]  ); 
 							for (int ndim =0; ndim < _Ndim; ndim ++ ){
@@ -369,7 +369,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					Convection -= _compressibleFluid->vitesseSon(rho) * Facef.getMeasure() * q ;
 					if (_timeScheme == Implicit){
 						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * _compressibleFluid->vitesseSon(rho), ADD_VALUES ); 
-						//MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * q/ _compressibleFluid->vitesseSon(rho), ADD_VALUES ); //TODO only works for a =1 , gamma =2	
+						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * q/ _compressibleFluid->vitesseSon(rho), ADD_VALUES ); //TODO only works for a =1 , gamma =2	
 					}
 				}
 					

@@ -54,13 +54,13 @@ std::vector<double> MomentumLowMach(double xbar ){
 
 //******************** INITIAL CONDITION*****************//
 double InitialDensity( double x, double y ){
-	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) return rhoVortex( x, y); 
+	//if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) return rhoVortex( x, y); 
 	if ( fabs(x/0.05)<1 )  						  return rhoLowMach(x/0.05); 
 	else                       					  return rho0;
 }
 std::vector<double> InitialMomentum(double x, double y ){
 	std::vector<double> vec(2,0.0); 
-	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return MomentumVortex( x, y); 
+	//if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return MomentumVortex( x, y); 
 	if ( fabs(x/0.05)<1 )   						return MomentumLowMach( x/0.05); 
 	else 											return vec;
 }
@@ -91,8 +91,8 @@ int main(int argc, char** argv){
 	double supx = 1.1;
 	double infy = 0.0;
 	double supy = 1.0;
-	int nx =300;
-	int ny =60;
+	int nx =100;
+	int ny =2;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
