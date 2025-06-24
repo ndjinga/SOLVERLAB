@@ -41,6 +41,7 @@ std::map<int,double>  WaveStaggered::getboundaryVelocity() const {  return _boun
 
 void WaveStaggered::setWallBoundIndex(int j ){    _WallBoundFaceSet.push_back(j); }
 void WaveStaggered::setSteggerBoundIndex(int j ){ _SteggerBoundFaceSet.push_back(j); }
+void WaveStaggered::setNeumannBoundIndex(int j ){ _NeumannBoundFaceSet.push_back(j); }
 void WaveStaggered::setInteriorIndex(int j ){     _InteriorFaceSet.push_back(j);   }
 
 bool  WaveStaggered::IsFaceBoundaryNotComputedInPeriodic(int j ) {
@@ -332,6 +333,7 @@ void WaveStaggered::initialize(){
 	MatZeroEntries(_GradDivTilde);
 
 	AssembleMetricsMatrices();
+	_BasisFunctionAlreadyComputed = true;
 	if(_system)
 	{
 		cout << "Variables primitives initiales : " << endl;
@@ -943,8 +945,8 @@ std::vector<double> WaveStaggered::ReferenceBasisFunctionRaviartThomas(const int
 				Psihat[1] = Xhat.y() - 1;
 			}
 			else if (i ==1){      
-				Psihat[0] = Xhat.x();
-				Psihat[1] = Xhat.y();
+				Psihat[0] = Xhat.x(); //*sqrt(2);
+				Psihat[1] = Xhat.y(); //*sqrt(2);
 			}
 			else if (i ==2){      
 				Psihat[0] = Xhat.x()-1 ;
@@ -1048,12 +1050,13 @@ bool WaveStaggered::FindlocalBasis(const int &m,const Face &Facej, const int &j,
 	}
 	double cdot =0;
 	for (int e=0; e <_Ndim; e++)
-		cdot += PhysicalPsij[e] * _vec_sigma.find(j)->second[e]*getOrientation(j,K) ;
-	return (abs(cdot -1)< 1e-11); 
+		cdot += PhysicalPsij[e] * _vec_sigma.find(j)->second[e]*getOrientation(j,K) ;	
+	assert(fabs(cdot -1)<1e-11 ||  fabs(cdot )<1e-11 );
+	return (fabs(cdot -1)< 1e-11); 
 }
 
 
-std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, int idcell, std::vector<Cell> Support, Face Facej, int j, Point X){
+std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, int idcell, const std::vector<Cell> &Support, Face Facej, int j, Point X){
 	std::vector<double> xf;
 	xf.push_back(X.x());
 	if (_Ndim ==2) xf.push_back(X.y());
@@ -1068,25 +1071,25 @@ std::vector<double> WaveStaggered::PhysicalBasisFunctionRaviartThomas(Cell K, in
 
 		bool K_is_in_Support = false;
 		for (const auto &cell: Support){
-			if (K.x() == cell.x() && K.y() == cell.y())
-				K_is_in_Support =true;
+			if (fabs( K.x()- cell.x()) < 1e-11 && fabs( K.y()-cell.y())<1e-11 )   K_is_in_Support =true;
 		}
 		
 		for (int  m = 0; m < K.getNumberOfFaces(); m ++){
-			if ( FindlocalBasis(m, Facej, j, K,  K_Nodes) == true && K_is_in_Support == true ){
-				for (int k =0; k < _Ndim ; k++){	
-					for (int l =0; l < _Ndim ; l++)
-						PhysicalPsif_in_X[k] += getOrientation(j,K) * Facej.getMeasure()/fabs(J) * JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferenceBasisFunctionRaviartThomas(m, xToxhat(K, X, K_Nodes),  K_Nodes )[l] ;
+			if (K_is_in_Support){
+				if ( FindlocalBasis(m, Facej, j, K,  K_Nodes)   ){
+					for (int k =0; k < _Ndim ; k++){	
+						for (int l =0; l < _Ndim ; l++)
+							PhysicalPsif_in_X[k] += getOrientation(j,K) * Facej.getMeasure()/fabs(J) * JacobianTransfor_K_Xhat[k*_Ndim + l] * ReferenceBasisFunctionRaviartThomas(m, xToxhat(K, X, K_Nodes),  K_Nodes )[l] ;
+					}
 				}
 			}
-			
 		}
 			
 		bool already_there =false;
 		if (_PhysicalPsif.find(idcell) != _PhysicalPsif.end() ){
 			if ( _PhysicalPsif.find(idcell)->second.find(j) != _PhysicalPsif.find(idcell)->second.end()){
 				for (const auto & e : _PhysicalPsif.find(idcell)->second.find(j)->second ){
-					if ( (_Ndim==1 && e.first[0] == X.x()) || (_Ndim ==2  && e.first[0] == X.x() && e.first[1] == X.y() ))
+					if ( (_Ndim==1 && fabs(e.first[0] - X.x()) <1e-11 ) || ( (_Ndim ==2  && fabs(e.first[0] -X.x())<1e-11 && fabs(e.first[1] - X.y())<1e-11 ) ) )
 						already_there = true;
 				}
 			}

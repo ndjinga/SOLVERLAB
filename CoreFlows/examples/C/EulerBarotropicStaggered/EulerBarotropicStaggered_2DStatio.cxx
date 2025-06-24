@@ -71,7 +71,6 @@ int main(int argc, char** argv)
 	std::vector<double> wallVelocityVector(spaceDim);
 	Field Density0("Density", CELLS, M, 1);
 	Field Momentum0("velocity", FACES, M, 1);
-	Field ExactVelocityAtFaces("ExactVelocityAtFaces", FACES, M, 1);
 
 	
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
@@ -118,7 +117,7 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DStatio";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 10	;
+	unsigned MaxNbOfTimeStep = 5;
 	int freqSave = 1		;
 	double cfl = 0.99;
 	double maxTime = 50;

@@ -64,7 +64,7 @@ public :
     //********* Raviart-Thomas related functions ***********//
     std::vector<double> HessienneTransfo(const int component, const std::vector<Node> &K_Nodes);
     std::vector<double> Gradient_ReferenceBasisFunctionRaviartThomas(int i, const std::vector<Node> &K_Nodes, const Point & Xhat );
-    std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, int idcell,  std::vector<Cell> Support, Face Facej, int j, Point X);
+    std::vector<double> Gradient_PhysicalBasisFunctionRaviartThomas(Cell K, int idcell,  const std::vector<Cell>& Support, Face Facej, int j, Point X);
     std::vector<double> MomentumRaviartThomas_at_point_X(Cell K, int idcell, Point X);
 
     // operation on matrices
@@ -77,6 +77,7 @@ public :
     std::map<int, std::vector<double> >  getboundaryVelocityVector() const;
 	void setboundaryVelocityVector(int j,  std::vector<double>  boundaryVelocityVector);
     std::vector<double> H_1DensitySemi_Norm__H_divVelocitySemi_Norm();
+    void computeOrder2Density(const double& rho_b, const double& Mach );
      
 protected :
     /** Fluid equation of state **/

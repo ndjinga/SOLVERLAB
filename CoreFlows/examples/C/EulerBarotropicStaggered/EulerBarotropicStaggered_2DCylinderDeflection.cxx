@@ -125,21 +125,18 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-
+	myProblem.setTimeScheme(Explicit);
+	myProblem.setLinearSolver(GMRES, LU, 50); //If Implicit
+	double cfl = 1;
     
     // name of result file
 	string fileName = "EulerBarotropicStaggered_2DCylinderDeflection";
-
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 10000000	;
-	double cfl = 20;
 	double precision = 1e-11;
-	int freqSave = 5;
+	int freqSave = 250;
 	double maxTime = 50;
-
-
-	myProblem.setTimeScheme(Implicit);
-	myProblem.setLinearSolver(GMRES, LU, 50);
+	
 	myProblem.setTimeMax(maxTime);
 	myProblem.setFreqSave(freqSave);
 	myProblem.setCFL(cfl);
@@ -155,7 +152,7 @@ int main(int argc, char** argv)
 	myProblem.initialize();
 	myProblem.InterpolateFromFacesToCells(ExactVelocityAtFaces);
 	bool ok = myProblem.run();
-
+	myProblem.computeOrder2Density(rho_b, M_ref);
 
 	if (ok)
 		cout << "Simulation "<<fileName<<" is successful !" << endl;

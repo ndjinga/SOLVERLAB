@@ -54,13 +54,13 @@ std::vector<double> MomentumLowMach(double xbar ){
 
 //******************** INITIAL CONDITION*****************//
 double InitialDensity( double x, double y ){
-	//if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) return rhoVortex( x, y); 
+	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) return rhoVortex( x, y); 
 	if ( fabs(x/0.05)<1 )  						  return rhoLowMach(x/0.05); 
 	else                       					  return rho0;
 }
 std::vector<double> InitialMomentum(double x, double y ){
 	std::vector<double> vec(2,0.0); 
-	//if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return MomentumVortex( x, y); 
+	if ( sqrt(pow(x- 0.5,2) +pow(y- 0.5,2) )<r0 ) 	return MomentumVortex( x, y); 
 	if ( fabs(x/0.05)<1 )   						return MomentumLowMach( x/0.05); 
 	else 											return vec;
 }
@@ -92,7 +92,7 @@ int main(int argc, char** argv){
 	double infy = 0.0;
 	double supy = 1.0;
 	int nx =100;
-	int ny =2;
+	int ny =100;
 	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
 	double a = 1.0;
 	double gamma = 2.0;
@@ -119,19 +119,19 @@ int main(int argc, char** argv){
 		for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 			if (j == Ctemp1.getFacesId()[l]){
 				for (int idim = 0; idim < spaceDim; ++idim)
-					vec_normal_sigma[idim] = fabs( Ctemp1.getNormalVector(l,idim) ) ;
+					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim)  ;
 			}
 		}
 		myProblem.setOrientation(j,vec_normal_sigma);
 		Density0[idCells[0]] = InitialDensity(Ctemp1.x(),Ctemp1.y());
+		Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
 		if(Fj.getNumberOfCells()==2 ){ 
 			Cell Ctemp2 = M.getCell(idCells[1]);
 			myProblem.setInteriorIndex(j);
 			Density0[idCells[1]] = InitialDensity(Ctemp2.x(),Ctemp2.y());
-			Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
+			
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
-			Momentum0[j] = dotprod(InitialMomentum(Fj.x(),Fj.y()),vec_normal_sigma);
 			// if periodic check that the boundary face is the computed (avoid passing twice ) 
 			if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
 				myProblem.setSteggerBoundIndex(j);	

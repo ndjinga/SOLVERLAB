@@ -69,24 +69,38 @@ double dotprod(std::vector<double> vector, std::vector<double> normal){
 int main(int argc, char** argv)
 {	
 	auto start = std::chrono::high_resolution_clock::now();
-	
-	//Preprocessing: mesh and group creation
 	int spaceDim = 2;
-	PetscInitialize(&argc, &argv, 0,0);
+	Mesh M;
+	double a = 1.0;
+	double gamma = 2.0;
+	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
+
+	if (argc>1  ){
+	
+		// ./resources/QuadTriangles.med
+		cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
+		cout << "Loading of a mesh named "<<argv[1] << endl;
+		string filename = argv[1];
+		M=Mesh(filename);
+	}
+	else{
+		PetscInitialize(&argc, &argv, 0,0);
+		// Prepare for the mesh
+		cout << "Building mesh" << endl;
+		cout << "Construction of a cartesian mesh" << endl;
+		double infx = -2.0;
+		double supx = 3.0;
+		double infy = -2.0;
+		double supy = 3.0;
+		int nx =100;
+		int ny =100;
+		Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
+	}
+
 	// Prepare for the mesh
 	cout << "Building mesh" << endl;
 	cout << "Construction of a cartesian mesh" << endl;
 
-	double infx = 0.0;
-	double supx = 1.0;
-	double infy = 0.0;
-	double supy = 1.0;
-	int nx =100;
-	int ny =100;
-	Mesh M=Mesh(infx, supx, nx, infy, supy, ny);
-	double a = 1.0;
-	double gamma = 2.0;
-	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
 
 	// Prepare for the initial condition
 	// set the boundary conditions
@@ -94,12 +108,9 @@ int main(int argc, char** argv)
 	cout << "Building initial data" << endl;
 	std::map<int ,double> wallDensityMap;
 	std::map<int ,double> wallVelocityMap ;
+	std::vector<double> wallVelocityVector(spaceDim);
 	Field Density0("Density", CELLS, M, 1);
 	Field Momentum0("velocity", FACES, M, 1);
-	std::vector<double> wallVelocityVector(spaceDim);
-
-
-	myProblem.setPeriodicFaces(M, 'x', nx, infx, supx); 
 
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
@@ -109,7 +120,7 @@ int main(int argc, char** argv)
 		for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 			if (j == Ctemp1.getFacesId()[l]){
 				for (int idim = 0; idim < spaceDim; ++idim)
-					vec_normal_sigma[idim] = fabs( Ctemp1.getNormalVector(l,idim) ) ;
+					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim) ;
 			}
 		}
 		myProblem.setOrientation(j,vec_normal_sigma);
@@ -139,15 +150,15 @@ int main(int argc, char** argv)
 	
 	// set the numerical method
 	myProblem.setTimeScheme(Explicit);
-	myProblem.setLinearSolver(GMRES, LU, 70);
+	myProblem.setLinearSolver(GMRES, LU, 70); //If Implicit
 	
 	// name of result file
 	string fileName = "EulerBarotropicStaggered_2DAdvectedVortex";
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000000;
-	int freqSave = 50;
-	double cfl = 0.99	;
+	int freqSave = 15;
+	double cfl = 1	;
 	double maxTime = 3.5;
 	double precision = 1e-9;
 

@@ -111,7 +111,7 @@ int main(int argc, char** argv)
 			for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 				if (j == Ctemp1.getFacesId()[l]){
 					for (int idim = 0; idim < spaceDim; ++idim)
-						vec_normal_sigma[idim] = fabs( Ctemp1.getNormalVector(l,idim) ) ;
+						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim)  ;
 				}
 			}
 			myProblem.setOrientation(j,vec_normal_sigma);
@@ -162,7 +162,7 @@ int main(int argc, char** argv)
 
 		// parameters calculation
 		unsigned MaxNbOfTimeStep = 10000;
-		int freqSave = 50;
+		int freqSave = 1;
 		double cfl = 0.99;
 		double maxTime = 0.07;
 		double precision = 1e-10;

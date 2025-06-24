@@ -103,7 +103,8 @@ public :
 
 	/******* Boundary conditions ********/
 	void setWallBoundIndex(int j );
-	void setSteggerBoundIndex(int j ); //Imposed pressure and velocity
+	void setSteggerBoundIndex(int j ); 
+	void setNeumannBoundIndex(int j ); 
 	void setInteriorIndex(int j );     
 	std::map<int,double>  getboundaryPressure() const;
 	std::map<int,double>  getboundaryVelocity() const;
@@ -129,7 +130,7 @@ public :
     Point xToxhat(const Cell &K, const  Point &X, const std::vector<Node> & K_Nodes); 
     std::vector<double>  JacobianTransfor_K_X(const Point &X, const std::vector<Node> &K_Nodes);
 	// K is the cell on which we evaluate the basis function, Support is the table containing the support, Facej is the face of the basis function and j its number,X the point inwhich it is evaluated
-    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, int idcell, std::vector<Cell> Support, Face Facej,int j, Point X);
+    std::vector<double> PhysicalBasisFunctionRaviartThomas(Cell K, int idcell, const std::vector<Cell>& Support, Face Facej,int j, Point X);
 	double MassLumping(const Cell &K, const int &idcell, const Face & Facej, const int &j);
 
     //We find the corresponding basis function on the ref elemm by testing its image by Piola transform & select the only one that is non-zero when taken against n_sigma. 
@@ -154,7 +155,7 @@ protected :
 	std::map<int, double>  _boundaryPressure, _boundaryVelocity;
 	std::map<int, std::vector<double> > _vec_sigma; // arbitrary degree of liberty associated to a face
 	std::map<int,int> _FacePeriodicMap;
-	std::vector<int>_WallBoundFaceSet, _SteggerBoundFaceSet, _InteriorFaceSet; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
+	std::vector<int>_WallBoundFaceSet, _SteggerBoundFaceSet, _InteriorFaceSet, _NeumannBoundFaceSet; // map of perdiodic faces couples : only it->first is computed. it->second is avoided in the loop for matrices and is updated to it->first in save()
 	bool _facesBoundinit,_indexFacePeriodicSet, _isWall; // To ensure that the boundary velocity is initialized after the initial velocity 
 
 	std::vector<double> _Energy, _Time;
