@@ -6,24 +6,22 @@
 
 using namespace std;
 
-double initialDensity( double x, double y , double nx){
-	if (y < (1-x - 1.0/(4 * nx) ) )	return 12;
-	else 							return 1;
+double initialDensity( double x, double y){
+	double r =  sqrt(x*x + y*y);
+	if (r < 2.5 )	return 12;
+	else 			return 1;
 }
 
 std::vector<double> initialVelocity(double x, double y){
 	std::vector<double> vec(2);
-	double ul = 1.5 ; 
-	double ur = -3 ; 
-	if (y < (1 - x)){
-		vec[0] = ul/sqrt(2.0);
-		vec[1] = ul/sqrt(2.0);
-	}
-	else {
-		vec[0] = ur/sqrt(2.0);
-		vec[1] = ur/sqrt(2.0);
-	}
-	
+	double theta = atan2(x,y); 
+	double r =  sqrt(x*x + y*y);
+	if (theta < 0) theta += 2 * M_PI;
+	double vr,vtheta;
+	vtheta = 0;
+	vr = (r < 2.5 ) ? 1.5: -3;
+	vec[0] =  sin(theta) * vr  + cos(theta) * 0;
+	vec[1] =  cos(theta) * vr  - sin(theta) * 0;
 	return vec;
 }
 
@@ -54,19 +52,6 @@ int main(int argc, char** argv)
 		nx=40;
 		M=Mesh(filename);
 	}
-	else{
-		PetscInitialize(&argc, &argv, 0,0);
-		// Prepare for the mesh
-		cout << "Building mesh" << endl;
-		cout << "Construction of a cartesian mesh" << endl;
-		double inf = 0.0;
-		double sup = 1.0;
-		int ny;
-		nx=40;
-		ny=40;
-		M=Mesh(inf,sup,nx,inf,sup,ny);
-	}
-	//Preprocessing: mesh and group creation
 
 	// Prepare for the initial condition
 	// set the boundary conditions
@@ -89,22 +74,36 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] =  Ctemp1.getNormalVector(l,idim)  ;
 			}
 		}
+		//TODO pb orientation ?
+		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){ 
+			vec_normal_sigma[0] *= -1;
+			vec_normal_sigma[1] *= -1;
+		} 
 		myProblem.setOrientation(j,vec_normal_sigma);
 
-		Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y(), nx);
+		Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y());
 		if(Fj.getNumberOfCells()==2 ){ 
 			myProblem.setInteriorIndex(j);
 			Cell Ctemp2 = M.getCell(idCells[1]);
-			Density0[idCells[1]] = initialDensity(Ctemp2.x(),Ctemp2.y(), nx);
+			Density0[idCells[1]] = initialDensity(Ctemp2.x(),Ctemp2.y());
 			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y() ) ,vec_normal_sigma )*(Density0[idCells[0]]+Density0[idCells[1]])/2.0;
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
 			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma )*Density0[idCells[0]];
-			myProblem.setNeumannBoundIndex(j);	
+			myProblem.setSteggerBoundIndex(j);	
+			// Boundary normal velocity, Density and full velocity vector
+			for (int idm = 0; idm <spaceDim; idm ++)
+				wallVelocityVector[idm] = initialVelocity(Fj.x(), Fj.y())[idm];
+			wallVelocityMap[j] = dotprod(wallVelocityVector,vec_normal_sigma );
+			wallDensityMap[j] = initialDensity(Fj.x(), Fj.y()) ;
+			myProblem.setboundaryVelocityVector(j, wallVelocityVector);
 		}
 	}
 	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
+	myProblem.setboundaryPressure(wallDensityMap);
+	myProblem.setboundaryVelocity(wallVelocityMap);
+
 
 	// set the numerical method
 	myProblem.setTimeScheme(Explicit);
@@ -114,7 +113,7 @@ int main(int argc, char** argv)
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000;
-	int freqSave = 1;
+	int freqSave = 200;
 	double cfl = 0.99;
 	double maxTime = 0.07;
 	double precision = 1e-10;

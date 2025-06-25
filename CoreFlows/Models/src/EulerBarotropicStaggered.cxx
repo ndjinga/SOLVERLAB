@@ -309,8 +309,8 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					//In quads it's 1/8 (instead of 1/4 given by trapezoid formula given on reference elem) 
 					// since the loop on the face then on the faces'nodes implies that the integral is computed twice 
 					//TODO -> to improve & what about triangles
-					WeightsForVolums[i] =  (_Ndim==2) ? 1.0/(K.getNumberOfFaces() *2.0 ) : 1.0/2.0 ; 
-					WeightsForFaces[i] =  ((K.getNumberOfFaces() == 4)|| (K.getNumberOfFaces() == 2) ) ? 1.0/_Ndim : 1.0  ;
+					WeightsForVolums[i] =   1.0/(K.getNumberOfFaces() *_Ndim); //(_Ndim==2) ? 1.0/(K.getNumberOfFaces() *2.0 ) : 1.0/2.0 ; 
+					WeightsForFaces[i] = ((K.getNumberOfFaces() == 4)|| (K.getNumberOfFaces() == 2) ) ? 1.0/_Ndim : 1.0  ;
 				}
 				//************* _Ndim-dimensional terms *************//
 				for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
@@ -352,22 +352,22 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 							}
 						}
 						double dotprod =0;
-						/* for (int ndim =0; ndim < _Ndim; ndim ++ )
-							dotprod  += meanRhoU[ndim]*PhysicalBasisFunctionRaviartThomas(interiorCell, idCellsOfFacef[0], Support_j, Fj_physical,j, IntegrationNodes[inteNode] )[ndim];
-						Convection -= Facef.getMeasure() * q * getOrientation(idFaces[f], interiorCell ) * dotprod * WeightsForFaces[inteNode];  */
+						for (int ndim =0; ndim < _Ndim; ndim ++ )
+							dotprod  += meanRhoU[ndim]*PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode] )[ndim];
+						Convection -= Facef.getMeasure() * q * getOrientation(idFaces[f], K ) * dotprod * WeightsForFaces[inteNode]; 
 
 						//The integral on the face j is computed twice because of choice of implementation, so divide by 2 to recover consistency
-						for (int ndim =0; ndim < _Ndim; ndim ++ )
+						/* for (int ndim =0; ndim < _Ndim; ndim ++ )
 							dotprod  += jumpPsi[ndim] * meanRhoU[ndim] * ( ((idFaces[f] == j) || ((it != _FacePeriodicMap.end()) && it->first == j) ) ? 1.0/2.0 : 1.0 ) ; 	
-						Convection -= Facef.getMeasure() * q* dotprod * WeightsForFaces[inteNode] *getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) ; 
+						Convection -= Facef.getMeasure() * q* dotprod * WeightsForFaces[inteNode] ;    *///*getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) ; 
 
 					}
 				}
 				else if (IsfWall && (idFaces[f] == j )){
-					Convection -= _compressibleFluid->vitesseSon(rho) * Facef.getMeasure() * q*getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ) ; //TODO epsilon_K(sigma) ??
+					Convection -= _compressibleFluid->vitesseSon(rho) * Facef.getMeasure() * q*getOrientation(idFaces[f], K ) ; //TODO epsilon_K(sigma) ??
 					if (_timeScheme == Implicit){
 						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * _compressibleFluid->vitesseSon(rho)*getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) ), ADD_VALUES ); 
-						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * q*getOrientation(idFaces[f], _mesh.getCell( idCellsOfFacef[0]) )/ _compressibleFluid->vitesseSon(rho), ADD_VALUES ); //TODO only works for a =1 , gamma =2	
+						MatSetValue(_JacobianMatrix, IndexFace, IndexFace,  Facef.getMeasure() * q*getOrientation(idFaces[f],K )/ _compressibleFluid->vitesseSon(rho), ADD_VALUES ); //TODO only works for a =1 , gamma =2	
 					}
 				}
 					
