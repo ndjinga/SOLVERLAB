@@ -5,7 +5,7 @@ static char help[] = "Read a PETSc matrix from a file -f0 <input file>\n Paramet
 /*                                                                                               */
 /* Input  : - Matrix A_{input}    (system matrix, loaded from a file)                            */
 /*          - Vector b_{input}    (right hand side, made up for testing)                         */
-/* Output : - Vector X_{output}   (unknown vector, to be determined                              */
+/* Output : - Vector X_{output}   (unknown vector, to be determined)                              */
 /*                                                                                               */
 /* Auxilliary variables : - A_hat (transformed matrix)                                           */
 /*                        - X_hat (unknown of the transformed system)                            */
@@ -40,7 +40,7 @@ int main( int argc, char **args ){
 	MPI_Comm_size(PETSC_COMM_WORLD,&size);
 	PetscErrorCode ierr=0;
 
-//##### Load the matrix A in the file given in the command line
+//##### Load the matrix A contained in the file given in the command line
 	char file[1][PETSC_MAX_PATH_LEN], mat_type[256]; // File to load, matrix type
 	PetscViewer viewer;
 	Mat A_input;
