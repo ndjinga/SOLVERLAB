@@ -108,14 +108,12 @@ int main( int argc, char **args ){
 
 //##### Definition of the right hand side to test the preconditioner
 	Vec b_input, X_hat, X_anal;
-	PetscScalar y[nb_pressure_lines];
-	PetscInt  i_p[nb_pressure_lines];
+	PetscScalar y[nb_pressure_lines];//To store the values
+	PetscInt  i_p[nb_pressure_lines];//To store the indices
 
 	PetscPrintf(PETSC_COMM_WORLD,"Creation of the RHS, exact and numerical solution vectors...\n");
-	MatCreateVecs(A_input,&b_input,&X_anal);// parallel distribution of vectors should optimise the computation A_input*X_anal=b_input
-	
-	//VecDuplicate(b_input,&X_anal);//X_anal will store the exact solution
-	VecDuplicate(X_anal ,&X_hat);// X_hat will store the numerical solution of the transformed system
+	MatCreateVecs( A_input,&b_input,&X_anal );// parallel distribution of vectors should optimise the computation A_input*X_anal=b_input
+	VecDuplicate(X_anal, &X_hat);// X_hat will store the numerical solution of the transformed system
 
 	VecSet(X_anal,0.0);
 
@@ -131,7 +129,7 @@ int main( int argc, char **args ){
 
 	MatMult( A_input, X_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
-	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on processed 0
+	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on process 0
 
 //##### Application of the transformation A -> A_hat
 	// Declaration
