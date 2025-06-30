@@ -18,13 +18,13 @@ static char help[] = "Read a PETSc matrix from a file Parameters : \n -f0 : matr
 /*                        - C submatrix p-p of A_{input}                                                  */
 /*                        - R submatrix (neither p nor u lines) - (neither p nor u columns) of A_{input}  */
 /*                                                                                               */
-/*                                 * M G X *                                                     */
-/*                        A     = *  D C X  *                                                    */
-/*                                 * X X R *                                                     */
+/*                                 * M  G  X1 *                                                     */
+/*                        A     = *  D  C  X2  *                                                    */
+/*                                 * X3 X4 R  *                                                     */
 /*                                                                                               */
-/*                                 *M    G_hat*                                                   */
-/*                        A_hat = *            *                                                  */
-/*                                 *-D   C_hat*                                                   */
+/*                                 * M   G_hat  X1*                                                   */
+/*                        A_hat = * -D   C_hat  X2 *
+/*                                 * X3  X4_hat R *                                               */
 /*                                                                                               */
 /*                                 *2 diag(M)  G_hat*                                           */
 /*                        Pmat  = *                   *                                          */
@@ -83,7 +83,7 @@ int main( int argc, char **args ){
 	Mat M, G, D, C, Remaining_Diagonal_Block;
 	PetscInt nrows, ncolumns;//Total number of rows and columns of A_input
 	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
-	IS is_U,is_P;
+	IS is_U,is_P,is_neither_U_nor_P;
 	PetscInt n_u, n_p, n_neither_U_nor_P;//Total number of velocity (n_u), pressure (n_p) and remaining (n_neither_U_nor_P) lines. n=matrix size = n_u+ n_p+ n_neither_U_nor_P
 	PetscBool setNbU, setNbP;
 
@@ -104,7 +104,8 @@ int main( int argc, char **args ){
 	PetscInt nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
 	ISCreateStride(PETSC_COMM_WORLD, nb_velocity_lines, max_velocity_lines - nb_velocity_lines, 1, &is_U);
 	ISCreateStride(PETSC_COMM_WORLD, nb_pressure_lines, min_pressure_lines                    , 1, &is_P);
-	PetscPrintf(PETSC_COMM_WORLD,"-nU and -nP set, so contiguous velocity line numbers followed by contiguous pressure line numbers);	
+	ISCreateStride(PETSC_COMM_WORLD, n_neither_U_nor_P, min_pressure_lines+nb_pressure_lines  , 1, &is_neither_U_nor_P);
+	PetscPrintf(PETSC_COMM_WORLD,"-nU and -nP set, so contiguous velocity line numbers followed by contiguous pressure line numbers");	
 	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d, min_pressure_lines = %d, max_velocity_lines = %d, local nb_pressure_lines = %d, local nb_velocity_lines = %d \n", rank, irow_min, irow_max, irow_min, irow_max, min_pressure_lines, max_velocity_lines, nb_pressure_lines, nb_velocity_lines);
 	}
 	else
@@ -124,21 +125,27 @@ int main( int argc, char **args ){
 	PetscCheck( n_intersect == 0, PETSC_COMM_WORLD, ierr, "is_U and is_P should not intersect (common row indices for pressure and velocity) !!!\n");	
 	PetscCheck( n_u+n_p + n_neither_U_nor_P == ncolumns, PETSC_COMM_WORLD, ierr, "Inconsistent data : the matrix has %d lines but %d velocity lines, %d pressure lines and %d remaining lines declared : n_u+n_p +n_neither_U_nor_P=%d, is not equal to the number of lines %d\n", ncolumns, n_u,n_p,n_neither_U_nor_P,n_u+n_p +n_neither_U_nor_P,ncolumns);
 
-	PetscPrintf(PETSC_COMM_WORLD,"-nU and -nP not set (isU and isP set ?) so possibly non contiguous velocity and pressure lines);	
+	PetscPrintf(PETSC_COMM_WORLD,"-nU and -nP not set (isU and isP set ?) so possibly non contiguous velocity and pressure lines");	
 	PetscPrintf(PETSC_COMM_SELF,"Process %d local rows : irow_min = %d, irow_max = %d\n", rank, irow_min, irow_max);
 	}
 
 	PetscPrintf(PETSC_COMM_WORLD,"The global matrix has %d lines : %d velocity lines, %d pressure and %d remaining lines\n", n, n_u,n_p,n_neither_U_nor_P);
 	
-	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 4 blocks M,G,D,C,R :\n M G *\n D C *\n * * *\n");
+	PetscPrintf(PETSC_COMM_WORLD,"Extraction of the 9 blocks M,G,D,C,R,X1,X2,X3,X4 :\n M G X1*\n D C X2*\n X3 X4 R\n");
 	
-	MatCreateSubMatrix(A_input,is_U, is_U,MAT_INITIAL_MATRIX,&M);
-	MatCreateSubMatrix(A_input,is_U, is_P,MAT_INITIAL_MATRIX,&G);
-	MatCreateSubMatrix(A_input,is_P, is_U,MAT_INITIAL_MATRIX,&D);
-	MatCreateSubMatrix(A_input,is_P, is_P,MAT_INITIAL_MATRIX,&C);
+	MatCreateSubMatrix(A_input,is_U              , is_U              ,MAT_INITIAL_MATRIX,&M);
+	MatCreateSubMatrix(A_input,is_U              , is_P              ,MAT_INITIAL_MATRIX,&G);
+	MatCreateSubMatrix(A_input,is_P              , is_U              ,MAT_INITIAL_MATRIX,&D);
+	MatCreateSubMatrix(A_input,is_P              , is_P              ,MAT_INITIAL_MATRIX,&C);
+	MatCreateSubMatrix(A_input,is_U              , is_neither_U_nor_P,MAT_INITIAL_MATRIX,&X1);
+	MatCreateSubMatrix(A_input,is_P              , is_neither_U_nor_P,MAT_INITIAL_MATRIX,&X2);
+	MatCreateSubMatrix(A_input,is_neither_U_nor_P, is_U              ,MAT_INITIAL_MATRIX,&X3);
+	MatCreateSubMatrix(A_input,is_neither_U_nor_P, is_P              ,MAT_INITIAL_MATRIX,&X4);
+	MatCreateSubMatrix(A_input,is_neither_U_nor_P, is_neither_U_nor_P,MAT_INITIAL_MATRIX,&R);
 	PetscPrintf(PETSC_COMM_WORLD,"... end of extraction\n");
-
-	//#Display some informations about the four blocs
+	//Todo tester la fonction MatCreateSubMatricesMPI
+	
+	//#Display some informations about the five main blocks
 	int size1, size2;
 	MatGetSize(M, &size1,&size2);
 	PetscPrintf(PETSC_COMM_WORLD,"Size of M : %d,%d\n", size1,size2);
@@ -148,6 +155,8 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"Size of G : %d,%d\n", size1,size2);
 	MatGetSize(D, &size1,&size2);
 	PetscPrintf(PETSC_COMM_WORLD,"Size of D : %d,%d\n", size1,size2);
+	MatGetSize(R, &size1,&size2);
+	PetscPrintf(PETSC_COMM_WORLD,"Size of R : %d,%d\n", size1,size2);
 
 //##### Definition of the right hand side to test the preconditioner
 	Vec b_input, X_hat, X_anal;
@@ -175,7 +184,8 @@ int main( int argc, char **args ){
 	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on process 0
 
 //##### Create the matrix used for the change of variable
-	Mat Id_M, Id_C, Id_R, D_M_inv_G, Pmat, invPmat, PMat_array[9], invPMat_array[9];
+/*
+	Mat Id_M, Id_C, Id_R, D_M_inv_G, Pchangeofbasis, invPchangeofbasis, Pchangeofbasis_array[9], invPchangeofbasis_array[9];
 	Vec v_M, v_C, v_R;
 	Vec v_redistributed;//different distribution of coefficients among the processors for v_M
 	VecScatter scat;//tool to redistribute a vector on the processors
@@ -202,7 +212,7 @@ int main( int argc, char **args ){
 	MatDiagonalSet(Id_R, v_R, INSERT_VALUES);
 
 	MatGetDiagonal(M,v_M);
-	VecReciprocal(v_M);
+	VecReciprocal(   v_M);
 	
 	// Creation of D_M_inv_G = D_M_inv*G
 	MatDuplicate(G,MAT_COPY_VALUES,&D_M_inv_G);//D_M_inv_G contains G
@@ -217,36 +227,41 @@ int main( int argc, char **args ){
 	VecScatterEnd(  scat, v_M, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
 	MatDiagonalScale( D_M_inv_G, v_redistributed, NULL);//D_M_inv_G contains D_M_inv*G
 
-	PMat_array[0]=Id_M;
-	PMat_array[1]=D_M_inv_G;
-	PMat_array[2]=NULL;
-	PMat_array[3]=NULL;
-	PMat_array[4]=Id_C;
-	PMat_array[5]=NULL;
-	PMat_array[6]=NULL;
-	PMat_array[7]=NULL;
-	PMat_array[8]=Id_R;
+	Pchangeofbasis_array[0]=Id_M;
+	Pchangeofbasis_array[1]=D_M_inv_G;
+	Pchangeofbasis_array[2]=NULL;
+	Pchangeofbasis_array[3]=NULL;
+	Pchangeofbasis_array[4]=Id_C;
+	Pchangeofbasis_array[5]=NULL;
+	Pchangeofbasis_array[6]=NULL;
+	Pchangeofbasis_array[7]=NULL;
+	Pchangeofbasis_array[8]=Id_R;
 
-	invPMat_array[0]=Id_M;
-	invPMat_array[1]=-D_M_inv_G;
-	invPMat_array[2]=NULL;
-	invPMat_array[3]=NULL;
-	invPMat_array[4]=Id_C;
-	invPMat_array[5]=NULL;
-	invPMat_array[6]=NULL;
-	invPMat_array[7]=NULL;
-	invPMat_array[8]=Id_R;
+	invPchangeofbasis_array[0]=Id_M;
+	invPchangeofbasis_array[1]=-D_M_inv_G;
+	invPchangeofbasis_array[2]=NULL;
+	invPchangeofbasis_array[3]=NULL;
+	invPchangeofbasis_array[4]=Id_C;
+	invPchangeofbasis_array[5]=NULL;
+	invPchangeofbasis_array[6]=NULL;
+	invPchangeofbasis_array[7]=NULL;
+	invPchangeofbasis_array[8]=Id_R;
 
-	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,   PMat_array,&   Pmat);
-	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,invPMat_array,&invPmat);
-
-//##### Application of the transformation A -> A_hat
+	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,   Pchangeofbasis_array,&   Pmat);
+	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,invPchangeofbasis_array,&invPmat);
+*/
+//##### Application of the transformation A -> A_hat = A*Pchangeofbasis
 	// Declaration
-	Mat Mat_array[4];
+	Mat Mat_array[9];
 	Mat A_hat, C_hat, G_hat;
-	Mat diag_2M;//Will store 2*diagonal part of M (to approximate the Schur complement)
+	Mat D_M_inv_G, diag_2M;//Will store 2*diagonal part of M (to approximate the Schur complement)
+	Vec v_M, v_redistributed;//different distribution of coefficients among the processors for v_M
+	VecScatter scat;//tool to redistribute a vector on the processors
+	IS is_to, is_from;
+	
 	
 	//Creation of 2*diag(M)
+	MatCreateVecs(M,NULL,&v_M);//v_M has the parallel distribution of M
 	MatGetDiagonal(M,v_M);
 	MatDuplicate(M, MAT_DO_NOT_COPY_VALUES, &diag_2M);
 	MatEliminateZeros(diag_2M, PETSC_TRUE);
@@ -265,58 +280,91 @@ int main( int argc, char **args ){
 	MatView( diag_2Maij, PETSC_VIEWER_STDOUT_WORLD);
 	*/
 
+	// Creation of D_M_inv_G = D_M_inv*G
+	VecReciprocal(   v_M);
+	MatDuplicate(G,MAT_COPY_VALUES,&D_M_inv_G);//D_M_inv_G contains G
+	MatCreateVecs(D_M_inv_G,NULL,&v_redistributed);//v_redistributed has the parallel distribution of D_M_inv_G
+	PetscInt col_min, col_max;
+	VecGetOwnershipRange(v_M,&col_min,&col_max);
+	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_from);
+	VecGetOwnershipRange(v_redistributed,&col_min,&col_max);
+	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_to);
+	VecScatterCreate(v_M,is_from,v_redistributed,is_to,&scat);
+	VecScatterBegin(scat, v_M, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
+	VecScatterEnd(  scat, v_M, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
+	MatDiagonalScale( D_M_inv_G, v_redistributed, NULL);//D_M_inv_G contains D_M_inv*G
+
 	// Creation of C_hat
 	MatMatMult(D,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);//C_hat contains D*D_M_inv*G
-	MatAXPY(C_hat,1.0,C,SUBSET_NONZERO_PATTERN);//C_hat contains C + D*D_M_inv*G
+	MatAXPY(C_hat,-1.0,C,SUBSET_NONZERO_PATTERN);//C_hat contains C - D*D_M_inv*G
 
 	// Creation of G_hat
 	MatMatMult(M,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&G_hat);//G_hat contains M*D_M_inv*G
 	MatAYPX(G_hat,-1.0,G,UNKNOWN_NONZERO_PATTERN);//G_hat contains G - M*D_M_inv*G
 
 	// Creation of -D
-	MatScale(D,-1.0);
+	//MatScale(D,-1.0);
 
+	//Creation of the new matrix X4_hat
+	MatMatMult(X3,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&X4_hat);//X4_hat contains X3*D_M_inv*G
+	MatAXPY(X4_hat,-1.0,X4,SUBSET_NONZERO_PATTERN);//X4_hat contains X4 - X3*D_M_inv*G
+	
 	//Creation of global matrices using MatCreateNest
 	if( size==1 )
 	{
-	Mat_array[3]=C_hat;//Top left block of A_hat
-	Mat_array[2]=D;//Top right block of A_hat
-	Mat_array[1]=G_hat;//Bottom left block of A_hat
-	Mat_array[0]=M;//Bottom left block of A_hat
-	// Creation of A_hat = transformed+ reordered A_input
-	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&A_hat);
+	Mat_array[3]=D;
+	Mat_array[2]=X1;
+	Mat_array[1]=G_hat;
+	Mat_array[0]=M;
+	Mat_array[4]=C_hat;
+	Mat_array[5]=X2;
+	Mat_array[6]=X3;
+	Mat_array[7]=X4_hat;
+	Mat_array[8]=R;
+	// Creation of A_hat = transformed A_input
+	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,Mat_array,&A_hat);
 
-	// Creation of Pmat
+	// Creation of Pmat (block trianglular matrix)
 	Mat_array[0]=diag_2M;
-	Mat_array[1]=NULL;//Cancel top right block
-	MatCreateNest(PETSC_COMM_WORLD,2,NULL,2,NULL,Mat_array,&Pmat);
+	Mat_array[1]=NULL;
+	Mat_array[2]=NULL;
+	Mat_array[5]=NULL;
+	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,Mat_array,&Pmat);
 	}
 	else// bug ordonancement matnest en parallèle ?
 	{
-	Mat_array[0]=C_hat;//Top left block of A_hat
-	Mat_array[1]=D;//Top right block of A_hat
-	Mat_array[2]=G_hat;//Bottom left block of A_hat
-	Mat_array[3]=M;//Bottom left block of A_hat
+	Mat_array[0]=C_hat;
+	Mat_array[1]=D;
+	Mat_array[2]=X2;
+	Mat_array[3]=M;
+	Mat_array[4]=G_hat;
+	Mat_array[5]=X1;
+	Mat_array[6]=X4_hat;
+	Mat_array[7]=X3;
+	Mat_array[8]=R;
 	//Creation IS pour que la creation du matnest se passe bien
-	IS IS_array[2];
+	IS IS_array[3];
 	IS_array[0]=is_P;
 	IS_array[1]=is_U;	
-	MatCreateNest(PETSC_COMM_WORLD,2,IS_array,2,IS_array,Mat_array,&A_hat);
+	IS_array[2]=is_neither_U_nor_P;	
+	MatCreateNest(PETSC_COMM_WORLD,3,IS_array,3,IS_array,Mat_array,&A_hat);
 	// Creation of Pmat
 	Mat_array[3]=diag_2M;
-	Mat_array[2]=NULL;//Cancel top right block
-	MatCreateNest(PETSC_COMM_WORLD,2,IS_array,2,IS_array,Mat_array,&Pmat);
+	Mat_array[4]=NULL;
+	Mat_array[5]=NULL;
+	Mat_array[2]=NULL;
+	MatCreateNest(PETSC_COMM_WORLD,3,IS_array,3,IS_array,Mat_array,&Pmat);
 	}
 
 //##### Call KSP solver and monitor convergence
 	double residu, abstol, rtol=1e-7, dtol;
-	int iter, iter1, iter2, numberMaxOfIter;
-	int nblocks=2;
+	int iter, iter1, iter2, iter3, numberMaxOfIter;
+	int nblocks=3;
 	KSP ksp;
 	KSP * kspArray;
-	KSPType type, type1, type2;
-	PC pc, pc1, pc2;
-	PCType pctype, pctype1, pctype2;
+	KSPType type, type1, type2, type3;
+	PC pc, pc1, pc2, pc3;
+	PCType pctype, pctype1, pctype2, pctype3;
 	
 	PetscPrintf(PETSC_COMM_WORLD,"Definition of the KSP solver to test the preconditioner...\n");
 	KSPCreate(PETSC_COMM_WORLD,&ksp);
@@ -330,14 +378,18 @@ int main( int argc, char **args ){
 	PCFieldSplitSetType(pc,PC_COMPOSITE_MULTIPLICATIVE);
 	PCFieldSplitSetIS(pc, "0",is_U);
 	PCFieldSplitSetIS(pc, "1",is_P);
+	PCFieldSplitSetIS(pc, "2",is_neither_U_nor_P);
 	PCFieldSplitGetSubKSP( pc, &nblocks, &kspArray);
 	KSPSetType( kspArray[0], KSPGMRES);
 	KSPSetType( kspArray[1], KSPGMRES);
+	KSPSetType( kspArray[1], KSPGMRES);
 	KSPGetPC(kspArray[0], &pc1);
 	KSPGetPC(kspArray[1], &pc2);
+	KSPGetPC(kspArray[2], &pc3);
 	PCSetType( pc1, PCBJACOBI);
 	PCSetType( pc2, PCGAMG);
 	PCGAMGSetType( pc2, PCGAMGAGG);
+	PCSetType( pc3, PCBJACOBI);
 
 /*		
 		KSP * subKSP;
@@ -383,19 +435,24 @@ int main( int argc, char **args ){
 	KSPGetType( ksp, &type);
 	KSPGetType( kspArray[0], &type1);
 	KSPGetType( kspArray[1], &type2);
+	KSPGetType( kspArray[2], &type3);
 	KSPGetIterationNumber(kspArray[0],&iter1);
 	KSPGetIterationNumber(kspArray[1],&iter2);
+	KSPGetIterationNumber(kspArray[2],&iter3);
 	KSPGetPC(kspArray[0],&pc1);
 	KSPGetPC(kspArray[1],&pc2);
+	KSPGetPC(kspArray[2],&pc3);
 	PCGetType( pc, &pctype);
 	PCGetType( pc1, &pctype1);
 	PCGetType( pc2, &pctype2);
+	PCGetType( pc3, &pctype3);
 	PetscFree(kspArray);
 
 	PetscPrintf(PETSC_COMM_WORLD, "\n############ : monitoring of the linear solver \n");
 	PetscPrintf(PETSC_COMM_WORLD, "Linear solver name: %s, preconditioner %s, %d iterations \n", type, pctype, iter);
 	PetscPrintf(PETSC_COMM_WORLD, "    sub solver 1 name : %s, preconditioner %s, %d iterations \n", type1, pctype1, iter1);
 	PetscPrintf(PETSC_COMM_WORLD, "    sub solver 2 name: %s, preconditioner %s, %d iterations \n", type2, pctype2, iter2);
+	PetscPrintf(PETSC_COMM_WORLD, "    sub solver 3 name: %s, preconditioner %s, %d iterations \n", type3, pctype3, iter3);
 
 	switch(reason){
 		case 2:
@@ -426,32 +483,39 @@ int main( int argc, char **args ){
 //##### Compute X from X_hat
 	Vec X_hat_p;//Pressure components of the transformed unknown
 	Vec X_hat_u;//Velocity components of the transformed unknown
+	Vec X_hat_remain;//Remaining components of the transformed unknown
 	Vec X_p;//Pressure components of the main unknown
 	Vec X_u;//Velocity components of the transformed unknown
-	Vec X_output, X_output_array[2];
+	Vec X_remain;//Remaining components of the transformed unknown
+	Vec X_output, X_output_array[3];
 	
 	VecGetSubVector( X_hat, is_P, &X_hat_p);
 	VecGetSubVector( X_hat, is_U, &X_hat_u);
+	VecGetSubVector( X_hat, is_U, &X_hat_remain);
 
 	VecDuplicate(X_hat_u,&X_u);
 	VecDuplicate(X_hat_p,&X_p);
+	VecDuplicate(X_hat_remain,&X_remain);
 	VecCopy(X_hat_p,X_p);
+	VecCopy(X_hat_remain,X_remain);
 	MatMult( G, X_hat_p, X_u);
 	VecPointwiseMult(X_u,X_u,v);
 	VecAYPX( X_u, -1, X_hat_u);
 
 	X_output_array[0] = X_u;
 	X_output_array[1] = X_p;
+	X_output_array[2] = X_remain;
 
-	//VecCreateNest( PETSC_COMM_WORLD, 2, NULL, X_array, &X_output);//This generate an error message : "Nest vector argument 3 not setup "
-	VecConcatenate(2, X_output_array, &X_output, NULL);
+	//VecCreateNest( PETSC_COMM_WORLD, 3, NULL, X_array, &X_output);//This generate an error message : "Nest vector argument 3 not setup "
+	VecConcatenate(3, X_output_array, &X_output, NULL);
 
 //##### Compute the error and check it is small
-	Vec X_anal_p, X_anal_u;//Pressure and velocity components of the analytic solution
-	double error, error_p, error_u;
+	Vec X_anal_p, X_anal_u, X_anal_remain;//Pressure, velocity and remain components of the analytic solution
+	double error, error_p, error_u, error_remain;
 	
-	VecGetSubVector( X_anal, is_P, &X_anal_p);
-	VecGetSubVector( X_anal, is_U, &X_anal_u);
+	VecGetSubVector( X_anal, is_P              , &X_anal_p);
+	VecGetSubVector( X_anal, is_U              , &X_anal_u);
+	VecGetSubVector( X_anal, is_neither_U_nor_P, &X_anal_remain);
 
 	VecAXPY(  X_p, -1, X_anal_p);
 	VecNorm(  X_p, NORM_2, &error_p);
@@ -459,6 +523,9 @@ int main( int argc, char **args ){
 	VecAXPY(  X_u, -1, X_anal_u);
 	VecNorm(  X_u, NORM_2, &error_u);
 	PetscPrintf(PETSC_COMM_WORLD,"L2 Error on velocity u : ||X_anal_u - X_num_u|| = %e \n", error_u);
+	VecAXPY(  X_remain, -1, X_anal_remain);
+	VecNorm(  X_remain, NORM_2, &error_remain);
+	PetscPrintf(PETSC_COMM_WORLD,"L2 Error on remaining variables : ||X_anal_remain - X_num_remain|| = %e \n", error_remain);
 
 	VecAXPY(X_output, -1, X_anal);
 	VecNorm( X_output, NORM_2, &error);
@@ -476,20 +543,21 @@ int main( int argc, char **args ){
 	MatDestroy(&diag_2M);
 	MatDestroy(&A_hat);
 	MatDestroy(&Pmat);
-	MatDestroy(&Id_M);
-	MatDestroy(&Id_C);
-	MatDestroy(&Id_R);
+	//MatDestroy(&Id_M);
+	//MatDestroy(&Id_C);
+	//MatDestroy(&Id_R);
 	
 	VecDestroy(&b_input);
 	VecDestroy(&X_hat);
 	VecDestroy(&X_anal);
-	VecDestroy(&v);
+	//VecDestroy(&v);
 	VecDestroy(&v_M);
-	VecDestroy(&v_C);
-	VecDestroy(&v_R);
+	//VecDestroy(&v_C);
+	//VecDestroy(&v_R);
 
 	ISDestroy(&is_U);
 	ISDestroy(&is_P);
+	ISDestroy(&is_neither_U_nor_P);
 
 	KSPDestroy(&ksp);
 	VecScatterDestroy(&scat);
