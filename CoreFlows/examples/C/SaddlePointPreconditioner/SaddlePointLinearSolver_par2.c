@@ -22,14 +22,14 @@ static char help[] = "Read a PETSc matrix from a file Parameters : \n -f0 : matr
 /*                        A     = *  D C X  *                                                    */
 /*                                 * X X R *                                                     */
 /*                                                                                               */
-/*                                 * C_hat -D X *                                                */
-/*                        A_hat = *  G_hat  M X  *                                               */
-/*                                 * X      X R *                                                */
+/*                                 *M    G_hat*                                                   */
+/*                        A_hat = *            *                                                  */
+/*                                 *-D   C_hat*                                                   */
 /*                                                                                               */
-/*                                 * C_hat 0          0 *                                        */
-/*                        Pmat  = *  G_hat 2 diag(M)  0  *                                       */
-/*                                 * X     X          R *                                        */
-/*                                                                                               */
+/*                                 *2 diag(M)  G_hat*                                           */
+/*                        Pmat  = *                   *                                          */
+/*                                 *0          C_hat*                                           */
+//*                                                                                               */
 /*************************************************************************************************/
 
 #include <petscis.h>
