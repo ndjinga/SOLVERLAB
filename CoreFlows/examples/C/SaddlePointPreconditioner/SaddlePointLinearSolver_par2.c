@@ -82,13 +82,12 @@ int main( int argc, char **args ){
 //####	Decompose the matrix A_input into 9=3x3 blocks and extract the 5 blocks M, G, D, C and Remaining_Diagonal_Block
 	Mat M, G, D, C, Remaining_Diagonal_Block;
 	PetscInt nrows, ncolumns;//Total number of rows and columns of A_input
-	PetscInt irow_min, irow_max, nb_local_lines;//min and max indices of rows stored locally on this process
+	PetscInt irow_min, irow_max;//min and max indices of rows stored locally on this process
 	IS is_U,is_P;
 	PetscInt n_u, n_p, n_neither_U_nor_P;//Total number of velocity (n_u), pressure (n_p) and remaining (n_neither_U_nor_P) lines. n=matrix size = n_u+ n_p+ n_neither_U_nor_P
 	PetscBool setNbU, setNbP;
 
 	MatGetOwnershipRange( A_input, &irow_min, &irow_max);
-	nb_local_lines = irow_max - irow_min;
 	MatGetSize( A_input, &nrows, &ncolumns);
 	PetscCheck( nrows == ncolumns, PETSC_COMM_WORLD, ierr, "Matrix is not square !!!\n");
 	PetscOptionsGetInt(NULL,NULL,"-nU",&n_u,setNbU);
@@ -100,7 +99,7 @@ int main( int argc, char **args ){
 	//Contiguous velocity lines followed by contiguous pressure lines : pressure indices must come after the velocity indices
 	PetscInt min_pressure_lines = irow_min <= n_u ? n_u : irow_min;//max(irow_min, n_u)
 	PetscInt max_velocity_lines = irow_max >= n_u ? n_u : irow_max;//min(irow_max, n_u)
-	//velocity (resp. pressure) indices are assumed to be consecutive, and nu+np+ n_neither_U_nor_P = nb_local_lines = irow_max - irow_min
+	//velocity (resp. pressure) indices are assumed to be consecutive, and nu+np+ n_neither_U_nor_P = irow_max - irow_min
 	PetscInt nb_pressure_lines = irow_max >= n_u ? min(irow_max, n_neither_U_nor_P) - min(min_pressure_lines, n_neither_U_nor_P) : 0;
 	PetscInt nb_velocity_lines = irow_min <= n_u ? max_velocity_lines - irow_min : 0;
 	ISCreateStride(PETSC_COMM_WORLD, nb_velocity_lines, max_velocity_lines - nb_velocity_lines, 1, &is_U);
@@ -169,35 +168,95 @@ int main( int argc, char **args ){
 	VecSetValues(X_anal,nb_pressure_lines,i_p,y,INSERT_VALUES);
 	VecAssemblyBegin(X_anal );
 	VecAssemblyEnd(  X_anal );
-	VecNormalize( X_anal, NULL);
+	VecNormalize(    X_anal, NULL);
 
 	MatMult( A_input, X_anal, b_input);
 	PetscPrintf(PETSC_COMM_WORLD,"... vectors created \n");	
 	MatDestroy(&A_input);//Early destruction since A_input is a sequential matrix stored on process 0
 
-//##### Application of the transformation A -> A_hat
-	// Declaration
-	Mat D_M_inv_G, Mat_array[4];
-	Mat A_hat, Pmat, C_hat, G_hat;
-	Mat diag_2M;//Will store 2*diagonal part of M (to approximate the Schur complement)
-	Vec v;
-	Vec v_redistributed;//different distribution of coefficients among the processors
+//##### Create the matrix used for the change of variable
+	Mat Id_M, Id_C, Id_R, D_M_inv_G, Pmat, invPmat, PMat_array[9], invPMat_array[9];
+	Vec v_M, v_C, v_R;
+	Vec v_redistributed;//different distribution of coefficients among the processors for v_M
 	VecScatter scat;//tool to redistribute a vector on the processors
 	IS is_to, is_from;
 	
-	//Extraction of the diagonal of M
-	MatCreateVecs(M,NULL,&v);//v has the parallel distribution of M
-	MatGetDiagonal(M,v);
+	MatCreateVecs(M,NULL,&v_M);//v_M has the parallel distribution of M
+	MatCreateVecs(C,NULL,&v_C);//v_C has the parallel distribution of C
+	MatCreateVecs(R,NULL,&v_R);//v_R has the parallel distribution of R
+
+	VecSet(v_M,1.0);
+	VecSet(v_C,1.0);
+	VecSet(v_R,1.0);
+
+	MatDuplicate(M, MAT_DO_NOT_COPY_VALUES, &Id_M);
+	MatDuplicate(C, MAT_DO_NOT_COPY_VALUES, &Id_C);
+	MatDuplicate(R, MAT_DO_NOT_COPY_VALUES, &Id_R);
+
+	MatEliminateZeros(Id_M, PETSC_TRUE);
+	MatEliminateZeros(Id_C, PETSC_TRUE);
+	MatEliminateZeros(Id_R, PETSC_TRUE);
 	
+	MatDiagonalSet(Id_M, v_M, INSERT_VALUES);
+	MatDiagonalSet(Id_C, v_C, INSERT_VALUES);
+	MatDiagonalSet(Id_R, v_R, INSERT_VALUES);
+
+	MatGetDiagonal(M,v_M);
+	VecReciprocal(v_M);
+	
+	// Creation of D_M_inv_G = D_M_inv*G
+	MatDuplicate(G,MAT_COPY_VALUES,&D_M_inv_G);//D_M_inv_G contains G
+	MatCreateVecs(D_M_inv_G,NULL,&v_redistributed);//v_redistributed has the parallel distribution of D_M_inv_G
+	PetscInt col_min, col_max;
+	VecGetOwnershipRange(v_M,&col_min,&col_max);
+	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_from);
+	VecGetOwnershipRange(v_redistributed,&col_min,&col_max);
+	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_to);
+	VecScatterCreate(v_M,is_from,v_redistributed,is_to,&scat);
+	VecScatterBegin(scat, v_M, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
+	VecScatterEnd(  scat, v_M, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
+	MatDiagonalScale( D_M_inv_G, v_redistributed, NULL);//D_M_inv_G contains D_M_inv*G
+
+	PMat_array[0]=Id_M;
+	PMat_array[1]=D_M_inv_G;
+	PMat_array[2]=NULL;
+	PMat_array[3]=NULL;
+	PMat_array[4]=Id_C;
+	PMat_array[5]=NULL;
+	PMat_array[6]=NULL;
+	PMat_array[7]=NULL;
+	PMat_array[8]=Id_R;
+
+	invPMat_array[0]=Id_M;
+	invPMat_array[1]=-D_M_inv_G;
+	invPMat_array[2]=NULL;
+	invPMat_array[3]=NULL;
+	invPMat_array[4]=Id_C;
+	invPMat_array[5]=NULL;
+	invPMat_array[6]=NULL;
+	invPMat_array[7]=NULL;
+	invPMat_array[8]=Id_R;
+
+	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,   PMat_array,&   Pmat);
+	MatCreateNest(PETSC_COMM_WORLD,3,NULL,3,NULL,invPMat_array,&invPmat);
+
+//##### Application of the transformation A -> A_hat
+	// Declaration
+	Mat Mat_array[4];
+	Mat A_hat, C_hat, G_hat;
+	Mat diag_2M;//Will store 2*diagonal part of M (to approximate the Schur complement)
+	
+	//Creation of 2*diag(M)
+	MatGetDiagonal(M,v_M);
 	MatDuplicate(M, MAT_DO_NOT_COPY_VALUES, &diag_2M);
 	MatEliminateZeros(diag_2M, PETSC_TRUE);
-	MatDiagonalSet(diag_2M, v,  INSERT_VALUES);
+	MatDiagonalSet(diag_2M, v_M, INSERT_VALUES);
 	MatScale(diag_2M,2);//store 2*diagonal part of M
 	//Create the matrix 2*diag(M). Why not use MatCreateDiagonal ??? Problem of conversion from MATCONSTANTDIAGONAL to MATAIJ
 	//MatCreateConstantDiagonal(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, n_u, n_u, 2, &diag_2M);
-	//MatDiagonalScale(diag_2M, v, NULL);//store 2*diagonal part of M
+	//MatDiagonalScale(diag_2M, v_M, NULL);//store 2*diagonal part of M
 	/*  Problem of conversion from MATDIAGONAL to MATAIJ
-	MatCreateDiagonal(v,&diag_2M);
+	MatCreateDiagonal(v_M,&diag_2M);
 	MatScale(diag_2M,2);//store 2*diagonal part of M
 	PetscPrintf(PETSC_COMM_WORLD,"Printing matrix diag_2M before conversion \n");
 	MatView( diag_2M, PETSC_VIEWER_STDOUT_WORLD);
@@ -205,20 +264,6 @@ int main( int argc, char **args ){
 	PetscPrintf(PETSC_COMM_WORLD,"Printing matrix diag_2M after conversion \n");
 	MatView( diag_2Maij, PETSC_VIEWER_STDOUT_WORLD);
 	*/
-	VecReciprocal(v);
-	
-	// Creation of D_M_inv_G = D_M_inv*G
-	MatDuplicate(G,MAT_COPY_VALUES,&D_M_inv_G);//D_M_inv_G contains G
-	MatCreateVecs(D_M_inv_G,NULL,&v_redistributed);//v_redistributed has the parallel distribution of D_M_inv_G
-	PetscInt col_min, col_max;
-	VecGetOwnershipRange(v,&col_min,&col_max);
-	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_from);
-	VecGetOwnershipRange(v_redistributed,&col_min,&col_max);
-	ISCreateStride(PETSC_COMM_WORLD, col_max-col_min, col_min, 1, &is_to);
-	VecScatterCreate(v,is_from,v_redistributed,is_to,&scat);
-	VecScatterBegin(scat, v, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
-	VecScatterEnd(  scat, v, v_redistributed,INSERT_VALUES,SCATTER_FORWARD);
-	MatDiagonalScale( D_M_inv_G, v_redistributed, NULL);//D_M_inv_G contains D_M_inv*G
 
 	// Creation of C_hat
 	MatMatMult(D,D_M_inv_G,MAT_INITIAL_MATRIX,PETSC_DEFAULT,&C_hat);//C_hat contains D*D_M_inv*G
@@ -431,11 +476,17 @@ int main( int argc, char **args ){
 	MatDestroy(&diag_2M);
 	MatDestroy(&A_hat);
 	MatDestroy(&Pmat);
+	MatDestroy(&Id_M);
+	MatDestroy(&Id_C);
+	MatDestroy(&Id_R);
 	
 	VecDestroy(&b_input);
 	VecDestroy(&X_hat);
 	VecDestroy(&X_anal);
 	VecDestroy(&v);
+	VecDestroy(&v_M);
+	VecDestroy(&v_C);
+	VecDestroy(&v_R);
 
 	ISDestroy(&is_U);
 	ISDestroy(&is_P);
