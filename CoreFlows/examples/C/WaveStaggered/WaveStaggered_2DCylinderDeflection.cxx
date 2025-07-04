@@ -118,9 +118,9 @@ int main(int argc, char** argv)
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 100000000	;
-	int freqSave = 800;
-	double cfl = 0.5;
-	double maxTime = 40;
+	int freqSave = 3000;
+	double cfl = 0.99;
+	double maxTime = 100;
 	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);

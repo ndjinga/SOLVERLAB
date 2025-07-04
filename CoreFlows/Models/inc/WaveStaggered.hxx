@@ -113,6 +113,7 @@ public :
 	
 	/***********Orientation *************/
 	double getOrientation(int l, Cell Cint)  ;
+	double getOrientationNode(int n, int j) ; //n is a node, j a face, gives back sign( (x_n - x_j). n_sigma^perp  )
 	void  setOrientation(int j,std::vector<double> vec_normal_sigma);
 
 	/***********Post Pro *************/

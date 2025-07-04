@@ -87,9 +87,9 @@ Regular_1D = Mesh_1.Segment()
 Number_of_Segments_1 = Regular_1D.NumberOfSegments(200)
 status = Mesh_1.AddHypothesis(Quadrangle_Parameters_2)
 status = Mesh_1.AddHypothesis(Quadrangle_2D)
-Number_of_Segments_1.SetNumberOfSegments( 40 )
+Number_of_Segments_1.SetNumberOfSegments( 55 )
 isDone = Mesh_1.Compute()
-isDone = Mesh_1.SplitQuadObject( Mesh_1, 2 )
+isDone = Mesh_1.SplitQuadObject( Mesh_1, 1 )
 
 
 ## Set names of Mesh objects
@@ -101,7 +101,7 @@ smesh.SetName(Gmsh_Parameters, 'Gmsh Parameters')
 smesh.SetName(Number_of_Segments_1, 'Number of Segments_1')
 smesh.SetName(Mesh_1.GetMesh(), 'Mesh_1')
 smesh.SetName(Quadrangle_Parameters_2, 'Quadrangle Parameters_2')
-Mesh_1.ExportMED( r'/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/SquareWithTriangles'+str(40)+'.med', auto_groups=1, minor=40)
+Mesh_1.ExportMED( r'/volatile/catB/esteban/Solverlab/SOLVERLAB_SRC/CoreFlows/examples/resources/SquareWithTriangles'+str(55)+'.med', auto_groups=1, minor=40)
 
 
 if salome.sg.hasDesktop():

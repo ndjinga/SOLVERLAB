@@ -7,20 +7,20 @@
 using namespace std;
 
 double initialDensity( double x, double y , double nx){
-	if (y < (1-x - 1.0/(4 * nx) ) )	return 12;
-	else 							return 1;
+	if (y < (x+0.1 - 1.0/(4 * nx) ) )	return 3.0 ;//12;
+	else 									return 1.0;
 }
 
-std::vector<double> initialVelocity(double x, double y){
+std::vector<double> initialVelocity(double x, double y, double nx){
 	std::vector<double> vec(2);
-	double ul = 1.5 ; 
-	double ur = -3 ; 
-	if (y < (1 - x)){
-		vec[0] = ul/sqrt(2.0);
+	double ul = 5;//1.5 ; 
+	double ur = -1.0;//-3 ; 
+	if (y < (x+0.1  -1.0/(4 * nx) )){
+		vec[0] = -ul/sqrt(2.0);
 		vec[1] = ul/sqrt(2.0);
 	}
 	else {
-		vec[0] = ur/sqrt(2.0);
+		vec[0] = -ur/sqrt(2.0);
 		vec[1] = ur/sqrt(2.0);
 	}
 	
@@ -46,12 +46,14 @@ int main(int argc, char** argv)
 	double gamma = 2.0;
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
 	int nx;
+	double inf = 0.0;
+	double sup = 1.0;
 	if (argc>1  ){
 		// ./resources/AnnulusSpiderWeb5x16.med or ./resources/AnnulusTriangles60.med
 		cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
 		cout << "Loading of a mesh named "<<argv[1] << endl;
 		string filename = argv[1];
-		nx=40;
+		nx=55;
 		M=Mesh(filename);
 	}
 	else{
@@ -59,11 +61,10 @@ int main(int argc, char** argv)
 		// Prepare for the mesh
 		cout << "Building mesh" << endl;
 		cout << "Construction of a cartesian mesh" << endl;
-		double inf = 0.0;
-		double sup = 1.0;
+	
 		int ny;
-		nx=40;
-		ny=40;
+		nx=10	;
+		ny=10;
 		M=Mesh(inf,sup,nx,inf,sup,ny);
 	}
 	//Preprocessing: mesh and group creation
@@ -78,6 +79,7 @@ int main(int argc, char** argv)
 	Field Momentum0("velocity", FACES, M, 1);
 	std::vector<double> wallVelocityVector(spaceDim);
 
+	//myProblem.setPeriodicFaces(M, 'd', nx, inf , sup);
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
 		std::vector<int> idCells = Fj.getCellsId();
@@ -96,10 +98,10 @@ int main(int argc, char** argv)
 			myProblem.setInteriorIndex(j);
 			Cell Ctemp2 = M.getCell(idCells[1]);
 			Density0[idCells[1]] = initialDensity(Ctemp2.x(),Ctemp2.y(), nx);
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y() ) ,vec_normal_sigma )*(Density0[idCells[0]]+Density0[idCells[1]])/2.0;
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y(),nx ) ,vec_normal_sigma )*(Density0[idCells[0]]+Density0[idCells[1]])/2.0;
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma )*Density0[idCells[0]];
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y(),nx),vec_normal_sigma )*Density0[idCells[0]];
 			myProblem.setNeumannBoundIndex(j);	
 		}
 	}
@@ -110,7 +112,7 @@ int main(int argc, char** argv)
 	myProblem.setTimeScheme(Explicit);
 	
 	// name of result file
-	string fileName = "EulerBarotropicStaggered_2DDiagonalRiemann_StructuredSquares";
+	string fileName = "EulerBarotropicStaggered_2DDiagonalRiemann";
 
 	// parameters calculation
 	unsigned MaxNbOfTimeStep = 1000000;

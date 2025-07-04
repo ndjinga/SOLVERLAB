@@ -155,7 +155,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	#print only at final time 
 	velocitydata = pd.read_csv(fileName + "_Velocity_" + str(len(time) -1)+ ".csv", sep='\s+')
 	velocitydata.columns =['x','velocity', 'index']
-	Densitydata = pd.read_csv(fileName + "_Pressure_" + str(len(time) -1)+ ".csv", sep='\s+')
+	Densitydata = pd.read_csv(fileName + "_Density_" + str(len(time) -1)+ ".csv", sep='\s+')
 	Densitydata.columns =['x','pressure', 'index']
 	
 	myEOS = myProblem.getBarotropicEOS(0)	

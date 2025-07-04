@@ -134,20 +134,12 @@ int main(int argc, char** argv){
 		else if (Fj.getNumberOfCells()==1  ){ 
 			// if periodic check that the boundary face is the computed (avoid passing twice ) 
 			if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false)
-				myProblem.setSteggerBoundIndex(j);	
-			// Boundary normal velocity, Density and full velocity vector
-			for (int idm = 0; idm <spaceDim; idm ++)
-				wallVelocityVector[idm] = InitialMomentum(Fj.x(),Fj.y())[idm]/Density0[idCells[0]];
-			myProblem.setboundaryVelocityVector(j, wallVelocityVector);
-			wallVelocityMap[j] = dotprod(wallVelocityVector,vec_normal_sigma );
-			wallDensityMap[j]  = Density0[idCells[0]];
+				myProblem.setNeumannBoundIndex(j);	
 		}
 	}
 	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
-	myProblem.setboundaryPressure(wallDensityMap);
-	myProblem.setboundaryVelocity(wallVelocityMap);
-	
+
 	// set the numerical method
 	myProblem.setTimeScheme(Explicit);
 	myProblem.setLinearSolver(GMRES, LU, 70);

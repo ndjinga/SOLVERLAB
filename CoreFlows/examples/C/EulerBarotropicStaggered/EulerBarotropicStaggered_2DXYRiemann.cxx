@@ -6,22 +6,45 @@
 
 using namespace std;
 
-double initialDensity( double x, double y){
-	double r =  sqrt(x*x + y*y);
-	if (r < 2.5 )	return 12;
-	else 			return 1;
+double initialDensity( double x, double y,char Direction){
+	if (Direction == 'x'){
+		if (x <  1.0/2.0)
+			return 12;
+		else
+			return 1;
+	}
+	else if (Direction == 'y'){
+		if (y < 1.0/2.0)
+			return 12;
+		else
+			return 1;
+	}	
 }
 
-std::vector<double> initialVelocity(double x, double y){
+std::vector<double> initialVelocity(double x, double y, char Direction){
 	std::vector<double> vec(2);
-	double theta = atan2(x,y); 
-	double r =  sqrt(x*x + y*y);
-	if (theta < 0) theta += 2 * M_PI;
-	double vr,vtheta;
-	vtheta = 0;
-	vr = (r < 2.5 ) ? 1.5: -3;
-	vec[0] =  sin(theta) * vr  + cos(theta) * 0;
-	vec[1] =  cos(theta) * vr  - sin(theta) * 0;
+	double ul = 1.5 ; 
+	double ur = -3 ; 
+	if (Direction == 'x'){
+		if (x <  1.0/2.0){
+			vec[0] = ul;
+			vec[1] = 0;
+		}
+		else {
+			vec[0] = ur;
+			vec[1] = 0;
+		}
+	}
+	else if (Direction == 'y'){
+		if (y <  1.0/2.0){
+			vec[0] = 0;
+			vec[1] = ul;
+		}
+		else {
+			vec[0] = 0;
+			vec[1] = ur	;
+		}
+	}
 	return vec;
 }
 
@@ -44,14 +67,30 @@ int main(int argc, char** argv)
 	double gamma = 2.0;
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
 	int nx;
+	double inf = 0.0;
+	double sup = 1.0;
 	if (argc>1  ){
 		// ./resources/AnnulusSpiderWeb5x16.med or ./resources/AnnulusTriangles60.med
 		cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
 		cout << "Loading of a mesh named "<<argv[1] << endl;
 		string filename = argv[1];
-		nx=40;
+		nx=55;
 		M=Mesh(filename);
 	}
+	else{
+		PetscInitialize(&argc, &argv, 0,0);
+		// Prepare for the mesh
+		cout << "Building mesh" << endl;
+		cout << "Construction of a cartesian mesh" << endl;
+	
+		int ny;
+		nx=10	;
+		ny=10;
+		M=Mesh(inf,sup,nx,inf,sup,ny);
+	}
+
+	char Direction = 'x';
+	
 
 	// Prepare for the initial condition
 	// set the boundary conditions
@@ -63,6 +102,9 @@ int main(int argc, char** argv)
 	Field Momentum0("velocity", FACES, M, 1);
 	std::vector<double> wallVelocityVector(spaceDim);
 
+	myProblem.setPeriodicFaces(M, Direction, nx, inf , sup); 
+
+	double coordLeft, coordRight, coordFace; 
 	for (int j=0; j< M.getNumberOfFaces(); j++ ){
 		Face Fj = M.getFace(j);
 		std::vector<int> idCells = Fj.getCellsId();
@@ -71,49 +113,45 @@ int main(int argc, char** argv)
 		for(int l=0; l<Ctemp1.getNumberOfFaces(); l++){//we look for l the index of the face Fj for the cell Ctemp1
 			if (j == Ctemp1.getFacesId()[l]){
 				for (int idim = 0; idim < spaceDim; ++idim)
-					vec_normal_sigma[idim] =  Ctemp1.getNormalVector(l,idim)  ;
+					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim)  ;
 			}
 		}
-		//TODO pb orientation ?
-		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){ 
-			vec_normal_sigma[0] *= -1;
-			vec_normal_sigma[1] *= -1;
-		} 
 		myProblem.setOrientation(j,vec_normal_sigma);
-
-		Density0[idCells[0]] = initialDensity(Ctemp1.x(),Ctemp1.y());
+	
+		Density0[idCells[0]] = initialDensity(Ctemp1.x(), Ctemp1.y(),Direction);
 		if(Fj.getNumberOfCells()==2 ){ 
 			myProblem.setInteriorIndex(j);
 			Cell Ctemp2 = M.getCell(idCells[1]);
-			Density0[idCells[1]] = initialDensity(Ctemp2.x(),Ctemp2.y());
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y() ) ,vec_normal_sigma )*(Density0[idCells[0]]+Density0[idCells[1]])/2.0;
+			Density0[idCells[1]] = initialDensity(Ctemp2.x(), Ctemp2.y(),Direction);
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y(), Direction),vec_normal_sigma ) * (Density0[idCells[0]] + Density0[idCells[1]]  )/2.0;
 		}
 		else if (Fj.getNumberOfCells()==1  ){ 
-			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y()),vec_normal_sigma )*Density0[idCells[0]];
-			myProblem.setSteggerBoundIndex(j);	
-			// Boundary normal velocity, Density and full velocity vector
-			for (int idm = 0; idm <spaceDim; idm ++)
-				wallVelocityVector[idm] = initialVelocity(Fj.x(), Fj.y())[idm];
-			wallVelocityMap[j] = dotprod(wallVelocityVector,vec_normal_sigma );
-			wallDensityMap[j] = initialDensity(Fj.x(), Fj.y()) ;
-			myProblem.setboundaryVelocityVector(j, wallVelocityVector);
+			Momentum0[j] = dotprod(initialVelocity(Fj.x(), Fj.y(), Direction) ,vec_normal_sigma ) * Density0[idCells[0]];
+			// if periodic check that the boundary face is the computed (avoid passing twice ) 
+			if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false){
+				myProblem.setSteggerBoundIndex(j);								
+				wallDensityMap[j] = initialDensity(Fj.x(),Fj.y(),Direction);
+				for (int idm = 0; idm <spaceDim; idm ++)    wallVelocityVector[idm] = initialVelocity(Fj.x(), Fj.y(),Direction)[idm];
+				wallVelocityMap[j] = dotprod( wallVelocityVector, vec_normal_sigma );
+				myProblem.setboundaryVelocityVector(j, wallVelocityVector);
+			} 
+			
 		}
 	}
+
 	myProblem.setInitialField(Density0);
 	myProblem.setInitialField(Momentum0);
 	myProblem.setboundaryPressure(wallDensityMap);
 	myProblem.setboundaryVelocity(wallVelocityMap);
-
-
 	// set the numerical method
 	myProblem.setTimeScheme(Explicit);
 	
 	// name of result file
-	string fileName = "EulerBarotropicStaggered_2DDiagonalRiemann_StructuredSquares";
+	string fileName = "EulerBarotropicStaggered_2DRiemannXY";
 
 	// parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000;
-	int freqSave = 200;
+	unsigned MaxNbOfTimeStep = 10000;
+	int freqSave = 1;
 	double cfl = 0.99;
 	double maxTime = 0.07;
 	double precision = 1e-10;

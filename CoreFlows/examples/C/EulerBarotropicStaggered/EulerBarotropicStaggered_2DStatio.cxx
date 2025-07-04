@@ -5,13 +5,13 @@
 using namespace std;
 
 double initialDensity( double x, double y){
-	return 456;
+	return 1;//456;
 }
 
 std::vector<double> initialVelocity(double x,double y){
 	std::vector<double> vec(2);
-	vec[0] = 908.8875101; 
-	vec[1] = -67.89;
+	vec[0] = 1 ;//908.8875101; 
+	vec[1] = 0; //-67.89;
 	return vec;
 }
 
@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DStatio";
 
     // parameters calculation
-	unsigned MaxNbOfTimeStep = 5;
+	unsigned MaxNbOfTimeStep = 2;
 	int freqSave = 1		;
 	double cfl = 0.99;
 	double maxTime = 50;

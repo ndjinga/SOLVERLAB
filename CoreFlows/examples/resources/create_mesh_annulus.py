@@ -79,6 +79,6 @@ if __name__ == "__main__":
     ntheta = n*16
     drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., nr, ntheta,"Annulus")
 
-  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 100, 100,"Annulus")
+  drawPolarGrid(0., 0.,Rmin, Rmax, 0., 360., 200, 30,"Annulus")
  
  

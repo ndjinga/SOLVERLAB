@@ -6,36 +6,20 @@
 
 using namespace std;
 
-double initialPressure( double z, double discontinuity){
-	if (z < discontinuity)
-		return 2;
-	else
-		return 2;
+double initialDensity( double z, double discontinuity){
+	return 2;
 }
 
 std::vector<double> initialVelocity(double z, double discontinuity, char Direction){
 	std::vector<double> vec(2);
-	double ul = 1;
-	double ur = 1;
+	double u = 1;
 	if (Direction == 'x'){
-		if (z < discontinuity){
-			vec[0] = ul;
-			vec[1] = 0;
-		}
-		else {
-			vec[0] = ur;
-			vec[1] = 0;
-		}
+		vec[0] = u;
+		vec[1] = 0;
 	}
 	else if (Direction == 'y'){
-		if (z < discontinuity){
-			vec[0] = 0;
-			vec[1] = ul;
-		}
-		else {
-			vec[0] = 0;
-			vec[1] = ur;
-		}
+		vec[0] = 0;
+		vec[1] = u;
 	}
 	return vec;
 }
@@ -91,10 +75,10 @@ int main(int argc, char** argv)
 		// set the boundary conditions
 		//Initial field creation
 		cout << "Building initial data" << endl;
-		std::map<int ,double> wallPressureMap;
+		std::map<int ,double> wallDensityMap;
 		std::map<int ,double> wallVelocityMap ;
 		std::vector<double> wallVelocityVector(spaceDim);
-		Field Pressure0("pressure", CELLS, M, 1);
+		Field Density0("Density", CELLS, M, 1);
 		Field Momentum0("velocity", FACES, M, 1);
 
 		assert(fabs(inf)<1e-11);
@@ -112,28 +96,23 @@ int main(int argc, char** argv)
 						vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 				}
 			}
-			
+			myProblem.setOrientation(j,vec_normal_sigma);
+
 			double coordLeft, coordRight, coordFace; 
 			coordFace = (Direction == 'x') ?  Fj.x() :  Fj.y() ;
+			coordLeft = (Direction == 'x') ?  Ctemp1.x() : Ctemp1.y();
+			Density0[idCells[0]] = initialDensity(coordLeft,discontinuity);
 			if(Fj.getNumberOfCells()==2 ){ 
-				myProblem.setOrientation(j,vec_normal_sigma);
 				myProblem.setInteriorIndex(j);
 				Cell Ctemp2 = M.getCell(idCells[1]);
-				coordLeft = (Direction == 'x') ?  Ctemp1.x() : Ctemp1.y();
 				coordRight = (Direction == 'x') ? Ctemp2.x() : Ctemp2.y();
-				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
-				Pressure0[idCells[1]] = initialPressure(coordRight,discontinuity);
-				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (Pressure0[idCells[1]]  + Pressure0[idCells[0]] )/2.0;
+				
+				Density0[idCells[1]] = initialDensity(coordRight,discontinuity);
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (Density0[idCells[1]]  + Density0[idCells[0]] )/2.0;
 			}
 			else if (Fj.getNumberOfCells()==1  ){ 
-				Pressure0[idCells[0]] = initialPressure(coordLeft,discontinuity);
-				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * (initialPressure(coordLeft,discontinuity) + initialPressure(coordFace,discontinuity) )/2.0;
-				// Boundary normal velocity, pressure and full velocity vector
-				/* for (int idim = 0; idim <spaceDim; idim ++){
-						if (vec_normal_sigma[idim] < 0)
-							vec_normal_sigma[idim] = -vec_normal_sigma[idim];
-				} */
-				myProblem.setOrientation(j,vec_normal_sigma);
+				Momentum0[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) * Density0[idCells[1]] ;
+				
 				// If boundary face and if periodic check that the boundary face is the computed (avoid passing twice ) 
 				if  (myProblem.IsFaceBoundaryNotComputedInPeriodic(j) == false && myProblem.IsFaceBoundaryComputedInPeriodic(j) == false){
 					if (wall =='l' && coordFace <1.0/(4*ncells) ){
@@ -151,7 +130,7 @@ int main(int argc, char** argv)
 					else {
 						myProblem.setSteggerBoundIndex(j);	
 						wallVelocityMap[j] = dotprod(initialVelocity(coordFace, discontinuity, Direction),vec_normal_sigma ) ;
-						wallPressureMap[j] = initialPressure(coordFace,discontinuity);
+						wallDensityMap[j] = initialDensity(coordFace,discontinuity);
 						for (int idm = 0 ;idm <spaceDim; idm ++)
 							wallVelocityVector[idm] = initialVelocity(coordFace, discontinuity, Direction)[idm];
 					}
@@ -160,9 +139,9 @@ int main(int argc, char** argv)
 			}
 		}
 		
-		myProblem.setInitialField(Pressure0);
+		myProblem.setInitialField(Density0);
 		myProblem.setInitialField(Momentum0);
-		myProblem.setboundaryPressure(wallPressureMap);
+		myProblem.setboundaryPressure(wallDensityMap);
 		myProblem.setboundaryVelocity(wallVelocityMap);
 
 		// set the numerical method

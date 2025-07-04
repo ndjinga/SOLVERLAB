@@ -60,7 +60,6 @@ void WaveStaggered::setOrientation(int j,std::vector<double> vec_normal_sigma){
 		_vec_sigma[j].push_back(vec_normal_sigma[idim]);
 }
 
-//TODO what about checkorientation in periodic ?
 //TODO make it more effiecient -> at time 0 save orientation in structure map< int jface, std::map<int indexcell; double n_j.n_{cell,j}>>
 double WaveStaggered::getOrientation(int l, Cell Cint) {	
 	double checktouternormal;
@@ -109,6 +108,21 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 
 }
 
+double WaveStaggered::getOrientationNode(int n, int j) {
+	assert(_Ndim == 2); 
+	std:vector<double> n_sigma_perp(_Ndim, 0.0), XnMinusXsigma(_Ndim, 0.0);
+	n_sigma_perp[0] = -_vec_sigma.find(j)->second[1];
+	n_sigma_perp[1] =  _vec_sigma.find(j)->second[0];
+	XnMinusXsigma[0] = _mesh.getNode(n).x() - _mesh.getFace(j).getBarryCenter().x() ;
+	XnMinusXsigma[1] = _mesh.getNode(n).y() - _mesh.getFace(j).getBarryCenter().y() ;
+	
+	double dotprod = 0;
+	if ( _mesh.getFace(j).getNodesId()[0] == n  ||  _mesh.getFace(j).getNodesId()[1] == n ){
+		for (int idim = 0; idim < _Ndim; ++idim)
+			dotprod += n_sigma_perp[idim] * XnMinusXsigma[idim] * 2.0/_mesh.getFace(j).getMeasure(); 
+	}
+	return dotprod ; 
+}
 
 void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells, double inf, double sup){ 
 	for (int j=0;j<M.getNumberOfFaces() ; j++){
@@ -120,7 +134,17 @@ void WaveStaggered::setPeriodicFaces( Mesh &M, const char &Direction, int ncells
 		else if (Direction == 'y' && _Ndim ==2)
 			e=my_face.y();
 		if (my_face.getNumberOfCells() ==1 ){ 
-			if( (_Ndim==2) &&  e>tol+ inf && e< (sup-tol) ){
+			if (_Ndim==2 && Direction =='d'){
+				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
+					Face face_i=M.getFace(iface);
+					if (face_i.getNumberOfCells() ==1 && iface !=j &&  fabs(my_face.y() -face_i.x())<tol &&  fabs(my_face.x() -face_i.y()) <tol && _FacePeriodicMap.find(iface) == _FacePeriodicMap.end() ){ 
+						_FacePeriodicMap[j]=iface;
+						setInteriorIndex(j);
+					}
+				}
+
+			}
+			if( ( (Direction == 'x') || (Direction == 'y') ) &&  e>tol+ inf && e< (sup-tol) ){
 				for (int iface=0;iface<M.getNumberOfFaces() ; iface++){
 					Face face_i=M.getFace(iface);
 					double ei;
@@ -358,35 +382,23 @@ void WaveStaggered::initialize(){
 	save();//save initial data
 }
 
-//TOD0 integration formula is not good 
 double WaveStaggered::MassLumping(const Cell &K, const int &idcell, const Face & Facej, const int &j){
 	double masslumping_on_K =0;
 	std::vector<Cell> Support_f, Support_j ;
 	Support_f.push_back(K);
 	Support_j.push_back(K);
 	std::vector<Node> K_Nodes;
-	for (int i=0; i < K.getNodesId().size(); i++)
-		K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
+	for (int i=0; i < K.getNodesId().size(); i++)  K_Nodes.push_back(_mesh.getNode(K.getNodesId()[i]) );
 	
-	/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10 && fabs(Facej.x())<2 && (idcell ==0 || idcell ==3) ){
-		cout << "\nK = "<< K.x() <<" "<< K.y()<< "  or = "<< getOrientation(j, K)<<" vec_sigma = "<< _vec_sigma.find(j)->second[0]<<" "<< _vec_sigma.find(j)->second[1]<<endl; 
-		cout << "idcell = " << idcell <<" Fj = ("<<Facej.x()<<" " <<Facej.y()<<") "  <<endl;
-	} */
-
 	for (int l =0; l <K.getNumberOfFaces(); l ++){
 		Point Xl =  _mesh.getFace( K.getFacesId()[l] ).getBarryCenter();
 		double weight = (_Ndim ==2) ? ( (K.getNumberOfFaces() == 4) ? 1/4.0 : 1/6.0 ) : 1/2.0;
 		double Area = fabs( det( JacobianTransfor_K_X( xToxhat(K, Xl, K_Nodes), K_Nodes) ) ) * weight;
 		std::vector<double> Psi_j_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_j, Facej,j, Xl);
-		/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10&& fabs(Facej.x())<2 && (idcell ==0 || idcell ==3) ){
-			cout <<"\nPsi_j = ("<< Psi_j_in_Xl[0]<< "  "<<Psi_j_in_Xl[1]<< ") in  ("<< Xl.x()<<" , "<< Xl.y()<<" )" <<endl;
-		} */
-
+		
 		for (int f=0; f <K.getNumberOfFaces(); f ++){
 			Face Facef = _mesh.getFace( K.getFacesId()[f] );
 			std::vector<double> Psi_f_in_Xl = PhysicalBasisFunctionRaviartThomas(K, idcell, Support_f, Facef, K.getFacesId()[f], Xl);
-			/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10&& fabs(Facej.x())<2 && (idcell ==0 || idcell ==3) )
-				cout <<"Facef = ("<<Facef.x()<<" " <<Facef.y()<<")                  Psi_f = ("<< Psi_f_in_Xl[0]<< "  "<<Psi_f_in_Xl[1]<< ") " <<endl; */
 			for (int e=0; e<_Ndim; e++)  masslumping_on_K +=  Area *  Psi_j_in_Xl[e] * Psi_f_in_Xl[e];	
 			/* if (fabs( atan(Facej.y()/Facej.x()) ) <1e-10&& fabs(Facej.x())<2&& (idcell ==0 || idcell ==3)){
 				cout <<" f = "<<K.getFacesId()[f]<<" dotprod = "<< Psi_j_in_Xl[0] * Psi_f_in_Xl[0] + Psi_j_in_Xl[1] * Psi_f_in_Xl[1] <<endl;
@@ -410,9 +422,10 @@ void WaveStaggered::AssembleMetricsMatrices(){
 		double D_sigma_K, D_sigma_L,HalfDiamondCell;
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;	
 		bool IsWallBound = std::find(_WallBoundFaceSet.begin(), _WallBoundFaceSet.end(),j ) != _WallBoundFaceSet.end() ;
-		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;	
+		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
+		bool IsNeumannBound = std::find(_NeumannBoundFaceSet.begin(), _NeumannBoundFaceSet.end(),j ) != _NeumannBoundFaceSet.end() ;	
 
-		D_sigma_K =  MassLumping(Ctemp1, idCells[0], Fj, j);
+		D_sigma_K =  MassLumping(Ctemp1, idCells[0], Fj, j);	
 		InvPerimeter1 = (_Ndim ==2) ? 1.0/_perimeters(idCells[0]) : 1.0 ;
 		InvVol1 = 1.0/Ctemp1.getMeasure();
 
@@ -425,17 +438,19 @@ void WaveStaggered::AssembleMetricsMatrices(){
 			D_sigma_L = MassLumping(Ctemp2, idCells[1], Fj_physical, j);
 			InvPerimeter2 = (_Ndim ==2) ? 1.0/_perimeters(idCells[1]) : 1.0 ;
 			InvVol2 = 1.0/Ctemp2.getMeasure();
-			/* if (fabs( atan(Fj.y()/Fj.x()) ) <3.14/2 && fabs(Fj.x())<3 && Fj.y() >0 )
-				cout <<"Facej = "<< Fj.x() <<" "<<Fj.y()<<"  mlump = "<<D_sigma_K + D_sigma_L <<endl;  */
-
 			InvD_sigma = 1.0/(D_sigma_K + D_sigma_L);
+
 			MatSetValue(_InvVol, idCells[0],idCells[0], InvVol1 , INSERT_VALUES );
 			MatSetValue(_InvVol, idCells[1],idCells[1], InvVol2, INSERT_VALUES );
 			MatSetValue(_InvVol, IndexFace, IndexFace,  InvD_sigma, INSERT_VALUES); 	
+			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  ){
+				int IndexPeriodicTwin = _Nmailles + _FacePeriodicMap.find(j)->second;
+				MatSetValue(_InvVol, IndexPeriodicTwin, IndexPeriodicTwin, InvD_sigma, INSERT_VALUES );
+			}
 			MatSetValue(_InvSurface,idCells[0],idCells[0], InvPerimeter1, INSERT_VALUES );
 			MatSetValue(_InvSurface,idCells[1],idCells[1], InvPerimeter2, INSERT_VALUES );
 		}
-		else if (IsWallBound || IsSteggerBound ) { 
+		else if (IsWallBound || IsSteggerBound || IsNeumannBound) { 
 			InvD_sigma = 1.0/D_sigma_K ; 	
 			MatSetValue(_InvSurface,idCells[0],idCells[0], InvPerimeter1, INSERT_VALUES );
 			MatSetValue(_InvVol, idCells[0],idCells[0], InvVol1, INSERT_VALUES );
@@ -446,11 +461,10 @@ void WaveStaggered::AssembleMetricsMatrices(){
 	MatAssemblyEnd(_InvVol, MAT_FINAL_ASSEMBLY);
 	MatAssemblyBegin(_InvSurface,MAT_FINAL_ASSEMBLY);
 	MatAssemblyEnd(_InvSurface, MAT_FINAL_ASSEMBLY);
-
 }
 
 
-
+ //TODO periodic is not taken into account
 void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 	assert(_nbTimeStep == 0);
     Mat B, Btranspose, HodgeLaplacian;
@@ -487,7 +501,7 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 		Face Fj = _mesh.getFace(j);
 		std::vector< int > idCells = Fj.getCellsId();
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-		if ( IsInterior ){	 //TODO periodic ?
+		if ( IsInterior ){	
 			Cell Ctemp1 = _mesh.getCell(idCells[0]);
 			Cell Ctemp2 = _mesh.getCell(idCells[1]);
 			MatSetValue(B, idCells[0], j ,  -getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
@@ -588,7 +602,7 @@ void  WaveStaggered::computeHodgeDecompositionWithBoundaries(){
 		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
 		double delta;
 		VecGetValues(_Velocity_0_Psi, 1, &j, &u_psi);
-		if ( !IsInterior ){	 //TODO periodic ?
+		if ( !IsInterior ){	 
 			delta = fabs(getboundaryVelocity().find(j)->second - u_psi);
 		}
 		if (fabs(delta)>1e-10)
@@ -669,6 +683,33 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
 					}
 				}	
+				// *************** Grad^perp tilde (Grad^per)^*  ************//
+				if (_Ndim ==2 ){
+					double Inv_Dsigma, length_sigma_perp,  Inv_Df, length_f_perp;
+					MatGetValues(_InvVol, 1, &IndexFace, 1, &IndexFace, &Inv_Dsigma);
+					length_sigma_perp = 1/(Inv_Dsigma * Fj.getMeasure());
+					//TODO periodic
+					std::vector<int> idNodesSigma = Fj.getNodesId();
+					for (int n=0; n < idNodesSigma.size() ; n++){
+						std::vector<int> idFacesn = _mesh.getNode( idNodesSigma[n] ).getFacesId();
+						double measureBoundaryDualVolumOfN =0;
+						for (int f=0; f< idFacesn.size(); f++){
+							Face FaceOfNodeN =  _mesh.getFace( idFacesn[f] );
+							for (int cell=0; cell < FaceOfNodeN.getNumberOfCells(); cell++){
+								Cell K = _mesh.getCell( FaceOfNodeN.getCellsId()[cell] );
+								measureBoundaryDualVolumOfN += sqrt( (K.x() -  FaceOfNodeN.x())*(K.x() -  FaceOfNodeN.x()) + (K.y() -  FaceOfNodeN.y())*(K.y() -  FaceOfNodeN.y()));
+							}
+						}
+						for (int f=0; f< idFacesn.size(); f++){
+							int I_f = _Nmailles + idFacesn[f];
+							MatGetValues(_InvVol, 1, &I_f, 1, &I_f, &Inv_Df);
+							length_f_perp = 1/(Inv_Df * _mesh.getFace(idFacesn[f]).getMeasure());
+							double rotrot = -_c/2.0 *length_sigma_perp * getOrientationNode(idNodesSigma[n],j) * length_f_perp * getOrientationNode(idNodesSigma[n], idFacesn[f])/measureBoundaryDualVolumOfN; 
+							MatSetValue(_A, IndexFace, I_f, rotrot, ADD_VALUES ); 
+
+						}
+					}
+				}
 			}
 			else if (IsSteggerBound || IsWallBound ) { 
 				//MatSetValue(_A, idCells[0], IndexFace, -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
@@ -1051,7 +1092,10 @@ bool WaveStaggered::FindlocalBasis(const int &m,const Face &Facej, const int &j,
 	double cdot =0;
 	for (int e=0; e <_Ndim; e++)
 		cdot += PhysicalPsij[e] * _vec_sigma.find(j)->second[e]*getOrientation(j,K) ;	
-	assert(fabs(cdot -1)<1e-11 ||  fabs(cdot )<1e-11 );
+	/* if (j==0)
+		cout <<cdot <<endl; */
+	if (fabs(cdot -1)>1e-11 &&  fabs(cdot )>1e-11 )
+		cout <<"WARNING !! BASIS FUNCTION " << j <<" WILL BE EQUAL TO 0, psi_m. n_sigma =  "<< cdot <<endl;
 	return (fabs(cdot -1)< 1e-11); 
 }
 
