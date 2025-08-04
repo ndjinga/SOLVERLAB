@@ -40,10 +40,10 @@ class Face;
 
 typedef enum
   {
-    CELLS = 11,
-    NODES = 7,
-    FACES = 5,
-    GAUSS_PT =3
+    CELLS,
+    NODES,
+    FACES,
+    GAUSS_PT
   } EntityType;
 
 #include <vector>
