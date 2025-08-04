@@ -624,10 +624,10 @@ if ( SOLVERLAB_WITH_POSTPRO )
         message( STATUS "Found vtkPVConfig.h in ${vtkPVConfig_file}")
         file(STRINGS ${vtkPVConfig_file} vtkPVConfig)
         FOREACH(line ${vtkPVConfig})
-          string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
+          string(FIND "${line}" "#define PARAVIEW_VERSION " pos)
           IF(NOT ${pos} EQUAL -1)
             string(LENGTH ${line} line_length)#length of the tarball
-            MATH(EXPR start_pv_version "${line_length}-6")#line ends with "x.y.z", that counts for 7 characters
+            MATH(EXPR start_pv_version "${line_length}-4")#line ends with "x.y", that counts for 5 characters
             string(SUBSTRING ${line} ${start_pv_version} 5 PARAVIEW_VERSION)
             break()
           ENDIF(NOT ${pos} EQUAL -1)
@@ -638,11 +638,11 @@ if ( SOLVERLAB_WITH_POSTPRO )
       message( STATUS "Found vtkPVVersion.h in ${vtkPVVersion_file}")
       file(STRINGS ${vtkPVVersion_file} vtkPVVersion)
       FOREACH(line ${vtkPVVersion})
-        string(FIND "${line}" "#define PARAVIEW_VERSION_FULL " pos)
+        string(FIND "${line}" "#define PARAVIEW_VERSION " pos)
         IF(NOT ${pos} EQUAL -1)
           string(LENGTH ${line} line_length)#length of the tarball
-          MATH(EXPR start_pv_version "${line_length}-7")#line ends with "x.y.z", that counts for 7 characters
-          string(SUBSTRING ${line} ${start_pv_version} 6 PARAVIEW_VERSION)
+          MATH(EXPR start_pv_version "${line_length}-5")#line ends with "x.y.z", that counts for 5 characters
+          string(SUBSTRING ${line} ${start_pv_version} 4 PARAVIEW_VERSION)
           break()
         ENDIF(NOT ${pos} EQUAL -1)
       ENDFOREACH(line ${vtkPVVersion})
