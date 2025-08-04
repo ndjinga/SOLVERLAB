@@ -43,15 +43,11 @@
 
 namespace MEDCoupling
 {
-class MEDFileCMesh;
 class MEDCouplingMesh;
 class MEDCouplingIMesh;
 class DataArrayIdType;
 }
-namespace ParaMEDMEM
-{
-class DataArrayIdType;
-}
+
 #include <MCAuto.hxx>
 #include "NormalizedGeometricTypes"
 
@@ -80,7 +76,7 @@ public: //----------------------------------------------------------------
 	Mesh ( void ) ;
 
 	/**
-	 * \brief constructor with data to load a structured MEDCouplingIMesh
+	 * \brief constructor with data to load a structured MEDCouplingCMesh (no loader yet for structured MEDCouplingCMesh)
 	 * @param filename name of structured mesh file
 	 * @param meshLevel : relative mesh dimension : 0->cells, 1->Faces etc
 	 */
@@ -119,7 +115,7 @@ public: //----------------------------------------------------------------
 	 */
 	Mesh( double xmin, double xmax, int nx, double ymin, double ymax, int ny, double zmin, double zmax, int nz, std::string meshName="MESH3D_Regular_Cuboid_Grid") ;
 
-	Mesh( const MEDCoupling::MEDCouplingMesh* mesh ) ;
+	Mesh( const MEDCoupling::MEDCouplingIMesh* mesh ) ;
 
     /**
      * \brief Computes the global cell number from its IJK position
@@ -170,13 +166,13 @@ public: //----------------------------------------------------------------
 	 * @param int cellId : global cell index 
 	 * @return vector of indices of the nodes surrounding the cell 
      */
-    std::vector< mcIdType > getNodeIdsOfCell(mcIdType cellId) const { std::vector< mcIdType > conn; _mesh_>getNodeIdsOfCell(mcIdType cellId, conn) ; return conn; };
+    std::vector< mcIdType > getNodeIdsOfCell(mcIdType cellId) const { std::vector< mcIdType > conn; _mesh->getNodeIdsOfCell(mcIdType cellId, conn) ; return conn; };
     /**
      * \brief Computes the coordinates of a node
 	 * @param int nodeId : global node index 
 	 * @return vector of components of the node coordinates 
      */
-    std::vector< double >   getNodeCoordinates (mcIdType nodeId) const { std::vector< double > coo; _mesh_>getCoordinatesOfNode(mcIdType nodeId, coo) ; return coo; };
+    std::vector< double >   getNodeCoordinates (mcIdType nodeId) const { std::vector< double > coo; _mesh->getCoordinatesOfNode(mcIdType nodeId, coo) ; return coo; };
     /**
      * \brief Computes the coordinates of a face center of mass
      * @param int face grid number corresponding to the direction of the face normal : 0->x, 1->y, 2->z
@@ -190,8 +186,6 @@ public: //----------------------------------------------------------------
      */
     std::vector< double >   getCellCenterCoordinates (mcIdType cellId) const ;
     
-	 double getMeasureOfAnyCell () const;
-	 
 	/**
 	 * \brief constructor with data
 	 * @param filename : file name of structured mesh med file
@@ -362,11 +356,13 @@ public: //----------------------------------------------------------------
     int getMaxNbNeighbours(EntityType type) const;
     
     /**
-	 * return the measure of a cell (length in 1D, surface in 2D or volume in 3D)
+	 * return the measure of any cell (length in 1D, surface in 2D or volume in 3D)
 	 * @return _cellMeasure
 	 */
 	double getCellMeasure ( ) const { return _cellMeasure;};
 
+    double getMeasureOfAnyCell () const;
+	 
     
     /**
 	 * return the measure of a cell (length in 1D, surface in 2D or volume in 3D)

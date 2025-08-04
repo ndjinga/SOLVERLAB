@@ -74,8 +74,8 @@ IJKMesh::setFaceMeshes()
 	_faceMeshes=std::vector< MEDCoupling::MCAuto<MEDCoupling::MEDCouplingStructuredMesh> >( meshDim )
 
 	std:vector< int > nodeStr = _mesh->getNodeGridStructure();
-	std:vector< int > dxyz = _mesh->getDXYZ();
-	std:vector< double > origin = _mesh->getOrigin();
+	std:vector< double > dxyz = _mesh->getDXYZ();//This function is specific to the class MEDCouplingIMesh
+	std:vector< double > origin = _mesh->getOrigin();//This function is specific to the class MEDCouplingIMesh
 
 	double originPtr[meshDim];
 	double dxyzPtr[meshDim];
@@ -88,12 +88,11 @@ IJKMesh::setFaceMeshes()
 		nodeStrctPtr[i]=nodeStr[i];
 		dxyzPtr[i]=dxyz[i];
 	}
-	_cellMeasure=1;
+	_cellMeasure=_mesh->getMeasureOfAnyCell ();//This function is specific to the class MEDCouplingIMesh
 	_faceNormals=std:vector< std:vector< double > > (meshDim, std:vector< double >(meshDim,0));
 	/* Creation of face meshes, and filling of face normals, face measures and cell measure */
 	for(int i=0; i<meshDim; i++)
 	{
-		_cellMeasure*=dxyz[i];
 		_faceMeasures[i]=1;
 		_faceNormals[i][i]=1;
 		for(int j=0; j<meshDim; j++)
@@ -135,7 +134,7 @@ IJKMesh::IJKMesh( const IJKMesh& m )
         _indexFacePeriodicMap=m.getIndexFacePeriodic();
     
 	//_mesh=m if _mesh is declared const
-	_mesh=m.getMEDCouplingIMesh()->clone(false);
+	_mesh=m.getMEDCouplingStructuredMesh()->clone(false);
 }
 
 //----------------------------------------------------------------------
@@ -150,7 +149,7 @@ void
 IJKMesh::readMeshMed( const std::string filename, const std::string & meshName , int meshLevel )
 //----------------------------------------------------------------------
 {
-	MEDFileCMesh * m;//Here we would like a MEDFileStructuredMesh but that class does not exist
+	MEDFileCMesh * m;//Here we would like a MEDFileStructuredMesh or a MEDFileIMesh but that class does not exist
 	
 	if( meshName == "" )
 		m=MEDFileCMesh::New(filename.c_str());//reads the first mesh encountered in the file, otherwise call New (const char *fileName, const char *mName, int dt=-1, int it=-1)
@@ -165,7 +164,7 @@ IJKMesh::readMeshMed( const std::string filename, const std::string & meshName ,
 	_measureField = mesh->getMeasureField(true);    
 
 	setFaceMeshes();
-    
+
 	cout<<endl<< "Loaded file "<< filename<<endl;
     cout<<"Structured Mesh name= "<<_mesh->getName()<<", mesh dim="<< _mesh->getMeshDimension()<< ", space dim="<< _mesh->getSpaceDimension()<< ", nb cells= "<<_mesh->getNumberOfCells()<< ", nb nodes= "<<_mesh->getNumberOfNodes()<<endl;
 
@@ -196,7 +195,7 @@ IJKMesh::IJKMesh( double xmin, double xmax, int nx, std::string meshName )
 	nodeStrctPtr[0]=nx+1;
 	dxyzPtr[0]=dx;
 
-	_mesh=MEDCouplingIIJKMesh::New(meshName,
+	_mesh=MEDCouplingIMesh::New(meshName,
 			meshDim,
 			nodeStrctPtr,
 			nodeStrctPtr+meshDim,
@@ -455,7 +454,7 @@ IJKMesh::getNumberOfCells ( void ) const
 std::vector<int> 
 IJKMesh::getCellGridStructure() const
 {
-	return _mesh->getCellGridStructure();
+	return _mesh->getCellGridStructure();//Implemented in MEDCouplingStructuredMesh
 }
 
 std::vector<int> 
@@ -479,7 +478,7 @@ int
 IJKMesh::getNumberOfFaces ( void ) const
 //----------------------------------------------------------------------
 {
-	std::vector<int> NxNyNz = _mesh->getCellGridStructure();
+	std::vector<int> NxNyNz = _mesh->getCellGridStructure();//Implemented in MEDCouplingStructuredMesh
 	
 	switch( _mesh->getMeshDimension () )
 	{
@@ -497,7 +496,7 @@ IJKMesh::getNumberOfFaces ( void ) const
 int 
 IJKMesh::getNumberOfEdges ( void )  const 
 {
-	std::vector<int> NxNyNz = _mesh->getCellGridStructure();
+	std::vector<int> NxNyNz = _mesh->getCellGridStructure();//Implemented in MEDCouplingStructuredMesh
 	
 	switch( _mesh->getMeshDimension () )
 	{
@@ -566,7 +565,11 @@ bool IJKMesh::isIndexFacePeriodicSet() const
 double 
 IJKMesh::minRatioVolSurf()
 {
-    return dx_min;
+    double result =0;
+	for(int i=0; i< _mesh->getMeshDimension(); i++)
+        result+=_faceMeasures[i];//or _faceMesh[i]->getMeasureOfAnyCell () for IMesh (not available for CMesh
+        
+    return _cellMeasure/(2*result);
 }
 int 
 IJKMesh::getMaxNbNeighbours(EntityType type) const
@@ -654,7 +657,7 @@ int
 IJKMesh::getNx( void )  const
 //----------------------------------------------------------------------
 {
-	return _mesh->getCellGridStructure()[0];
+	return _mesh->getCellGridStructure()[0];//Implemented in MEDCouplingStructuredMesh
 }
 
 //----------------------------------------------------------------------
@@ -665,7 +668,7 @@ IJKMesh::getNy( void )  const
 	if(_mesh->getMeshDimension () < 2)
 		throw CdmathException("int IJKMesh::getNy( void ) : Ny is not defined in dimension < 2!");
 	else
-		return _mesh->getCellGridStructure()[1];
+		return _mesh->getCellGridStructure()[1];//Implemented in MEDCouplingStructuredMesh
 }
 
 //----------------------------------------------------------------------
@@ -676,5 +679,5 @@ IJKMesh::getNz( void )  const
 	if(_mesh->getMeshDimension () < 3)
 		throw CdmathException("int IJKMesh::getNz( void ) : Nz is not defined in dimension < 3!");
 	else
-		return _mesh->getCellGridStructure()[2];
+		return _mesh->getCellGridStructure()[2];//Implemented in MEDCouplingStructuredMesh
 }

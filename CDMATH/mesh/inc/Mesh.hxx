@@ -33,10 +33,7 @@ class MEDFileUMesh;
 class MEDCouplingMesh;
 class DataArrayIdType;
 }
-namespace ParaMEDMEM
-{
-class DataArrayIdType;
-}
+
 class Node;
 class Cell;
 class Face;
