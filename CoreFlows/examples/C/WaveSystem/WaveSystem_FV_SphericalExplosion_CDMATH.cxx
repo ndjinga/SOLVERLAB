@@ -28,41 +28,41 @@ void initial_conditions_shock(Mesh my_mesh,Field& pressure_field,Field& velocity
     double xcentre=0.;
     double ycentre=0;
     double zcentre=0;
-	
-	double x, y, z;
-	double val, valX, valY, valZ;
-	
+    
+    double x, y, z;
+    double val, valX, valY, valZ;
+    
     int dim    =my_mesh.getMeshDimension();
     int nbCells=my_mesh.getNumberOfCells();
 
     for (int j=0 ; j<nbCells ; j++)
     {
         x = my_mesh.getCell(j).x() ;
-		if(dim>1)
-		{
-			y = my_mesh.getCell(j).y() ;
-			if(dim==3)
-				z = my_mesh.getCell(j).z() ;
-		}
+        if(dim>1)
+        {
+            y = my_mesh.getCell(j).y() ;
+            if(dim==3)
+                z = my_mesh.getCell(j).z() ;
+        }
 
         valX=(x-xcentre)*(x-xcentre);
-		if(dim==1)
-			val=sqrt(valX);
-		else if(dim==2)
-		{
-			valY=(y-ycentre)*(y-ycentre);
-			val=sqrt(valX+valY);		
-		}
-		else if(dim==3)
-		{
-			valY=(y-ycentre)*(y-ycentre);
-			valZ=(z-zcentre)*(z-zcentre);
-			val=sqrt(valX+valY+valZ);		
-		}
-		
-		for(int idim=0; idim<dim; idim++)
-			velocity_field[j,idim]=0;
-			
+        if(dim==1)
+            val=sqrt(valX);
+        else if(dim==2)
+        {
+            valY=(y-ycentre)*(y-ycentre);
+            val=sqrt(valX+valY);        
+        }
+        else if(dim==3)
+        {
+            valY=(y-ycentre)*(y-ycentre);
+            valZ=(z-zcentre)*(z-zcentre);
+            val=sqrt(valX+valY+valZ);        
+        }
+        
+        for(int idim=0; idim<dim; idim++)
+            velocity_field[j,idim]=0;
+            
         if (val<rayon)
             pressure_field(j) = 155e5;
         else
@@ -130,15 +130,15 @@ SparseMatrixPetsc computeDivergenceMatrix(Mesh my_mesh, int nbVoisinsMax, double
             }
             else 
             {    
-				if( Fk.getGroupName() != "Periodic" && Fk.getGroupName() != "Neumann")//Wall boundary condition unless Periodic/Neumann specified explicitly
+                if( Fk.getGroupName() != "Periodic" && Fk.getGroupName() != "Neumann")//Wall boundary condition unless Periodic/Neumann specified explicitly
                 {
-					Vector v(dim+1);
+                    Vector v(dim+1);
                     for(int i=0; i<dim; i++)
                         v[i+1]=normal[i];
                     Matrix idMoinsJacCL=v.tensProduct(v)*2;
                     
                     implMat.addValue(j*nbComp,j*nbComp,Am*(-1.)*idMoinsJacCL);
-				}
+                }
                 else if( Fk.getGroupName() == "Periodic")//Periodic boundary condition
                 {
                     int indexFP=my_mesh.getIndexFacePeriodic(indexFace);
@@ -147,12 +147,12 @@ SparseMatrixPetsc computeDivergenceMatrix(Mesh my_mesh, int nbVoisinsMax, double
                     
                     implMat.addValue(j*nbComp,cellAutre*nbComp,Am);
                     implMat.addValue(j*nbComp,        j*nbComp,Am*(-1.));
-				}
+                }
                 else if(Fk.getGroupName() != "Neumann")//Nothing to do for Neumann boundary condition
                 {
                     cout<< Fk.getGroupName() <<endl;
                     throw CdmathException("computeDivergenceMatrix: Unknown boundary condition name");
-				}
+                }
             }
         }   
     }     
@@ -161,7 +161,7 @@ SparseMatrixPetsc computeDivergenceMatrix(Mesh my_mesh, int nbVoisinsMax, double
 
 void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh& my_mesh, const string file)
 {
-	/* Retrieve mesh data */
+    /* Retrieve mesh data */
     int dim=my_mesh.getMeshDimension();
     int nbCells = my_mesh.getNumberOfCells();
     std::string meshName=my_mesh.getName();
@@ -187,7 +187,7 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
             Un[k + 2*nbCells] = rho0*velocity_field[k,1] ;
         if(dim==3)
             Un[k + 3*nbCells] = rho0*velocity_field[k,2];
-		}
+        }
 
     /*
      * MED output of the initial condition at t=0 and iter = 0
@@ -231,13 +231,13 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
                     velocity_field[k,1]=Un[k*(dim+1)+2]/rho0;
                     if(dim>2)
                         velocity_field[k,2]=Un[k*(dim+1)+3]/rho0;
-				}
-			}
+                }
+            }
             pressure_field.setTime(time,it);
             pressure_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_pressure",false);
             velocity_field.setTime(time,it);
             velocity_field.writeVTK("WaveSystem"+to_string(dim)+"DUpwind"+meshName+"_velocity",false);
-		}
+        }
     }
     cout<<"End of calculation -- Iteration: " << it << ", Time: "<< time<< ", dt: " << dt<<endl;
 
@@ -251,9 +251,9 @@ void WaveSystem(double tmax, int ntmax, double cfl, int output_freq, const Mesh&
  
 int main(int argc, char *argv[])
 {
-	cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM"<<endl;
-	cout << "- Numerical scheme : Upwind explicit scheme" << endl;
-	cout << "- Boundary conditions : WALL" << endl;
+    cout << "-- Starting the RESOLUTION OF THE 2D WAVE SYSTEM"<<endl;
+    cout << "- Numerical scheme : Upwind explicit scheme" << endl;
+    cout << "- Boundary conditions : WALL" << endl;
 
     // Problem data
     double tmax=1.;
@@ -261,37 +261,37 @@ int main(int argc, char *argv[])
     int freqSortie=100;
     string fileOutPut="SphericalWave";
 
-	Mesh myMesh;
-	
-	if(argc<2)
-	{
-		    cout << "- DOMAIN : SQUARE" << endl;
-		    cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
-		    cout << "Construction of a cartesian mesh" << endl;
-	    double xinf=-0.5;
-	    double xsup= 0.5;
-	    double yinf=-0.5;
-	    double ysup= 0.5;
-	    int nx=50;
-	    int ny=50;
-	    myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
-	    double eps=precision;
-	    myMesh.setGroupAtPlan(xsup,0,eps,"RightEdge");
-	    myMesh.setGroupAtPlan(xinf,0,eps,"LeftEdge");
-	    myMesh.setGroupAtPlan(yinf,1,eps,"BottomEdge");
-	    myMesh.setGroupAtPlan(ysup,1,eps,"TopEdge");
-	}
-	else
-	{
-	    cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
-	    cout << "Loading of a mesh named "<<argv[1] << endl;
-	    string filename = argv[1];
-	    myMesh=Mesh(filename);
-	}
+    Mesh myMesh;
+    
+    if(argc<2)
+    {
+            cout << "- DOMAIN : SQUARE" << endl;
+            cout << "- MESH : CARTESIAN, GENERATED INTERNALLY WITH CDMATH" << endl<< endl;
+            cout << "Construction of a cartesian mesh" << endl;
+        double xinf=-0.5;
+        double xsup= 0.5;
+        double yinf=-0.5;
+        double ysup= 0.5;
+        int nx=50;
+        int ny=50;
+        myMesh=Mesh(xinf,xsup,nx,yinf,ysup,ny);
+        double eps=precision;
+        myMesh.setGroupAtPlan(xsup,0,eps,"RightEdge");
+        myMesh.setGroupAtPlan(xinf,0,eps,"LeftEdge");
+        myMesh.setGroupAtPlan(yinf,1,eps,"BottomEdge");
+        myMesh.setGroupAtPlan(ysup,1,eps,"TopEdge");
+    }
+    else
+    {
+        cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
+        cout << "Loading of a mesh named "<<argv[1] << endl;
+        string filename = argv[1];
+        myMesh=Mesh(filename);
+    }
 
     double cfl=1./myMesh.getSpaceDimension();
-	WaveSystem(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
-	
+    WaveSystem(tmax,ntmax,cfl,freqSortie,myMesh,fileOutPut);
+    
     cout << "Simulation complete." << endl;
 
     return 0;
