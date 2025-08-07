@@ -304,18 +304,13 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 					WeightsForVolums[i] =   1.0/(K.getNumberOfFaces() *_Ndim * (K.getNumberOfFaces()==3 ? 2.0 :1.0));//1.0/(K.getNumberOfFaces() ); 
 					WeightsForFaces[i] = 1.0/_Ndim; ((K.getNumberOfFaces() == 4)|| (K.getNumberOfFaces() == 2) ) ? 1.0/_Ndim : 1.0  ;
 				}
-
-				double what =0;
 				//************* _Ndim-dimensional terms *************//
 				for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
 					std::vector<double> MomentumRT_in_Xf = MomentumRaviartThomas_at_point_X(K, idCells[nei], IntegrationNodes[inteNode] ); 
 					std::vector<double> qtensorielq = TensorProduct(MomentumRT_in_Xf, MomentumRT_in_Xf);
 					std::vector<double> GradientPsi_j_in_Xf = Gradient_PhysicalBasisFunctionRaviartThomas(K, idCells[nei], Support_j, Fj_physical,j, IntegrationNodes[inteNode]  ); 
 					Convection +=  WeightsForVolums[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * 1.0/rho * Contraction(qtensorielq, GradientPsi_j_in_Xf); 	
-					//what += WeightsForVolums[inteNode] * fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) * 1.0/rho * Contraction(qtensorielq, GradientPsi_j_in_Xf); 	
-					//cout <<" WeightsForVolums[inteNode]  "<< WeightsForVolums[inteNode]  <<" "<< fabs( det( JacobianTransfor_K_X( xToxhat(K, IntegrationNodes[inteNode]  , K_Nodes), K_Nodes) ) ) <<" contraciton "<<Contraction(qtensorielq, GradientPsi_j_in_Xf) <<endl;
 				}
-				//cout <<" j = "<< j <<" "<< what <<endl;
 				//************* (_Ndim-1)-dimensional terms *************//
 				if (IsfInterior || IsfPeriodicTwin){
 					for (int inteNode=0; inteNode <IntegrationNodes.size(); inteNode ++){
@@ -520,30 +515,7 @@ double EulerBarotropicStaggered::computeTimeStep(bool & stop){
 	/***********Adding boundary terms to density equation, convection term and pressure gradient to momentum equation **************/
 	// Add convection terms  : AU^n + Boundterms - _Conv
 	VecAXPY(Au,     1, _BoundaryTerms); 
-	VecAXPY(Au,     1, _Conv); 
-	//Add pressure gradient : AU^n+ Boundterms - _Conv - GradPressure 
-	/* for (int j =0; j <_Nfaces ; j++){
-		Face Fj = _mesh.getFace(j);
-		std::vector< int > idCells = Fj.getCellsId();
-		Cell Ctemp1 = _mesh.getCell(idCells[0]);
-		bool IsInterior = std::find(_InteriorFaceSet.begin(), _InteriorFaceSet.end(),j ) != _InteriorFaceSet.end() ;
-		bool IsSteggerBound = std::find(_SteggerBoundFaceSet.begin(), _SteggerBoundFaceSet.end(),j ) != _SteggerBoundFaceSet.end() ;
-		bool IsNeumannBound = std::find(_NeumannBoundFaceSet.begin(), _NeumannBoundFaceSet.end(),j ) != _NeumannBoundFaceSet.end() ;
-		PetscInt IndexFace = _Nmailles + j;		
-		if (IsInterior){
-			if ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end()  ) 
-				idCells.push_back( _mesh.getFace(_FacePeriodicMap.find(j) ->second).getCellsId()[0]  );
-			Cell Ctemp2 = _mesh.getCell(idCells[1]);
-			VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
-			VecGetValues(_primitiveVars,1,&idCells[1],&rhoExt);
-			VecSetValue(_GradPressure, IndexFace, getOrientation(j,Ctemp1) * Fj.getMeasure() *_compressibleFluid->getPressure(rhoInt) , ADD_VALUES );
-			VecSetValue(_GradPressure, IndexFace, getOrientation(j,Ctemp2) * Fj.getMeasure() *_compressibleFluid->getPressure(rhoExt) , ADD_VALUES );
-		}
-		if (IsSteggerBound  ){
-			VecGetValues(_primitiveVars,1,&idCells[0],&rhoInt);
-			VecSetValue(_GradPressure, IndexFace,  getOrientation(j,Ctemp1) * Fj.getMeasure() *_compressibleFluid->getPressure(rhoInt) , ADD_VALUES ); 
-		}
-	} */
+	VecAXPY(Au,     1, _Conv);
 	VecAXPY(Au,     1, _GradPressure); 
 	//Multiply by inverse volums V^{-1}( AU^n + Boundterms - _Conv - GradPressure  )
 	MatMult(_InvVol, Au, _b);
@@ -830,9 +802,9 @@ bool EulerBarotropicStaggered::iterateTimeStep(bool &converged){
 						q *= _vec_sigma.find(i)->second[0] * _vec_sigma.find(idFacesofK[f])->second[0]  +  _vec_sigma.find(i)->second[1] * _vec_sigma.find(idFacesofK[f])->second[1]; 
 						int I = _Nmailles + i;
 						VecSetValue(_primitiveVars, I, q, INSERT_VALUES );
-						//cout <<" Fj = "<< Fj.x()<< " "<<Fj.y()<< "   Facef =  "<< Facef.x() << " "<<Facef.y()<<endl; 
 					}
-					if (i != idFacesofK[f] && ( (pow(Fj.x()+_vec_sigma.find(i)->second[0]*(-1)*getOrientation(i,K)*_minCell/(2.0*Fj.getMeasure()) -Facef.x(),2) + pow(Fj.y()+_vec_sigma.find(i)->second[1]*(-1)*getOrientation(i,K)*_minCell/(2.0*Fj.getMeasure()) -Facef.y(),2) ) <1/pow(_Nmailles,2.0) ) ){
+						//cout <<" Fj = "<< Fj.x()<< " "<<Fj.y()<< "   Facef =  "<< Facef.x() << " "<<Facef.y()<<  " Fj translated "<< Fj.x()+_vec_sigma.find(i)->second[0]*(-1)*getOrientation(i,K)*_minCell/(Fj.getMeasure())<<" "<< Fj.y()+_vec_sigma.find(i)->second[1]*(-1)*getOrientation(i,K)*_minCell/(Fj.getMeasure())<<endl; 
+					if (i != idFacesofK[f] && ( (pow(Fj.x()+_vec_sigma.find(i)->second[0]*(-1)*getOrientation(i,K)*_minCell/(Fj.getMeasure()) -Facef.x(),2) + pow(Fj.y()+_vec_sigma.find(i)->second[1]*(-1)*getOrientation(i,K)*_minCell/(Fj.getMeasure()) -Facef.y(),2) ) <1/pow(_Nmailles,2.0) ) ){
 						int If = _Nmailles + idFacesofK[f];
 						VecGetValues(_primitiveVars,1,&If,&q);
 						q *= _vec_sigma.find(i)->second[0] * _vec_sigma.find(idFacesofK[f])->second[0]  +  _vec_sigma.find(i)->second[1] * _vec_sigma.find(idFacesofK[f])->second[1]; 

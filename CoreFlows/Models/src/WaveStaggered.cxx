@@ -18,6 +18,7 @@ WaveStaggered::WaveStaggered(int dim, double kappa, double rho, MPI_Comm comm):P
 	_c = sqrt(kappa/rho);
 	_saveVelocity=false; 
 	_savePressure=false; 
+	_addRotRot=false; 
 	_facesBoundinit = false;
 	_indexFacePeriodicSet = false;
 	_vec_normal=NULL;
@@ -101,7 +102,6 @@ double WaveStaggered::getOrientation(int l, Cell Cint) {
 		}
 	}
 	double dotprod = 0;
-	//cout <<"cell = "<<Cint.x() <<" "<<Cint.y()<< "  nk = "<<  vec[0]<< " "<<vec[1]<< " _vec_sigma = "<< _vec_sigma.find(l)->second[0]<< " "<<_vec_sigma.find(l)->second[1	] <<endl;
 	for (int idim = 0; idim < _Ndim; ++idim)
 		dotprod += vec[idim] * _vec_sigma.find(l)->second[idim]; 
 	return (dotprod >1e-14 )  ? 1 : -1; 
@@ -684,11 +684,10 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					}
 				}	
 				// *************** Grad^perp tilde (Grad^per)^*  ************//
-				if (_Ndim ==2 ){
+				if (_Ndim ==2 && _addRotRot ){
 					double Inv_Dsigma, length_sigma_perp,  Inv_Df, length_f_perp;
 					MatGetValues(_InvVol, 1, &IndexFace, 1, &IndexFace, &Inv_Dsigma);
 					length_sigma_perp = 1/(Inv_Dsigma * Fj.getMeasure());
-					//TODO periodic
 					std::vector<int> idNodesSigma = Fj.getNodesId();
 					for (int n=0; n < idNodesSigma.size() ; n++){
 						std::vector<int> idFacesn = _mesh.getNode( idNodesSigma[n] ).getFacesId();
@@ -711,42 +710,37 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 					}
 				}
 			}
-			else if (IsSteggerBound || IsWallBound ) { 
-				//MatSetValue(_A, idCells[0], IndexFace, -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure(), ADD_VALUES ); 
+			else if (IsSteggerBound ) { 
+				//********* pressure equation *************//
+				MatSetValue(_A, idCells[0], IndexFace,  -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0, ADD_VALUES );
+				VecSetValue(_BoundaryTerms, idCells[0], -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0 * getboundaryVelocity().find(j)->second, ADD_VALUES );
+				MatSetValue(_A, idCells[0], idCells[0], -_d * _c * Fj.getMeasure(), ADD_VALUES );
+				VecSetValue(_BoundaryTerms, idCells[0],  _d * _c * Fj.getMeasure() * getboundaryPressure().find(j)->second, ADD_VALUES );
+				//************* Velocity equation *************//
+				// pressure gradient
+				MatSetValue(_A, IndexFace , idCells[0],  _kappa * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0, ADD_VALUES );
+				VecSetValue(_BoundaryTerms, IndexFace , -_kappa * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
+				// jump velocity
+				MatSetValue(_A, IndexFace , IndexFace,  -_c/2.0  * Fj.getMeasure(), ADD_VALUES );
+				VecSetValue(_BoundaryTerms, IndexFace ,  _c/2.0 * Fj.getMeasure()* getboundaryVelocity().find(j)->second, ADD_VALUES ); 
 				
-				if (IsSteggerBound){
-					//********* pressure equation *************//
-					MatSetValue(_A, idCells[0], IndexFace,  -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0, ADD_VALUES );
-					VecSetValue(_BoundaryTerms, idCells[0], -1/_rho * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0 * getboundaryVelocity().find(j)->second, ADD_VALUES );
-					MatSetValue(_A, idCells[0], idCells[0], -_d * _c * Fj.getMeasure(), ADD_VALUES );
-					VecSetValue(_BoundaryTerms, idCells[0],  _d * _c * Fj.getMeasure() * getboundaryPressure().find(j)->second, ADD_VALUES );
-					//************* Velocity equation *************//
-					// pressure gradient
-					MatSetValue(_A, IndexFace , idCells[0],  _kappa * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0, ADD_VALUES );
-					VecSetValue(_BoundaryTerms, IndexFace , -_kappa * getOrientation(j,Ctemp1) * Fj.getMeasure()/2.0 * getboundaryPressure().find(j)->second, ADD_VALUES );
-					// jump velocity
-					MatSetValue(_A, IndexFace , IndexFace,  -_c/2.0  * Fj.getMeasure(), ADD_VALUES );
-					VecSetValue(_BoundaryTerms, IndexFace , _c/2.0 * Fj.getMeasure()* getboundaryVelocity().find(j)->second, ADD_VALUES ); 
-					
-					Cell K = _mesh.getCell(idCells[0]); 
-					std::vector<int> idFaces = K.getFacesId();
-					//If  the face is periodic and K isn't the direct neighbour of Fj, recover the geometric informations of the associated periodic cell 
-					Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[0] ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
-					
-					for (int f =0; f <K.getNumberOfFaces(); f ++){
-						Face Facef = _mesh.getFace( idFaces[f] );
-						std::vector< int> idCellsOfFacef =  Facef.getCellsId();
-						std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
-						PetscInt I = _Nmailles + idFaces[f];
-						double gradiv = - _d * _c * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[0]] : 1.0);
-						MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
-					}
+				Cell K = _mesh.getCell(idCells[0]); 
+				std::vector<int> idFaces = K.getFacesId();
+				//If  the face is periodic and K isn't the direct neighbour of Fj, recover the geometric informations of the associated periodic cell 
+				Face Fj_physical =  ( _FacePeriodicMap.find(j) != _FacePeriodicMap.end() ) && Fj.getCellsId()[0] != idCells[0] ? _mesh.getFace(_FacePeriodicMap.find(j)->second ):  Fj;
+				
+				for (int f =0; f <K.getNumberOfFaces(); f ++){
+					Face Facef = _mesh.getFace( idFaces[f] );
+					std::vector< int> idCellsOfFacef =  Facef.getCellsId();
+					std::vector< int > idNodesOfFacef = Facef.getNodesId(); 
+					PetscInt I = _Nmailles + idFaces[f];
+					double gradiv = - _d * _c * Fj_physical.getMeasure() * getOrientation(j,K) *Facef.getMeasure()* getOrientation(idFaces[f], K) /( (_Ndim==2 )? _perimeters[idCells[0]] : 1.0);
+					MatSetValue(_A, IndexFace, I, gradiv, ADD_VALUES ); 
 				}
-				if (IsWallBound){
-					// Velocity equation
-					// jump velocity
-					MatSetValue(_A, IndexFace , IndexFace, -_c * Fj.getMeasure(), ADD_VALUES );
-				}
+			}
+			else if (IsWallBound){
+				// jump velocity
+				MatSetValue(_A, IndexFace , IndexFace, -_c * Fj.getMeasure(), ADD_VALUES );
 			}	
 		}
 		MatAssemblyBegin(_A,MAT_FINAL_ASSEMBLY);
@@ -757,7 +751,6 @@ double WaveStaggered::computeTimeStep(bool & stop){//dt is not known and will no
 		MatMatMult(_InvVol, _A, MAT_INITIAL_MATRIX, PETSC_DEFAULT, & Prod); 
 		MatCopy(Prod,_A, SAME_NONZERO_PATTERN); 
 		MatDestroy(& Prod);
-
 
 		ComputeMinCellMaxPerim();
 
@@ -1092,8 +1085,7 @@ bool WaveStaggered::FindlocalBasis(const int &m,const Face &Facej, const int &j,
 	double cdot =0;
 	for (int e=0; e <_Ndim; e++)
 		cdot += PhysicalPsij[e] * _vec_sigma.find(j)->second[e]*getOrientation(j,K) ;	
-	/* if (j==0)
-		cout <<cdot <<endl; */
+
 	if (fabs(cdot -1)>1e-11 &&  fabs(cdot )>1e-11 )
 		cout <<"WARNING !! BASIS FUNCTION " << j <<" WILL BE EQUAL TO 0, psi_m. n_sigma =  "<< cdot <<endl;
 	return (fabs(cdot -1)< 1e-11); 
@@ -1374,8 +1366,6 @@ void WaveStaggered::RelativeEnergyBalanceEq(){
 		residual -= pow(grad,2) + pow(velocityjump,2);
 	}
 	PetscReal norm;
-	VecNorm(_newtonVariation, NORM_2, &norm);
-	//cout << "|| U^n+1 - U^n || = " <<norm <<endl;
 	cout << "flux = "<< flux <<"        residual = "<< residual<<endl;
 }
 

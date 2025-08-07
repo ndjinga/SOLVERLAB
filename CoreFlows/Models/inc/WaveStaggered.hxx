@@ -92,6 +92,9 @@ public :
     void saveVelocity(bool save_v=true){
         _saveVelocity=save_v;
     }
+	void addRotRot(bool addRotRot){
+        _addRotRot=addRotRot;
+	}
 
 
 	void ComputeEnergyAtTimeT();
@@ -152,7 +155,7 @@ protected :
 
 	PetscScalar _pExt, _pInt;
 
-	bool _savePressure, _saveVelocity, _BasisFunctionAlreadyComputed;
+	bool _savePressure, _saveVelocity, _BasisFunctionAlreadyComputed, _addRotRot;
 	std::map<int, double>  _boundaryPressure, _boundaryVelocity;
 	std::map<int, std::vector<double> > _vec_sigma; // arbitrary degree of liberty associated to a face
 	std::map<int,int> _FacePeriodicMap;

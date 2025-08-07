@@ -76,10 +76,10 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){ 
-			vec_normal_sigma[0] *= -1;
-			vec_normal_sigma[1] *= -1;
-		} 
+		//TODO at theta=0; changing the sign of the basis function seems to give a better metric
+		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ) {
+			 cout << "bonjour "<< endl; 
+			 vec_normal_sigma[0] *= -1;}
 
 		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
@@ -118,9 +118,9 @@ int main(int argc, char** argv)
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 100000000	;
-	int freqSave = 3000;
+	int freqSave = 4000;
 	double cfl = 0.99;
-	double maxTime = 100;
+	double maxTime = 200;
 	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);
@@ -133,6 +133,8 @@ int main(int argc, char** argv)
 	myProblem.saveVelocity(true);
 	myProblem.savePressure(true);
 	myProblem.setVerbose(false);
+
+	myProblem.addRotRot(false);
 	
 	// evolution
 	myProblem.initialize();

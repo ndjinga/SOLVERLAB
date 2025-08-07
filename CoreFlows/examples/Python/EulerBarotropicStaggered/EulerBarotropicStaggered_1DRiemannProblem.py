@@ -30,10 +30,10 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
 	print("Building initial data " ); 
 	initialDensity_Left = 3; #12
-	initialDensity_Right = 1
+	initialDensity_Right = 1 #1
 
 	initialVelocity_Left = 5 ;#1.5
-	initialVelocity_Right = -1 # -3
+	initialVelocity_Right = 8 # -3
 
 	def initialDensity(x):
 		if x < discontinuity:
@@ -100,7 +100,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	MaxNbOfTimeStep = 100000;
 	freqSave = 50;
 	cfl = 1
-	maxTime = 0.1
+	maxTime = 0.02
 	precision = 1e-10;
 
 	myProblem.setCFL(cfl);

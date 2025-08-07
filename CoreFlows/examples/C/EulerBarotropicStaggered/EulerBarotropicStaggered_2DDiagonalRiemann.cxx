@@ -7,14 +7,14 @@
 using namespace std;
 
 double initialDensity( double x, double y , double nx){
-	if (y < (x+0.1 - 1.0/(4 * nx) ) )	return 3.0 ;//12;
-	else 									return 1.0;
+	if (y < (x+0.1 - 1.0/(4 * nx) ) )		return 3.0 ;//12;
+	else 									return 1.0; //1.0
 }
 
 std::vector<double> initialVelocity(double x, double y, double nx){
 	std::vector<double> vec(2);
 	double ul = 5;//1.5 ; 
-	double ur = -1.0;//-3 ; 
+	double ur = 8.0;//-3 ; 
 	if (y < (x+0.1  -1.0/(4 * nx) )){
 		vec[0] = -ul/sqrt(2.0);
 		vec[1] = ul/sqrt(2.0);
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
 	EulerBarotropicStaggered myProblem = EulerBarotropicStaggered(GasStaggered, around1bar300K, a, gamma, spaceDim );
 	int nx;
 	double inf = 0.0;
-	double sup = 1.0;
+	double sup = 5.0;
 	if (argc>1  ){
 		// ./resources/AnnulusSpiderWeb5x16.med or ./resources/AnnulusTriangles60.med
 		cout << "- MESH:  GENERATED EXTERNALLY WITH SALOME" << endl;
@@ -115,10 +115,10 @@ int main(int argc, char** argv)
 	string fileName = "EulerBarotropicStaggered_2DDiagonalRiemann";
 
 	// parameters calculation
-	unsigned MaxNbOfTimeStep = 1000000;
-	int freqSave = 1;
+	unsigned MaxNbOfTimeStep = 100000000;
+	int freqSave = 100;
 	double cfl = 0.99;
-	double maxTime = 0.07;
+	double maxTime = 0.02;
 	double precision = 1e-10;
 
 	myProblem.setCFL(cfl);
