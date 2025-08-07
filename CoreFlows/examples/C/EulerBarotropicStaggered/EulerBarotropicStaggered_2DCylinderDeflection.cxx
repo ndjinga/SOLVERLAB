@@ -86,11 +86,9 @@ int main(int argc, char** argv)
 					vec_normal_sigma[idim] = Ctemp1.getNormalVector(l,idim);
 			}
 		}
-		//TODO orientation
-		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ){ 
-			vec_normal_sigma[0] *= -1;
-			vec_normal_sigma[1] *= -1;
-		} 
+		//TODO at theta=0; changing the sign of the basis function seems to give a better metric
+		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 )  vec_normal_sigma[1] *= -1;
+
 		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
 		double theta = atan2(Fj.y(),Fj.x()); 

@@ -77,9 +77,7 @@ int main(int argc, char** argv)
 			}
 		}
 		//TODO at theta=0; changing the sign of the basis function seems to give a better metric
-		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 ) {
-			 cout << "bonjour "<< endl; 
-			 vec_normal_sigma[0] *= -1;}
+		if (  Fj.x() >1e-10 && fabs( atan(Fj.y()/Fj.x()) ) <1e-10 )  vec_normal_sigma[1] *= -1;
 
 		myProblem.setOrientation(j,vec_normal_sigma);
 		double r =  sqrt(Fj.x()*Fj.x() + Fj.y()*Fj.y());
