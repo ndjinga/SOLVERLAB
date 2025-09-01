@@ -132,7 +132,7 @@ int main(int argc, char** argv)
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 10000000	;
 	double precision = 1e-11;
-	int freqSave = 250;
+	int freqSave = 1000;
 	double maxTime = 50;
 	
 	myProblem.setTimeMax(maxTime);

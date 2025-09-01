@@ -110,13 +110,13 @@ int main(int argc, char** argv)
 	myProblem.setboundaryVelocity(wallVelocityMap);
 
     // set the numerical method
-	myProblem.setTimeScheme(Explicit	);    
+	myProblem.setTimeScheme(Explicit);    
     // name of result file
 	string fileName = "WaveStaggered_2DCylinderDeflection";
 
     // parameters calculation
 	unsigned MaxNbOfTimeStep = 100000000	;
-	int freqSave = 4000;
+	int freqSave = 1000000;
 	double cfl = 0.99;
 	double maxTime = 200;
 	double precision = 1e-10;
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
 	myProblem.savePressure(true);
 	myProblem.setVerbose(false);
 
-	myProblem.addRotRot(false);
+	myProblem.addRotRot(true);
 	
 	// evolution
 	myProblem.initialize();
@@ -146,7 +146,8 @@ int main(int argc, char** argv)
 	cout << "------------ End of calculation !!! -----------" << endl;
 	cout << "\nBoundary Velocity error = "<< std::setprecision(17) << std::fixed<< myProblem.ErrorInftyVelocityBoundary(wallVelocityMap)<<endl;
 	cout << "Error L2 of velocity at the faces = "<< myProblem.ErrorVelocity(ExactVelocityAtFaces)[0] <<endl;
-	//cout << "Error L2 of interpolated velocity at cells= "<< myProblem.ErrorL2VelocityInfty(ExactVelocityAtFaces, ExactVelocityInterpolate)[1] <<endl;
+	cout << "Error L2 of velocity at the Cells x = "<< myProblem.ErrorVelocity(ExactVelocityAtFaces)[1] <<endl;
+	cout << "Error L2 of velocity at the Cells y = "<< myProblem.ErrorVelocity(ExactVelocityAtFaces)[2] <<endl;
 	myProblem.terminate();
 	
 
