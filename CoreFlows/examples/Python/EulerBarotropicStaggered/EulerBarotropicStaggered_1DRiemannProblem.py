@@ -17,7 +17,7 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	print("Building mesh " );
 	xinf = 0 ;
 	xsup= 1
-	nx=120	;
+	nx=400	;
 	M=svl.Mesh(xinf,xsup,nx)
 	discontinuity=(xinf+xsup)/2 + 0.75/nx
 
@@ -98,8 +98,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 
     # simulation parameters 
 	MaxNbOfTimeStep = 100000;
-	freqSave = 50;
-	cfl = 1
+	freqSave = 200;
+	cfl = 0.8
 	maxTime = 0.02
 	precision = 1e-10;
 
@@ -181,10 +181,11 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	exactDensity, exactVelocity = exact_rs_euler_barotropic.exact_sol_Riemann_problem(xinf, xsup, Tmax, gamma, a , [initialPressure_Left , initialVelocity_Left ], [ initialPressure_Right, initialVelocity_Right ], (xinf+xsup)/2, nx)
 
 	plt.subplot(1, 2, 1)
+	
 	plt.plot(Densitydata['x'], Densitydata['Density'], label="Density results", color='tab:blue')
 	plt.plot(Densitydata['x'], exactDensity, label="Exact density", color='tab:green')
-	plt.xlabel("x")
-	plt.ylabel("Density")
+	pyplot.xlabel("x",12,labelpad=1)          
+	pyplot.ylabel(r"$\rho$",12,labelpad=1) 
 	plt.title("Density profil")
 	plt.grid(True)
 	plt.legend()
@@ -192,8 +193,8 @@ def EulerBarotropicStaggered_1DRiemannProblem():
 	plt.subplot(1, 2, 2)
 	plt.plot(velocitydata['x'], velocitydata['velocity'], label="Velocity results", color='tab:blue')
 	plt.plot(Densitydata['x'], exactVelocity, label="Exact velocity", color='tab:green')
-	plt.xlabel("x")
-	plt.ylabel("Velocity")
+	pyplot.xlabel("x",12,labelpad=1)          
+	pyplot.ylabel(r"$u$",12,labelpad=1) 
 	plt.title("Velocity profil")
 	plt.grid(True)
 	plt.legend()

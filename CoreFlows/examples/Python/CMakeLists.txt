@@ -157,12 +157,18 @@ CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DEF_Ro
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_StructuredCubes.py "Python fv stationary diffusion 3D dirichlet unstructured cubes CUBE coreflows")
 CreatePythonTest(StationaryDiffusionEquation/StationaryDiffusionEquation_3DVF_RoomCooling_UnstructuredTetras.py "Python fv stationary diffusion 3D dirichlet unstructured tetrahedra CUBE coreflows")
 
-
-CreatePythonTest(WaveStaggered/MeshConvergence.py "Python fv Wave staggered 1D test for wall boundary conditions on left wall structured coreflows")
+CreatePythonTest(WaveStaggered/preambule.py "Python fv Wave staggered ")
+CreatePythonTest(WaveStaggered/addTriangleSlope.py "Python fv Wave staggered ")
+CreatePythonTest(WaveStaggered/MeshConvergence.py "Python fv Wave staggered ")
 CreatePythonTest(WaveStaggered/WaveStaggered_1DWall.py "Python fv Wave staggered 1D test for wall boundary conditions on left wall structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_1DRiemannProblem.py "Python fv Wave staggered 1D test for wall boundary conditions on left wall structured coreflows")
 CreatePythonTest(WaveStaggered/WaveStaggered_2DCylinderMeshConvergence.py "Python fv Wave staggered mesh convergence structured coreflows")
 
+CreatePythonTest(IsoContoursVelocity.py "Python fv IsoContours ")
+
+CreatePythonTest(EulerBarotropicStaggered/preambule.py "Python fv Wave staggered ")
+CreatePythonTest(EulerBarotropicStaggered/addTriangleSlope.py "Python fv Wave staggered ")
+CreatePythonTest(EulerBarotropicStaggered/MeshConvergence.py "Python fv Wave staggered ")
 CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DRiemannProblem.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_1DWall.py "Python fv Wave staggered 2D Riemann X structured coreflows")
 CreatePythonTest(EulerBarotropicStaggered/EulerBarotropicStaggered_2DCylinderMeshConvergence.py "Python fv Wave staggered 2D Riemann X structured coreflows")
