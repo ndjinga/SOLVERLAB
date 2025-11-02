@@ -175,6 +175,7 @@ CreatePythonTest(DriftModel/DriftModel_2DVidangeReservoirUnstructured.py "Python
 CreatePythonTest(DriftModel/DriftModel_3DBoilingChannelBarrier.py "Python fv driftmodel 3D heating boiling structured barrier coreflows")
 
 CreatePythonTest(IsothermalTwoFluid/IsothermalTwoFluid_1DSedimentation.py "Python fv isothermaltwofluid 1D gravity sedimentation structured coreflows")
+CreatePythonTest(IsothermalTwoFluid/IsothermalTwoFluid_1DSedimentation_Explicit.py "Python fv isothermaltwofluid 1D gravity sedimentation structured coreflows")
 CreatePythonTest(IsothermalTwoFluid/IsothermalTwoFluid_1DVidangeReservoir.py "Python fv isothermaltwofluid 1D gravity drainage structured coreflows")
 CreatePythonTest(IsothermalTwoFluid/IsothermalTwoFluid_2DVidangeReservoir.py "Python fv isothermaltwofluid 2D gravity drainage structured coreflows")
 
